@@ -588,3 +588,269 @@ a {
     margin-bottom: 30px;
     color: rgba(255,255,255,0.9);
 }
+
+/* =========================
+   A&O CASE STUDY PAGE
+========================= */
+
+.case-hero {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(8, 26, 51, 0.96) 0%,
+      rgba(8, 26, 51, 0.88) 45%,
+      rgba(8, 26, 51, 0.62) 100%
+    );
+  color: var(--white);
+  padding: 100px 0;
+}
+
+.case-hero-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 50px;
+  align-items: center;
+}
+
+.case-hero h1 {
+  font-size: clamp(3rem, 6vw, 5rem);
+  line-height: 1;
+  letter-spacing: -0.05em;
+  margin-bottom: 24px;
+}
+
+.case-hero-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 22px;
+  padding: 36px;
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.case-summary-section {
+  background: var(--white);
+}
+
+.case-summary-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 50px;
+  align-items: start;
+}
+
+.case-summary-grid h2 {
+  font-size: clamp(2.2rem, 4vw, 3.2rem);
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  margin-bottom: 20px;
+}
+
+.challenge-list {
+  background: var(--light);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px;
+}
+
+.challenge-list h3 {
+  color: var(--navy);
+  margin-bottom: 16px;
+}
+
+.challenge-list ul {
+  padding-left: 20px;
+}
+
+.challenge-list li {
+  margin-bottom: 10px;
+}
+
+.build-section {
+  background: var(--light);
+}
+
+.case-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+
+.case-service-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 30px;
+  min-height: 230px;
+}
+
+.case-service-card span {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  background: var(--navy);
+  color: var(--white);
+  font-weight: 800;
+  margin-bottom: 20px;
+}
+
+.case-service-card h3 {
+  color: var(--navy);
+  font-size: 1.3rem;
+  margin-bottom: 12px;
+}
+
+.case-service-card p {
+  color: var(--gray);
+}
+
+.visual-section {
+  background: var(--white);
+}
+
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.portfolio-item {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+}
+
+.portfolio-item.large {
+  grid-column: span 2;
+}
+
+.portfolio-item img {
+  width: 100%;
+  height: 340px;
+  object-fit: cover;
+  object-position: top center;
+  background: var(--light);
+  border-bottom: 1px solid var(--border);
+}
+
+.portfolio-item.large img {
+  height: 460px;
+}
+
+.portfolio-item div {
+  padding: 24px;
+}
+
+.portfolio-item h3 {
+  color: var(--navy);
+  margin-bottom: 8px;
+}
+
+.portfolio-item p {
+  color: var(--gray);
+}
+
+.results-section {
+  background: var(--navy-dark);
+  color: var(--white);
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 50px;
+  align-items: center;
+}
+
+.results-section h2 {
+  font-size: clamp(2.2rem, 4vw, 3.2rem);
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  margin-bottom: 20px;
+}
+
+.results-section p {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.results-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.results-list div {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  padding: 18px;
+  font-weight: 800;
+}
+
+.lesson-section {
+  text-align: center;
+  background: var(--white);
+}
+
+.lesson-section .narrow {
+  margin: 0 auto;
+}
+
+.lesson-section h2 {
+  font-size: clamp(2.2rem, 4vw, 3.2rem);
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+  margin-bottom: 20px;
+}
+
+/* CASE STUDY MOBILE */
+
+@media (max-width: 980px) {
+  .case-hero-grid,
+  .case-summary-grid,
+  .results-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .case-card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .portfolio-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .portfolio-item.large {
+    grid-column: span 1;
+  }
+
+  .portfolio-item img,
+  .portfolio-item.large img {
+    height: 320px;
+  }
+
+  .results-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .case-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .case-hero {
+    padding: 75px 0;
+  }
+
+  .portfolio-item img,
+  .portfolio-item.large img {
+    height: 260px;
+  }
+}
