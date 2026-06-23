@@ -1,6 +1,6 @@
 :root {
   --navy: #13294b;
-  --navy-dark: #0d1c35;
+  --navy-dark: #0b1c37;
   --gold: #d4af37;
   --white: #ffffff;
   --light: #f5f7fa;
@@ -18,8 +18,8 @@
 body {
   font-family: Arial, Helvetica, sans-serif;
   color: var(--black);
-  line-height: 1.6;
   background: var(--white);
+  line-height: 1.6;
 }
 
 img {
@@ -37,9 +37,7 @@ a {
   margin: 0 auto;
 }
 
-/* =========================
-   HEADER
-========================= */
+/* HEADER */
 
 .site-header {
   background: white;
@@ -75,27 +73,25 @@ a {
 .nav-button {
   background: var(--navy);
   color: white !important;
-  padding: 10px 18px;
+  padding: 10px 20px;
   border-radius: 999px;
 }
 
-/* =========================
-   HERO
-========================= */
+/* HERO */
 
 .hero {
-  padding: 80px 0;
   background: linear-gradient(
     135deg,
     var(--navy-dark),
     var(--navy)
   );
+  padding: 90px 0;
   color: white;
 }
 
 .hero-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1.1fr 1fr;
   gap: 60px;
   align-items: center;
 }
@@ -114,26 +110,33 @@ a {
 }
 
 .hero h1 {
-  font-size: 3.8rem;
+  font-size: 4rem;
   line-height: 1.05;
-  margin-bottom: 24px;
+  margin-bottom: 25px;
 }
 
 .hero-text {
   font-size: 1.15rem;
-  margin-bottom: 30px;
+  margin-bottom: 35px;
   color: rgba(255,255,255,0.9);
 }
 
-.hero-image {
-  border-radius: 16px;
-  overflow: hidden;
+.hero-image-wrap {
   width: 100%;
+  height: 420px;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.25);
 }
 
-/* =========================
-   BUTTONS
-========================= */
+.hero-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* BUTTONS */
 
 .button-row {
   display: flex;
@@ -158,9 +161,7 @@ a {
   color: white;
 }
 
-/* =========================
-   SECTIONS
-========================= */
+/* GENERAL SECTIONS */
 
 .section {
   padding: 90px 0;
@@ -187,9 +188,7 @@ a {
   text-align: center;
 }
 
-/* =========================
-   SERVICE CARDS
-========================= */
+/* SERVICE CARDS */
 
 .card-grid {
   display: grid;
@@ -200,13 +199,13 @@ a {
 .service-card {
   background: white;
   border: 1px solid var(--border);
+  border-radius: 14px;
   padding: 30px;
-  border-radius: 12px;
   transition: 0.3s;
 }
 
 .service-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-5px);
 }
 
 .service-card h3 {
@@ -214,9 +213,7 @@ a {
   margin-bottom: 12px;
 }
 
-/* =========================
-   CASE STUDY
-========================= */
+/* CASE STUDY */
 
 .case-preview {
   background: var(--light);
@@ -231,7 +228,7 @@ a {
 .case-box {
   background: white;
   padding: 30px;
-  border-radius: 12px;
+  border-radius: 14px;
   border: 1px solid var(--border);
 }
 
@@ -248,14 +245,12 @@ a {
   font-weight: 700;
 }
 
-/* =========================
-   CTA
-========================= */
+/* CTA */
 
 .cta-section {
-  text-align: center;
   background: var(--navy);
   color: white;
+  text-align: center;
 }
 
 .cta-section h2 {
@@ -266,14 +261,12 @@ a {
   margin-bottom: 25px;
 }
 
-/* =========================
-   FOOTER
-========================= */
+/* FOOTER */
 
 .site-footer {
   background: var(--navy-dark);
   color: white;
-  padding: 40px 0;
+  padding: 50px 0;
 }
 
 .footer-wrap {
@@ -281,13 +274,15 @@ a {
 }
 
 .footer-logo {
-  max-width: 250px;
+  width: 90px;
   margin: 0 auto 20px;
 }
 
-/* =========================
-   MOBILE
-========================= */
+.footer-wrap p {
+  color: rgba(255,255,255,0.75);
+}
+
+/* MOBILE */
 
 @media (max-width: 900px) {
 
@@ -297,6 +292,10 @@ a {
 
   .hero h1 {
     font-size: 2.8rem;
+  }
+
+  .hero-image-wrap {
+    height: 300px;
   }
 
   .card-grid {
