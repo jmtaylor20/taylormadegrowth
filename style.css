@@ -216,6 +216,66 @@ a {
   font-size: 1.05rem;
 }
 
+/* PROOF SECTION */
+
+.proof-section {
+  background: var(--light);
+}
+
+.proof-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  gap: 22px;
+}
+
+.proof-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px;
+  min-height: 260px;
+}
+
+.dark-card {
+  background: var(--navy-dark);
+  color: var(--white);
+}
+
+.dark-card p {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.proof-card h2 {
+  font-size: 2rem;
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+  margin-bottom: 18px;
+}
+
+.proof-card h3 {
+  color: var(--navy);
+  font-size: 1.35rem;
+  margin-bottom: 12px;
+}
+
+.dark-card h2,
+.dark-card .eyebrow {
+  color: var(--white);
+}
+
+.proof-number {
+  display: inline-flex;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  background: var(--navy);
+  color: var(--white);
+  font-weight: 800;
+  margin-bottom: 20px;
+}
+
 /* CARDS */
 
 .card-grid {
@@ -387,4 +447,8 @@ a {
   .section {
     padding: 70px 0;
   }
+
+  .proof-grid {
+  grid-template-columns: 1fr;
+}
 }
