@@ -79,61 +79,20 @@ a {
 
 /* HERO */
 
-.hero {
-  background: linear-gradient(
-    135deg,
-    var(--navy-dark),
-    var(--navy)
-  );
-  padding: 90px 0;
-  color: white;
-}
-
-.hero-grid {
-  display: grid;
-  grid-template-columns: 1.1fr 1fr;
-  gap: 60px;
-  align-items: center;
-}
-
-.eyebrow {
-  color: var(--gold);
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  margin-bottom: 15px;
-}
-
-.eyebrow.dark {
-  color: var(--navy);
-}
-
-.hero h1 {
-  font-size: 4rem;
-  line-height: 1.05;
-  margin-bottom: 25px;
-}
-
-.hero-text {
-  font-size: 1.15rem;
-  margin-bottom: 35px;
-  color: rgba(255,255,255,0.9);
-}
-
-.hero-image-wrap {
+..hero-image-wrap {
   width: 100%;
-  height: 420px;
+  min-height: 420px;
   border-radius: 18px;
   overflow: hidden;
+  background-image: url("TMB_Hero.png");
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
   box-shadow: 0 20px 40px rgba(0,0,0,0.25);
 }
 
 .hero-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
+  display: none;
 }
 
 /* BUTTONS */
