@@ -1125,7 +1125,7 @@ main > .section:nth-of-type(even):not(.featured-work):not(.cta-section):not(.res
       rgba(8, 26, 51, 0.9) 52%,
       rgba(8, 26, 51, 0.72) 100%
     ),
-    url("growth_system.png");
+    url("TMB_hero.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
