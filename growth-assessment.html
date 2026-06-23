@@ -1,1 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+  <title>Growth Assessment | Taylormade Brands</title>
+  <meta name="description" content="Complete the Taylormade Brands growth assessment to identify what your business needs most." />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a href="index.html">
+        <img src="TMB_Horizontal_Logo.png" alt="Taylormade Brands logo" class="site-logo" />
+      </a>
+
+      <nav class="site-nav">
+        <a href="index.html">Home</a>
+        <a href="services.html">Services</a>
+        <a href="work.html">Work</a>
+        <a href="ao-case-study.html">Case Study</a>
+        <a href="growth-assessment.html">Assessment</a>
+        <a href="about.html">About</a>
+        <a href="contact.html" class="nav-button">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-hero assessment-hero">
+      <div class="container narrow">
+        <p class="eyebrow">Client Needs Assessment</p>
+        <h1>Let’s find what your business needs first.</h1>
+        <p>
+          Fill this out as honestly as possible. I’ll use it to review your current marketing,
+          identify gaps, and recommend the best next steps.
+        </p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container form-container">
+
+        <form name="growth-assessment" method="POST" action="/assessment-thank-you.html" data-netlify="true" netlify-honeypot="bot-field" class="assessment-form">
+          <input type="hidden" name="form-name" value="growth-assessment" />
+
+          <p class="hidden">
+            <label>Don’t fill this out: <input name="bot-field" /></label>
+          </p>
+
+          <div class="form-section">
+            <h2>1. Business Information</h2>
+
+            <label>Business Name
+              <input type="text" name="business-name" required>
+            </label>
+
+            <label>Owner Name
+              <input type="text" name="owner-name" required>
+            </label>
+
+            <label>Phone Number
+              <input type="tel" name="phone">
+            </label>
+
+            <label>Email Address
+              <input type="email" name="email" required>
+            </label>
+
+            <label>Business Address
+              <input type="text" name="business-address">
+            </label>
+
+            <label>Current Website
+              <input type="text" name="current-website" placeholder="Put N/A if you do not have one">
+            </label>
+
+            <label>Facebook Page
+              <input type="text" name="facebook-page">
+            </label>
+
+            <label>Google Business Profile Link
+              <input type="text" name="google-business-profile">
+            </label>
+          </div>
+
+          <div class="form-section">
+            <h2>2. Business Overview</h2>
+
+            <label>Tell me about your business. What do you do?
+              <textarea name="business-overview" rows="4"></textarea>
+            </label>
+
+            <label>How long have you been in business?
+              <select name="years-in-business">
+                <option value="">Select one</option>
+                <option>Less than 1 year</option>
+                <option>1–3 years</option>
+                <option>3–5 years</option>
+                <option>5–10 years</option>
+                <option>10+ years</option>
+              </select>
+            </label>
+
+            <label>What services or products generate the most revenue?
+              <textarea name="top-revenue-services" rows="3"></textarea>
+            </label>
+
+            <label>What services or products would you like to grow?
+              <textarea name="services-to-grow" rows="3"></textarea>
+            </label>
+          </div>
+
+          <div class="form-section">
+            <h2>3. Goals</h2>
+
+            <div class="checkbox-grid">
+              <label><input type="checkbox" name="goals" value="More Leads"> More Leads</label>
+              <label><input type="checkbox" name="goals" value="More Sales"> More Sales</label>
+              <label><input type="checkbox" name="goals" value="More Reviews"> More Reviews</label>
+              <label><input type="checkbox" name="goals" value="Better Branding"> Better Branding</label>
+              <label><input type="checkbox" name="goals" value="Better Website"> Better Website</label>
+              <label><input type="checkbox" name="goals" value="More Social Media Presence"> More Social Media Presence</label>
+              <label><input type="checkbox" name="goals" value="Expand Service Area"> Expand Service Area</label>
+              <label><input type="checkbox" name="goals" value="Recruiting Employees"> Recruiting Employees</label>
+            </div>
+
+            <label>What would success look like one year from now?
+              <textarea name="one-year-success" rows="4"></textarea>
+            </label>
+          </div>
+
+          <div class="form-section">
+            <h2>4. Current Marketing</h2>
+
+            <div class="checkbox-grid">
+              <label><input type="checkbox" name="current-marketing" value="Website"> Website</label>
+              <label><input type="checkbox" name="current-marketing" value="Facebook"> Facebook</label>
+              <label><input type="checkbox" name="current-marketing" value="Instagram"> Instagram</label>
+              <label><input type="checkbox" name="current-marketing" value="Google Business Profile"> Google Business Profile</label>
+              <label><input type="checkbox" name="current-marketing" value="Google Ads"> Google Ads</label>
+              <label><input type="checkbox" name="current-marketing" value="Yard Signs"> Yard Signs</label>
+              <label><input type="checkbox" name="current-marketing" value="Business Cards"> Business Cards</label>
+              <label><input type="checkbox" name="current-marketing" value="Vehicle Branding"> Vehicle Branding</label>
+              <label><input type="checkbox" name="current-marketing" value="Email Marketing"> Email Marketing</label>
+              <label><input type="checkbox" name="current-marketing" value="Referral Program"> Referral Program</label>
+            </div>
+
+            <label>What marketing efforts have worked best?
+              <textarea name="marketing-worked" rows="3"></textarea>
+            </label>
+
+            <label>What marketing efforts have not worked?
+              <textarea name="marketing-not-worked" rows="3"></textarea>
+            </label>
+          </div>
+
+          <div class="form-section">
+            <h2>5. Website Discovery</h2>
+
+            <label>Do you currently have a website?
+              <select name="has-website">
+                <option value="">Select one</option>
+                <option>Yes</option>
+                <option>No</option>
+              </select>
+            </label>
+
+            <label>What do you like about your current website?
+              <textarea name="website-likes" rows="3"></textarea>
+            </label>
+
+            <label>What do you dislike about your current website?
+              <textarea name="website-dislikes" rows="3"></textarea>
+            </label>
+
+            <p class="field-label">What pages would you like included?</p>
+            <div class="checkbox-grid">
+              <label><input type="checkbox" name="website-pages" value="Home"> Home</label>
+              <label><input type="checkbox" name="website-pages" value="About"> About</label>
+              <label><input type="checkbox" name="website-pages" value="Services"> Services</label>
+              <label><input type="checkbox" name="website-pages" value="Gallery"> Gallery</label>
+              <label><input type="checkbox" name="website-pages" value="Contact"> Contact</label>
+              <label><input type="checkbox" name="website-pages" value="Reviews"> Reviews</label>
+              <label><input type="checkbox" name="website-pages" value="FAQ"> FAQ</label>
+              <label><input type="checkbox" name="website-pages" value="Online Store"> Online Store</label>
+              <label><input type="checkbox" name="website-pages" value="Blog"> Blog</label>
+            </div>
+
+            <p class="field-label">What actions should visitors take?</p>
+            <div class="checkbox-grid">
+              <label><input type="checkbox" name="visitor-actions" value="Call"> Call</label>
+              <label><input type="checkbox" name="visitor-actions" value="Submit Form"> Submit Form</label>
+              <label><input type="checkbox" name="visitor-actions" value="Request Estimate"> Request Estimate</label>
+              <label><input type="checkbox" name="visitor-actions" value="Schedule Appointment"> Schedule Appointment</label>
+              <label><input type="checkbox" name="visitor-actions" value="Purchase Product"> Purchase Product</label>
+              <label><input type="checkbox" name="visitor-actions" value="Leave Review"> Leave Review</label>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h2>6. Branding</h2>
+
+            <label>Do you currently have a logo?
+              <select name="has-logo">
+                <option value="">Select one</option>
+                <option>Yes</option>
+                <option>No</option>
+              </select>
+            </label>
+
+            <label>Do you have brand colors?
+              <select name="has-brand-colors">
+                <option value="">Select one</option>
+                <option>Yes</option>
+                <option>No</option>
+              </select>
+            </label>
+
+            <p class="field-label">Describe your ideal brand personality.</p>
+            <div class="checkbox-grid">
+              <label><input type="checkbox" name="brand-personality" value="Professional"> Professional</label>
+              <label><input type="checkbox" name="brand-personality" value="Premium"> Premium</label>
+              <label><input type="checkbox" name="brand-personality" value="Family Owned"> Family Owned</label>
+              <label><input type="checkbox" name="brand-personality" value="Modern"> Modern</label>
+              <label><input type="checkbox" name="brand-personality" value="Rugged"> Rugged</label>
+              <label><input type="checkbox" name="brand-personality" value="Luxury"> Luxury</label>
+              <label><input type="checkbox" name="brand-personality" value="Traditional"> Traditional</label>
+              <label><input type="checkbox" name="brand-personality" value="Bold"> Bold</label>
+              <label><input type="checkbox" name="brand-personality" value="Conservative"> Conservative</label>
+            </div>
+
+            <label>List businesses whose branding you admire.
+              <textarea name="branding-admire" rows="3"></textarea>
+            </label>
+          </div>
+
+          <div class="form-section">
+            <h2>7. Social Media</h2>
+
+            <p class="field-label">Which platforms do you actively use?</p>
+            <div class="checkbox-grid">
+              <label><input type="checkbox" name="social-platforms" value="Facebook"> Facebook</label>
+              <label><input type="checkbox" name="social-platforms" value="Instagram"> Instagram</label>
+              <label><input type="checkbox" name="social-platforms" value="TikTok"> TikTok</label>
+              <label><input type="checkbox" name="social-platforms" value="LinkedIn"> LinkedIn</label>
+              <label><input type="checkbox" name="social-platforms" value="YouTube"> YouTube</label>
+            </div>
+
+            <label>How often do you currently post?
+              <select name="post-frequency">
+                <option value="">Select one</option>
+                <option>Daily</option>
+                <option>Weekly</option>
+                <option>Monthly</option>
+                <option>Rarely</option>
+                <option>Never</option>
+              </select>
+            </label>
+
+            <p class="field-label">What types of content do you want?</p>
+            <div class="checkbox-grid">
+              <label><input type="checkbox" name="content-types" value="Before and After"> Before & After</label>
+              <label><input type="checkbox" name="content-types" value="Customer Testimonials"> Customer Testimonials</label>
+              <label><input type="checkbox" name="content-types" value="Promotions"> Promotions</label>
+              <label><input type="checkbox" name="content-types" value="Educational Content"> Educational Content</label>
+              <label><input type="checkbox" name="content-types" value="Team Spotlights"> Team Spotlights</label>
+              <label><input type="checkbox" name="content-types" value="Community Involvement"> Community Involvement</label>
+              <label><input type="checkbox" name="content-types" value="Seasonal Campaigns"> Seasonal Campaigns</label>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h2>8. Google & Reviews</h2>
+
+            <label>Approximately how many Google reviews do you have?
+              <input type="text" name="google-review-count">
+            </label>
+
+            <label>What is your current rating?
+              <input type="text" name="google-rating">
+            </label>
+
+            <label>Do you actively ask for reviews?
+              <select name="asks-for-reviews">
+                <option value="">Select one</option>
+                <option>Yes</option>
+                <option>No</option>
+              </select>
+            </label>
+
+            <label>Would you like help increasing reviews?
+              <select name="review-help">
+                <option value="">Select one</option>
+                <option>Yes</option>
+                <option>No</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="form-section">
+            <h2>9. Photos & Content</h2>
+
+            <p class="field-label">What do you currently have?</p>
+            <div class="checkbox-grid">
+              <label><input type="checkbox" name="available-content" value="Logo Files"> Logo Files</label>
+              <label><input type="checkbox" name="available-content" value="Professional Photos"> Professional Photos</label>
+              <label><input type="checkbox" name="available-content" value="Team Photos"> Team Photos</label>
+              <label><input type="checkbox" name="available-content" value="Equipment Photos"> Equipment Photos</label>
+              <label><input type="checkbox" name="available-content" value="Product Photos"> Product Photos</label>
+              <label><input type="checkbox" name="available-content" value="Service Photos"> Service Photos</label>
+              <label><input type="checkbox" name="available-content" value="Video Content"> Video Content</label>
+              <label><input type="checkbox" name="available-content" value="Testimonials"> Testimonials</label>
+            </div>
+
+            <label>Where are these files stored?
+              <input type="text" name="file-storage" placeholder="Phone, Google Drive, Dropbox, computer, etc.">
+            </label>
+          </div>
+
+          <div class="form-section">
+            <h2>10. Competitors</h2>
+
+            <label>Who are your top three competitors?
+              <textarea name="competitors" rows="4"></textarea>
+            </label>
+
+            <label>What do they do better than you?
+              <textarea name="competitor-strengths" rows="3"></textarea>
+            </label>
+
+            <label>What do you do better than them?
+              <textarea name="your-advantages" rows="3"></textarea>
+            </label>
+          </div>
+
+          <div class="form-section">
+            <h2>11. Budget & Timeline</h2>
+
+            <label>When would you like this project completed?
+              <input type="text" name="timeline">
+            </label>
+
+            <p class="field-label">Which services are you interested in?</p>
+            <div class="checkbox-grid">
+              <label><input type="checkbox" name="services-interested" value="Website"> Website</label>
+              <label><input type="checkbox" name="services-interested" value="Branding"> Branding</label>
+              <label><input type="checkbox" name="services-interested" value="Logo Design"> Logo Design</label>
+              <label><input type="checkbox" name="services-interested" value="Social Media"> Social Media</label>
+              <label><input type="checkbox" name="services-interested" value="Google Ads"> Google Ads</label>
+              <label><input type="checkbox" name="services-interested" value="Print Materials"> Print Materials</label>
+              <label><input type="checkbox" name="services-interested" value="Review Generation System"> Review Generation System</label>
+              <label><input type="checkbox" name="services-interested" value="Business Growth System"> Business Growth System</label>
+              <label><input type="checkbox" name="services-interested" value="Consulting"> Consulting</label>
+            </div>
+
+            <label>Preferred investment range
+              <select name="investment-range">
+                <option value="">Select one</option>
+                <option>Under $500</option>
+                <option>$500–$1,000</option>
+                <option>$1,000–$2,500</option>
+                <option>$2,500–$5,000</option>
+                <option>$5,000+</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="form-section">
+            <h2>12. Access Checklist</h2>
+
+            <p class="field-label">Which access items can you provide if needed?</p>
+            <div class="checkbox-grid">
+              <label><input type="checkbox" name="access-available" value="Website Login"> Website Login</label>
+              <label><input type="checkbox" name="access-available" value="Domain Login"> Domain Login</label>
+              <label><input type="checkbox" name="access-available" value="Hosting Login"> Hosting Login</label>
+              <label><input type="checkbox" name="access-available" value="Facebook Access"> Facebook Access</label>
+              <label><input type="checkbox" name="access-available" value="Instagram Access"> Instagram Access</label>
+              <label><input type="checkbox" name="access-available" value="Google Business Access"> Google Business Access</label>
+              <label><input type="checkbox" name="access-available" value="Google Analytics Access"> Google Analytics Access</label>
+              <label><input type="checkbox" name="access-available" value="Google Ads Access"> Google Ads Access</label>
+              <label><input type="checkbox" name="access-available" value="Canva Access"> Canva Access</label>
+              <label><input type="checkbox" name="access-available" value="Shopify Access"> Shopify Access</label>
+              <label><input type="checkbox" name="access-available" value="Email Access"> Email Access</label>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h2>13. Final Question</h2>
+
+            <label>If we could solve one problem in your business over the next 90 days, what would it be?
+              <textarea name="main-90-day-problem" rows="5" required></textarea>
+            </label>
+          </div>
+
+          <button type="submit" class="form-submit">Submit Growth Assessment</button>
+        </form>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-wrap">
+      <img src="TMB_Stacked_White_Logo.png" alt="Taylormade Brands logo" class="footer-logo" />
+      <p>© 2026 Taylormade Brands. Built for local business growth.</p>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>
