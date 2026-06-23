@@ -567,3 +567,24 @@ a {
 .hidden {
   display: none;
 }
+
+.thank-you-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--navy-dark), var(--navy));
+    color: white;
+    text-align: center;
+}
+
+.thank-you-page h1 {
+    font-size: 4rem;
+    margin-bottom: 20px;
+}
+
+.thank-you-page p {
+    font-size: 1.25rem;
+    margin-bottom: 30px;
+    color: rgba(255,255,255,0.9);
+}
