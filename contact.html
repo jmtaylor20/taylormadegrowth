@@ -1,1 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+  <title>Contact | Taylormade Brands</title>
+  <meta name="description" content="Contact Taylormade Brands to discuss websites, branding, Google growth, and local business marketing systems." />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a href="index.html">
+        <img src="TMB_Horizontal_Logo.png" alt="Taylormade Brands logo" class="site-logo" />
+      </a>
+
+      <nav class="site-nav">
+        <a href="index.html">Home</a>
+        <a href="services.html">Services</a>
+        <a href="work.html">Work</a>
+        <a href="ao-case-study.html">Case Study</a>
+        <a href="growth-assessment.html">Assessment</a>
+        <a href="about.html">About</a>
+        <a href="contact.html" class="nav-button">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="contact-hero">
+      <div class="container contact-hero-grid">
+        <div>
+          <p class="eyebrow">Contact</p>
+          <h1>Let’s talk about what your business needs next.</h1>
+          <p>
+            The best place to start is the Growth Assessment. If you already know what you need,
+            send a quick message and I’ll follow up.
+          </p>
+
+          <div class="button-row">
+            <a href="growth-assessment.html" class="button primary">Start Assessment</a>
+            <a href="#contact-form" class="button secondary">Send Message</a>
+          </div>
+        </div>
+
+        <div class="contact-photo-card">
+          <img src="Taylor_headshot.png" alt="Josh Taylor">
+          <div>
+            <h3>Josh Taylor</h3>
+            <p>Taylormade Brands</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section contact-options-section">
+      <div class="container contact-options-grid">
+        <div class="contact-option-card">
+          <span>01</span>
+          <h3>Start With the Assessment</h3>
+          <p>
+            Best option if you want a full review of your website, Google presence,
+            branding, reviews, and lead flow.
+          </p>
+          <a href="growth-assessment.html" class="text-link">Take the Assessment →</a>
+        </div>
+
+        <div class="contact-option-card">
+          <span>02</span>
+          <h3>Send a Quick Message</h3>
+          <p>
+            Best option if you already know what you need or want to ask about a specific project.
+          </p>
+          <a href="#contact-form" class="text-link">Go to Message Form →</a>
+        </div>
+
+        <div class="contact-option-card">
+          <span>03</span>
+          <h3>Talk Through a Project</h3>
+          <p>
+            Website, branding, Google Ads, review systems, or ongoing management can all start here.
+          </p>
+          <a href="services.html" class="text-link">View Services →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section contact-form-section" id="contact-form">
+      <div class="container contact-form-grid">
+        <div>
+          <p class="eyebrow dark">Quick Message</p>
+          <h2>Tell me what you’re thinking.</h2>
+          <p>
+            Keep it simple. Tell me who you are, what business you’re working on,
+            and what kind of help you’re looking for.
+          </p>
+
+          <div class="contact-info-box">
+            <h3>Contact Info</h3>
+            <p><strong>Email:</strong> jmtaylor20@gmail.com</p>
+            <p><strong>Phone:</strong> 334-391-6641</p>
+          </div>
+        </div>
+
+        <form name="contact" method="POST" action="/thank-you.html" data-netlify="true" netlify-honeypot="bot-field" class="contact-form">
+          <input type="hidden" name="form-name" value="contact" />
+
+          <p class="hidden">
+            <label>Don’t fill this out: <input name="bot-field" /></label>
+          </p>
+
+          <label>Name
+            <input type="text" name="name" required>
+          </label>
+
+          <label>Business Name
+            <input type="text" name="business-name">
+          </label>
+
+          <label>Email
+            <input type="email" name="email" required>
+          </label>
+
+          <label>Phone
+            <input type="tel" name="phone">
+          </label>
+
+          <label>What do you need help with?
+            <select name="project-type">
+              <option value="">Select one</option>
+              <option>Website</option>
+              <option>Branding</option>
+              <option>Google Business Profile</option>
+              <option>Google Ads</option>
+              <option>Review System</option>
+              <option>Marketing Management</option>
+              <option>Not Sure Yet</option>
+            </select>
+          </label>
+
+          <label>Message
+            <textarea name="message" rows="6" required></textarea>
+          </label>
+
+          <button type="submit" class="form-submit">Send Message</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="section cta-section">
+      <div class="container narrow">
+        <p class="eyebrow">Best First Step</p>
+        <h2>Not sure what your business needs?</h2>
+        <p>
+          Take the Growth Assessment and I’ll help identify the best starting point.
+        </p>
+        <a href="growth-assessment.html" class="button primary">Start Assessment</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-wrap">
+      <img src="TMB_Stacked_White_Logo.png" alt="Taylormade Brands logo" class="footer-logo" />
+      <p>© 2026 Taylormade Brands. Built for local business growth.</p>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>
