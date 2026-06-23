@@ -22,7 +22,20 @@ html {
 body {
   font-family: Arial, Helvetica, sans-serif;
   color: var(--black);
-  background: var(--white);
+
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(212, 175, 55, 0.04),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at bottom right,
+      rgba(19, 41, 75, 0.04),
+      transparent 30%
+    ),
+    #ffffff;
+
   line-height: 1.6;
 }
 
@@ -179,6 +192,11 @@ a {
 
 .section {
   padding: 90px 0;
+  position: relative;
+}
+
+.section:nth-child(even) {
+  background: rgba(19, 41, 75, 0.015);
 }
 
 .narrow {
@@ -597,10 +615,16 @@ a {
   background:
     linear-gradient(
       90deg,
-      rgba(8, 26, 51, 0.96) 0%,
-      rgba(8, 26, 51, 0.88) 45%,
-      rgba(8, 26, 51, 0.62) 100%
-    );
+      rgba(8, 26, 51, 0.97) 0%,
+      rgba(8, 26, 51, 0.90) 45%,
+      rgba(8, 26, 51, 0.75) 100%
+    ),
+    url("ao_website.png");
+
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+
   color: var(--white);
   padding: 100px 0;
 }
