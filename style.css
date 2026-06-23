@@ -1233,10 +1233,11 @@ main > .section:nth-of-type(even):not(.featured-work):not(.cta-section):not(.res
 .service-detail-card img {
   width: 100%;
   height: 330px;
-  object-fit: cover;
-  object-position: top center;
+  object-fit: contain;
+  object-position: center;
   border-radius: 18px;
   background: #f3f4f6;
+  padding: 14px;
 }
 
 .service-detail-card span {
