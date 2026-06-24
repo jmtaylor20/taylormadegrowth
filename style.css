@@ -2057,3 +2057,66 @@ a {
     max-width: 100%;
   }
 }
+
+/* MOBILE HAMBURGER MENU */
+
+.mobile-menu-toggle {
+  display: none;
+  background: var(--navy);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .nav-wrap {
+    min-height: 82px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .site-logo {
+    height: 54px;
+  }
+
+  .mobile-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .site-nav {
+    display: none;
+    width: 100%;
+    background: white;
+    border-top: 1px solid var(--border);
+    padding: 18px 0 6px;
+    margin-top: 14px;
+  }
+
+  .site-nav.active {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .site-nav a {
+    font-size: 1rem;
+    padding: 6px 0;
+  }
+
+  .nav-button {
+    text-align: center;
+    width: 100%;
+    margin-top: 6px;
+  }
+
+  .site-header .nav-wrap {
+    flex-wrap: wrap;
+  }
+}
