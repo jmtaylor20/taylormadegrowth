@@ -2472,6 +2472,13 @@ a {
   background: transparent;
 }
 
+.navy-button {
+  background: var(--navy);
+  color: white;
+}
+
+/* HERO */
+
 .investment-hero {
   min-height: 720px;
   background:
@@ -2574,27 +2581,34 @@ a {
   background: var(--gold);
 }
 
-/* PRICING CARDS */
+/* SETUP PLANS */
 
 .investment-plans-section {
-  background: #f8fafc;
+  background:
+    radial-gradient(circle at top left, rgba(200,164,93,.10), transparent 32%),
+    #f8fafc;
 }
 
 .investment-card-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 28px;
-  align-items: center;
+  grid-template-columns: 1fr 1.08fr 1fr;
+  gap: 32px;
+  max-width: 1180px;
+  margin: 0 auto;
+  align-items: stretch;
 }
 
 .investment-card {
   background: white;
   border: 1px solid var(--border);
   border-radius: 28px;
-  padding: 34px;
+  padding: 38px 34px;
   box-shadow: 0 20px 50px rgba(15,23,42,.08);
   position: relative;
   transition: transform .25s ease, box-shadow .25s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .investment-card:hover {
@@ -2604,12 +2618,12 @@ a {
 
 .featured-investment-card {
   border: 2px solid var(--gold);
-  transform: scale(1.06);
+  transform: scale(1.03);
   z-index: 2;
 }
 
 .featured-investment-card:hover {
-  transform: scale(1.06) translateY(-6px);
+  transform: scale(1.03) translateY(-6px);
 }
 
 .popular-ribbon {
@@ -2645,7 +2659,7 @@ a {
 
 .plan-price {
   color: #1F2937;
-  font-size: 2.3rem;
+  font-size: clamp(1.9rem, 3vw, 2.6rem);
   font-weight: 900;
   line-height: 1.1;
   margin-bottom: 8px;
@@ -2677,6 +2691,7 @@ a {
 .investment-card li {
   padding: 9px 0;
   border-bottom: 1px solid var(--border);
+  font-size: .96rem;
 }
 
 .investment-card li::before {
@@ -2690,7 +2705,7 @@ a {
   background: #f8fafc;
   border-radius: 16px;
   padding: 16px;
-  margin-bottom: 22px;
+  margin: auto 0 22px;
 }
 
 .plan-footer span {
@@ -2701,6 +2716,123 @@ a {
 
 .plan-footer strong {
   color: var(--navy);
+}
+
+.investment-card > .button {
+  margin-top: auto;
+}
+
+/* CARE PLANS */
+
+.care-section {
+  background:
+    linear-gradient(135deg, rgba(31,41,55,.96), rgba(19,41,75,.94)),
+    radial-gradient(circle at bottom right, rgba(200,164,93,.24), transparent 30%);
+  color: white;
+}
+
+.care-section .section-heading h2,
+.care-section .section-heading p,
+.care-section .eyebrow.dark {
+  color: white;
+}
+
+.care-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 26px;
+}
+
+.care-card {
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.16);
+  color: white;
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 16px 38px rgba(15,23,42,.07);
+}
+
+.highlighted-care {
+  background: rgba(200,164,93,.14);
+  border: 2px solid var(--gold);
+}
+
+.care-card h3,
+.care-price {
+  color: white;
+}
+
+.care-card h3 {
+  font-size: 1.7rem;
+  margin-bottom: 8px;
+}
+
+.care-price {
+  font-size: 2rem;
+  font-weight: 900;
+  margin-bottom: 20px;
+}
+
+.care-card ul {
+  padding-left: 20px;
+}
+
+.care-card li {
+  margin-bottom: 10px;
+  color: rgba(255,255,255,.86);
+}
+
+/* RECOMMENDED COMBOS */
+
+.recommended-combos-section {
+  background: #fff7e6;
+}
+
+.combo-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+}
+
+.combo-card {
+  background: white;
+  border: 1px solid rgba(200,164,93,.35);
+  border-radius: 22px;
+  padding: 28px;
+  box-shadow: 0 14px 35px rgba(15,23,42,.06);
+}
+
+.combo-card span {
+  display: inline-block;
+  color: var(--gold);
+  font-size: .78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  margin-bottom: 12px;
+}
+
+.combo-card h3 {
+  color: var(--navy);
+  margin-bottom: 10px;
+}
+
+.combo-card p {
+  color: var(--gray);
+}
+
+.combo-featured {
+  background: var(--navy-dark);
+  color: white;
+  border-color: var(--gold);
+}
+
+.combo-featured h3 {
+  color: white;
+}
+
+.combo-featured p {
+  color: rgba(255,255,255,.82);
 }
 
 /* COMPARISON TABLE */
@@ -2763,437 +2895,7 @@ a {
   font-size: 1.5rem;
 }
 
-/* CARE PLANS */
-
-.care-section {
-  background: #f8fafc;
-}
-
-.care-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 26px;
-}
-
-.care-card {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  padding: 32px;
-  box-shadow: 0 16px 38px rgba(15,23,42,.07);
-}
-
-.highlighted-care {
-  border: 2px solid var(--gold);
-  background:
-    linear-gradient(180deg, rgba(200,164,93,.10), transparent 35%),
-    white;
-}
-
-.care-card h3 {
-  color: var(--navy);
-  font-size: 1.7rem;
-  margin-bottom: 8px;
-}
-
-.care-price {
-  color: #1F2937;
-  font-size: 2rem;
-  font-weight: 900;
-  margin-bottom: 20px;
-}
-
-.care-card ul {
-  padding-left: 20px;
-}
-
-.care-card li {
-  margin-bottom: 10px;
-}
-
-/* INDIVIDUAL SERVICES */
-
-.individual-services-section {
-  background: white;
-}
-
-.service-price-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-}
-
-.service-price-card {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 22px;
-  padding: 30px;
-  box-shadow: 0 14px 35px rgba(15,23,42,.06);
-  transition: transform .25s ease;
-}
-
-.service-price-card:hover {
-  transform: translateY(-5px);
-}
-
-.service-price-card h3 {
-  color: var(--navy);
-  font-size: 1.45rem;
-  margin-bottom: 16px;
-}
-
-.service-price-card p {
-  color: var(--gray);
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
-}
-
-/* AGENCY COMPARISON */
-
-.agency-compare-section {
-  background: #f8fafc;
-}
-
-.agency-compare-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 26px;
-}
-
-.agency-column {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  padding: 34px;
-  box-shadow: 0 18px 45px rgba(15,23,42,.08);
-}
-
-.agency-column h3 {
-  font-size: 1.6rem;
-  margin-bottom: 20px;
-  color: var(--navy);
-}
-
-.agency-column p {
-  padding: 14px 0;
-  border-bottom: 1px solid var(--border);
-  color: var(--gray);
-  font-weight: 700;
-}
-
-.tmb-column {
-  border: 2px solid var(--gold);
-}
-
-.tmb-column h3,
-.tmb-column p {
-  color: var(--navy);
-}
-
-.disclaimer {
-  max-width: 850px;
-  margin: 28px auto 0;
-  text-align: center;
-  color: var(--gray);
-  font-size: .92rem;
-}
-
-/* WORTH FLOW */
-
-.worth-section {
-  background: white;
-}
-
-.worth-flow {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 22px;
-}
-
-.worth-flow div {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  padding: 30px;
-  box-shadow: 0 18px 45px rgba(15,23,42,.07);
-  position: relative;
-}
-
-.worth-flow span {
-  display: inline-block;
-  color: var(--gold);
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: .12em;
-  font-size: .76rem;
-  margin-bottom: 12px;
-}
-
-.worth-flow h3 {
-  color: var(--navy);
-  font-size: 1.5rem;
-  margin-bottom: 12px;
-}
-
-.worth-flow p {
-  color: var(--gray);
-}
-
-.worth-note {
-  max-width: 860px;
-  margin: 34px auto 0;
-  text-align: center;
-  font-weight: 700;
-  color: var(--navy);
-}
-
-/* DIFFERENCE */
-
-.difference-section {
-  background: #f8fafc;
-}
-
-.difference-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 22px;
-}
-
-.difference-grid div {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 22px;
-  padding: 30px;
-  box-shadow: 0 14px 35px rgba(15,23,42,.06);
-}
-
-.difference-grid h3 {
-  color: var(--navy);
-  margin-bottom: 12px;
-}
-
-.difference-grid p {
-  color: var(--gray);
-}
-
-/* TRUST STRIP + FINAL CTA */
-
-.trust-strip {
-  background: white;
-  padding: 34px 0;
-  border-top: 1px solid var(--border);
-}
-
-.trust-strip-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-  text-align: center;
-}
-
-.trust-strip-grid div {
-  font-weight: 900;
-  color: var(--navy);
-}
-
-.final-investment-cta {
-  background: #1F2937;
-  color: white;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.final-investment-cta .narrow {
-  margin: 0 auto;
-  position: relative;
-  z-index: 2;
-}
-
-.final-investment-cta h2 {
-  color: white;
-  font-size: clamp(2.6rem, 5vw, 4.4rem);
-  line-height: 1.05;
-  margin-bottom: 22px;
-}
-
-.final-investment-cta p {
-  color: rgba(255,255,255,.84);
-  margin-bottom: 30px;
-  font-size: 1.1rem;
-}
-
-/* INVESTMENT MOBILE */
-
-@media (max-width: 980px) {
-  .investment-card-grid,
-  .care-grid,
-  .service-price-grid,
-  .agency-compare-grid,
-  .worth-flow,
-  .difference-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .featured-investment-card,
-  .featured-investment-card:hover {
-    transform: none;
-  }
-
-  .roadmap {
-    flex-direction: column;
-  }
-
-  .roadmap-line {
-    width: 2px;
-    height: 45px;
-  }
-
-  .trust-strip-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  .investment-hero {
-    min-height: 680px;
-    padding: 80px 0;
-  }
-
-  .investment-card,
-  .care-card,
-  .service-price-card,
-  .agency-column,
-  .worth-flow div,
-  .difference-grid div {
-    padding: 24px;
-  }
-}
-
-/* =================================
-   INVESTMENT PAGE REFINEMENTS
-================================= */
-
-.investment-plans-section {
-  background:
-    radial-gradient(circle at top left, rgba(200,164,93,.10), transparent 32%),
-    #f8fafc;
-}
-
-.investment-card-grid {
-  grid-template-columns: 1fr 1.08fr 1fr;
-  gap: 32px;
-  max-width: 1180px;
-  margin: 0 auto;
-}
-
-.investment-card {
-  padding: 38px 34px;
-}
-
-.featured-investment-card {
-  transform: scale(1.03);
-}
-
-.featured-investment-card:hover {
-  transform: scale(1.03) translateY(-6px);
-}
-
-.plan-price {
-  font-size: clamp(1.9rem, 3vw, 2.6rem);
-}
-
-.investment-card li {
-  font-size: .96rem;
-}
-
-.care-section {
-  background:
-    linear-gradient(135deg, rgba(31,41,55,.96), rgba(19,41,75,.94)),
-    radial-gradient(circle at bottom right, rgba(200,164,93,.24), transparent 30%);
-  color: white;
-}
-
-.care-section .section-heading h2,
-.care-section .section-heading p,
-.care-section .eyebrow.dark {
-  color: white;
-}
-
-.care-card {
-  background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.16);
-  color: white;
-}
-
-.care-card h3,
-.care-price {
-  color: white;
-}
-
-.care-card li {
-  color: rgba(255,255,255,.86);
-}
-
-.highlighted-care {
-  background: rgba(200,164,93,.14);
-  border: 2px solid var(--gold);
-}
-
-.recommended-combos-section {
-  background: #fff7e6;
-}
-
-.combo-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 22px;
-}
-
-.combo-card {
-  background: white;
-  border: 1px solid rgba(200,164,93,.35);
-  border-radius: 22px;
-  padding: 28px;
-  box-shadow: 0 14px 35px rgba(15,23,42,.06);
-}
-
-.combo-card span {
-  display: inline-block;
-  color: var(--gold);
-  font-size: .78rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: .12em;
-  margin-bottom: 12px;
-}
-
-.combo-card h3 {
-  color: var(--navy);
-  margin-bottom: 10px;
-}
-
-.combo-card p {
-  color: var(--gray);
-}
-
-.combo-featured {
-  background: var(--navy-dark);
-  color: white;
-  border-color: var(--gold);
-}
-
-.combo-featured h3 {
-  color: white;
-}
-
-.combo-featured p {
-  color: rgba(255,255,255,.82);
-}
-
-.compare-section {
-  background: white;
-}
+/* SHOPIFY */
 
 .shopify-section {
   background:
@@ -3260,42 +2962,91 @@ a {
   margin-right: 10px;
 }
 
+/* INDIVIDUAL SERVICES */
+
 .individual-services-section {
   background: #f8fafc;
 }
+
+.service-price-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.service-price-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 30px;
+  box-shadow: 0 14px 35px rgba(15,23,42,.06);
+  transition: transform .25s ease;
+}
+
+.service-price-card:hover {
+  transform: translateY(-5px);
+}
+
+.service-price-card h3 {
+  color: var(--navy);
+  font-size: 1.45rem;
+  margin-bottom: 16px;
+}
+
+.service-price-card p {
+  color: var(--gray);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+/* AGENCY COMPARISON */
 
 .agency-compare-section {
   background: white;
 }
 
-.worth-section {
-  background:
-    radial-gradient(circle at top left, rgba(200,164,93,.14), transparent 30%),
-    #fffaf0;
+.agency-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 26px;
 }
 
-.difference-section {
-  background: #f8fafc;
+.agency-column {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 34px;
+  box-shadow: 0 18px 45px rgba(15,23,42,.08);
 }
 
-/* MOBILE INVESTMENT REFINEMENTS */
+.agency-column h3 {
+  font-size: 1.6rem;
+  margin-bottom: 20px;
+  color: var(--navy);
+}
 
-@media (max-width: 980px) {
-  .investment-card-grid,
-  .combo-grid,
-  .shopify-grid {
-    grid-template-columns: 1fr;
-  }
+.agency-column p {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--gray);
+  font-weight: 700;
+}
 
-  .featured-investment-card,
-  .featured-investment-card:hover {
-    transform: none;
-  }
+.tmb-column {
+  border: 2px solid var(--gold);
+}
 
-  .combo-card,
-  .shopify-card {
-    padding: 26px;
-  }
+.tmb-column h3,
+.tmb-column p {
+  color: var(--navy);
+}
+
+.disclaimer {
+  max-width: 850px;
+  margin: 28px auto 0;
+  text-align: center;
+  color: var(--gray);
+  font-size: .92rem;
 }
 
 /* UPDATED WORTH COMPARISON */
@@ -3414,18 +3165,139 @@ a {
   font-weight: 700;
 }
 
+/* DIFFERENCE */
+
+.difference-section {
+  background: #f8fafc;
+}
+
+.difference-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+}
+
+.difference-grid div {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 30px;
+  box-shadow: 0 14px 35px rgba(15,23,42,.06);
+}
+
+.difference-grid h3 {
+  color: var(--navy);
+  margin-bottom: 12px;
+}
+
+.difference-grid p {
+  color: var(--gray);
+}
+
+/* TRUST STRIP + FINAL CTA */
+
+.trust-strip {
+  background: white;
+  padding: 34px 0;
+  border-top: 1px solid var(--border);
+}
+
+.trust-strip-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  text-align: center;
+}
+
+.trust-strip-grid div {
+  font-weight: 900;
+  color: var(--navy);
+}
+
+.final-investment-cta {
+  background: #1F2937;
+  color: white;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.final-investment-cta .narrow {
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.final-investment-cta h2 {
+  color: white;
+  font-size: clamp(2.6rem, 5vw, 4.4rem);
+  line-height: 1.05;
+  margin-bottom: 22px;
+}
+
+.final-investment-cta p {
+  color: rgba(255,255,255,.84);
+  margin-bottom: 30px;
+  font-size: 1.1rem;
+}
+
+/* MOBILE */
+
 @media (max-width: 980px) {
+  .investment-card-grid,
+  .care-grid,
+  .combo-grid,
+  .shopify-grid,
+  .service-price-grid,
+  .agency-compare-grid,
+  .difference-grid {
+    grid-template-columns: 1fr;
+  }
+
   .worth-compare-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .featured-investment-card,
+  .featured-investment-card:hover {
+    transform: none;
+  }
+
+  .roadmap {
+    flex-direction: column;
+  }
+
+  .roadmap-line {
+    width: 2px;
+    height: 45px;
+  }
+
+  .trust-strip-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .combo-card,
+  .shopify-card {
+    padding: 26px;
   }
 }
 
 @media (max-width: 640px) {
-  .worth-compare-grid {
-    grid-template-columns: 1fr;
+  .investment-hero {
+    min-height: 680px;
+    padding: 80px 0;
   }
 
-  .worth-card {
+  .investment-card,
+  .care-card,
+  .service-price-card,
+  .agency-column,
+  .worth-card,
+  .difference-grid div {
     padding: 24px;
+  }
+
+  .worth-compare-grid {
+    grid-template-columns: 1fr;
   }
 }
