@@ -2415,13 +2415,13 @@ a {
         grid-template-columns:repeat(2,1fr);
     }
 
-    .wolf-gallery-grid{
-        grid-template-columns:repeat(2,1fr);
-    }
+  .wolf-gallery-grid {
+  grid-template-columns: 1fr;
+}
 
-    .wolf-gallery-item.large{
-        grid-column:span 2;
-    }
+.wolf-gallery-item.website-feature {
+  grid-column: span 1;
+}
 
     .wolf-foundation-grid{
         grid-template-columns:repeat(2,1fr);
@@ -2444,10 +2444,9 @@ a {
         grid-column:span 1;
     }
 
-    .wolf-gallery-item img,
-    .wolf-gallery-item.large img{
-        height:260px;
-    }
+    .wolf-gallery-item img {
+  height: auto;
+}
 
     .wolf-showcase-image img{
         height:280px;
