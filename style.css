@@ -2456,3 +2456,616 @@ a {
         width:170px;
     }
 }
+
+/* =================================
+   INVESTMENT PAGE
+================================= */
+
+.gold-button {
+  background: var(--gold);
+  color: var(--navy-dark);
+}
+
+.outline-light {
+  border: 2px solid rgba(255,255,255,.85);
+  color: white;
+  background: transparent;
+}
+
+.investment-hero {
+  min-height: 720px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(31,41,55,.96) 0%,
+      rgba(31,41,55,.88) 52%,
+      rgba(31,41,55,.40) 100%
+    ),
+    radial-gradient(circle at top right, rgba(200,164,93,.20), transparent 35%);
+  color: white;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.investment-hero::before,
+.final-investment-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-radial-gradient(
+      circle at 20% 30%,
+      rgba(255,255,255,.10) 0 1px,
+      transparent 1px 22px
+    );
+  opacity: .16;
+  pointer-events: none;
+}
+
+.investment-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 900px;
+}
+
+.investment-hero h1 {
+  font-size: clamp(3.2rem, 7vw, 6rem);
+  line-height: 1;
+  letter-spacing: -.06em;
+  margin-bottom: 26px;
+}
+
+.investment-hero p {
+  font-size: 1.25rem;
+  max-width: 720px;
+  color: rgba(255,255,255,.86);
+  margin-bottom: 34px;
+}
+
+/* ROADMAP */
+
+.roadmap-section {
+  text-align: center;
+  background: white;
+}
+
+.roadmap-section .narrow {
+  margin: 0 auto;
+}
+
+.roadmap-section h2 {
+  font-size: clamp(2.3rem, 4vw, 3.4rem);
+  line-height: 1.1;
+  margin-bottom: 28px;
+}
+
+.roadmap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 22px;
+  margin: 38px 0;
+}
+
+.roadmap div:not(.roadmap-line) {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 24px 34px;
+  box-shadow: 0 14px 35px rgba(15,23,42,.07);
+}
+
+.roadmap span {
+  display: block;
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.roadmap strong {
+  color: var(--navy);
+  font-size: 1.25rem;
+}
+
+.roadmap-line {
+  width: 70px;
+  height: 2px;
+  background: var(--gold);
+}
+
+/* PRICING CARDS */
+
+.investment-plans-section {
+  background: #f8fafc;
+}
+
+.investment-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  align-items: center;
+}
+
+.investment-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  padding: 34px;
+  box-shadow: 0 20px 50px rgba(15,23,42,.08);
+  position: relative;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.investment-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 28px 70px rgba(15,23,42,.12);
+}
+
+.featured-investment-card {
+  border: 2px solid var(--gold);
+  transform: scale(1.06);
+  z-index: 2;
+}
+
+.featured-investment-card:hover {
+  transform: scale(1.06) translateY(-6px);
+}
+
+.popular-ribbon {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  background: var(--gold);
+  color: var(--navy-dark);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: .78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.plan-icon {
+  font-size: 2.4rem;
+  margin-bottom: 16px;
+}
+
+.investment-card h3 {
+  color: var(--navy);
+  font-size: 2.1rem;
+  margin-bottom: 6px;
+}
+
+.price-label {
+  color: var(--gray);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.plan-price {
+  color: #1F2937;
+  font-size: 2.3rem;
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+
+.monthly-price {
+  color: var(--gold);
+  font-weight: 900;
+  font-size: 1.2rem;
+  margin-bottom: 16px;
+}
+
+.investment-card > p {
+  color: var(--gray);
+  margin-bottom: 20px;
+}
+
+.investment-card h4 {
+  color: var(--navy);
+  margin: 24px 0 14px;
+}
+
+.investment-card ul {
+  list-style: none;
+  margin: 0 0 24px;
+  padding: 0;
+}
+
+.investment-card li {
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.investment-card li::before {
+  content: "✓";
+  color: var(--gold);
+  font-weight: 900;
+  margin-right: 10px;
+}
+
+.plan-footer {
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 22px;
+}
+
+.plan-footer span {
+  display: block;
+  color: var(--gray);
+  font-size: .9rem;
+}
+
+.plan-footer strong {
+  color: var(--navy);
+}
+
+/* COMPARISON TABLE */
+
+.compare-section {
+  background: white;
+}
+
+.comparison-table-wrap {
+  overflow-x: auto;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  box-shadow: 0 18px 45px rgba(15,23,42,.08);
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+.comparison-table th {
+  background: #1F2937;
+  color: white;
+  padding: 20px;
+  text-align: center;
+}
+
+.comparison-table th:first-child,
+.comparison-table td:first-child {
+  text-align: left;
+}
+
+.comparison-table td {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  font-weight: 800;
+}
+
+.comparison-table td:first-child {
+  color: var(--black);
+  font-weight: 700;
+}
+
+.comparison-table td:not(:first-child) {
+  color: var(--gold);
+  font-size: 1.15rem;
+}
+
+.table-note {
+  margin: 34px auto 0;
+  max-width: 760px;
+  text-align: center;
+}
+
+.table-note h3 {
+  color: var(--navy);
+  font-size: 1.5rem;
+}
+
+/* CARE PLANS */
+
+.care-section {
+  background: #f8fafc;
+}
+
+.care-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 26px;
+}
+
+.care-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 16px 38px rgba(15,23,42,.07);
+}
+
+.highlighted-care {
+  border: 2px solid var(--gold);
+  background:
+    linear-gradient(180deg, rgba(200,164,93,.10), transparent 35%),
+    white;
+}
+
+.care-card h3 {
+  color: var(--navy);
+  font-size: 1.7rem;
+  margin-bottom: 8px;
+}
+
+.care-price {
+  color: #1F2937;
+  font-size: 2rem;
+  font-weight: 900;
+  margin-bottom: 20px;
+}
+
+.care-card ul {
+  padding-left: 20px;
+}
+
+.care-card li {
+  margin-bottom: 10px;
+}
+
+/* INDIVIDUAL SERVICES */
+
+.individual-services-section {
+  background: white;
+}
+
+.service-price-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.service-price-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 30px;
+  box-shadow: 0 14px 35px rgba(15,23,42,.06);
+  transition: transform .25s ease;
+}
+
+.service-price-card:hover {
+  transform: translateY(-5px);
+}
+
+.service-price-card h3 {
+  color: var(--navy);
+  font-size: 1.45rem;
+  margin-bottom: 16px;
+}
+
+.service-price-card p {
+  color: var(--gray);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+/* AGENCY COMPARISON */
+
+.agency-compare-section {
+  background: #f8fafc;
+}
+
+.agency-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 26px;
+}
+
+.agency-column {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 34px;
+  box-shadow: 0 18px 45px rgba(15,23,42,.08);
+}
+
+.agency-column h3 {
+  font-size: 1.6rem;
+  margin-bottom: 20px;
+  color: var(--navy);
+}
+
+.agency-column p {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--gray);
+  font-weight: 700;
+}
+
+.tmb-column {
+  border: 2px solid var(--gold);
+}
+
+.tmb-column h3,
+.tmb-column p {
+  color: var(--navy);
+}
+
+.disclaimer {
+  max-width: 850px;
+  margin: 28px auto 0;
+  text-align: center;
+  color: var(--gray);
+  font-size: .92rem;
+}
+
+/* WORTH FLOW */
+
+.worth-section {
+  background: white;
+}
+
+.worth-flow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+}
+
+.worth-flow div {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 30px;
+  box-shadow: 0 18px 45px rgba(15,23,42,.07);
+  position: relative;
+}
+
+.worth-flow span {
+  display: inline-block;
+  color: var(--gold);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  font-size: .76rem;
+  margin-bottom: 12px;
+}
+
+.worth-flow h3 {
+  color: var(--navy);
+  font-size: 1.5rem;
+  margin-bottom: 12px;
+}
+
+.worth-flow p {
+  color: var(--gray);
+}
+
+.worth-note {
+  max-width: 860px;
+  margin: 34px auto 0;
+  text-align: center;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+/* DIFFERENCE */
+
+.difference-section {
+  background: #f8fafc;
+}
+
+.difference-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+}
+
+.difference-grid div {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 30px;
+  box-shadow: 0 14px 35px rgba(15,23,42,.06);
+}
+
+.difference-grid h3 {
+  color: var(--navy);
+  margin-bottom: 12px;
+}
+
+.difference-grid p {
+  color: var(--gray);
+}
+
+/* TRUST STRIP + FINAL CTA */
+
+.trust-strip {
+  background: white;
+  padding: 34px 0;
+  border-top: 1px solid var(--border);
+}
+
+.trust-strip-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  text-align: center;
+}
+
+.trust-strip-grid div {
+  font-weight: 900;
+  color: var(--navy);
+}
+
+.final-investment-cta {
+  background: #1F2937;
+  color: white;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.final-investment-cta .narrow {
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.final-investment-cta h2 {
+  color: white;
+  font-size: clamp(2.6rem, 5vw, 4.4rem);
+  line-height: 1.05;
+  margin-bottom: 22px;
+}
+
+.final-investment-cta p {
+  color: rgba(255,255,255,.84);
+  margin-bottom: 30px;
+  font-size: 1.1rem;
+}
+
+/* INVESTMENT MOBILE */
+
+@media (max-width: 980px) {
+  .investment-card-grid,
+  .care-grid,
+  .service-price-grid,
+  .agency-compare-grid,
+  .worth-flow,
+  .difference-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .featured-investment-card,
+  .featured-investment-card:hover {
+    transform: none;
+  }
+
+  .roadmap {
+    flex-direction: column;
+  }
+
+  .roadmap-line {
+    width: 2px;
+    height: 45px;
+  }
+
+  .trust-strip-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .investment-hero {
+    min-height: 680px;
+    padding: 80px 0;
+  }
+
+  .investment-card,
+  .care-card,
+  .service-price-card,
+  .agency-column,
+  .worth-flow div,
+  .difference-grid div {
+    padding: 24px;
+  }
+}
