@@ -3069,3 +3069,231 @@ a {
     padding: 24px;
   }
 }
+
+/* =================================
+   INVESTMENT PAGE REFINEMENTS
+================================= */
+
+.investment-plans-section {
+  background:
+    radial-gradient(circle at top left, rgba(200,164,93,.10), transparent 32%),
+    #f8fafc;
+}
+
+.investment-card-grid {
+  grid-template-columns: 1fr 1.08fr 1fr;
+  gap: 32px;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.investment-card {
+  padding: 38px 34px;
+}
+
+.featured-investment-card {
+  transform: scale(1.03);
+}
+
+.featured-investment-card:hover {
+  transform: scale(1.03) translateY(-6px);
+}
+
+.plan-price {
+  font-size: clamp(1.9rem, 3vw, 2.6rem);
+}
+
+.investment-card li {
+  font-size: .96rem;
+}
+
+.care-section {
+  background:
+    linear-gradient(135deg, rgba(31,41,55,.96), rgba(19,41,75,.94)),
+    radial-gradient(circle at bottom right, rgba(200,164,93,.24), transparent 30%);
+  color: white;
+}
+
+.care-section .section-heading h2,
+.care-section .section-heading p,
+.care-section .eyebrow.dark {
+  color: white;
+}
+
+.care-card {
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.16);
+  color: white;
+}
+
+.care-card h3,
+.care-price {
+  color: white;
+}
+
+.care-card li {
+  color: rgba(255,255,255,.86);
+}
+
+.highlighted-care {
+  background: rgba(200,164,93,.14);
+  border: 2px solid var(--gold);
+}
+
+.recommended-combos-section {
+  background: #fff7e6;
+}
+
+.combo-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+}
+
+.combo-card {
+  background: white;
+  border: 1px solid rgba(200,164,93,.35);
+  border-radius: 22px;
+  padding: 28px;
+  box-shadow: 0 14px 35px rgba(15,23,42,.06);
+}
+
+.combo-card span {
+  display: inline-block;
+  color: var(--gold);
+  font-size: .78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  margin-bottom: 12px;
+}
+
+.combo-card h3 {
+  color: var(--navy);
+  margin-bottom: 10px;
+}
+
+.combo-card p {
+  color: var(--gray);
+}
+
+.combo-featured {
+  background: var(--navy-dark);
+  color: white;
+  border-color: var(--gold);
+}
+
+.combo-featured h3 {
+  color: white;
+}
+
+.combo-featured p {
+  color: rgba(255,255,255,.82);
+}
+
+.compare-section {
+  background: white;
+}
+
+.shopify-section {
+  background:
+    linear-gradient(135deg, rgba(8,26,51,.97), rgba(31,41,55,.94)),
+    radial-gradient(circle at top right, rgba(200,164,93,.20), transparent 35%);
+  color: white;
+}
+
+.shopify-section .section-heading h2,
+.shopify-section .section-heading p,
+.shopify-section .eyebrow {
+  color: white;
+}
+
+.shopify-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 26px;
+}
+
+.shopify-card {
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 24px;
+  padding: 34px;
+  box-shadow: 0 22px 55px rgba(0,0,0,.18);
+}
+
+.shopify-featured {
+  border: 2px solid var(--gold);
+  background: rgba(200,164,93,.13);
+}
+
+.shopify-card h3 {
+  color: white;
+  font-size: 1.7rem;
+  margin-bottom: 12px;
+}
+
+.shopify-card .plan-price {
+  color: var(--gold);
+}
+
+.shopify-card p {
+  color: rgba(255,255,255,.84);
+}
+
+.shopify-card ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 20px;
+}
+
+.shopify-card li {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,.14);
+  color: rgba(255,255,255,.88);
+}
+
+.shopify-card li::before {
+  content: "✓";
+  color: var(--gold);
+  font-weight: 900;
+  margin-right: 10px;
+}
+
+.individual-services-section {
+  background: #f8fafc;
+}
+
+.agency-compare-section {
+  background: white;
+}
+
+.worth-section {
+  background:
+    radial-gradient(circle at top left, rgba(200,164,93,.14), transparent 30%),
+    #fffaf0;
+}
+
+.difference-section {
+  background: #f8fafc;
+}
+
+/* MOBILE INVESTMENT REFINEMENTS */
+
+@media (max-width: 980px) {
+  .investment-card-grid,
+  .combo-grid,
+  .shopify-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .featured-investment-card,
+  .featured-investment-card:hover {
+    transform: none;
+  }
+
+  .combo-card,
+  .shopify-card {
+    padding: 26px;
+  }
+}
