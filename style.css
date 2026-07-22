@@ -2565,9 +2565,16 @@ a {
 }
 
 .roadmap span {
-  display: block;
-  font-size: 2rem;
-  margin-bottom: 8px;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin: 0 auto 10px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: var(--navy-dark);
+  font-size: 1.1rem;
+  font-weight: 900;
 }
 
 .roadmap strong {
@@ -2715,7 +2722,21 @@ a {
 }
 
 .plan-footer strong {
+  display: block;
   color: var(--navy);
+  margin-top: 3px;
+  font-size: 1.03rem;
+}
+
+/* Keep the Investment page focused on the three buying decisions:
+   setup, monthly care, and optional add-ons. */
+.investment-page-simplified .recommended-combos-section,
+.investment-page-simplified .compare-section,
+.investment-page-simplified .shopify-section,
+.investment-page-simplified .agency-compare-section,
+.investment-page-simplified .worth-section,
+.investment-page-simplified .difference-section {
+  display: none;
 }
 
 .investment-card > .button {
