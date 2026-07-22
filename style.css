@@ -2782,6 +2782,22 @@ a {
   color: rgba(255,255,255,.86);
 }
 
+.care-plan-note {
+  max-width: 940px;
+  margin: 32px auto 0;
+  padding: 20px 24px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 18px;
+  background: rgba(255,255,255,.06);
+  text-align: center;
+}
+
+.care-plan-note p {
+  margin: 0;
+  color: rgba(255,255,255,.78);
+  font-size: .94rem;
+}
+
 /* RECOMMENDED COMBOS */
 
 .recommended-combos-section {
@@ -2881,7 +2897,7 @@ a {
 
 .comparison-table td:not(:first-child) {
   color: var(--gold);
-  font-size: 1.15rem;
+  font-size: 1rem;
 }
 
 .table-note {
