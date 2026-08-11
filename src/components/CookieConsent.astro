@@ -1,0 +1,98 @@
+---
+// Simple Consent Mode v2 banner. Renders only when analytics is configured.
+import { analyticsEnabled } from '../config/analytics';
+---
+
+{analyticsEnabled && (
+  <div id="cookie-consent" class="cookie-consent" hidden>
+    <p>
+      This site uses cookies to measure performance and improve ads. See our
+      <a href="/privacy.html">Privacy Policy</a>.
+    </p>
+    <div class="cookie-consent-actions">
+      <button type="button" data-consent="denied" class="cc-btn cc-decline">Decline</button>
+      <button type="button" data-consent="granted" class="cc-btn cc-accept">Accept</button>
+    </div>
+  </div>
+)}
+
+{analyticsEnabled && (
+  <script is:inline>
+    (function () {
+      var bar = document.getElementById('cookie-consent');
+      if (!bar) return;
+      var stored;
+      try { stored = localStorage.getItem('tmb-consent'); } catch (e) {}
+      if (!stored) bar.hidden = false;
+
+      bar.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-consent]');
+        if (!btn) return;
+        var choice = btn.getAttribute('data-consent');
+        try { localStorage.setItem('tmb-consent', choice); } catch (e) {}
+        if (window.gtag) {
+          gtag('consent', 'update', {
+            ad_storage: choice,
+            ad_user_data: choice,
+            ad_personalization: choice,
+            analytics_storage: choice,
+          });
+        }
+        bar.hidden = true;
+      });
+    })();
+  </script>
+)}
+
+<style>
+  .cookie-consent {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    max-width: 720px;
+    margin: 0 auto;
+    background: var(--navy-dark, #081a33);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 14px;
+    padding: 18px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+  }
+  .cookie-consent p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    flex: 1 1 320px;
+  }
+  .cookie-consent a {
+    color: var(--gold, #d4af37);
+  }
+  .cookie-consent-actions {
+    display: flex;
+    gap: 10px;
+  }
+  .cc-btn {
+    border: 0;
+    border-radius: 999px;
+    padding: 10px 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  .cc-decline {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+  }
+  .cc-accept {
+    background: var(--gold, #d4af37);
+    color: var(--navy-dark, #081a33);
+  }
+</style>
