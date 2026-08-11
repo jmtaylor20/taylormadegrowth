@@ -13,7 +13,48 @@ import aoReviewCard from '../assets/ao_review_card.png';
 import aoEstimate from '../assets/ao_estimate_sheet.png';
 import aoWorkPhoto from '../assets/ao_work_photo.png';
 
+// Recent client projects (showcase grid)
+import rhinoLogo from '../assets/clients/rhino-landworks.png';
+import millersLogo from '../assets/clients/millers-backhoe.png';
+import fordLogo from '../assets/clients/ford-paving.png';
+import beehiveLogo from '../assets/clients/beehive-stars.png';
+
 const hero = await getImage({ src: heroSrc, format: 'webp', width: 1600 });
+
+const clients = [
+  {
+    name: 'Rhino Landworks',
+    logo: rhinoLogo,
+    url: 'https://rhinolandwork.com',
+    tagline: 'Land work done right.',
+    desc: 'Land clearing, forestry mulching, grading, drainage, and gravel driveways across East Alabama.',
+    work: ['Website', 'Branding'],
+  },
+  {
+    name: "Miller's Backhoe Service",
+    logo: millersLogo,
+    url: 'https://millerbackhoe.com',
+    tagline: 'One call. Serious capability.',
+    desc: 'Septic systems, trenching, drainage, and excavation out of Notasulga, Alabama.',
+    work: ['Website', 'Brand identity'],
+  },
+  {
+    name: 'Ford Paving & Sealing',
+    logo: fordLogo,
+    url: 'https://fordpaving.com',
+    tagline: 'Built smooth. Finished sharp.',
+    desc: 'Asphalt paving, sealcoating, striping, driveways, and parking lots across Central Alabama.',
+    work: ['Website', 'Branding'],
+  },
+  {
+    name: 'Beehive Stars Baseball',
+    logo: beehiveLogo,
+    url: 'https://beehivestars.com',
+    tagline: 'Built for the Next Level.',
+    desc: 'Travel baseball and softball, player development, tryouts, and online team registration.',
+    work: ['Website', 'Branding', 'Registration system'],
+  },
+];
 ---
 
 <Base
@@ -46,6 +87,35 @@ const hero = await getImage({ src: heroSrc, format: 'webp', width: 1600 });
             <li>Review System</li>
             <li>Print Materials</li>
           </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section clients-section">
+      <div class="container">
+        <div class="section-heading">
+          <p class="eyebrow dark">Recent Projects</p>
+          <h2>Local businesses I've helped look sharper and get found.</h2>
+          <p>New brands, new websites, and growth systems built for real companies across Alabama.</p>
+        </div>
+
+        <div class="clients-grid">
+          {clients.map((c) => (
+            <a class="client-card" href={c.url} target="_blank" rel="noopener">
+              <div class="client-logo">
+                <Image src={c.logo} alt={`${c.name} logo`} width={420} />
+              </div>
+              <div class="client-body">
+                <h3>{c.name}</h3>
+                <p class="client-tag">{c.tagline}</p>
+                <p class="client-desc">{c.desc}</p>
+                <div class="client-work">
+                  {c.work.map((w) => <span>{w}</span>)}
+                </div>
+                <span class="client-link">Visit site →</span>
+              </div>
+            </a>
+          ))}
         </div>
       </div>
     </section>
@@ -221,4 +291,86 @@ const hero = await getImage({ src: heroSrc, format: 'webp', width: 1600 });
       </div>
     </section>
   </main>
+
+  <style>
+    .clients-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 28px;
+      margin-top: 48px;
+    }
+    .client-card {
+      display: flex;
+      flex-direction: column;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      text-decoration: none;
+      color: var(--black);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .client-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 18px 40px rgba(8, 26, 51, 0.12);
+      border-color: var(--navy);
+    }
+    .client-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 150px;
+      padding: 26px;
+      background: var(--light);
+      border-bottom: 1px solid var(--border);
+    }
+    .client-logo :global(img) {
+      max-height: 98px;
+      width: auto;
+      object-fit: contain;
+    }
+    .client-body {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 26px 26px 28px;
+    }
+    .client-body h3 {
+      color: var(--navy);
+      font-size: 1.3rem;
+    }
+    .client-tag {
+      color: var(--gold);
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .client-desc {
+      color: var(--gray);
+      font-size: 0.95rem;
+      line-height: 1.55;
+    }
+    .client-work {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .client-work span {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--navy);
+      background: rgba(19, 41, 75, 0.07);
+      border-radius: 999px;
+      padding: 5px 12px;
+    }
+    .client-link {
+      margin-top: 14px;
+      color: var(--navy);
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .client-card:hover .client-link {
+      color: var(--gold);
+    }
+  </style>
 </Base>

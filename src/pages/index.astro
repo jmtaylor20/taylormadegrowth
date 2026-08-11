@@ -1,9 +1,20 @@
 ---
 import Base from '../layouts/Base.astro';
-import { getImage } from 'astro:assets';
+import { Image, getImage } from 'astro:assets';
 import heroSrc from '../assets/TMB_Hero.png';
+import rhinoLogo from '../assets/clients/rhino-landworks.png';
+import millersLogo from '../assets/clients/millers-backhoe.png';
+import fordLogo from '../assets/clients/ford-paving.png';
+import beehiveLogo from '../assets/clients/beehive-stars.png';
 
 const hero = await getImage({ src: heroSrc, format: 'webp', width: 1600 });
+
+const clientLogos = [
+  { src: rhinoLogo, name: 'Rhino Landworks' },
+  { src: millersLogo, name: "Miller's Backhoe Service" },
+  { src: fordLogo, name: 'Ford Paving & Sealing' },
+  { src: beehiveLogo, name: 'Beehive Stars Baseball' },
+];
 ---
 
 <Base
@@ -133,6 +144,17 @@ const hero = await getImage({ src: heroSrc, format: 'webp', width: 1600 });
       </div>
     </section>
 
+    <section class="section clients-strip">
+      <div class="container">
+        <p class="eyebrow dark">Recent Work</p>
+        <h2 class="clients-strip-title">Local businesses growing with Taylormade.</h2>
+        <div class="clients-strip-logos">
+          {clientLogos.map((c) => <Image src={c.src} alt={`${c.name} logo`} width={260} />)}
+        </div>
+        <a href="/work.html" class="text-link">See recent projects →</a>
+      </div>
+    </section>
+
     <section class="section cta-section">
       <div class="container narrow">
         <p class="eyebrow">Start Here</p>
@@ -145,4 +167,35 @@ const hero = await getImage({ src: heroSrc, format: 'webp', width: 1600 });
       </div>
     </section>
   </main>
+
+  <style>
+    .clients-strip {
+      text-align: center;
+    }
+    .clients-strip-title {
+      margin-bottom: 36px;
+    }
+    .clients-strip-logos {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 40px 56px;
+      margin-bottom: 28px;
+    }
+    .clients-strip-logos :global(img) {
+      height: 64px;
+      width: auto;
+      object-fit: contain;
+      opacity: 0.85;
+      transition: opacity 0.2s ease;
+    }
+    .clients-strip-logos :global(img:hover) {
+      opacity: 1;
+    }
+    @media (max-width: 640px) {
+      .clients-strip-logos { gap: 28px 36px; }
+      .clients-strip-logos :global(img) { height: 48px; }
+    }
+  </style>
 </Base>
