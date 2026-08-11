@@ -1,0 +1,92 @@
+---
+import { Image } from 'astro:assets';
+import footerLogo from '../assets/TMB_Stacked_White_Logo.png';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container footer-wrap">
+    <div class="footer-brand">
+      <Image src={footerLogo} alt="Taylormade Brands logo" class="footer-logo" width={200} densities={[1, 2]} loading="lazy" />
+      <p class="footer-tagline">Local business growth systems — websites, branding, Google, and marketing that works together.</p>
+    </div>
+
+    <nav class="footer-links" aria-label="Footer">
+      <a href="/services.html">Services</a>
+      <a href="/investment.html">Investment</a>
+      <a href="/work.html">Work</a>
+      <a href="/about.html">About</a>
+      <a href="/growth-assessment.html">Assessment</a>
+      <a href="/contact.html">Contact</a>
+    </nav>
+
+    <div class="footer-contact">
+      <a href="tel:+13343916641">334-391-6641</a>
+      <a href="mailto:josh@taylormadegrowth.com">josh@taylormadegrowth.com</a>
+    </div>
+  </div>
+
+  <div class="container footer-bottom">
+    <p>&copy; {year} Taylormade Brands. Built for local business growth.</p>
+  </div>
+</footer>
+
+<style>
+  .footer-wrap {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr auto;
+    gap: 40px;
+    align-items: start;
+    text-align: left;
+  }
+  .footer-tagline {
+    margin-top: 16px;
+    max-width: 34ch;
+    opacity: 0.75;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+  .footer-links {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .footer-links a,
+  .footer-contact a {
+    color: #fff;
+    text-decoration: none;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+  }
+  .footer-links a:hover,
+  .footer-contact a:hover {
+    opacity: 1;
+    color: var(--gold);
+  }
+  .footer-contact {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .footer-bottom {
+    margin-top: 36px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    text-align: center;
+    font-size: 0.85rem;
+    opacity: 0.6;
+  }
+  @media (max-width: 780px) {
+    .footer-wrap {
+      grid-template-columns: 1fr;
+      gap: 28px;
+      text-align: center;
+      justify-items: center;
+    }
+    .footer-tagline { max-width: 46ch; }
+    .footer-links { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 8px 20px; }
+  }
+</style>

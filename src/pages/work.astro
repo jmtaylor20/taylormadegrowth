@@ -1,46 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" type="image/png" sizes="32x32" href="TMB_favicon_32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="TMB_favicon_16.png">
-<link rel="apple-touch-icon" sizes="180x180" href="TMB_favicon_180.png">
+---
+import Base from '../layouts/Base.astro';
+import { Image, getImage } from 'astro:assets';
+import heroSrc from '../assets/ao_work_photo.png';
+import aoWebsite from '../assets/ao_website.png';
+import aoContact from '../assets/ao_contact_webpage.png';
+import aoServices from '../assets/ao_services_webpage.png';
+import aoMobile from '../assets/ao_mobile_website.png';
+import aoGoogleProfile from '../assets/ao_google_profile.png';
+import aoGoogleAds from '../assets/ao_google_ads.png';
+import aoBusinessCard from '../assets/ao_business_card.png';
+import aoReviewCard from '../assets/ao_review_card.png';
+import aoEstimate from '../assets/ao_estimate_sheet.png';
+import aoWorkPhoto from '../assets/ao_work_photo.png';
 
-  <title>Work | Taylormade Brands</title>
-  <meta name="description" content="View Taylormade Brands work examples including websites, branding, Google Business Profile support, Google Ads, print materials, and growth systems." />
+const hero = await getImage({ src: heroSrc, format: 'webp', width: 1600 });
+---
 
-  <link rel="stylesheet" href="style.css" />
-</head>
-
-<body>
-  <header class="site-header">
-  <div class="container nav-wrap">
-    <a href="index.html" class="logo-link">
-      <img src="TMB_Horizontal_Logo.png" alt="Taylormade Brands logo" class="site-logo" />
-    </a>
-
-    <button class="mobile-menu-toggle" aria-label="Open menu">
-      ☰
-    </button>
-
-      <nav class="site-nav">
-      <a href="index.html">Home</a>
-      <a href="services.html">Services</a>
-      <a href="investment.html">Investment</a>
-      <a href="portfolio.html">Portfolio</a>
-      <a href="ao-case-study.html">AO Trees Project</a>
-      <a href="wolf-creek-growth-project.html">Wolf Creek Project</a>
-      <a href="growth-assessment.html">Assessment</a>
-      <a href="about.html">About</a>
-      <a href="contact.html" class="nav-button">Contact</a>
-    </nav>
-  </div>
-</header>
-
+<Base
+  title="Work | Taylormade Brands"
+  description="View Taylormade Brands work examples including websites, branding, Google Business Profile support, Google Ads, print materials, and growth systems."
+>
   <main>
-
-    <section class="work-hero improved-work-hero">
+    <section class="work-hero improved-work-hero" style={`--hero-bg: url(${hero.src})`}>
       <div class="container work-hero-grid">
         <div>
           <p class="eyebrow">Selected Work</p>
@@ -50,13 +31,13 @@
           </p>
 
           <div class="button-row">
-            <a href="ao-case-study.html" class="button primary">View Case Study</a>
-            <a href="growth-assessment.html" class="button secondary">Start Assessment</a>
+            <a href="/ao-case-study.html" class="button primary">View Case Study</a>
+            <a href="/growth-assessment.html" class="button secondary">Start Assessment</a>
           </div>
         </div>
 
         <div class="work-hero-card">
-          <h3>A&O Tree Service</h3>
+          <h3>A&amp;O Tree Service</h3>
           <p>A complete local growth project.</p>
           <ul>
             <li>Website</li>
@@ -113,15 +94,15 @@
 
         <div class="work-grid">
           <article class="work-card large">
-            <img src="ao_website.png" alt="A&O Tree Service website homepage">
+            <Image src={aoWebsite} alt="A&O Tree Service website homepage" width={1100} />
             <div class="work-card-content">
-              <h3>A&O Website Homepage</h3>
+              <h3>A&amp;O Website Homepage</h3>
               <p>Service-focused homepage with clear calls to action and local credibility.</p>
             </div>
           </article>
 
           <article class="work-card">
-            <img src="ao_contact_webpage.png" alt="A&O Tree Service contact page">
+            <Image src={aoContact} alt="A&O Tree Service contact page" width={720} />
             <div class="work-card-content">
               <h3>Lead Form Page</h3>
               <p>Simple form built to capture service inquiries.</p>
@@ -129,7 +110,7 @@
           </article>
 
           <article class="work-card">
-            <img src="ao_services_webpage.png" alt="A&O Tree Service services page">
+            <Image src={aoServices} alt="A&O Tree Service services page" width={720} />
             <div class="work-card-content">
               <h3>Services Page</h3>
               <p>Clear service structure for customers comparing options.</p>
@@ -137,7 +118,7 @@
           </article>
 
           <article class="work-card">
-            <img src="ao_mobile_website.png" alt="A&O Tree Service mobile website">
+            <Image src={aoMobile} alt="A&O Tree Service mobile website" width={720} />
             <div class="work-card-content">
               <h3>Mobile Layout</h3>
               <p>Built for customers searching from their phones.</p>
@@ -156,7 +137,7 @@
 
         <div class="work-grid two-column">
           <article class="work-card">
-            <img src="ao_google_profile.png" alt="A&O Tree Service Google Business Profile">
+            <Image src={aoGoogleProfile} alt="A&O Tree Service Google Business Profile" width={720} />
             <div class="work-card-content">
               <h3>Google Business Profile</h3>
               <p>Profile support to strengthen local visibility and trust.</p>
@@ -164,7 +145,7 @@
           </article>
 
           <article class="work-card">
-            <img src="ao_google_ads.png" alt="A&O Tree Service Google Ads dashboard">
+            <Image src={aoGoogleAds} alt="A&O Tree Service Google Ads dashboard" width={720} />
             <div class="work-card-content">
               <h3>Google Ads</h3>
               <p>Local search campaign support focused on service leads.</p>
@@ -177,13 +158,13 @@
     <section class="section work-section">
       <div class="container">
         <div class="section-heading">
-          <p class="eyebrow dark">Branding & Print</p>
+          <p class="eyebrow dark">Branding &amp; Print</p>
           <h2>Customer touchpoints that build confidence.</h2>
         </div>
 
         <div class="work-grid three-column">
           <article class="work-card">
-            <img src="ao_business_card.png" alt="A&O Tree Service business card">
+            <Image src={aoBusinessCard} alt="A&O Tree Service business card" width={600} />
             <div class="work-card-content">
               <h3>Business Card</h3>
               <p>Clean contact piece for referrals and customer conversations.</p>
@@ -191,7 +172,7 @@
           </article>
 
           <article class="work-card">
-            <img src="ao_review_card.png" alt="A&O Tree Service review card">
+            <Image src={aoReviewCard} alt="A&O Tree Service review card" width={600} />
             <div class="work-card-content">
               <h3>Review Card</h3>
               <p>QR-based review tool to help build Google trust.</p>
@@ -199,7 +180,7 @@
           </article>
 
           <article class="work-card">
-            <img src="ao_estimate_sheet.png" alt="A&O Tree Service estimate sheet">
+            <Image src={aoEstimate} alt="A&O Tree Service estimate sheet" width={600} />
             <div class="work-card-content">
               <h3>Estimate Sheet</h3>
               <p>Professional quoting material that reinforces credibility.</p>
@@ -213,17 +194,17 @@
       <div class="container featured-work-grid">
         <div>
           <p class="eyebrow">Featured Project</p>
-          <h2>A&O Tree Service Case Study</h2>
+          <h2>A&amp;O Tree Service Case Study</h2>
           <p>
             A complete local business growth project covering website launch,
             Google presence, Google Ads, print materials, review generation,
             and lead capture.
           </p>
-          <a href="ao-case-study.html" class="button primary">View Full Case Study</a>
+          <a href="/ao-case-study.html" class="button primary">View Full Case Study</a>
         </div>
 
         <div class="featured-image-wrap">
-          <img src="ao_work_photo.png" alt="A&O Tree Service work example">
+          <Image src={aoWorkPhoto} alt="A&O Tree Service work example" width={900} />
         </div>
       </div>
     </section>
@@ -233,22 +214,11 @@
         <p class="eyebrow">Start Here</p>
         <h2>Want your business to look sharper and get found?</h2>
         <p>
-          Start with the growth assessment. I’ll review your website, Google presence,
+          Start with the growth assessment. I'll review your website, Google presence,
           branding, reviews, and lead flow.
         </p>
-        <a href="growth-assessment.html" class="button primary">Start Assessment</a>
+        <a href="/growth-assessment.html" class="button primary">Start Assessment</a>
       </div>
     </section>
-
   </main>
-
-  <footer class="site-footer">
-    <div class="container footer-wrap">
-      <img src="TMB_Stacked_White_Logo.png" alt="Taylormade Brands logo" class="footer-logo" />
-      <p>© 2026 Taylormade Brands. Built for local business growth.</p>
-    </div>
-  </footer>
-
-  <script src="main.js"></script>
-</body>
-</html>
+</Base>

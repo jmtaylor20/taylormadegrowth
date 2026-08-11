@@ -1,0 +1,22 @@
+---
+import Base from '../layouts/Base.astro';
+import { Image } from 'astro:assets';
+import logo from '../assets/TMB_ScriptStack_White_Logo.png';
+---
+
+<Base title="Thank You | Taylormade Brands" chrome={false}>
+  <section class="thank-you-page">
+    <div class="container narrow">
+      <Image src={logo} alt="Taylormade Brands" width={320} style="width:300px; margin:0 auto 30px; display:block; filter:brightness(0) invert(1);" />
+
+      <h1>Thank You!</h1>
+
+      <p>
+        Your assessment has been submitted successfully.
+        I'll review your information and follow up with recommendations soon.
+      </p>
+
+      <a href="/index.html" class="button primary">Return Home</a>
+    </div>
+  </section>
+</Base>

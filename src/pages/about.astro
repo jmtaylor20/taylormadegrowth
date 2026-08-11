@@ -1,42 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+---
+import Base from '../layouts/Base.astro';
+import { Image } from 'astro:assets';
+import headshot from '../assets/Taylor_headshot.png';
+---
 
-  <title>About | Taylormade Brands</title>
-  <meta name="description" content="Learn about Josh Taylor and Taylormade Brands, a local business growth partner focused on websites, branding, Google visibility, and practical marketing systems." />
-
-  <link rel="stylesheet" href="style.css" />
-</head>
-
-<body>
-  <header class="site-header">
-  <div class="container nav-wrap">
-    <a href="index.html" class="logo-link">
-      <img src="TMB_Horizontal_Logo.png" alt="Taylormade Brands logo" class="site-logo" />
-    </a>
-
-    <button class="mobile-menu-toggle" aria-label="Open menu">
-      ☰
-    </button>
-
-      <nav class="site-nav">
-      <a href="index.html">Home</a>
-      <a href="services.html">Services</a>
-      <a href="investment.html">Investment</a>
-      <a href="portfolio.html">Portfolio</a>
-      <a href="ao-case-study.html">AO Trees Project</a>
-      <a href="wolf-creek-growth-project.html">Wolf Creek Project</a>
-      <a href="growth-assessment.html">Assessment</a>
-      <a href="about.html">About</a>
-      <a href="contact.html" class="nav-button">Contact</a>
-    </nav>
-  </div>
-</header>
-
+<Base
+  title="About | Taylormade Brands"
+  description="Learn about Josh Taylor and Taylormade Brands, a local business growth partner focused on websites, branding, Google visibility, and practical marketing systems."
+>
   <main>
-
     <section class="about-hero">
       <div class="container about-hero-grid">
         <div>
@@ -48,13 +20,13 @@
           </p>
 
           <div class="button-row">
-            <a href="growth-assessment.html" class="button primary">Start Assessment</a>
-            <a href="work.html" class="button secondary">View Work</a>
+            <a href="/growth-assessment.html" class="button primary">Start Assessment</a>
+            <a href="/work.html" class="button secondary">View Work</a>
           </div>
         </div>
 
         <div class="about-photo-card">
-          <img src="Taylor_headshot.png" alt="Josh Taylor">
+          <Image src={headshot} alt="Josh Taylor" width={520} />
           <div>
             <h3>Josh Taylor</h3>
             <p>Founder, Taylormade Brands</p>
@@ -200,22 +172,11 @@
         <p class="eyebrow">Start Here</p>
         <h2>Want to know what your business needs first?</h2>
         <p>
-          Take the growth assessment and I’ll review your website, Google presence,
+          Take the growth assessment and I'll review your website, Google presence,
           branding, reviews, and lead flow.
         </p>
-        <a href="growth-assessment.html" class="button primary">Start Assessment</a>
+        <a href="/growth-assessment.html" class="button primary">Start Assessment</a>
       </div>
     </section>
-
   </main>
-
-  <footer class="site-footer">
-    <div class="container footer-wrap">
-      <img src="TMB_Stacked_White_Logo.png" alt="Taylormade Brands logo" class="footer-logo" />
-      <p>© 2026 Taylormade Brands. Built for local business growth.</p>
-    </div>
-  </footer>
-
-  <script src="main.js"></script>
-</body>
-</html>
+</Base>

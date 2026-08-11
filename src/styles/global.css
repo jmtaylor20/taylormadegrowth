@@ -20,7 +20,7 @@ html {
 }
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   color: var(--black);
   background:
     radial-gradient(circle at top left, rgba(212, 175, 55, 0.04), transparent 30%),
@@ -169,7 +169,7 @@ a {
       rgba(8, 26, 51, 0.35) 68%,
       rgba(8, 26, 51, 0.15) 100%
     ),
-    url("TMB_Hero.png");
+    var(--hero-bg, none);
   background-size: cover;
   background-position: center right;
   background-repeat: no-repeat;
@@ -533,7 +533,7 @@ a {
       rgba(8, 26, 51, 0.90) 45%,
       rgba(8, 26, 51, 0.75) 100%
     ),
-    url("ao_work_photo.png");
+    var(--hero-bg, none);
   background-size: cover;
   background-position: center top;
   background-repeat: no-repeat;
@@ -784,7 +784,7 @@ a {
       rgba(8, 26, 51, 0.92) 50%,
       rgba(8, 26, 51, 0.70) 100%
     ),
-    url("ao_work_photo.png");
+    var(--hero-bg, none);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -1011,7 +1011,7 @@ a {
       rgba(8, 26, 51, 0.9) 52%,
       rgba(8, 26, 51, 0.72) 100%
     ),
-    url("TMB_Hero.png");
+    var(--hero-bg, none);
   background-size: cover;
   background-position: center right;
   background-repeat: no-repeat;
@@ -1466,7 +1466,7 @@ a {
       rgba(8, 26, 51, 0.90) 55%,
       rgba(8, 26, 51, 0.75) 100%
     ),
-    url("hero.png");
+    var(--hero-bg, none);
 
   background-size: cover;
   background-position: center;
@@ -1687,7 +1687,7 @@ a {
       rgba(8, 26, 51, 0.90) 55%,
       rgba(8, 26, 51, 0.75) 100%
     ),
-    url("hero.png");
+    var(--hero-bg, none);
 
   background-size: cover;
   background-position: center;
@@ -1971,7 +1971,7 @@ a {
       rgba(8, 26, 51, 0.90) 55%,
       rgba(8, 26, 51, 0.75) 100%
     ),
-    url("hero.png");
+    var(--hero-bg, none);
   background-size: cover;
   background-position: center;
   color: white;
@@ -2047,7 +2047,7 @@ a {
         rgba(8, 26, 51, 0.88) 45%,
         rgba(8, 26, 51, 0.35) 100%
       ),
-      url("hero.png");
+      var(--hero-bg, none);
     background-size: cover;
     background-position: center top;
     padding: 80px 0;
@@ -2133,7 +2133,7 @@ a {
             rgba(8,26,51,.90) 55%,
             rgba(8,26,51,.72) 100%
         ),
-        url("wolfcreek_hero.png");
+        var(--hero-bg, none);
 
     background-size:cover;
     background-position:center;
@@ -3337,4 +3337,33 @@ a {
   .worth-compare-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ==========================================================================
+   Web fonts + rendering polish (added in Astro migration)
+   Body: Inter · Headings: Sora — self-hosted via @fontsource (no external calls)
+   ========================================================================== */
+h1, h2, h3,
+.eyebrow,
+.plan-price,
+.care-price,
+.worth-number,
+.proof-number {
+  font-family: 'Sora', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+h1, h2, h3 {
+  letter-spacing: -0.01em;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Optimized (Astro) images should always scale within their container. */
+img {
+  max-width: 100%;
+  height: auto;
 }

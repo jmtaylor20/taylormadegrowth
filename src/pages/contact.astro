@@ -1,58 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" type="image/png" sizes="32x32" href="TMB_favicon_32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="TMB_favicon_16.png">
-<link rel="apple-touch-icon" sizes="180x180" href="TMB_favicon_180.png">
+---
+import Base from '../layouts/Base.astro';
+import { Image } from 'astro:assets';
+import headshot from '../assets/Taylor_headshot.png';
+---
 
-  <title>Contact | Taylormade Brands</title>
-  <meta name="description" content="Contact Taylormade Brands to discuss websites, branding, Google growth, and local business marketing systems." />
-
-  <link rel="stylesheet" href="style.css" />
-</head>
-
-<body>
-  <header class="site-header">
-    <div class="container nav-wrap">
-      <a href="index.html">
-        <img src="TMB_Horizontal_Logo.png" alt="Taylormade Brands logo" class="site-logo" />
-      </a>
-
-      <nav class="site-nav">
-      <a href="index.html">Home</a>
-      <a href="services.html">Services</a>
-      <a href="investment.html">Investment</a>
-      <a href="portfolio.html">Portfolio</a>
-      <a href="ao-case-study.html">AO Trees Project</a>
-      <a href="wolf-creek-growth-project.html">Wolf Creek Project</a>
-      <a href="growth-assessment.html">Assessment</a>
-      <a href="about.html">About</a>
-      <a href="contact.html" class="nav-button">Contact</a>
-    </nav>
-    </div>
-  </header>
-
+<Base
+  title="Contact | Taylormade Brands"
+  description="Contact Taylormade Brands to discuss websites, branding, Google growth, and local business marketing systems."
+>
   <main>
     <section class="contact-hero">
       <div class="container contact-hero-grid">
         <div>
           <p class="eyebrow">Contact</p>
-          <h1>Let’s talk about what your business needs next.</h1>
+          <h1>Let's talk about what your business needs next.</h1>
           <p>
             The best place to start is the Growth Assessment. If you already know what you need,
-            send a quick message and I’ll follow up.
+            send a quick message and I'll follow up.
           </p>
 
           <div class="button-row">
-            <a href="growth-assessment.html" class="button primary">Start Assessment</a>
+            <a href="/growth-assessment.html" class="button primary">Start Assessment</a>
             <a href="#contact-form" class="button secondary">Send Message</a>
           </div>
         </div>
 
         <div class="contact-photo-card">
-          <img src="Taylor_headshot.png" alt="Josh Taylor">
+          <Image src={headshot} alt="Josh Taylor" width={520} />
           <div>
             <h3>Josh Taylor</h3>
             <p>Taylormade Brands</p>
@@ -70,7 +44,7 @@
             Best option if you want a full review of your website, Google presence,
             branding, reviews, and lead flow.
           </p>
-          <a href="growth-assessment.html" class="text-link">Take the Assessment →</a>
+          <a href="/growth-assessment.html" class="text-link">Take the Assessment →</a>
         </div>
 
         <div class="contact-option-card">
@@ -88,7 +62,7 @@
           <p>
             See examples of branding, websites, marketing systems, and growth projects.
           </p>
-          <a href="portfolio.html" class="text-link">View Portfolio →</a>
+          <a href="/portfolio.html" class="text-link">View Portfolio →</a>
         </div>
       </div>
     </section>
@@ -97,40 +71,40 @@
       <div class="container contact-form-grid">
         <div>
           <p class="eyebrow dark">Quick Message</p>
-          <h2>Tell me what you’re thinking.</h2>
+          <h2>Tell me what you're thinking.</h2>
           <p>
-            Keep it simple. Tell me who you are, what business you’re working on,
-            and what kind of help you’re looking for.
+            Keep it simple. Tell me who you are, what business you're working on,
+            and what kind of help you're looking for.
           </p>
 
           <div class="contact-info-box">
             <h3>Contact Info</h3>
-            <p><strong>Email:</strong> josh@taylormadegrowth.com</p>
-            <p><strong>Phone:</strong> 334-391-6641</p>
+            <p><strong>Email:</strong> <a href="mailto:josh@taylormadegrowth.com">josh@taylormadegrowth.com</a></p>
+            <p><strong>Phone:</strong> <a href="tel:+13343916641">334-391-6641</a></p>
           </div>
         </div>
 
-        <form name="contact" method="POST" action="/thank-you.html" netlify netlify-honeypot="bot-field" class="contact-form">
+        <form name="contact" method="POST" action="/thank-you.html" data-netlify="true" netlify-honeypot="bot-field" class="contact-form">
           <input type="hidden" name="form-name" value="contact" />
 
           <p class="hidden">
-            <label>Don’t fill this out: <input name="bot-field" /></label>
+            <label>Don't fill this out: <input name="bot-field" /></label>
           </p>
 
           <label>Name
-            <input type="text" name="name" required>
+            <input type="text" name="name" required />
           </label>
 
           <label>Business Name
-            <input type="text" name="business-name">
+            <input type="text" name="business-name" />
           </label>
 
           <label>Email
-            <input type="email" name="email" required>
+            <input type="email" name="email" required />
           </label>
 
           <label>Phone
-            <input type="tel" name="phone">
+            <input type="tel" name="phone" />
           </label>
 
           <label>What do you need help with?
@@ -159,7 +133,7 @@
       <div class="container narrow">
         <p class="eyebrow dark">Want To Learn More?</p>
         <h2>See examples of the work behind Taylormade Brands.</h2>
-        <a href="portfolio.html" class="button navy-button">View Business Growth Portfolio</a>
+        <a href="/portfolio.html" class="button navy-button">View Business Growth Portfolio</a>
       </div>
     </section>
 
@@ -168,20 +142,10 @@
         <p class="eyebrow">Best First Step</p>
         <h2>Not sure what your business needs?</h2>
         <p>
-          Take the Growth Assessment and I’ll help identify the best starting point.
+          Take the Growth Assessment and I'll help identify the best starting point.
         </p>
-        <a href="growth-assessment.html" class="button primary">Start Assessment</a>
+        <a href="/growth-assessment.html" class="button primary">Start Assessment</a>
       </div>
     </section>
   </main>
-
-  <footer class="site-footer">
-    <div class="container footer-wrap">
-      <img src="TMB_Stacked_White_Logo.png" alt="Taylormade Brands logo" class="footer-logo" />
-      <p>© 2026 Taylormade Brands. Built for local business growth.</p>
-    </div>
-  </footer>
-
-  <script src="main.js"></script>
-</body>
-</html>
+</Base>
