@@ -2,6 +2,9 @@
 import Base from '../layouts/Base.astro';
 import { Image } from 'astro:assets';
 import logo from '../assets/TMB_ScriptStack_White_Logo.png';
+import { analytics } from '../config/analytics';
+
+const conv = analytics.conversions.contactForm;
 ---
 
 <Base title="Thank You | Taylormade Brands" chrome={false}>
@@ -19,4 +22,11 @@ import logo from '../assets/TMB_ScriptStack_White_Logo.png';
       <a href="/index.html" class="button primary">Return Home</a>
     </div>
   </section>
+
+  <script is:inline define:vars={{ conv }}>
+    if (window.gtag) {
+      gtag('event', 'generate_lead', { form: 'contact' });
+      if (conv) gtag('event', 'conversion', { send_to: conv });
+    }
+  </script>
 </Base>

@@ -28,7 +28,7 @@ const year = new Date().getFullYear();
   </div>
 
   <div class="container footer-bottom">
-    <p>&copy; {year} Taylormade Brands. Built for local business growth.</p>
+    <p>&copy; {year} Taylormade Brands. Built for local business growth. · <a href="/privacy.html">Privacy Policy</a></p>
   </div>
 </footer>
 
@@ -78,6 +78,10 @@ const year = new Date().getFullYear();
     text-align: center;
     font-size: 0.85rem;
     opacity: 0.6;
+  }
+  .footer-bottom a {
+    color: inherit;
+    text-decoration: underline;
   }
   @media (max-width: 780px) {
     .footer-wrap {

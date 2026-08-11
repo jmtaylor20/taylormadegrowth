@@ -1,0 +1,53 @@
+---
+// Loads GA4 + Google Ads (gtag.js) with Google Consent Mode v2.
+// Renders NOTHING until an ID is set in src/config/analytics.ts.
+import { analytics, analyticsEnabled } from '../config/analytics';
+
+const { ga4Id, adsId } = analytics;
+const loaderId = ga4Id || adsId;
+const phoneConv = analytics.conversions.phoneCall;
+---
+
+{analyticsEnabled && (
+  <>
+    <script is:inline define:vars={{ ga4Id, adsId, phoneConv }}>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      window.gtag = gtag;
+
+      // Consent Mode v2 — default to denied until the visitor accepts.
+      gtag('consent', 'default', {
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+        analytics_storage: 'denied',
+        wait_for_update: 500,
+      });
+
+      // Re-apply a previously granted choice.
+      try {
+        if (localStorage.getItem('tmb-consent') === 'granted') {
+          gtag('consent', 'update', {
+            ad_storage: 'granted',
+            ad_user_data: 'granted',
+            ad_personalization: 'granted',
+            analytics_storage: 'granted',
+          });
+        }
+      } catch (e) {}
+
+      gtag('js', new Date());
+      if (ga4Id) gtag('config', ga4Id);
+      if (adsId) gtag('config', adsId);
+
+      // Click-to-call: count taps on the phone number as a lead.
+      document.addEventListener('click', function (e) {
+        var link = e.target.closest && e.target.closest('a[href^="tel:"]');
+        if (!link) return;
+        gtag('event', 'phone_call_click');
+        if (phoneConv) gtag('event', 'conversion', { send_to: phoneConv });
+      });
+    </script>
+    <script async src={`https://www.googletagmanager.com/gtag/js?id=${loaderId}`}></script>
+  </>
+)}
