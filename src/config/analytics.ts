@@ -20,7 +20,7 @@
  *                    • phoneCall      → a "Contact / Phone call clicks" conversion (fires when someone taps the phone number)
  */
 export const analytics = {
-  ga4Id: '',
+  ga4Id: 'G-TEST00000',
   adsId: '',
   conversions: {
     contactForm: '',
