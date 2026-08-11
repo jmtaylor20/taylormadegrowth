@@ -1,0 +1,73 @@
+<!--
+  Netlify Forms detection file.
+  Astro's compiler strips the `data-netlify` attribute from the real page forms,
+  so this static file (scanned by Netlify at deploy) registers both forms and all
+  their fields. Not linked anywhere; visitors never see it. The live forms submit
+  with a matching hidden `form-name`, so Netlify captures them.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /><title>Netlify form detection</title></head>
+<body>
+  <!-- Contact form -->
+  <form name="contact" data-netlify="true" netlify-honeypot="bot-field" hidden>
+    <input type="hidden" name="form-name" value="contact" />
+    <input name="bot-field" />
+    <input type="text" name="name" />
+    <input type="text" name="business-name" />
+    <input type="email" name="email" />
+    <input type="tel" name="phone" />
+    <select name="project-type"></select>
+    <textarea name="message"></textarea>
+  </form>
+
+  <!-- Growth assessment form -->
+  <form name="growth-assessment" data-netlify="true" netlify-honeypot="bot-field" hidden>
+    <input type="hidden" name="form-name" value="growth-assessment" />
+    <input name="bot-field" />
+    <input type="text" name="business-name" />
+    <input type="text" name="owner-name" />
+    <input type="tel" name="phone" />
+    <input type="email" name="email" />
+    <input type="text" name="business-address" />
+    <input type="text" name="current-website" />
+    <input type="text" name="facebook-page" />
+    <input type="text" name="google-business-profile" />
+    <textarea name="business-overview"></textarea>
+    <select name="years-in-business"></select>
+    <textarea name="top-revenue-services"></textarea>
+    <textarea name="services-to-grow"></textarea>
+    <input type="checkbox" name="goals" />
+    <textarea name="one-year-success"></textarea>
+    <input type="checkbox" name="current-marketing" />
+    <textarea name="marketing-worked"></textarea>
+    <textarea name="marketing-not-worked"></textarea>
+    <select name="has-website"></select>
+    <textarea name="website-likes"></textarea>
+    <textarea name="website-dislikes"></textarea>
+    <input type="checkbox" name="website-pages" />
+    <input type="checkbox" name="visitor-actions" />
+    <select name="has-logo"></select>
+    <select name="has-brand-colors"></select>
+    <input type="checkbox" name="brand-personality" />
+    <textarea name="branding-admire"></textarea>
+    <input type="checkbox" name="social-platforms" />
+    <select name="post-frequency"></select>
+    <input type="checkbox" name="content-types" />
+    <input type="text" name="google-review-count" />
+    <input type="text" name="google-rating" />
+    <select name="asks-for-reviews"></select>
+    <select name="review-help"></select>
+    <input type="checkbox" name="available-content" />
+    <input type="text" name="file-storage" />
+    <textarea name="competitors"></textarea>
+    <textarea name="competitor-strengths"></textarea>
+    <textarea name="your-advantages"></textarea>
+    <input type="text" name="timeline" />
+    <input type="checkbox" name="services-interested" />
+    <select name="investment-range"></select>
+    <input type="checkbox" name="access-available" />
+    <textarea name="main-90-day-problem"></textarea>
+  </form>
+</body>
+</html>
