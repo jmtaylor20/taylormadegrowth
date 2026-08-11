@@ -1,46 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" type="image/png" sizes="32x32" href="TMB_favicon_32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="TMB_favicon_16.png">
-<link rel="apple-touch-icon" sizes="180x180" href="TMB_favicon_180.png">
+---
+import Base from '../layouts/Base.astro';
+import { Image, getImage } from 'astro:assets';
+import heroSrc from '../assets/TMB_Hero.png';
+import growthSystem from '../assets/growth_system.png';
+import aoBusinessCard from '../assets/ao_business_card.png';
+import aoWebsite from '../assets/ao_website.png';
+import aoGoogleProfile from '../assets/ao_google_profile.png';
+import aoReviewCard from '../assets/ao_review_card.png';
+import aoWorkPhoto from '../assets/ao_work_photo.png';
 
-  <title>Services | Taylormade Brands</title>
-  <meta name="description" content="Taylormade Brands helps local businesses look professional, get found, generate leads, and grow through websites, branding, Google tools, and marketing systems." />
+const hero = await getImage({ src: heroSrc, format: 'webp', width: 1600 });
+---
 
-  <link rel="stylesheet" href="style.css" />
-</head>
-
-<body>
- <header class="site-header">
-  <div class="container nav-wrap">
-    <a href="index.html" class="logo-link">
-      <img src="TMB_Horizontal_Logo.png" alt="Taylormade Brands logo" class="site-logo" />
-    </a>
-
-    <button class="mobile-menu-toggle" aria-label="Open menu">
-      ☰
-    </button>
-
-      <nav class="site-nav">
-      <a href="index.html">Home</a>
-      <a href="services.html">Services</a>
-      <a href="investment.html">Investment</a>
-      <a href="portfolio.html">Portfolio</a>
-      <a href="ao-case-study.html">AO Trees Project</a>
-      <a href="wolf-creek-growth-project.html">Wolf Creek Project</a>
-      <a href="growth-assessment.html">Assessment</a>
-      <a href="about.html">About</a>
-      <a href="contact.html" class="nav-button">Contact</a>
-    </nav>
-  </div>
-</header>
-
+<Base
+  title="Services | Taylormade Brands"
+  description="Taylormade Brands helps local businesses look professional, get found, generate leads, and grow through websites, branding, Google tools, and marketing systems."
+>
   <main>
-
-    <section class="services-hero">
+    <section class="services-hero" style={`--hero-bg: url(${hero.src})`}>
       <div class="container services-hero-grid">
         <div>
           <p class="eyebrow">Services</p>
@@ -51,8 +28,8 @@
           </p>
 
           <div class="button-row">
-            <a href="growth-assessment.html" class="button primary">Start Assessment</a>
-            <a href="work.html" class="button secondary">View Work</a>
+            <a href="/growth-assessment.html" class="button primary">Start Assessment</a>
+            <a href="/work.html" class="button secondary">View Work</a>
           </div>
         </div>
 
@@ -79,7 +56,7 @@
         </div>
 
         <div class="growth-system-image-wrap">
-          <img src="growth_system.png" alt="Local business growth system diagram">
+          <Image src={growthSystem} alt="Local business growth system diagram" width={1100} />
         </div>
       </div>
     </section>
@@ -93,10 +70,10 @@
 
         <div class="services-grid">
           <article class="service-detail-card">
-            <img src="ao_business_card.png" alt="Branding and business card example">
+            <Image src={aoBusinessCard} alt="Branding and business card example" width={720} />
             <div>
               <span>01</span>
-              <h3>Branding & Print Materials</h3>
+              <h3>Branding &amp; Print Materials</h3>
               <p>
                 Build trust before the customer ever calls. This includes logos, brand kits,
                 business cards, review cards, estimate sheets, yard signs, and other customer touchpoints.
@@ -111,7 +88,7 @@
           </article>
 
           <article class="service-detail-card">
-            <img src="ao_website.png" alt="Website design example">
+            <Image src={aoWebsite} alt="Website design example" width={720} />
             <div>
               <span>02</span>
               <h3>Websites</h3>
@@ -129,7 +106,7 @@
           </article>
 
           <article class="service-detail-card">
-            <img src="ao_google_profile.png" alt="Google Business Profile example">
+            <Image src={aoGoogleProfile} alt="Google Business Profile example" width={720} />
             <div>
               <span>03</span>
               <h3>Google Growth</h3>
@@ -147,10 +124,10 @@
           </article>
 
           <article class="service-detail-card">
-            <img src="ao_review_card.png" alt="Review generation system example">
+            <Image src={aoReviewCard} alt="Review generation system example" width={720} />
             <div>
               <span>04</span>
-              <h3>Marketing & Growth Systems</h3>
+              <h3>Marketing &amp; Growth Systems</h3>
               <p>
                 Growth gets easier when leads, reviews, follow-up, and customer touchpoints are organized.
                 I help build the system behind the marketing.
@@ -244,16 +221,16 @@
       <div class="container service-proof-grid">
         <div>
           <p class="eyebrow">Proof</p>
-          <h2>A&O Tree Service shows how the pieces work together.</h2>
+          <h2>A&amp;O Tree Service shows how the pieces work together.</h2>
           <p>
             Website launch, Google Business Profile support, Google Ads, print materials,
             review generation, and lead capture all worked together as one growth foundation.
           </p>
-          <a href="ao-case-study.html" class="button primary">View Case Study</a>
+          <a href="/ao-case-study.html" class="button primary">View Case Study</a>
         </div>
 
         <div class="service-proof-image">
-          <img src="ao_work_photo.png" alt="A&O Tree Service work photo">
+          <Image src={aoWorkPhoto} alt="A&O Tree Service work photo" width={900} />
         </div>
       </div>
     </section>
@@ -304,22 +281,11 @@
         <p class="eyebrow">Start Here</p>
         <h2>Ready to see where your business stands?</h2>
         <p>
-          Take the growth assessment and I’ll review your current website, Google presence,
+          Take the growth assessment and I'll review your current website, Google presence,
           branding, reviews, and lead flow.
         </p>
-        <a href="growth-assessment.html" class="button primary">Start Assessment</a>
+        <a href="/growth-assessment.html" class="button primary">Start Assessment</a>
       </div>
     </section>
-
   </main>
-
-  <footer class="site-footer">
-    <div class="container footer-wrap">
-      <img src="TMB_Stacked_White_Logo.png" alt="Taylormade Brands logo" class="footer-logo" />
-      <p>© 2026 Taylormade Brands. Built for local business growth.</p>
-    </div>
-  </footer>
-
-  <script src="main.js"></script>
-</body>
-</html>
+</Base>

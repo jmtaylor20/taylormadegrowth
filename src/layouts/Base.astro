@@ -1,0 +1,68 @@
+---
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import '../styles/global.css';
+
+// Self-hosted fonts (bundled at build time — no external network requests).
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/sora/500.css';
+import '@fontsource/sora/600.css';
+import '@fontsource/sora/700.css';
+
+const {
+  title,
+  description = 'Taylormade Brands helps local businesses grow through websites, branding, Google Business Profile support, ads, and practical marketing systems.',
+  bodyClass = '',
+  chrome = true,
+} = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="icon" type="image/png" sizes="32x32" href="/TMB_favicon_32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/TMB_favicon_16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/TMB_favicon_180.png" />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    <!-- Open Graph / social sharing -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Taylormade Brands" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <slot name="head" />
+  </head>
+
+  <body class={bodyClass}>
+    {chrome && <Header />}
+    <slot />
+    {chrome && <Footer />}
+
+    {chrome && (
+      <script>
+        const toggle = document.querySelector('.mobile-menu-toggle');
+        const nav = document.querySelector('.site-nav');
+        if (toggle && nav) {
+          toggle.addEventListener('click', () => {
+            const open = nav.classList.toggle('active');
+            toggle.textContent = open ? '×' : '☰';
+            toggle.setAttribute('aria-expanded', String(open));
+          });
+        }
+      </script>
+    )}
+  </body>
+</html>

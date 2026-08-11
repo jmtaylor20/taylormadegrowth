@@ -1,0 +1,463 @@
+---
+import Base from '../layouts/Base.astro';
+import { Image, getImage } from 'astro:assets';
+import heroSrc from '../assets/ao_work_photo.png';
+import aoWebsite from '../assets/ao_website.png';
+import aoContact from '../assets/ao_contact_webpage.png';
+import aoServices from '../assets/ao_services_webpage.png';
+import aoMobile from '../assets/ao_mobile_website.png';
+import aoGoogleProfile from '../assets/ao_google_profile.png';
+import aoGoogleAds from '../assets/ao_google_ads.png';
+import aoBusinessCard from '../assets/ao_business_card.png';
+import aoReviewCard from '../assets/ao_review_card.png';
+import aoEstimate from '../assets/ao_estimate_sheet.png';
+import aoWorkPhoto from '../assets/ao_work_photo.png';
+
+// Recent client projects (showcase grid)
+import rhinoLogo from '../assets/clients/rhino-landworks.png';
+import millersLogo from '../assets/clients/millers-backhoe.png';
+import fordLogo from '../assets/clients/ford-paving.png';
+import beehiveLogo from '../assets/clients/beehive-stars.png';
+
+const hero = await getImage({ src: heroSrc, format: 'webp', width: 1600 });
+
+const clients = [
+  {
+    name: 'Rhino Landworks',
+    logo: rhinoLogo,
+    url: 'https://rhinolandwork.com',
+    tagline: 'Land work done right.',
+    desc: 'Land clearing, forestry mulching, grading, drainage, and gravel driveways across East Alabama.',
+    work: ['Website', 'Branding'],
+  },
+  {
+    name: "Miller's Backhoe Service",
+    logo: millersLogo,
+    url: 'https://millerbackhoe.com',
+    tagline: 'One call. Serious capability.',
+    desc: 'Septic systems, trenching, drainage, and excavation out of Notasulga, Alabama.',
+    work: ['Website', 'Brand identity'],
+  },
+  {
+    name: 'Ford Paving & Sealing',
+    logo: fordLogo,
+    url: 'https://fordpaving.com',
+    tagline: 'Built smooth. Finished sharp.',
+    desc: 'Asphalt paving, sealcoating, striping, driveways, and parking lots across Central Alabama.',
+    work: ['Website', 'Branding'],
+  },
+  {
+    name: 'Beehive Stars Baseball',
+    logo: beehiveLogo,
+    url: 'https://beehivestars.com',
+    tagline: 'Built for the Next Level.',
+    desc: 'Travel baseball and softball, player development, tryouts, and online team registration.',
+    work: ['Website', 'Branding', 'Registration system'],
+  },
+];
+---
+
+<Base
+  title="Work | Taylormade Brands"
+  description="View Taylormade Brands work examples including websites, branding, Google Business Profile support, Google Ads, print materials, and growth systems."
+>
+  <main>
+    <section class="work-hero improved-work-hero" style={`--hero-bg: url(${hero.src})`}>
+      <div class="container work-hero-grid">
+        <div>
+          <p class="eyebrow">Selected Work</p>
+          <h1>Marketing assets built to make local businesses look sharper and get found.</h1>
+          <p>
+            Websites, Google tools, print materials, review systems, and brand touchpoints built around real business growth.
+          </p>
+
+          <div class="button-row">
+            <a href="/ao-case-study.html" class="button primary">View Case Study</a>
+            <a href="/growth-assessment.html" class="button secondary">Start Assessment</a>
+          </div>
+        </div>
+
+        <div class="work-hero-card">
+          <h3>A&amp;O Tree Service</h3>
+          <p>A complete local growth project.</p>
+          <ul>
+            <li>Website</li>
+            <li>Google Business Profile</li>
+            <li>Google Ads</li>
+            <li>Review System</li>
+            <li>Print Materials</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section clients-section">
+      <div class="container">
+        <div class="section-heading">
+          <p class="eyebrow dark">Recent Projects</p>
+          <h2>Local businesses I've helped look sharper and get found.</h2>
+          <p>New brands, new websites, and growth systems built for real companies across Alabama.</p>
+        </div>
+
+        <div class="clients-grid">
+          {clients.map((c) => (
+            <a class="client-card" href={c.url} target="_blank" rel="noopener">
+              <div class="client-logo">
+                <Image src={c.logo} alt={`${c.name} logo`} width={420} />
+              </div>
+              <div class="client-body">
+                <h3>{c.name}</h3>
+                <p class="client-tag">{c.tagline}</p>
+                <p class="client-desc">{c.desc}</p>
+                <div class="client-work">
+                  {c.work.map((w) => <span>{w}</span>)}
+                </div>
+                <span class="client-link">Visit site →</span>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="section results-band">
+      <div class="container">
+        <div class="section-heading">
+          <p class="eyebrow">The Impact</p>
+          <h2>The systems I build are made to bring in real business.</h2>
+          <p>I don't just build things that look good. I build them to generate leads — and for the businesses
+            I work with, that has added up to hundreds of thousands of dollars in new work.</p>
+        </div>
+
+        <div class="results-stats">
+          <div class="result-stat">
+            <span class="result-number">$300K+</span>
+            <p>in new business landed by local clients after launching their growth systems</p>
+          </div>
+          <div class="result-stat">
+            <span class="result-number">Booked months out</span>
+            <p>demand so strong that clients have hired new employees to keep up</p>
+          </div>
+          <div class="result-stat">
+            <span class="result-number">Most leads from search</span>
+            <p>for some clients, almost every new customer now comes straight from their website and Google</p>
+          </div>
+        </div>
+
+        <p class="results-quote">One client called just to say thank you. Another told me their office is
+          &ldquo;tired of answering the phone.&rdquo; That's the kind of problem I like to create.</p>
+
+        <p class="results-disclaimer">Results reflect outcomes reported by clients and vary by business. Individual results are not guaranteed.</p>
+      </div>
+    </section>
+
+    <section class="section work-category-section">
+      <div class="container">
+        <div class="section-heading">
+          <p class="eyebrow dark">Work Categories</p>
+          <h2>Everything works better when it works together.</h2>
+        </div>
+
+        <div class="work-category-grid">
+          <div class="work-category-card">
+            <span>01</span>
+            <h3>Websites</h3>
+            <p>Lead-focused pages built around services, trust, and contact.</p>
+          </div>
+
+          <div class="work-category-card">
+            <span>02</span>
+            <h3>Google Growth</h3>
+            <p>Google Business Profile and ads support for local search visibility.</p>
+          </div>
+
+          <div class="work-category-card">
+            <span>03</span>
+            <h3>Branding</h3>
+            <p>Business cards, review cards, estimates, and customer materials.</p>
+          </div>
+
+          <div class="work-category-card">
+            <span>04</span>
+            <h3>Growth Systems</h3>
+            <p>Simple marketing pieces that support leads, reviews, and follow-up.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section work-section">
+      <div class="container">
+        <div class="section-heading">
+          <p class="eyebrow dark">Websites</p>
+          <h2>Built to turn visitors into leads.</h2>
+        </div>
+
+        <div class="work-grid">
+          <article class="work-card large">
+            <Image src={aoWebsite} alt="A&O Tree Service website homepage" width={1100} />
+            <div class="work-card-content">
+              <h3>A&amp;O Website Homepage</h3>
+              <p>Service-focused homepage with clear calls to action and local credibility.</p>
+            </div>
+          </article>
+
+          <article class="work-card">
+            <Image src={aoContact} alt="A&O Tree Service contact page" width={720} />
+            <div class="work-card-content">
+              <h3>Lead Form Page</h3>
+              <p>Simple form built to capture service inquiries.</p>
+            </div>
+          </article>
+
+          <article class="work-card">
+            <Image src={aoServices} alt="A&O Tree Service services page" width={720} />
+            <div class="work-card-content">
+              <h3>Services Page</h3>
+              <p>Clear service structure for customers comparing options.</p>
+            </div>
+          </article>
+
+          <article class="work-card">
+            <Image src={aoMobile} alt="A&O Tree Service mobile website" width={720} />
+            <div class="work-card-content">
+              <h3>Mobile Layout</h3>
+              <p>Built for customers searching from their phones.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section work-section light-work">
+      <div class="container">
+        <div class="section-heading">
+          <p class="eyebrow dark">Google Growth</p>
+          <h2>Visibility and trust where customers search first.</h2>
+        </div>
+
+        <div class="work-grid two-column">
+          <article class="work-card">
+            <Image src={aoGoogleProfile} alt="A&O Tree Service Google Business Profile" width={720} />
+            <div class="work-card-content">
+              <h3>Google Business Profile</h3>
+              <p>Profile support to strengthen local visibility and trust.</p>
+            </div>
+          </article>
+
+          <article class="work-card">
+            <Image src={aoGoogleAds} alt="A&O Tree Service Google Ads dashboard" width={720} />
+            <div class="work-card-content">
+              <h3>Google Ads</h3>
+              <p>Local search campaign support focused on service leads.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section work-section">
+      <div class="container">
+        <div class="section-heading">
+          <p class="eyebrow dark">Branding &amp; Print</p>
+          <h2>Customer touchpoints that build confidence.</h2>
+        </div>
+
+        <div class="work-grid three-column">
+          <article class="work-card">
+            <Image src={aoBusinessCard} alt="A&O Tree Service business card" width={600} />
+            <div class="work-card-content">
+              <h3>Business Card</h3>
+              <p>Clean contact piece for referrals and customer conversations.</p>
+            </div>
+          </article>
+
+          <article class="work-card">
+            <Image src={aoReviewCard} alt="A&O Tree Service review card" width={600} />
+            <div class="work-card-content">
+              <h3>Review Card</h3>
+              <p>QR-based review tool to help build Google trust.</p>
+            </div>
+          </article>
+
+          <article class="work-card">
+            <Image src={aoEstimate} alt="A&O Tree Service estimate sheet" width={600} />
+            <div class="work-card-content">
+              <h3>Estimate Sheet</h3>
+              <p>Professional quoting material that reinforces credibility.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section featured-work">
+      <div class="container featured-work-grid">
+        <div>
+          <p class="eyebrow">Featured Project</p>
+          <h2>A&amp;O Tree Service Case Study</h2>
+          <p>
+            A complete local business growth project covering website launch,
+            Google presence, Google Ads, print materials, review generation,
+            and lead capture.
+          </p>
+          <a href="/ao-case-study.html" class="button primary">View Full Case Study</a>
+        </div>
+
+        <div class="featured-image-wrap">
+          <Image src={aoWorkPhoto} alt="A&O Tree Service work example" width={900} />
+        </div>
+      </div>
+    </section>
+
+    <section class="section cta-section">
+      <div class="container narrow">
+        <p class="eyebrow">Start Here</p>
+        <h2>Want your business to look sharper and get found?</h2>
+        <p>
+          Start with the growth assessment. I'll review your website, Google presence,
+          branding, reviews, and lead flow.
+        </p>
+        <a href="/growth-assessment.html" class="button primary">Start Assessment</a>
+      </div>
+    </section>
+  </main>
+
+  <style>
+    .clients-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 28px;
+      margin-top: 48px;
+    }
+    .client-card {
+      display: flex;
+      flex-direction: column;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      text-decoration: none;
+      color: var(--black);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .client-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 18px 40px rgba(8, 26, 51, 0.12);
+      border-color: var(--navy);
+    }
+    .client-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 150px;
+      padding: 26px;
+      background: var(--light);
+      border-bottom: 1px solid var(--border);
+    }
+    .client-logo :global(img) {
+      max-height: 98px;
+      width: auto;
+      object-fit: contain;
+    }
+    .client-body {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 26px 26px 28px;
+    }
+    .client-body h3 {
+      color: var(--navy);
+      font-size: 1.3rem;
+    }
+    .client-tag {
+      color: var(--gold);
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .client-desc {
+      color: var(--gray);
+      font-size: 0.95rem;
+      line-height: 1.55;
+    }
+    .client-work {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .client-work span {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--navy);
+      background: rgba(19, 41, 75, 0.07);
+      border-radius: 999px;
+      padding: 5px 12px;
+    }
+    .client-link {
+      margin-top: 14px;
+      color: var(--navy);
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .client-card:hover .client-link {
+      color: var(--gold);
+    }
+
+    /* Results / impact band */
+    .results-band {
+      background: var(--navy-dark);
+      color: var(--white);
+    }
+    .results-band .section-heading h2 {
+      color: var(--white);
+    }
+    .results-band .section-heading p {
+      color: rgba(255, 255, 255, 0.82);
+    }
+    .results-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin: 48px 0 8px;
+    }
+    .result-stat {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      padding: 32px 26px;
+      text-align: center;
+    }
+    .result-number {
+      display: block;
+      color: var(--gold);
+      font-size: 1.9rem;
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 12px;
+    }
+    .result-stat p {
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 0.95rem;
+      line-height: 1.55;
+    }
+    .results-quote {
+      max-width: 60ch;
+      margin: 40px auto 0;
+      text-align: center;
+      font-size: 1.15rem;
+      line-height: 1.6;
+      color: #fff;
+    }
+    .results-disclaimer {
+      max-width: 60ch;
+      margin: 20px auto 0;
+      text-align: center;
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.5);
+    }
+    @media (max-width: 780px) {
+      .results-stats { grid-template-columns: 1fr; }
+    }
+  </style>
+</Base>

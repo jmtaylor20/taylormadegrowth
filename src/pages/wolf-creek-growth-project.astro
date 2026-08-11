@@ -1,45 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+---
+import Base from '../layouts/Base.astro';
+import { Image, getImage } from 'astro:assets';
+import heroSrc from '../assets/wolfcreek_hero.png';
+import wcLogo from '../assets/wolfcreek_logo.png';
+import wcWebsite from '../assets/wolfcreek_website.png';
+import wcBusinessCard from '../assets/wolfcreek_business_card.png';
+import wcTailgate from '../assets/wolfcreek_tailgate_wrap.png';
+import wcSocial from '../assets/wolfcreek_social_post.png';
+import wcBadge from '../assets/wolf-creek-badge-logo.png';
+import wcWorkPhoto from '../assets/wolfcreek_work_photo.png';
 
-  <link rel="icon" type="image/png" sizes="32x32" href="TMB_favicon_32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="TMB_favicon_16.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="TMB_favicon_180.png">
+const hero = await getImage({ src: heroSrc, format: 'webp', width: 1600 });
+---
 
-  <title>Wolf Creek Farms Growth Project | Taylormade Brands</title>
-  <meta name="description" content="See how Taylormade Brands partnered with Wolf Creek Farms to build a stronger brand, website, print materials, and growth foundation." />
-
-  <link rel="stylesheet" href="style.css" />
-</head>
-
-<body>
-  <header class="site-header">
-    <div class="container nav-wrap">
-      <a href="index.html" class="logo-link">
-        <img src="TMB_Horizontal_Logo.png" alt="Taylormade Brands logo" class="site-logo" />
-      </a>
-
-      <button class="mobile-menu-toggle" aria-label="Open menu">☰</button>
-
-      <nav class="site-nav">
-      <a href="index.html">Home</a>
-      <a href="services.html">Services</a>
-      <a href="portfolio.html">Portfolio</a>
-      <a href="work.html">Work</a>
-      <a href="ao-case-study.html">AO Trees Project</a>
-      <a href="wolf-creek-growth-project.html">Wolf Creek Project</a>
-      <a href="growth-assessment.html">Assessment</a>
-      <a href="about.html">About</a>
-      <a href="contact.html" class="nav-button">Contact</a>
-    </nav>
-    </div>
-  </header>
-
+<Base
+  title="Wolf Creek Farms Growth Project | Taylormade Brands"
+  description="See how Taylormade Brands partnered with Wolf Creek Farms to build a stronger brand, website, print materials, and growth foundation."
+>
   <main>
-
-    <section class="wolf-hero">
+    <section class="wolf-hero" style={`--hero-bg: url(${hero.src})`}>
       <div class="container wolf-hero-grid">
         <div>
           <p class="eyebrow">Growth Project</p>
@@ -50,13 +29,13 @@
           </p>
 
           <div class="button-row">
-            <a href="growth-assessment.html" class="button primary">Start Assessment</a>
-            <a href="portfolio.html" class="button secondary">View Portfolio</a>
+            <a href="/growth-assessment.html" class="button primary">Start Assessment</a>
+            <a href="/portfolio.html" class="button secondary">View Portfolio</a>
           </div>
         </div>
 
         <div class="wolf-hero-card">
-          <img src="wolfcreek_logo.png" alt="Wolf Creek Farms logo">
+          <Image src={wcLogo} alt="Wolf Creek Farms logo" width={400} />
           <h3>Project Included</h3>
           <ul>
             <li>Complete Rebrand</li>
@@ -131,57 +110,55 @@
     </section>
 
     <section class="section wolf-gallery-section">
-  <div class="container">
-    <div class="section-heading">
-      <p class="eyebrow dark">Brand Gallery</p>
-      <h2>Visual pieces designed to make the company look established.</h2>
-    </div>
-
-    <div class="wolf-gallery-grid">
-
-      <article class="wolf-gallery-item website-feature">
-        <img src="wolfcreek_website.png" alt="Wolf Creek Farms website screenshot">
-        <div>
-          <h3>Website</h3>
-          <p>A cleaner digital home for land clearing, land management, road building, drainage, and related services.</p>
+      <div class="container">
+        <div class="section-heading">
+          <p class="eyebrow dark">Brand Gallery</p>
+          <h2>Visual pieces designed to make the company look established.</h2>
         </div>
-      </article>
 
-      <article class="wolf-gallery-item">
-        <img src="wolfcreek_business_card.png" alt="Wolf Creek Farms business card">
-        <div>
-          <h3>Business Card</h3>
-          <p>Professional contact piece for estimates, referrals, and customer conversations.</p>
+        <div class="wolf-gallery-grid">
+          <article class="wolf-gallery-item website-feature">
+            <Image src={wcWebsite} alt="Wolf Creek Farms website screenshot" width={1100} />
+            <div>
+              <h3>Website</h3>
+              <p>A cleaner digital home for land clearing, land management, road building, drainage, and related services.</p>
+            </div>
+          </article>
+
+          <article class="wolf-gallery-item">
+            <Image src={wcBusinessCard} alt="Wolf Creek Farms business card" width={720} />
+            <div>
+              <h3>Business Card</h3>
+              <p>Professional contact piece for estimates, referrals, and customer conversations.</p>
+            </div>
+          </article>
+
+          <article class="wolf-gallery-item">
+            <Image src={wcTailgate} alt="Wolf Creek Farms tailgate wrap concept" width={720} />
+            <div>
+              <h3>Tailgate Wrap</h3>
+              <p>Vehicle branding concept built for high local visibility.</p>
+            </div>
+          </article>
+
+          <article class="wolf-gallery-item">
+            <Image src={wcSocial} alt="Wolf Creek Farms social media graphic" width={720} />
+            <div>
+              <h3>Social Launch Graphic</h3>
+              <p>Branded content to help introduce the new direction online.</p>
+            </div>
+          </article>
+
+          <article class="wolf-gallery-item">
+            <Image src={wcBadge} alt="Wolf Creek Farms logo" width={720} />
+            <div>
+              <h3>Logo System</h3>
+              <p>A stronger mark built around land, timber, equipment, and trust.</p>
+            </div>
+          </article>
         </div>
-      </article>
-
-      <article class="wolf-gallery-item">
-        <img src="wolfcreek_tailgate_wrap.png" alt="Wolf Creek Farms tailgate wrap concept">
-        <div>
-          <h3>Tailgate Wrap</h3>
-          <p>Vehicle branding concept built for high local visibility.</p>
-        </div>
-      </article>
-
-      <article class="wolf-gallery-item">
-        <img src="wolfcreek_social_post.png" alt="Wolf Creek Farms social media graphic">
-        <div>
-          <h3>Social Launch Graphic</h3>
-          <p>Branded content to help introduce the new direction online.</p>
-        </div>
-      </article>
-
-      <article class="wolf-gallery-item">
-        <img src="wolf-creek-badge-logo.png" alt="Wolf Creek Farms logo">
-        <div>
-          <h3>Logo System</h3>
-          <p>A stronger mark built around land, timber, equipment, and trust.</p>
-        </div>
-      </article>
-
-    </div>
-  </div>
-</section>
+      </div>
+    </section>
 
     <section class="section wolf-showcase-section">
       <div class="container wolf-showcase-grid">
@@ -193,11 +170,11 @@
             and reach out for work related to land clearing, land preparation, road building, drainage,
             house pads, RV lots, fire breaks, hunting land development, pond building, and clay gravel.
           </p>
-          <a href="growth-assessment.html" class="button primary">Start Your Growth Assessment</a>
+          <a href="/growth-assessment.html" class="button primary">Start Your Growth Assessment</a>
         </div>
 
         <div class="wolf-showcase-image">
-          <img src="wolfcreek_work_photo.png" alt="Wolf Creek Farms work photo">
+          <Image src={wcWorkPhoto} alt="Wolf Creek Farms work photo" width={900} />
         </div>
       </div>
     </section>
@@ -227,22 +204,11 @@
         <p class="eyebrow">Start Here</p>
         <h2>Ready to modernize your business?</h2>
         <p>
-          Take the growth assessment and I’ll review your website, Google presence,
+          Take the growth assessment and I'll review your website, Google presence,
           branding, reviews, and lead flow.
         </p>
-        <a href="growth-assessment.html" class="button primary">Start Assessment</a>
+        <a href="/growth-assessment.html" class="button primary">Start Assessment</a>
       </div>
     </section>
-
   </main>
-
-  <footer class="site-footer">
-    <div class="container footer-wrap">
-      <img src="TMB_Stacked_White_Logo.png" alt="Taylormade Brands logo" class="footer-logo" />
-      <p>© 2026 Taylormade Brands. Built for local business growth.</p>
-    </div>
-  </footer>
-
-  <script src="main.js"></script>
-</body>
-</html>
+</Base>

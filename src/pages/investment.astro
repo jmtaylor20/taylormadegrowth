@@ -1,44 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+---
+import Base from '../layouts/Base.astro';
+---
 
-  <link rel="icon" type="image/png" sizes="32x32" href="TMB_favicon_32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="TMB_favicon_16.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="TMB_favicon_180.png">
-
-  <title>Investment | Taylormade Brands</title>
-  <meta name="description" content="Explore Taylormade Brands investment options for websites, branding, Shopify, Google growth, marketing systems, and ongoing business support." />
-
-  <link rel="stylesheet" href="style.css" />
-</head>
-
-<body class="investment-page-simplified">
-  <header class="site-header">
-    <div class="container nav-wrap">
-      <a href="index.html" class="logo-link">
-        <img src="TMB_Horizontal_Logo.png" alt="Taylormade Brands logo" class="site-logo" />
-      </a>
-
-      <button class="mobile-menu-toggle" aria-label="Open menu">☰</button>
-
-      <nav class="site-nav">
-      <a href="index.html">Home</a>
-      <a href="services.html">Services</a>
-      <a href="investment.html">Investment</a>
-      <a href="portfolio.html">Portfolio</a>
-      <a href="ao-case-study.html">AO Trees Project</a>
-      <a href="wolf-creek-growth-project.html">Wolf Creek Project</a>
-      <a href="growth-assessment.html">Assessment</a>
-      <a href="about.html">About</a>
-      <a href="contact.html" class="nav-button">Contact</a>
-    </nav>
-    </div>
-  </header>
-
+<Base
+  title="Investment | Taylormade Brands"
+  description="Explore Taylormade Brands investment options for websites, branding, Shopify, Google growth, marketing systems, and ongoing business support."
+  bodyClass="investment-page-simplified"
+>
   <main>
-
     <section class="investment-hero">
       <div class="container investment-hero-content">
         <p class="eyebrow">Investment</p>
@@ -49,7 +18,7 @@
         </p>
 
         <div class="button-row">
-          <a href="contact.html" class="button gold-button">Schedule a Free Strategy Session</a>
+          <a href="/contact.html" class="button gold-button">Schedule a Free Strategy Session</a>
           <a href="#plans" class="button outline-light">Explore Plans</a>
         </div>
       </div>
@@ -87,7 +56,6 @@
         </div>
 
         <div class="investment-card-grid">
-
           <article class="investment-card">
             <div class="plan-icon">🌱</div>
             <h3>Launch</h3>
@@ -110,7 +78,7 @@
               <strong>Essential Care · $250/month</strong>
             </div>
 
-            <a href="contact.html" class="button navy-button">Launch My Brand</a>
+            <a href="/contact.html" class="button navy-button">Launch My Brand</a>
           </article>
 
           <article class="investment-card featured-investment-card">
@@ -136,7 +104,7 @@
               <strong>Growth Care · $800/month</strong>
             </div>
 
-            <a href="contact.html" class="button gold-button">Grow My Business</a>
+            <a href="/contact.html" class="button gold-button">Grow My Business</a>
           </article>
 
           <article class="investment-card">
@@ -162,9 +130,8 @@
               <strong>Market Leader · $1,500/month</strong>
             </div>
 
-            <a href="contact.html" class="button navy-button">Request Proposal</a>
+            <a href="/contact.html" class="button navy-button">Request Proposal</a>
           </article>
-
         </div>
       </div>
     </section>
@@ -306,7 +273,7 @@
           <h3>Not sure which package fits your business?</h3>
           <p>
             Every advanced feature, integration, product catalog, and campaign is scoped before work begins.
-            Schedule a free strategy session and we’ll recommend the right starting point.
+            Schedule a free strategy session and we'll recommend the right starting point.
           </p>
         </div>
       </div>
@@ -315,7 +282,7 @@
     <section class="section shopify-section">
       <div class="container">
         <div class="section-heading">
-          <p class="eyebrow">E-Commerce & Shopify</p>
+          <p class="eyebrow">E-Commerce &amp; Shopify</p>
           <h2>Online stores need more than a website.</h2>
           <p>
             Shopify projects include store structure, products, payments, shipping, taxes,
@@ -429,70 +396,68 @@
       </div>
     </section>
 
-<section class="section worth-section">
-  <div class="container">
-    <div class="section-heading">
-      <p class="eyebrow dark">What Is Your Marketing Worth?</p>
-      <h2>Most businesses compare price. Smart businesses compare value.</h2>
-      <p>
-        A website alone is one piece. A growth system connects the pieces that actually help your business earn trust, get found, and turn interest into leads.
-      </p>
-    </div>
+    <section class="section worth-section">
+      <div class="container">
+        <div class="section-heading">
+          <p class="eyebrow dark">What Is Your Marketing Worth?</p>
+          <h2>Most businesses compare price. Smart businesses compare value.</h2>
+          <p>
+            A website alone is one piece. A growth system connects the pieces that actually help your business earn trust, get found, and turn interest into leads.
+          </p>
+        </div>
 
-    <div class="worth-compare-grid">
+        <div class="worth-compare-grid">
+          <article class="worth-card worth-them">
+            <h3>What Others Usually Sell</h3>
+            <p class="worth-label">Basic Website Package</p>
+            <ul>
+              <li>Website pages</li>
+              <li>Basic contact form</li>
+              <li>Generic layout</li>
+              <li>Little strategy</li>
+              <li>No real growth system</li>
+            </ul>
+          </article>
 
-      <article class="worth-card worth-them">
-        <h3>What Others Usually Sell</h3>
-        <p class="worth-label">Basic Website Package</p>
-        <ul>
-          <li>Website pages</li>
-          <li>Basic contact form</li>
-          <li>Generic layout</li>
-          <li>Little strategy</li>
-          <li>No real growth system</li>
-        </ul>
-      </article>
+          <article class="worth-card worth-us">
+            <h3>What Taylormade Builds</h3>
+            <p class="worth-label">Complete Growth System</p>
+            <ul>
+              <li>Professional website</li>
+              <li>Brand identity</li>
+              <li>Google Business Profile</li>
+              <li>Google Ads foundation</li>
+              <li>Local SEO structure</li>
+              <li>Marketing materials</li>
+              <li>Lead capture strategy</li>
+            </ul>
+          </article>
 
-      <article class="worth-card worth-us">
-        <h3>What Taylormade Builds</h3>
-        <p class="worth-label">Complete Growth System</p>
-        <ul>
-          <li>Professional website</li>
-          <li>Brand identity</li>
-          <li>Google Business Profile</li>
-          <li>Google Ads foundation</li>
-          <li>Local SEO structure</li>
-          <li>Marketing materials</li>
-          <li>Lead capture strategy</li>
-        </ul>
-      </article>
+          <article class="worth-card worth-them">
+            <h3>Typical Retail Value</h3>
+            <p class="worth-number">$8,000–25,000+</p>
+            <p>
+              When purchased separately through multiple vendors, the retail value of these services can add up fast.
+            </p>
+          </article>
 
-      <article class="worth-card worth-them">
-        <h3>Typical Retail Value</h3>
-        <p class="worth-number">$8,000–25,000+</p>
-        <p>
-          When purchased separately through multiple vendors, the retail value of these services can add up fast.
-        </p>
-      </article>
+          <article class="worth-card worth-us worth-featured">
+            <h3>Your Taylormade Investment</h3>
+            <p class="worth-number">Starting at $2,000</p>
+            <p>
+              You get a connected system, one clear partner, and a value report showing what was built and what it is worth.
+            </p>
+          </article>
+        </div>
 
-      <article class="worth-card worth-us worth-featured">
-        <h3>Your Taylormade Investment</h3>
-        <p class="worth-number">Starting at $2,000</p>
-        <p>
-          You get a connected system, one clear partner, and a value report showing what was built and what it is worth.
-        </p>
-      </article>
-
-    </div>
-
-    <div class="worth-summary">
-      <h3>The point is not cheaper work. The point is smarter value.</h3>
-      <p>
-        Every project includes a personalized Taylormade Value Report documenting the retail value of services delivered, completed work, and measurable progress over time.
-      </p>
-    </div>
-  </div>
-</section>
+        <div class="worth-summary">
+          <h3>The point is not cheaper work. The point is smarter value.</h3>
+          <p>
+            Every project includes a personalized Taylormade Value Report documenting the retail value of services delivered, completed work, and measurable progress over time.
+          </p>
+        </div>
+      </div>
+    </section>
 
     <section class="section difference-section">
       <div class="container">
@@ -522,22 +487,11 @@
       <div class="container narrow">
         <h2>Ready to Build a Brand That Works as Hard as You Do?</h2>
         <p>
-          Let’s create a marketing system that attracts customers, builds trust,
+          Let's create a marketing system that attracts customers, builds trust,
           and helps your business grow for years to come.
         </p>
-        <a href="contact.html" class="button gold-button">Schedule Your Free Strategy Session</a>
+        <a href="/contact.html" class="button gold-button">Schedule Your Free Strategy Session</a>
       </div>
     </section>
-
   </main>
-
-  <footer class="site-footer">
-    <div class="container footer-wrap">
-      <img src="TMB_Stacked_White_Logo.png" alt="Taylormade Brands logo" class="footer-logo" />
-      <p>© 2026 Taylormade Brands. Built for local business growth.</p>
-    </div>
-  </footer>
-
-  <script src="main.js"></script>
-</body>
-</html>
+</Base>

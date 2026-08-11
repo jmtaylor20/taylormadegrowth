@@ -1,0 +1,213 @@
+---
+import Base from '../layouts/Base.astro';
+import { Image, getImage } from 'astro:assets';
+import heroSrc from '../assets/TMB_Hero.png';
+import rhinoLogo from '../assets/clients/rhino-landworks.png';
+import millersLogo from '../assets/clients/millers-backhoe.png';
+import fordLogo from '../assets/clients/ford-paving.png';
+import beehiveLogo from '../assets/clients/beehive-stars.png';
+
+const hero = await getImage({ src: heroSrc, format: 'webp', width: 1600 });
+
+const clientLogos = [
+  { src: rhinoLogo, name: 'Rhino Landworks' },
+  { src: millersLogo, name: "Miller's Backhoe Service" },
+  { src: fordLogo, name: 'Ford Paving & Sealing' },
+  { src: beehiveLogo, name: 'Beehive Stars Baseball' },
+];
+---
+
+<Base
+  title="Taylormade Brands | Local Business Growth Systems"
+  description="Taylormade Brands helps local businesses grow through websites, branding, Google Business Profile support, ads, and practical marketing systems."
+>
+  <main>
+    <section class="hero" style={`--hero-bg: url(${hero.src})`}>
+      <div class="container hero-grid">
+        <div class="hero-content">
+          <p class="eyebrow">Local Business Growth Systems</p>
+
+          <h1>Helping local businesses look sharper, get found, and grow.</h1>
+
+          <p class="hero-text">
+            Taylormade Brands builds websites, branding, Google Business Profiles,
+            ads, and follow-up systems for business owners who need practical growth,
+            not marketing fluff.
+          </p>
+
+          <div class="button-row">
+            <a href="/growth-assessment.html" class="button primary">Start Assessment</a>
+            <a href="/work.html" class="button secondary">View My Work</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section intro-section">
+      <div class="container narrow">
+        <p class="eyebrow dark">What I Help Fix</p>
+
+        <h2>Your business may be good, but your marketing may not show it.</h2>
+
+        <p>
+          A lot of local businesses do quality work but lose leads because their online presence
+          is scattered, outdated, or hard to trust. I help clean that up and turn it into a simple
+          growth system.
+        </p>
+      </div>
+    </section>
+
+    <section class="section proof-section">
+      <div class="container proof-grid">
+        <div class="proof-card dark-card">
+          <p class="eyebrow">The Problem</p>
+          <h2>Good businesses lose leads when trust is unclear.</h2>
+          <p>
+            Customers judge your business before they call. Your website, Google profile,
+            reviews, photos, branding, and follow-up all work together.
+          </p>
+        </div>
+
+        <div class="proof-card">
+          <span class="proof-number">01</span>
+          <h3>Look professional</h3>
+          <p>Branding, graphics, signs, cards, and a website that match the quality of your work.</p>
+        </div>
+
+        <div class="proof-card">
+          <span class="proof-number">02</span>
+          <h3>Get found</h3>
+          <p>Google Business Profile, service pages, reviews, and ads built around real local searches.</p>
+        </div>
+
+        <div class="proof-card">
+          <span class="proof-number">03</span>
+          <h3>Turn interest into leads</h3>
+          <p>Contact forms, calls, QR codes, review systems, and simple follow-up that keep leads moving.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section cards-section">
+      <div class="container">
+        <div class="section-heading">
+          <p class="eyebrow dark">Services</p>
+          <h2>Built around what local businesses actually need.</h2>
+        </div>
+
+        <div class="card-grid">
+          <div class="service-card">
+            <h3>Websites</h3>
+            <p>Clean, mobile-friendly websites built to explain your services and help customers contact you.</p>
+          </div>
+
+          <div class="service-card">
+            <h3>Branding</h3>
+            <p>Logos, brand kits, business cards, signs, review cards, and materials that make you look established.</p>
+          </div>
+
+          <div class="service-card">
+            <h3>Google Growth</h3>
+            <p>Google Business Profile setup, review systems, service pages, and Google Ads support.</p>
+          </div>
+
+          <div class="service-card">
+            <h3>Marketing Systems</h3>
+            <p>Simple plans for leads, follow-up, content, referrals, seasonal pushes, and customer trust.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section case-preview">
+      <div class="container case-grid">
+        <div>
+          <p class="eyebrow dark">Featured Work</p>
+          <h2>A&amp;O Tree Service</h2>
+          <p>
+            A local service business needed a stronger online presence, cleaner branding,
+            better customer touchpoints, and a system for generating more leads.
+          </p>
+          <a href="/ao-case-study.html" class="text-link">View the case study →</a>
+        </div>
+
+        <div class="case-box">
+          <h3>Work Included</h3>
+          <ul>
+            <li>Website launch</li>
+            <li>Google Business Profile support</li>
+            <li>Google Ads launch</li>
+            <li>Review card with QR code</li>
+            <li>Business cards and print materials</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section clients-strip">
+      <div class="container">
+        <p class="eyebrow dark">Recent Work</p>
+        <h2 class="clients-strip-title">Local businesses growing with Taylormade.</h2>
+        <p class="clients-strip-stat"><strong>$300K+</strong> in new business generated for local clients — booked months out, with most leads coming straight from Google.</p>
+        <div class="clients-strip-logos">
+          {clientLogos.map((c) => <Image src={c.src} alt={`${c.name} logo`} width={260} />)}
+        </div>
+        <a href="/work.html" class="text-link">See recent projects →</a>
+      </div>
+    </section>
+
+    <section class="section cta-section">
+      <div class="container narrow">
+        <p class="eyebrow">Start Here</p>
+        <h2>Want to know what your business needs first?</h2>
+        <p>
+          Fill out the growth assessment. I'll review where you are, what's missing,
+          and what would make the biggest difference first.
+        </p>
+        <a href="/growth-assessment.html" class="button primary">Take the Assessment</a>
+      </div>
+    </section>
+  </main>
+
+  <style>
+    .clients-strip {
+      text-align: center;
+    }
+    .clients-strip-title {
+      margin-bottom: 14px;
+    }
+    .clients-strip-stat {
+      max-width: 62ch;
+      margin: 0 auto 36px;
+      color: var(--gray);
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+    .clients-strip-stat strong {
+      color: var(--navy);
+      font-weight: 700;
+    }
+    .clients-strip-logos {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 40px 56px;
+      margin-bottom: 28px;
+    }
+    .clients-strip-logos :global(img) {
+      height: 64px;
+      width: auto;
+      object-fit: contain;
+      opacity: 0.85;
+      transition: opacity 0.2s ease;
+    }
+    .clients-strip-logos :global(img:hover) {
+      opacity: 1;
+    }
+    @media (max-width: 640px) {
+      .clients-strip-logos { gap: 28px 36px; }
+      .clients-strip-logos :global(img) { height: 48px; }
+    }
+  </style>
+</Base>
