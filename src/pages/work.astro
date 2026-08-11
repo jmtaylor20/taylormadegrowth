@@ -120,6 +120,37 @@ const clients = [
       </div>
     </section>
 
+    <section class="section results-band">
+      <div class="container">
+        <div class="section-heading">
+          <p class="eyebrow">The Impact</p>
+          <h2>The systems I build are made to bring in real business.</h2>
+          <p>I don't just build things that look good. I build them to generate leads — and for the businesses
+            I work with, that has added up to hundreds of thousands of dollars in new work.</p>
+        </div>
+
+        <div class="results-stats">
+          <div class="result-stat">
+            <span class="result-number">$300K+</span>
+            <p>in new business landed by local clients after launching their growth systems</p>
+          </div>
+          <div class="result-stat">
+            <span class="result-number">Booked months out</span>
+            <p>demand so strong that clients have hired new employees to keep up</p>
+          </div>
+          <div class="result-stat">
+            <span class="result-number">Most leads from search</span>
+            <p>for some clients, almost every new customer now comes straight from their website and Google</p>
+          </div>
+        </div>
+
+        <p class="results-quote">One client called just to say thank you. Another told me their office is
+          &ldquo;tired of answering the phone.&rdquo; That's the kind of problem I like to create.</p>
+
+        <p class="results-disclaimer">Results reflect outcomes reported by clients and vary by business. Individual results are not guaranteed.</p>
+      </div>
+    </section>
+
     <section class="section work-category-section">
       <div class="container">
         <div class="section-heading">
@@ -371,6 +402,62 @@ const clients = [
     }
     .client-card:hover .client-link {
       color: var(--gold);
+    }
+
+    /* Results / impact band */
+    .results-band {
+      background: var(--navy-dark);
+      color: var(--white);
+    }
+    .results-band .section-heading h2 {
+      color: var(--white);
+    }
+    .results-band .section-heading p {
+      color: rgba(255, 255, 255, 0.82);
+    }
+    .results-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin: 48px 0 8px;
+    }
+    .result-stat {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      padding: 32px 26px;
+      text-align: center;
+    }
+    .result-number {
+      display: block;
+      color: var(--gold);
+      font-size: 1.9rem;
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 12px;
+    }
+    .result-stat p {
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 0.95rem;
+      line-height: 1.55;
+    }
+    .results-quote {
+      max-width: 60ch;
+      margin: 40px auto 0;
+      text-align: center;
+      font-size: 1.15rem;
+      line-height: 1.6;
+      color: #fff;
+    }
+    .results-disclaimer {
+      max-width: 60ch;
+      margin: 20px auto 0;
+      text-align: center;
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.5);
+    }
+    @media (max-width: 780px) {
+      .results-stats { grid-template-columns: 1fr; }
     }
   </style>
 </Base>

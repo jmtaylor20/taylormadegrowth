@@ -148,6 +148,7 @@ const clientLogos = [
       <div class="container">
         <p class="eyebrow dark">Recent Work</p>
         <h2 class="clients-strip-title">Local businesses growing with Taylormade.</h2>
+        <p class="clients-strip-stat"><strong>$300K+</strong> in new business generated for local clients — booked months out, with most leads coming straight from Google.</p>
         <div class="clients-strip-logos">
           {clientLogos.map((c) => <Image src={c.src} alt={`${c.name} logo`} width={260} />)}
         </div>
@@ -173,7 +174,18 @@ const clientLogos = [
       text-align: center;
     }
     .clients-strip-title {
-      margin-bottom: 36px;
+      margin-bottom: 14px;
+    }
+    .clients-strip-stat {
+      max-width: 62ch;
+      margin: 0 auto 36px;
+      color: var(--gray);
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+    .clients-strip-stat strong {
+      color: var(--navy);
+      font-weight: 700;
     }
     .clients-strip-logos {
       display: flex;
