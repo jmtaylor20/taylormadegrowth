@@ -74,7 +74,7 @@ body.locked { background: radial-gradient(120% 120% at 50% 0%, #16305a 0%, var(-
 .sidebar { display: none; }
 .main {
   min-width: 0;
-  padding: 18px 16px calc(84px + env(safe-area-inset-bottom));
+  padding: calc(16px + env(safe-area-inset-top)) 16px calc(84px + env(safe-area-inset-bottom));
   max-width: 1180px; width: 100%; margin: 0 auto;
 }
 
