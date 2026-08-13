@@ -236,19 +236,45 @@ function proposalHtml_(p, client) {
 }
 
 function invoiceHtml_(inv, client) {
-  return '<!DOCTYPE html><html><head><meta charset="utf-8">' + CSS + '</head><body>' +
-    header_('Invoice' + (inv.number ? ' ' + inv.number : '')) +
-    '<div style="display:flex;justify-content:space-between;margin-bottom:6px">' +
-      '<div><div class="muted">Bill to</div><b>' + esc_(client.business_name || '') + '</b><br>' +
-        esc_(client.contact_name || '') + '<br>' + esc_([client.city, client.state].filter(Boolean).join(', ')) + '</div>' +
-      '<div style="text-align:right"><div class="muted">Issued</div>' + esc_(inv.issued_on || '') +
-        '<div class="muted" style="margin-top:6px">Due</div>' + esc_(inv.due_on || '—') + '</div>' +
+  var LOGO = 'https://taylormadegrowth.com/app/assets/img/logo-proposal.png';
+  var cityState = [client.city, client.state].filter(Boolean).join(', ');
+  function detail(label, value) {
+    return '<div class="drow"><span class="dl">' + esc_(label) + '</span><span class="dv">' + esc_(value || '—') + '</span></div>';
+  }
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><style>' +
+    'html,body{margin:0}body{font-family:Georgia,"Times New Roman",serif;color:#1c1c1c}' +
+    '.frame{border:2px solid #dcdcdc;padding:20px 30px 22px;margin:12px}' +
+    '.top{display:flex;justify-content:space-between}' +
+    '.logo{width:238px;height:auto}' +
+    '.contact{text-align:right;font-size:12.5px;line-height:1.5;color:#2a2a2a}' +
+    '.title{text-align:center;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:27px;letter-spacing:3px;margin:6px 0 14px;color:#111}' +
+    '.sec{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:12px;letter-spacing:1.2px;color:#111;border-bottom:1.5px solid #111;padding-bottom:3px;margin:14px 0 8px}' +
+    '.cols{display:flex;justify-content:space-between}' +
+    '.col{font-size:13.5px;line-height:1.6}.col.right{text-align:right}' +
+    '.billname{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:15px}' +
+    '.drow{margin:1px 0}.dl{font-family:Arial,Helvetica,sans-serif;font-weight:bold;font-size:12px;padding-right:8px}' +
+    'table{width:100%;border-collapse:collapse;margin:16px 0}' +
+    'th,td{padding:9px 4px;border-bottom:1px solid #e0e0e0;font-size:13.5px}' +
+    'th{text-align:left;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:.04em;color:#555}' +
+    'th.r,td.r{text-align:right}' +
+    'tfoot td{font-weight:800;font-family:Arial,Helvetica,sans-serif;border-top:2px solid #111;border-bottom:0;font-size:15px}' +
+    '.pay{font-size:13px;color:#444}.foot{margin-top:20px;text-align:center;color:#888;font-size:11px;font-family:Arial}' +
+    '</style></head><body><div class="frame">' +
+    '<div class="top"><img class="logo" src="' + LOGO + '"><div class="contact">1346 Tallapoosa Street<br>Notasulga, AL 36866<br>334.391.6641<br>josh@taylormadegrowth.com</div></div>' +
+    '<div class="title">INVOICE</div>' +
+    '<div class="cols">' +
+      '<div class="col"><div class="sec" style="margin-top:0">BILL TO</div>' +
+        '<div class="billname">' + esc_(client.business_name || '') + '</div>' +
+        (client.contact_name ? esc_(client.contact_name) + '<br>' : '') + esc_(cityState) + '</div>' +
+      '<div class="col right"><div class="sec" style="margin-top:0">DETAILS</div>' +
+        detail('Invoice #', inv.number) + detail('Issued', inv.issued_on) + detail('Due', inv.due_on) + '</div>' +
     '</div>' +
-    '<table><thead><tr><th>Description</th><th style="text-align:right">Amount</th></tr></thead>' +
-    '<tbody><tr><td>' + esc_(inv.description || titleCase_(inv.type || 'Service')) + '</td><td style="text-align:right">' + money_(inv.amount) + '</td></tr></tbody>' +
-    '<tfoot><tr><td>Total due</td><td style="text-align:right">' + money_(inv.amount) + '</td></tr></tfoot></table>' +
-    (inv.method ? '<div class="muted">Payment: ' + esc_(inv.method) + '</div>' : '') +
-    footer_() + '</body></html>';
+    '<table><thead><tr><th>Description</th><th class="r">Amount</th></tr></thead>' +
+    '<tbody><tr><td>' + esc_(inv.description || titleCase_(inv.type || 'Service')) + '</td><td class="r">' + money_(inv.amount) + '</td></tr></tbody>' +
+    '<tfoot><tr><td>Total due</td><td class="r">' + money_(inv.amount) + '</td></tr></tfoot></table>' +
+    (inv.method ? '<div class="pay">Payment method: ' + esc_(inv.method) + '</div>' : '') +
+    '<div class="foot">Thank you for your business.  TaylorMade Brands · taylormadegrowth.com</div>' +
+    '</div></body></html>';
 }
 
 function header_(right) {
