@@ -173,7 +173,8 @@ function showLock() {
   let entry = '';
   const paint = () => { clear(dots); for (let i = 0; i < 4; i++) dots.append(el('span.pin-dot' + (i < entry.length ? '.on' : ''))); };
   const check = () => {
-    if (entry === String(APP_PIN)) { try { localStorage.setItem('tmg_unlocked', '1'); } catch {} boot(); }
+    // No persisted unlock — the PIN is required every time the app is opened.
+    if (entry === String(APP_PIN)) { boot(); }
     else { wrap.classList.add('shake'); title.textContent = 'Wrong PIN — try again'; entry = ''; paint(); setTimeout(() => wrap.classList.remove('shake'), 420); }
   };
   const press = (n) => { if (entry.length >= 4) return; entry += n; paint(); if (entry.length === 4) setTimeout(check, 130); };
@@ -187,6 +188,6 @@ function showLock() {
   root.append(shell);
 }
 
-let unlocked = false;
-try { unlocked = localStorage.getItem('tmg_unlocked') === '1'; } catch {}
-if (unlocked) boot(); else showLock();
+// Always start locked — the PIN is required on every launch.
+try { localStorage.removeItem('tmg_unlocked'); } catch {}
+showLock();
