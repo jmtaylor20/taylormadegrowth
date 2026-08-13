@@ -1,0 +1,83 @@
+// Supabase data layer for TaylorMade Growth.
+// One thin generic CRUD wrapper + a handful of purpose-built loaders.
+// The Supabase client is loaded via a classic <script> in index.html (vendored
+// locally at assets/vendor/supabase.js) and exposed as window.supabase.
+import { SUPABASE_URL, SUPABASE_KEY } from './config.js';
+
+const { createClient } = window.supabase;
+export const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// True once real credentials are wired in (config still has placeholders
+// until the Supabase project is created).
+export const CONFIGURED = !SUPABASE_URL.startsWith('__') && !SUPABASE_KEY.startsWith('__');
+
+// ---- Generic table helpers -------------------------------------------------
+function table(name) {
+  return {
+    async list(opts = {}) {
+      let q = sb.from(name).select('*');
+      if (opts.eq) for (const [k, v] of Object.entries(opts.eq)) q = q.eq(k, v);
+      if (opts.in) for (const [k, v] of Object.entries(opts.in)) q = q.in(k, v);
+      if (opts.order) q = q.order(opts.order.col, { ascending: opts.order.asc ?? true, nullsFirst: false });
+      else q = q.order('created_at', { ascending: false });
+      const { data, error } = await q;
+      if (error) throw error;
+      return data || [];
+    },
+    async create(row) {
+      const { data, error } = await sb.from(name).insert(row).select().single();
+      if (error) throw error;
+      return data;
+    },
+    async update(id, patch) {
+      const { data, error } = await sb.from(name).update(patch).eq('id', id).select().single();
+      if (error) throw error;
+      return data;
+    },
+    async remove(id) {
+      const { error } = await sb.from(name).delete().eq('id', id);
+      if (error) throw error;
+    },
+  };
+}
+
+export const Clients   = table('clients');
+export const Tasks     = table('tasks');
+export const Invoices  = table('invoices');
+export const Content   = table('content_items');
+export const Assets    = table('assets');
+export const Reviews   = table('reviews');
+export const Proposals = table('proposals');
+export const Activities = table('activities');
+
+// ---- Purpose-built loaders -------------------------------------------------
+
+// Everything the dashboard needs, in parallel.
+export async function loadOverview() {
+  const [clients, invoices, tasks, activities] = await Promise.all([
+    Clients.list({ order: { col: 'updated_at', asc: false } }),
+    Invoices.list(),
+    Tasks.list(),
+    Activities.list(),
+  ]);
+  return { clients, invoices, tasks, activities };
+}
+
+// Tasks for a client (or all), newest-due first.
+export async function tasksFor(clientId) {
+  return Tasks.list({ eq: clientId ? { client_id: clientId } : undefined, order: { col: 'due_date', asc: true } });
+}
+
+// Child records tied to one client (for the detail sheet).
+export async function clientBundle(clientId) {
+  const [tasks, invoices, activities, content, assets, reviews, proposals] = await Promise.all([
+    Tasks.list({ eq: { client_id: clientId }, order: { col: 'due_date', asc: true } }),
+    Invoices.list({ eq: { client_id: clientId }, order: { col: 'issued_on', asc: false } }),
+    Activities.list({ eq: { client_id: clientId } }),
+    Content.list({ eq: { client_id: clientId }, order: { col: 'scheduled_for', asc: true } }),
+    Assets.list({ eq: { client_id: clientId } }),
+    Reviews.list({ eq: { client_id: clientId } }),
+    Proposals.list({ eq: { client_id: clientId } }),
+  ]);
+  return { tasks, invoices, activities, content, assets, reviews, proposals };
+}
