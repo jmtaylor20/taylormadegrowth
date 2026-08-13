@@ -18,7 +18,7 @@ export function openReport(client, bundle) {
   const doc = el('div.report', {}, [
     el('div', { style: 'display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid var(--navy);padding-bottom:14px;margin-bottom:18px' }, [
       el('div', {}, [
-        el('div', { style: 'font-family:var(--head);font-weight:800;font-size:1.3rem;color:var(--navy-dark)', html: 'TaylorMade <span style="color:var(--gold)">Growth</span>' }),
+        el('div', { style: 'font-family:var(--head);font-weight:800;font-size:1.3rem;color:var(--navy-dark)', html: 'TaylorMade <span style="color:var(--gold)">Brands</span>' }),
         el('div.muted', { style: 'font-size:.85rem', text: 'Monthly Growth Report' }),
       ]),
       el('div', { style: 'text-align:right' }, [
@@ -48,7 +48,7 @@ export function openReport(client, bundle) {
       : el('span.muted', { text: 'No new reviews recorded this month.' })),
 
     el('div', { style: 'margin-top:24px;padding-top:14px;border-top:1px solid var(--line);color:var(--muted);font-size:.82rem' }, [
-      el('span', { text: 'Prepared by TaylorMade Growth · taylormadegrowth.com' }),
+      el('span', { text: 'Prepared by TaylorMade Brands · taylormadegrowth.com' }),
     ]),
   ]);
 

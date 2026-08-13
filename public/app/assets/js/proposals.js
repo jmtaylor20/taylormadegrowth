@@ -157,8 +157,8 @@ function emailProposal(p, client) {
   const m = items.reduce((s, x) => s + Number(x.monthly || 0), 0);
   const o = items.reduce((s, x) => s + Number(x.oneTime || 0), 0);
   const lines = items.map((it) => `• ${it.label}${it.monthly ? ` — ${money(it.monthly)}/mo` : ''}${it.oneTime ? ` — ${money(it.oneTime)} one-time` : ''}`).join('\n');
-  const body = `Hi ${client.contact_name || ''},\n\n${p.summary || 'Here is the growth plan we put together for you.'}\n\n${lines}\n\nTotal: ${money(m)}/month${o ? ` + ${money(o)} to get started` : ''}\n\nReady to move forward? Just reply and we'll get you set up.\n\nThanks,\nJosh\nTaylorMade Growth\ntaylormadegrowth.com`;
-  const url = `mailto:${encodeURIComponent(client.email)}?subject=${encodeURIComponent('Your Growth Proposal — ' + (p.title || 'TaylorMade Growth'))}&body=${encodeURIComponent(body)}`;
+  const body = `Hi ${client.contact_name || ''},\n\n${p.summary || 'Here is the growth plan we put together for you.'}\n\n${lines}\n\nTotal: ${money(m)}/month${o ? ` + ${money(o)} to get started` : ''}\n\nReady to move forward? Just reply and we'll get you set up.\n\nThanks,\nJosh\nTaylorMade Brands\ntaylormadegrowth.com`;
+  const url = `mailto:${encodeURIComponent(client.email)}?subject=${encodeURIComponent('Your Proposal — ' + (p.title || 'TaylorMade Brands'))}&body=${encodeURIComponent(body)}`;
   window.location.href = url;
 }
 
@@ -178,7 +178,7 @@ function previewProposal(p, clientName) {
     .totals{display:flex;gap:14px;margin-top:8px}.chip{background:#13294b;color:#fff;padding:10px 16px;border-radius:12px;font-weight:700}
     .chip small{display:block;color:#d4af37;font-weight:600;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em}
   </style></head><body>
-    <div class="head"><div class="brand">TaylorMade <span>Growth</span></div><div class="muted" style="text-align:right">${esc(labelOf(DOC_TYPE, p.doc_type || 'proposal'))}<br>${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div></div>
+    <div class="head"><div class="brand">TaylorMade <span>Brands</span></div><div class="muted" style="text-align:right">${esc(labelOf(DOC_TYPE, p.doc_type || 'proposal'))}<br>${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div></div>
     <h1>${esc(p.title || 'Growth Proposal')}</h1>
     <div class="muted">Prepared for <b style="color:#101827">${esc(clientName || 'your business')}</b></div>
     ${p.summary ? `<p style="margin-top:16px">${esc(p.summary)}</p>` : ''}
@@ -187,7 +187,7 @@ function previewProposal(p, clientName) {
       <tfoot><tr><td>Total</td><td style="text-align:right">${money(m)}/mo</td><td style="text-align:right">${money(o)}</td></tr></tfoot>
     </table>
     <div class="totals"><div class="chip"><small>Monthly</small>${money(m)}</div><div class="chip"><small>To start</small>${money(o)}</div></div>
-    <p class="muted" style="margin-top:28px;border-top:1px solid #e6e9ef;padding-top:14px">TaylorMade Growth · taylormadegrowth.com · Let’s grow something great together.</p>
+    <p class="muted" style="margin-top:28px;border-top:1px solid #e6e9ef;padding-top:14px">TaylorMade Brands · taylormadegrowth.com · Let’s grow something great together.</p>
   </body></html>`;
   const w = window.open('', '_blank', 'width=820,height=1000');
   if (!w) { toast('Allow pop-ups to preview', 'err'); return; }

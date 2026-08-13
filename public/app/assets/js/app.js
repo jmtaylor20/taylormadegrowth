@@ -77,7 +77,7 @@ function buildShell() {
 
   // Sidebar (desktop)
   const sidebar = el('aside.sidebar', {}, [
-    el('div.side-brand', {}, [el('img.side-logo', { src: './assets/img/logo-wordmark.png', alt: 'TaylorMade Growth' })]),
+    el('div.side-brand', {}, [el('img.side-logo', { src: './assets/img/logo-wordmark.png', alt: 'TaylorMade Brands' })]),
   ]);
   NAV.forEach((n) => sidebar.append(navLink(n, 'side-link')));
   sidebar.append(el('div.side-foot', {}, [
@@ -165,8 +165,8 @@ function showLock() {
   document.body.classList.add('locked');
   clear(root);
   const wrap = el('div.lock-wrap');
-  const brand = el('img.lock-logo', { src: './assets/img/logo-mark.png', alt: 'TaylorMade Growth' });
-  const tag = el('div.lock-tag', { text: 'TaylorMade Growth — Operating System' });
+  const brand = el('img.lock-logo', { src: './assets/img/logo-mark.png', alt: 'TaylorMade Brands' });
+  const tag = el('div.lock-tag', { text: 'TaylorMade Brands — Operating System' });
   const title = el('h1.lock-title', { text: 'Enter PIN' });
   const dots = el('div.pin-dots');
   const pad = el('div.pin-pad');

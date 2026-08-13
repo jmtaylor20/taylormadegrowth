@@ -1,4 +1,4 @@
-// TaylorMade Growth — internal ops app configuration.
+// TaylorMade Brands — internal ops app configuration.
 // This is the ONE file you edit to tune the app: keys, PIN, team, and the
 // option lists that populate every dropdown. No build step — just save + push.
 //
