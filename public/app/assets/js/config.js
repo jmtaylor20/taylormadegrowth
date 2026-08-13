@@ -16,6 +16,16 @@ export const APP_PIN = '4280';
 export const OWNER = 'Josh';
 export const TEAM = ['Josh', 'Wyatt', 'Tony', 'Cole'];
 
+// ---- Business info (shown on proposals / quotes / estimates / invoices) ----
+export const BUSINESS = {
+  name: 'TaylorMade Brands',
+  address1: '1346 Tallapoosa Street',
+  address2: 'Notasulga, AL 36866',
+  phone: '334.391.6641',
+  email: 'josh@taylormadegrowth.com',
+  website: 'taylormadegrowth.com',
+};
+
 // ---- Prospect / client categories (industries you target) -----------------
 export const CATEGORIES = [
   'Home Services', 'Trades / Contractor', 'Landscaping / Lawn', 'Tree Service',
