@@ -1,4 +1,4 @@
-# TaylorMade Growth — Ops app
+# TaylorMade Brands — Ops app
 
 Your internal operating system: CRM + sales pipeline, website build tracking,
 monthly management tasks, invoices/MRR, content, proposals, renewals, and

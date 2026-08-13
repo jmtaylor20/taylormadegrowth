@@ -1,7 +1,7 @@
 {
-  "name": "TaylorMade Growth — Ops",
-  "short_name": "TMG Ops",
-  "description": "Internal operating system for TaylorMade Growth: CRM, pipeline, projects, invoices, content.",
+  "name": "TaylorMade Brands — Ops",
+  "short_name": "TMB Ops",
+  "description": "Internal operating system for TaylorMade Brands: CRM, pipeline, projects, invoices, content.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

@@ -1,5 +1,5 @@
 /**
- * TaylorMade Growth — document pipeline
+ * TaylorMade Brands — document pipeline
  * ------------------------------------------------------------------------
  * Turns queued proposals/quotes/estimates and invoices from the ops app into
  * real PDFs that get:
@@ -23,11 +23,11 @@ var CONFIG = {
   SUPABASE_URL: 'https://buubrapkkqyalecwbhkh.supabase.co',
   // Publishable (anon) key — browser-safe, same key the app uses.
   SUPABASE_KEY: 'sb_publishable_h-KXdNNW7Tc_BFut25s_sQ_ypIidBJB',
-  // "TaylorMade Growth — Client Documents" in your Drive.
-  DRIVE_FOLDER_ID: '16Xdj5h0uetqWPtu3gHuL94_lhdYYf1iO',
+  // "TaylorMade Brands — Client Documents" in your Drive.
+  DRIVE_FOLDER_ID: '16xWJ-y8zEJtX6X16m7ZXQDTjGej6Moko',
   PER_CLIENT_SUBFOLDERS: true,   // file each client's docs in their own subfolder
-  FROM_NAME: 'TaylorMade Growth',
-  BUSINESS_NAME: 'TaylorMade Growth',
+  FROM_NAME: 'TaylorMade Brands',
+  BUSINESS_NAME: 'TaylorMade Brands',
   WEBSITE: 'taylormadegrowth.com',
   REPLY_TO: 'josh@taylormadegrowth.com',
 };
@@ -209,7 +209,7 @@ function invoiceHtml_(inv, client) {
 }
 
 function header_(right) {
-  return '<div class="head"><div class="brand">TaylorMade <span>Growth</span></div>' +
+  return '<div class="head"><div class="brand">TaylorMade <span>Brands</span></div>' +
     '<div class="muted" style="text-align:right">' + esc_(right) + '<br>' + dateNice_() + '</div></div>';
 }
 function footer_() {

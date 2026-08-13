@@ -1,4 +1,4 @@
-# TaylorMade Growth — document pipeline (Google Apps Script)
+# TaylorMade Brands — document pipeline (Google Apps Script)
 
 This is the helper that makes **Send** and **Save to Drive** in the ops app
 actually work. When you tap those buttons, the app flags the proposal/quote/
@@ -11,7 +11,7 @@ Same idea as the A&O `drive-archive.gs` / `email-sender.gs` scripts.
 ## What you get
 
 - **PDFs** of proposals, quotes, estimates, and invoices — clean, branded.
-- **Filed in Drive** under **TaylorMade Growth — Client Documents**, in a
+- **Filed in Drive** under **TaylorMade Brands — Client Documents**, in a
   subfolder per client.
 - **Emailed to the client** from your Gmail, with the PDF attached.
 - The app shows **Emailed** / **In Drive** (with a link) once it's done.
