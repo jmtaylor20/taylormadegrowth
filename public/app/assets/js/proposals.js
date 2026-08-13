@@ -213,23 +213,23 @@ export function proposalDocHtml(p, clientName, opts = {}) {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(p.title || docType)}</title><style>
     *{box-sizing:border-box}html,body{margin:0}
     body{font-family:Georgia,'Times New Roman',serif;color:#1c1c1c;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .frame{border:2px solid #dcdcdc;border-radius:12px;margin:18px;padding:26px 30px 30px}
+    .frame{border:2px solid #dcdcdc;border-radius:12px;margin:12px;padding:20px 30px 22px}
     .top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}
-    .logo{width:248px;max-width:52%;height:auto}
-    .contact{text-align:right;font-size:13px;line-height:1.6;color:#2a2a2a}
-    .title{text-align:center;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:32px;letter-spacing:3px;margin:14px 0 18px;color:#111}
-    .sec{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:12.5px;letter-spacing:1.2px;text-transform:uppercase;color:#111;border-bottom:1.5px solid #111;padding-bottom:4px;margin:20px 0 9px}
+    .logo{width:238px;max-width:52%;height:auto}
+    .contact{text-align:right;font-size:12.5px;line-height:1.5;color:#2a2a2a}
+    .title{text-align:center;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:27px;letter-spacing:3px;margin:6px 0 12px;color:#111}
+    .sec{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:#111;border-bottom:1.5px solid #111;padding-bottom:3px;margin:13px 0 6px}
     .grid2{display:flex;gap:30px}.grid2>.row{flex:1}
-    .row{display:flex;align-items:baseline;gap:8px;font-size:14px;line-height:1.85;margin:3px 0}
-    .row .lbl{font-weight:bold;white-space:nowrap;font-family:Arial,Helvetica,sans-serif;font-size:12.5px}
+    .row{display:flex;align-items:baseline;gap:8px;font-size:13.5px;line-height:1.45;margin:4px 0}
+    .row .lbl{font-weight:bold;white-space:nowrap;font-family:Arial,Helvetica,sans-serif;font-size:12px}
     .row .val{flex:1}
     .row .val.blank{border-bottom:1px solid #666;min-height:1.05em;align-self:flex-end}
-    .approve{display:flex;gap:46px;font-size:15px;margin:8px 0 4px}
-    .box{font-family:Arial;font-size:17px;margin-right:7px}
+    .approve{display:flex;gap:46px;font-size:14.5px;margin:6px 0 3px}
+    .box{font-family:Arial;font-size:16px;margin-right:7px}
     .dline{display:inline-block;border-bottom:1px solid #666;min-width:150px}
-    .sign{font-size:14px;margin-top:15px;display:flex;align-items:baseline;gap:8px}
+    .sign{font-size:13.5px;margin-top:10px;display:flex;align-items:baseline;gap:8px}
     .sign .lbl{font-family:Arial;font-weight:bold}.sign .u{flex:1;border-bottom:1px solid #666;min-height:1.05em}
-    .foot{margin-top:22px;text-align:center;color:#888;font-size:11px;font-family:Arial}
+    .foot{margin-top:14px;text-align:center;color:#888;font-size:11px;font-family:Arial}
     @page{margin:0}
   </style></head><body><div class="frame">
     <div class="top">
