@@ -53,7 +53,8 @@ export async function renderProposals(root) {
       ]),
       el('div.row-right', {}, [
         statusBadge(PROPOSAL_STATUS, p.status),
-        el('button.icon-btn', { title: 'Preview', html: iconSvg('external', 18), onclick: () => previewProposal(p, nameFor(list, p.client_id)) }),
+        el('button.icon-btn', { title: 'Email to client', html: iconSvg('mail', 18), onclick: () => emailProposal(p, list.find((c) => c.id === p.client_id)) }),
+        el('button.icon-btn', { title: 'Preview / print', html: iconSvg('external', 18), onclick: () => previewProposal(p, nameFor(list, p.client_id)) }),
       ]),
     ])));
     wrap.append(rows);
@@ -140,6 +141,20 @@ function openProposalForm(existing = {}, onSaved, list) {
     v.build_total = v.line_items.reduce((s, x) => s + Number(x.oneTime || 0), 0);
     return v;
   }
+}
+
+// Open the user's email app with the proposal pre-filled, addressed to the
+// client. Immediate "send from the app" with zero setup (real automated send +
+// Drive archiving is handled by the Apps Script pipeline).
+function emailProposal(p, client) {
+  if (!client || !client.email) { toast('No email on file for this client', 'err'); return; }
+  const items = p.line_items || [];
+  const m = items.reduce((s, x) => s + Number(x.monthly || 0), 0);
+  const o = items.reduce((s, x) => s + Number(x.oneTime || 0), 0);
+  const lines = items.map((it) => `• ${it.label}${it.monthly ? ` — ${money(it.monthly)}/mo` : ''}${it.oneTime ? ` — ${money(it.oneTime)} one-time` : ''}`).join('\n');
+  const body = `Hi ${client.contact_name || ''},\n\n${p.summary || 'Here is the growth plan we put together for you.'}\n\n${lines}\n\nTotal: ${money(m)}/month${o ? ` + ${money(o)} to get started` : ''}\n\nReady to move forward? Just reply and we'll get you set up.\n\nThanks,\nJosh\nTaylorMade Growth\ntaylormadegrowth.com`;
+  const url = `mailto:${encodeURIComponent(client.email)}?subject=${encodeURIComponent('Your Growth Proposal — ' + (p.title || 'TaylorMade Growth'))}&body=${encodeURIComponent(body)}`;
+  window.location.href = url;
 }
 
 function previewProposal(p, clientName) {
