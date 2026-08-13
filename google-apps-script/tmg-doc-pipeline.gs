@@ -174,22 +174,65 @@ var CSS = '<style>' +
   '</style>';
 
 function proposalHtml_(p, client) {
+  var D = p.details || {};
+  var LOGO = 'https://taylormadegrowth.com/app/assets/img/logo-proposal.png';
+  var docType = titleCase_(p.doc_type || 'proposal').toUpperCase();
   var items = p.line_items || [];
+  var services = items.map(function (it) { return it.label; }).filter(Boolean).join(', ');
   var m = sum_(items, 'monthly'), o = sum_(items, 'oneTime');
-  var rows = items.map(function (it) {
-    return '<tr><td>' + esc_(it.label) + '</td><td style="text-align:right">' + (it.monthly ? money_(it.monthly) + '/mo' : '—') +
-      '</td><td style="text-align:right">' + (it.oneTime ? money_(it.oneTime) : '—') + '</td></tr>';
-  }).join('') || '<tr><td colspan="3" class="muted">No line items</td></tr>';
-  return '<!DOCTYPE html><html><head><meta charset="utf-8">' + CSS + '</head><body>' +
-    header_(titleCase_(p.doc_type || 'proposal')) +
-    '<h1>' + esc_(p.title || 'Growth Proposal') + '</h1>' +
-    '<div class="muted">Prepared for <b style="color:#101827">' + esc_(client.business_name || 'your business') + '</b></div>' +
-    (p.summary ? '<p>' + esc_(p.summary) + '</p>' : '') +
-    '<table><thead><tr><th>Service</th><th style="text-align:right">Monthly</th><th style="text-align:right">One-time</th></tr></thead>' +
-    '<tbody>' + rows + '</tbody>' +
-    '<tfoot><tr><td>Total</td><td style="text-align:right">' + money_(m) + '/mo</td><td style="text-align:right">' + money_(o) + '</td></tr></tfoot></table>' +
-    '<div class="totals"><span class="chip"><small>Monthly</small>' + money_(m) + '</span><span class="chip"><small>To start</small>' + money_(o) + '</span></div>' +
-    footer_() + '</body></html>';
+  var feeParts = items.map(function (it) {
+    return it.label + (it.monthly ? ' — ' + money_(it.monthly) + '/mo' : '') + (it.oneTime ? ' — ' + money_(it.oneTime) + ' one-time' : '');
+  });
+  var feeTot = [];
+  if (m) feeTot.push(money_(m) + '/mo');
+  if (o) feeTot.push(money_(o) + ' to start');
+  var fees = items.length ? (feeParts.join('; ') + (feeTot.length ? '.  Total: ' + feeTot.join(' + ') : '')) : '';
+  var dateStr = p.sent_on ? p.sent_on : dateNice_();
+  function row(label, value) {
+    return '<div class="row"><span class="lbl">' + esc_(label) + ':</span><span class="val' + (value ? '' : ' blank') + '">' + (value ? esc_(value) : '') + '</span></div>';
+  }
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><style>' +
+    'html,body{margin:0}body{font-family:Georgia,"Times New Roman",serif;color:#1c1c1c}' +
+    '.frame{border:2px solid #dcdcdc;padding:26px 30px 30px;margin:16px}' +
+    '.top{display:flex;justify-content:space-between}' +
+    '.logo{width:250px;height:auto}' +
+    '.contact{text-align:right;font-size:13px;line-height:1.6;color:#2a2a2a}' +
+    '.title{text-align:center;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:31px;letter-spacing:3px;margin:14px 0 18px;color:#111}' +
+    '.sec{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:12.5px;letter-spacing:1.2px;color:#111;border-bottom:1.5px solid #111;padding-bottom:4px;margin:20px 0 9px}' +
+    '.grid2{display:flex}.grid2>.row{flex:1}' +
+    '.row{display:flex;font-size:14px;line-height:1.85;margin:3px 0}' +
+    '.row .lbl{font-weight:bold;font-family:Arial,Helvetica,sans-serif;font-size:12.5px;padding-right:8px}' +
+    '.row .val{flex:1}.row .val.blank{border-bottom:1px solid #666}' +
+    '.approve{display:flex;font-size:15px;margin:8px 0 4px}.approve span{padding-right:46px}' +
+    '.sign{font-size:14px;margin-top:15px;display:flex}.sign .lbl{font-family:Arial;font-weight:bold;padding-right:8px}.sign .u{flex:1;border-bottom:1px solid #666}' +
+    '.foot{margin-top:22px;text-align:center;color:#888;font-size:11px;font-family:Arial}' +
+    '</style></head><body><div class="frame">' +
+    '<div class="top"><img class="logo" src="' + LOGO + '"><div class="contact">1346 Tallapoosa Street<br>Notasulga, AL 36866<br>334.391.6641<br>josh@taylormadegrowth.com</div></div>' +
+    '<div class="title">' + esc_(docType) + '</div>' +
+    '<div class="sec">CLIENT / PROJECT</div>' +
+    '<div class="grid2">' + row('Client', client.business_name) + row('Project', p.title) + '</div>' +
+    '<div class="grid2">' + row('Prepared by', D.prepared_by || 'Josh') + row('Date', dateStr) + '</div>' +
+    '<div class="sec">' + docType + ' &amp; SCOPE</div>' +
+    row('Desired outcome', D.desired_outcome || p.summary) +
+    row('Services included', services) +
+    row('Deliverables', D.deliverables) +
+    row('Timeline and milestones', D.timeline) +
+    row('Revision allowance', D.revision_allowance) +
+    row('Client responsibilities', D.client_responsibilities) +
+    row('Fees / Payment schedule', fees) +
+    row('Third-party costs', D.third_party_costs) +
+    row('Not included', D.not_included) +
+    row('Approval method / Deadline', D.approval_method) +
+    '<div class="sec">CHANGES</div>' +
+    row('Scope Change Notes', D.scope_change_notes) +
+    row('Price Difference & Reasoning', D.price_difference) +
+    '<div class="sec">APPROVE / DENIAL</div>' +
+    '<div class="approve"><span>&#9744; Approve / Proceed</span><span>&#9744; Denial / Reason: __________</span></div>' +
+    '<div class="sign"><span class="lbl">Name:</span><span class="u"></span></div>' +
+    '<div class="sign"><span class="lbl">Signature:</span><span class="u"></span></div>' +
+    '<div class="sign"><span class="lbl">Date:</span><span class="u"></span></div>' +
+    '<div class="foot">TaylorMade Brands · taylormadegrowth.com</div>' +
+    '</div></body></html>';
 }
 
 function invoiceHtml_(inv, client) {
