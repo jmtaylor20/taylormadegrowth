@@ -193,19 +193,19 @@ function proposalHtml_(p, client) {
   }
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><style>' +
     'html,body{margin:0}body{font-family:Georgia,"Times New Roman",serif;color:#1c1c1c}' +
-    '.frame{border:2px solid #dcdcdc;padding:26px 30px 30px;margin:16px}' +
+    '.frame{border:2px solid #dcdcdc;padding:20px 30px 22px;margin:12px}' +
     '.top{display:flex;justify-content:space-between}' +
-    '.logo{width:250px;height:auto}' +
-    '.contact{text-align:right;font-size:13px;line-height:1.6;color:#2a2a2a}' +
-    '.title{text-align:center;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:31px;letter-spacing:3px;margin:14px 0 18px;color:#111}' +
-    '.sec{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:12.5px;letter-spacing:1.2px;color:#111;border-bottom:1.5px solid #111;padding-bottom:4px;margin:20px 0 9px}' +
+    '.logo{width:238px;height:auto}' +
+    '.contact{text-align:right;font-size:12.5px;line-height:1.5;color:#2a2a2a}' +
+    '.title{text-align:center;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:27px;letter-spacing:3px;margin:6px 0 12px;color:#111}' +
+    '.sec{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:12px;letter-spacing:1.2px;color:#111;border-bottom:1.5px solid #111;padding-bottom:3px;margin:13px 0 6px}' +
     '.grid2{display:flex}.grid2>.row{flex:1}' +
-    '.row{display:flex;font-size:14px;line-height:1.85;margin:3px 0}' +
-    '.row .lbl{font-weight:bold;font-family:Arial,Helvetica,sans-serif;font-size:12.5px;padding-right:8px}' +
+    '.row{display:flex;font-size:13.5px;line-height:1.45;margin:4px 0}' +
+    '.row .lbl{font-weight:bold;font-family:Arial,Helvetica,sans-serif;font-size:12px;padding-right:8px}' +
     '.row .val{flex:1}.row .val.blank{border-bottom:1px solid #666}' +
-    '.approve{display:flex;font-size:15px;margin:8px 0 4px}.approve span{padding-right:46px}' +
-    '.sign{font-size:14px;margin-top:15px;display:flex}.sign .lbl{font-family:Arial;font-weight:bold;padding-right:8px}.sign .u{flex:1;border-bottom:1px solid #666}' +
-    '.foot{margin-top:22px;text-align:center;color:#888;font-size:11px;font-family:Arial}' +
+    '.approve{display:flex;font-size:14.5px;margin:6px 0 3px}.approve span{padding-right:46px}' +
+    '.sign{font-size:13.5px;margin-top:10px;display:flex}.sign .lbl{font-family:Arial;font-weight:bold;padding-right:8px}.sign .u{flex:1;border-bottom:1px solid #666}' +
+    '.foot{margin-top:14px;text-align:center;color:#888;font-size:11px;font-family:Arial}' +
     '</style></head><body><div class="frame">' +
     '<div class="top"><img class="logo" src="' + LOGO + '"><div class="contact">1346 Tallapoosa Street<br>Notasulga, AL 36866<br>334.391.6641<br>josh@taylormadegrowth.com</div></div>' +
     '<div class="title">' + esc_(docType) + '</div>' +
