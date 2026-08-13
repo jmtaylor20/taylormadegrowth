@@ -68,6 +68,12 @@ export async function openClient(id, onChange) {
     if (client.website) actions.append(el('a', { href: normUrl(client.website), target: '_blank', html: `${iconSvg('globe', 15)} Site` }));
     actions.append(el('a', { href: 'javascript:void 0', onclick: () => openClientForm(client, rerender), html: `${iconSvg('edit', 15)} Edit` }));
     actions.append(el('a', { href: 'javascript:void 0', onclick: () => openReport(client, bundle), html: `${iconSvg('report', 15)} Report` }));
+    actions.append(el('a', { href: 'javascript:void 0', style: 'color:var(--red);border-color:#f3c9c9', onclick: async () => {
+      if (await confirmDialog(`Delete ${client.business_name}? This permanently removes the client and all its tasks, invoices, content, reviews, proposals, and notes. This can't be undone.`, { confirmLabel: 'Delete client' })) {
+        try { await Clients.remove(id); toast('Client deleted'); closeSheet(() => onChange?.()); }
+        catch (e) { toast(e.message || 'Delete failed', 'err'); }
+      }
+    }, html: `${iconSvg('trash', 15)} Delete` }));
     body.append(actions);
 
     // Tab strip

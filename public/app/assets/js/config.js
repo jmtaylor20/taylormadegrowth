@@ -10,7 +10,7 @@ export const SUPABASE_KEY = 'sb_publishable_h-KXdNNW7Tc_BFut25s_sQ_ypIidBJB';
 // Light access gate. NOTE: the PIN lives in the client, so it deters casual
 // access rather than being real security. Swap for Supabase logins when you
 // want a true lock-down (the database is already RLS-ready).
-export const APP_PIN = '1225';
+export const APP_PIN = '4280';
 
 // ---- Team (task assignment) ----------------------------------------------
 export const OWNER = 'Josh';
