@@ -101,7 +101,10 @@ create table if not exists public.invoices (
   issued_on date default now(),
   due_on  date,
   paid_on date,
-  method  text                             -- Relay, QuickBooks, cash, card…
+  method  text,                            -- Relay, QuickBooks, cash, card…
+  -- Document pipeline (Google Apps Script): email + Drive archive state.
+  send_status  text, sent_to text, sent_at timestamptz, send_error text,
+  drive_status text, drive_url text, drive_saved_at timestamptz, drive_error text
 );
 
 -- ---------------------------------------------------------------------------
@@ -165,7 +168,11 @@ create table if not exists public.proposals (
   sent_on date,
   contract_status text not null default 'none',  -- none | sent | signed
   contract_signed_on date,
-  contract_url text
+  contract_url text,
+  doc_type text not null default 'proposal',     -- proposal | quote | estimate
+  -- Document pipeline (Google Apps Script): email + Drive archive state.
+  send_status  text, sent_to text, sent_at timestamptz, send_error text,
+  drive_status text, drive_url text, drive_saved_at timestamptz, drive_error text
 );
 
 -- ---------------------------------------------------------------------------
