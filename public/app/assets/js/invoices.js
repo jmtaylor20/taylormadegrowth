@@ -7,6 +7,7 @@ import {
   todayISO, emptyState, primaryBtn, field, textInput, numberInput, textArea,
   selectInput, dateInput, readForm, openSheet, toast, confirmDialog, labelOf,
 } from './ui.js';
+import { queueDoc, docBadges } from './docs.js';
 
 let clientCache = null;
 async function clients() { if (!clientCache) clientCache = await Clients.list({ order: { col: 'business_name', asc: true } }); return clientCache; }
@@ -61,10 +62,13 @@ export async function renderInvoices(root) {
           badge(labelOf(INVOICE_TYPE, i.type), 'gray'),
           i.description ? el('span', { text: i.description }) : null,
           i.status === 'paid' ? el('span.text-green', { text: 'paid ' + (i.paid_on ? fmtDate(i.paid_on) : '') }) : (i.due_on ? el('span', { class: dueClass(i.due_on), text: 'due ' + relDue(i.due_on) }) : null),
+          ...docBadges(i),
         ]),
       ]),
       el('div.row-right', {}, [
         el('span.row-amount', { text: money(i.amount) }),
+        el('button.icon-btn', { title: 'Send to client (PDF email + save to Drive)', html: iconSvg('send', 18), onclick: () => queueDoc(Invoices, i, list.find((c) => c.id === i.client_id), { send: true, drive: true }, refreshAfter) }),
+        el('button.icon-btn', { title: 'Save to Google Drive', html: iconSvg('cloud', 18), onclick: () => queueDoc(Invoices, i, list.find((c) => c.id === i.client_id), { drive: true }, refreshAfter) }),
         (() => { const s = selectInput('status', INVOICE_STATUS, i.status); s.style.width = 'auto'; s.classList.add('btn-sm');
           s.addEventListener('change', async () => { await Invoices.update(i.id, { status: s.value, paid_on: s.value === 'paid' ? todayISO() : null }); refreshAfter(); }); return s; })(),
       ]),

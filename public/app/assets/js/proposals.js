@@ -1,12 +1,13 @@
 // Proposals — build a proposal from line items, track its status, and track the
 // contract through to signed. Generate a clean printable proposal to send.
 import { Proposals, Clients } from './db.js';
-import { PROPOSAL_STATUS, CONTRACT_STATUS, SERVICES } from './config.js';
+import { PROPOSAL_STATUS, CONTRACT_STATUS, SERVICES, DOC_TYPE, SEND_STATUS, DRIVE_STATUS } from './config.js';
 import {
   el, clear, money, iconSvg, pageHeader, badge, statusBadge, labelOf, fmtDate,
   emptyState, primaryBtn, field, textInput, numberInput, textArea, selectInput,
-  dateInput, readForm, openSheet, toast, confirmDialog,
+  dateInput, readForm, openSheet, toast, confirmDialog, todayISO,
 } from './ui.js';
+import { queueDoc, docBadges } from './docs.js';
 
 let clientCache = null;
 async function clients() { if (!clientCache) clientCache = await Clients.list({ order: { col: 'business_name', asc: true } }); return clientCache; }
@@ -45,15 +46,17 @@ export async function renderProposals(root) {
       el('div.row-main', { style: 'cursor:pointer', onclick: () => openProposalForm(p, refreshAfter, list) }, [
         el('div.row-title', { text: p.title }),
         el('div.row-sub', {}, [
+          badge(labelOf(DOC_TYPE, p.doc_type || 'proposal'), 'gray'),
           el('span', { text: nameFor(list, p.client_id) }),
           p.monthly_total ? badge(money(p.monthly_total) + '/mo', 'green') : null,
           p.build_total ? badge(money(p.build_total) + ' build', 'gold') : null,
-          statusBadge(CONTRACT_STATUS, p.contract_status),
+          ...docBadges(p),
         ]),
       ]),
       el('div.row-right', {}, [
         statusBadge(PROPOSAL_STATUS, p.status),
-        el('button.icon-btn', { title: 'Email to client', html: iconSvg('mail', 18), onclick: () => emailProposal(p, list.find((c) => c.id === p.client_id)) }),
+        el('button.icon-btn', { title: 'Send to client (PDF email + save to Drive)', html: iconSvg('send', 18), onclick: () => queueDoc(Proposals, p, list.find((c) => c.id === p.client_id), { send: true, drive: true }, refreshAfter) }),
+        el('button.icon-btn', { title: 'Save to Google Drive', html: iconSvg('cloud', 18), onclick: () => queueDoc(Proposals, p, list.find((c) => c.id === p.client_id), { drive: true }, refreshAfter) }),
         el('button.icon-btn', { title: 'Preview / print', html: iconSvg('external', 18), onclick: () => previewProposal(p, nameFor(list, p.client_id)) }),
       ]),
     ])));
@@ -102,8 +105,9 @@ function openProposalForm(existing = {}, onSaved, list) {
   renderItems(); totals();
 
   const node = el('div.form', {}, [
-    field('Proposal title', textInput('title', existing.title, { placeholder: 'Growth Plan for ABC Co.' })),
+    field('Title', textInput('title', existing.title, { placeholder: 'Growth Plan for ABC Co.' })),
     el('div.form-grid.cols-2', {}, [
+      field('Document type', selectInput('doc_type', DOC_TYPE, existing.doc_type || 'proposal')),
       field('Client', selectInput('client_id', clientOptions, existing.client_id || '')),
       field('Status', selectInput('status', PROPOSAL_STATUS, existing.status || 'draft')),
     ]),
@@ -122,6 +126,7 @@ function openProposalForm(existing = {}, onSaved, list) {
     title: isNew ? 'New proposal' : 'Edit proposal', body: node, wide: true,
     actions: [
       { label: 'Cancel', tone: 'ghost', onClick: () => close() },
+      { label: 'Email now', tone: 'ghost', onClick: () => { const v = collect(); emailProposal({ ...existing, ...v }, list.find((c) => c.id === v.client_id)); } },
       { label: 'Preview', tone: 'ghost', onClick: () => { const v = collect(); previewProposal({ ...existing, ...v }, nameFor(list, v.client_id)); } },
       { label: isNew ? 'Add' : 'Save', tone: 'primary', onClick: async () => {
         const v = collect();
@@ -173,7 +178,7 @@ function previewProposal(p, clientName) {
     .totals{display:flex;gap:14px;margin-top:8px}.chip{background:#13294b;color:#fff;padding:10px 16px;border-radius:12px;font-weight:700}
     .chip small{display:block;color:#d4af37;font-weight:600;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em}
   </style></head><body>
-    <div class="head"><div class="brand">TaylorMade <span>Growth</span></div><div class="muted" style="text-align:right">Proposal<br>${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div></div>
+    <div class="head"><div class="brand">TaylorMade <span>Growth</span></div><div class="muted" style="text-align:right">${esc(labelOf(DOC_TYPE, p.doc_type || 'proposal'))}<br>${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div></div>
     <h1>${esc(p.title || 'Growth Proposal')}</h1>
     <div class="muted">Prepared for <b style="color:#101827">${esc(clientName || 'your business')}</b></div>
     ${p.summary ? `<p style="margin-top:16px">${esc(p.summary)}</p>` : ''}

@@ -135,6 +135,26 @@ export const CONTRACT_STATUS = [
   { key: 'signed', label: 'Signed',      tone: 'green' },
 ];
 
+// A proposal can be presented as a proposal, a quote, or an estimate.
+export const DOC_TYPE = [
+  { key: 'proposal', label: 'Proposal' },
+  { key: 'quote',    label: 'Quote' },
+  { key: 'estimate', label: 'Estimate' },
+];
+
+// Document pipeline state (email send + Google Drive archive), driven by the
+// Google Apps Script in /google-apps-script.
+export const SEND_STATUS = [
+  { key: 'queued', label: 'Send queued', tone: 'amber' },
+  { key: 'sent',   label: 'Emailed',     tone: 'green' },
+  { key: 'error',  label: 'Send failed', tone: 'red' },
+];
+export const DRIVE_STATUS = [
+  { key: 'queued', label: 'Saving…',  tone: 'amber' },
+  { key: 'saved',  label: 'In Drive', tone: 'green' },
+  { key: 'error',  label: 'Save failed', tone: 'red' },
+];
+
 // ---- Default onboarding checklist (applied to a new client) ---------------
 export const ONBOARDING_TEMPLATE = [
   'Signed agreement / deposit',

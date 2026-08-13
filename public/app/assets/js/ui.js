@@ -253,6 +253,8 @@ const P = {
   camera: '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
   ads: '<path d="M3 11h3l7-5v14l-7-5H3z"/><path d="M17 8a5 5 0 0 1 0 8"/>',
   logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>',
+  cloud: '<path d="M18 10h-1.3A7 7 0 1 0 4 15.7"/><path d="M12 12v9M8 17l4 4 4-4"/>',
+  send: '<path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>',
 };
 export function iconSvg(name, size = 24) {
   const body = P[name] || P.dashboard;
