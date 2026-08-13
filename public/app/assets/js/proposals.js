@@ -1,7 +1,7 @@
 // Proposals — build a proposal from line items, track its status, and track the
 // contract through to signed. Generate a clean printable proposal to send.
 import { Proposals, Clients } from './db.js';
-import { PROPOSAL_STATUS, CONTRACT_STATUS, SERVICES, DOC_TYPE, SEND_STATUS, DRIVE_STATUS } from './config.js';
+import { PROPOSAL_STATUS, CONTRACT_STATUS, SERVICES, DOC_TYPE, SEND_STATUS, DRIVE_STATUS, BUSINESS, OWNER } from './config.js';
 import {
   el, clear, money, iconSvg, pageHeader, badge, statusBadge, labelOf, fmtDate,
   emptyState, primaryBtn, field, textInput, numberInput, textArea, selectInput,
@@ -70,6 +70,7 @@ export async function renderProposals(root) {
 
 function openProposalForm(existing = {}, onSaved, list) {
   const isNew = !existing.id;
+  const D = existing.details || {};
   const clientOptions = [{ key: '', label: '— Select client —' }, ...list.map((c) => ({ key: c.id, label: c.business_name }))];
   let items = (existing.line_items && existing.line_items.length) ? existing.line_items.map((x) => ({ ...x }))
     : [{ label: 'Website build', monthly: 0, oneTime: 0 }];
@@ -111,8 +112,25 @@ function openProposalForm(existing = {}, onSaved, list) {
       field('Client', selectInput('client_id', clientOptions, existing.client_id || '')),
       field('Status', selectInput('status', PROPOSAL_STATUS, existing.status || 'draft')),
     ]),
-    field('Summary / cover note', textArea('summary', existing.summary, { rows: 2, placeholder: 'What you’ll do and why it matters.' })),
+    field('Summary / cover note', textArea('summary', existing.summary, { rows: 2, placeholder: 'What you’ll do and why it matters. (Used as “Desired outcome” if that’s blank.)' })),
     field('Line items', el('div', {}, [itemsWrap, totalsBar])),
+    el('div.section-title', {}, [el('h3', { text: 'Scope & terms' })]),
+    el('div.form-grid.cols-2', {}, [
+      field('Prepared by', textInput('prepared_by', D.prepared_by || OWNER)),
+      field('Revision allowance', textInput('revision_allowance', D.revision_allowance, { placeholder: 'e.g. 2 rounds' })),
+    ]),
+    field('Desired outcome', textArea('desired_outcome', D.desired_outcome, { rows: 2, placeholder: 'What success looks like for the client.' })),
+    field('Deliverables', textArea('deliverables', D.deliverables, { rows: 2 })),
+    field('Timeline & milestones', textArea('timeline', D.timeline, { rows: 2 })),
+    field('Client responsibilities', textArea('client_responsibilities', D.client_responsibilities, { rows: 2 })),
+    el('div.form-grid.cols-2', {}, [
+      field('Third-party costs', textInput('third_party_costs', D.third_party_costs, { placeholder: 'e.g. hosting, stock photos' })),
+      field('Approval method / deadline', textInput('approval_method', D.approval_method, { placeholder: 'e.g. Sign below by Fri' })),
+    ]),
+    field('Not included', textArea('not_included', D.not_included, { rows: 2 })),
+    el('div.section-title', {}, [el('h3', { text: 'Changes (optional)' })]),
+    field('Scope change notes', textArea('scope_change_notes', D.scope_change_notes, { rows: 2 })),
+    field('Price difference & reasoning', textArea('price_difference', D.price_difference, { rows: 2 })),
     el('div.section-title', {}, [el('h3', { text: 'Contract' })]),
     el('div.form-grid.cols-2', {}, [
       field('Contract status', selectInput('contract_status', CONTRACT_STATUS, existing.contract_status || 'none')),
@@ -144,6 +162,13 @@ function openProposalForm(existing = {}, onSaved, list) {
     v.line_items = items.filter((x) => x.label);
     v.monthly_total = v.line_items.reduce((s, x) => s + Number(x.monthly || 0), 0);
     v.build_total = v.line_items.reduce((s, x) => s + Number(x.oneTime || 0), 0);
+    // Pull the scope/terms fields out of the flat form object into `details`.
+    const DETAIL_KEYS = ['prepared_by', 'desired_outcome', 'deliverables', 'timeline',
+      'revision_allowance', 'client_responsibilities', 'third_party_costs', 'approval_method',
+      'not_included', 'scope_change_notes', 'price_difference'];
+    const details = {};
+    DETAIL_KEYS.forEach((k) => { if (v[k] != null && String(v[k]).trim() !== '') details[k] = v[k]; delete v[k]; });
+    v.details = details;
     return v;
   }
 }
@@ -162,36 +187,91 @@ function emailProposal(p, client) {
   window.location.href = url;
 }
 
-function previewProposal(p, clientName) {
+// Fees / Payment schedule text derived from the line items.
+function feesText(p) {
   const items = p.line_items || [];
-  const rows = items.map((it) => `<tr><td>${esc(it.label)}</td><td style="text-align:right">${it.monthly ? money(it.monthly) + '/mo' : '—'}</td><td style="text-align:right">${it.oneTime ? money(it.oneTime) : '—'}</td></tr>`).join('');
+  if (!items.length) return (p.details && p.details.fees_note) || '';
+  const parts = items.map((it) => `${it.label}${it.monthly ? ` — ${money(it.monthly)}/mo` : ''}${it.oneTime ? ` — ${money(it.oneTime)} one-time` : ''}`);
   const m = items.reduce((s, x) => s + Number(x.monthly || 0), 0);
   const o = items.reduce((s, x) => s + Number(x.oneTime || 0), 0);
-  const html = `<!DOCTYPE html><html><head><title>${esc(p.title || 'Proposal')}</title><style>
-    body{font-family:'Inter',system-ui,sans-serif;color:#101827;max-width:720px;margin:32px auto;padding:0 24px;line-height:1.55}
-    .head{display:flex;justify-content:space-between;border-bottom:3px solid #13294b;padding-bottom:14px;margin-bottom:22px}
-    .brand{font-family:'Sora',sans-serif;font-weight:800;font-size:1.4rem;color:#081a33}.brand span{color:#d4af37}
-    h1{font-size:1.3rem;color:#081a33;margin:0 0 6px}.muted{color:#64748b}
-    table{width:100%;border-collapse:collapse;margin:18px 0}td,th{padding:9px 6px;border-bottom:1px solid #e6e9ef;font-size:.95rem}
-    th{text-align:left;color:#64748b;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em}
-    tfoot td{font-weight:800;color:#081a33;border-top:2px solid #13294b;border-bottom:0}
-    .totals{display:flex;gap:14px;margin-top:8px}.chip{background:#13294b;color:#fff;padding:10px 16px;border-radius:12px;font-weight:700}
-    .chip small{display:block;color:#d4af37;font-weight:600;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em}
-  </style></head><body>
-    <div class="head"><div class="brand">TaylorMade <span>Brands</span></div><div class="muted" style="text-align:right">${esc(labelOf(DOC_TYPE, p.doc_type || 'proposal'))}<br>${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div></div>
-    <h1>${esc(p.title || 'Growth Proposal')}</h1>
-    <div class="muted">Prepared for <b style="color:#101827">${esc(clientName || 'your business')}</b></div>
-    ${p.summary ? `<p style="margin-top:16px">${esc(p.summary)}</p>` : ''}
-    <table><thead><tr><th>Service</th><th style="text-align:right">Monthly</th><th style="text-align:right">One-time</th></tr></thead>
-      <tbody>${rows || '<tr><td colspan="3" class="muted">No line items</td></tr>'}</tbody>
-      <tfoot><tr><td>Total</td><td style="text-align:right">${money(m)}/mo</td><td style="text-align:right">${money(o)}</td></tr></tfoot>
-    </table>
-    <div class="totals"><div class="chip"><small>Monthly</small>${money(m)}</div><div class="chip"><small>To start</small>${money(o)}</div></div>
-    <p class="muted" style="margin-top:28px;border-top:1px solid #e6e9ef;padding-top:14px">TaylorMade Brands · taylormadegrowth.com · Let’s grow something great together.</p>
-  </body></html>`;
-  const w = window.open('', '_blank', 'width=820,height=1000');
+  const totals = [];
+  if (m) totals.push(`${money(m)}/mo`);
+  if (o) totals.push(`${money(o)} to start`);
+  return parts.join('; ') + (totals.length ? `.  Total: ${totals.join(' + ')}` : '');
+}
+
+// Build the branded document HTML (shared shape used by the Apps Script PDF).
+export function proposalDocHtml(p, clientName, opts = {}) {
+  const D = p.details || {};
+  const logo = opts.logo || 'https://taylormadegrowth.com/app/assets/img/logo-proposal.png';
+  const docType = (labelOf(DOC_TYPE, p.doc_type || 'proposal')).toUpperCase();
+  const scopeHead = (labelOf(DOC_TYPE, p.doc_type || 'proposal')) + ' &amp; Scope';
+  const dateStr = p.sent_on ? fmtDate(p.sent_on) : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const services = (p.line_items || []).map((i) => i.label).filter(Boolean).join(', ');
+  const row = (label, value) => `<div class="row"><span class="lbl">${esc(label)}:</span><span class="val${value ? '' : ' blank'}">${value ? esc(value) : ''}</span></div>`;
+  const half = (label, value) => `<div class="row"><span class="lbl">${esc(label)}:</span><span class="val${value ? '' : ' blank'}">${value ? esc(value) : ''}</span></div>`;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(p.title || docType)}</title><style>
+    *{box-sizing:border-box}html,body{margin:0}
+    body{font-family:Georgia,'Times New Roman',serif;color:#1c1c1c;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .frame{border:2px solid #dcdcdc;border-radius:12px;margin:18px;padding:26px 30px 30px}
+    .top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}
+    .logo{width:248px;max-width:52%;height:auto}
+    .contact{text-align:right;font-size:13px;line-height:1.6;color:#2a2a2a}
+    .title{text-align:center;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:32px;letter-spacing:3px;margin:14px 0 18px;color:#111}
+    .sec{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:12.5px;letter-spacing:1.2px;text-transform:uppercase;color:#111;border-bottom:1.5px solid #111;padding-bottom:4px;margin:20px 0 9px}
+    .grid2{display:flex;gap:30px}.grid2>.row{flex:1}
+    .row{display:flex;align-items:baseline;gap:8px;font-size:14px;line-height:1.85;margin:3px 0}
+    .row .lbl{font-weight:bold;white-space:nowrap;font-family:Arial,Helvetica,sans-serif;font-size:12.5px}
+    .row .val{flex:1}
+    .row .val.blank{border-bottom:1px solid #666;min-height:1.05em;align-self:flex-end}
+    .approve{display:flex;gap:46px;font-size:15px;margin:8px 0 4px}
+    .box{font-family:Arial;font-size:17px;margin-right:7px}
+    .dline{display:inline-block;border-bottom:1px solid #666;min-width:150px}
+    .sign{font-size:14px;margin-top:15px;display:flex;align-items:baseline;gap:8px}
+    .sign .lbl{font-family:Arial;font-weight:bold}.sign .u{flex:1;border-bottom:1px solid #666;min-height:1.05em}
+    .foot{margin-top:22px;text-align:center;color:#888;font-size:11px;font-family:Arial}
+    @page{margin:0}
+  </style></head><body><div class="frame">
+    <div class="top">
+      <img class="logo" src="${logo}" alt="TaylorMade Brands">
+      <div class="contact">${esc(BUSINESS.address1)}<br>${esc(BUSINESS.address2)}<br>${esc(BUSINESS.phone)}<br>${esc(BUSINESS.email)}</div>
+    </div>
+    <div class="title">${esc(docType)}</div>
+
+    <div class="sec">Client / Project</div>
+    <div class="grid2">${half('Client', clientName)}${half('Project', p.title)}</div>
+    <div class="grid2">${half('Prepared by', D.prepared_by || 'Josh')}${half('Date', dateStr)}</div>
+
+    <div class="sec">${scopeHead}</div>
+    ${row('Desired outcome', D.desired_outcome || p.summary)}
+    ${row('Services included', services)}
+    ${row('Deliverables', D.deliverables)}
+    ${row('Timeline and milestones', D.timeline)}
+    ${row('Revision allowance', D.revision_allowance)}
+    ${row('Client responsibilities', D.client_responsibilities)}
+    ${row('Fees / Payment schedule', feesText(p))}
+    ${row('Third-party costs', D.third_party_costs)}
+    ${row('Not included', D.not_included)}
+    ${row('Approval method / Deadline', D.approval_method)}
+
+    <div class="sec">Changes</div>
+    ${row('Scope Change Notes', D.scope_change_notes)}
+    ${row('Price Difference & Reasoning', D.price_difference)}
+
+    <div class="sec">Approve / Denial</div>
+    <div class="approve"><span><span class="box">☐</span>Approve / Proceed</span><span><span class="box">☐</span>Denial / Reason: <span class="dline">&nbsp;</span></span></div>
+    <div class="sign"><span class="lbl">Name:</span><span class="u"></span></div>
+    <div class="sign"><span class="lbl">Signature:</span><span class="u"></span></div>
+    <div class="sign"><span class="lbl">Date:</span><span class="u"></span></div>
+
+    <div class="foot">${esc(BUSINESS.name)} · ${esc(BUSINESS.website)}</div>
+  </div></body></html>`;
+}
+
+function previewProposal(p, clientName) {
+  const w = window.open('', '_blank', 'width=880,height=1040');
   if (!w) { toast('Allow pop-ups to preview', 'err'); return; }
-  w.document.write(html); w.document.close();
+  w.document.write(proposalDocHtml(p, clientName)); w.document.close();
 }
 
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
