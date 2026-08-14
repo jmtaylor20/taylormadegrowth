@@ -82,7 +82,8 @@ create table if not exists public.tasks (
   status   text not null default 'todo',    -- todo | doing | done
   priority text not null default 'normal',
   due_date date,
-  recurring boolean not null default false,  -- monthly recurring management task
+  recurring boolean not null default false,  -- true when recur_interval != 'none'
+  recur_interval text not null default 'none', -- none|weekly|monthly|quarterly|semiannual|annual|triennial
   completed_at timestamptz
 );
 
