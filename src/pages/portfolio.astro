@@ -4,36 +4,49 @@ import Base from '../layouts/Base.astro';
 
 <Base
   title="Portfolio | Taylormade Brands"
-  description="View or download the Taylormade Brands business growth portfolio."
+  description="View or download the Taylormade Brands portfolio — software, websites, branding, and growth projects for owner-led businesses."
 >
   <main>
-    <section class="portfolio-simple-hero">
-      <div class="container portfolio-simple-grid">
-        <div>
-          <p class="eyebrow">Business Growth Portfolio</p>
-          <h1>View the full Taylormade Brands portfolio.</h1>
-          <p>
-            See examples of branding, websites, marketing systems, and business growth projects
-            built for local businesses.
-          </p>
-
-          <div class="button-row">
-            <a href="/TMB_portfolio.pdf" class="button primary" target="_blank" rel="noopener">View Portfolio PDF</a>
-            <a href="/TMB_portfolio.pdf" class="button secondary" download>Download Portfolio</a>
+    <section class="ink page-hero grid-bg glow-gold">
+      <div class="container wide">
+        <div class="hero-split">
+          <div>
+            <p class="label">Portfolio</p>
+            <h1 class="display">The full portfolio, in one place.</h1>
+            <p class="lead muted">See examples of software and web apps, websites, branding, and growth projects built for owner-led businesses.</p>
+            <div class="btn-row mt-m">
+              <a href="/TMB_portfolio.pdf" class="btn btn-primary" target="_blank" rel="noopener">View portfolio PDF <span class="arrow">→</span></a>
+              <a href="/TMB_portfolio.pdf" class="btn btn-ghost" download>Download</a>
+            </div>
+          </div>
+          <div class="card summary-card reveal">
+            <p class="label plain">Inside the PDF</p>
+            <ul class="check-list mt-m">
+              <li>Software &amp; web app examples</li>
+              <li>Website examples</li>
+              <li>Branding &amp; print</li>
+              <li>Client growth projects</li>
+              <li>Consulting philosophy</li>
+            </ul>
           </div>
         </div>
+      </div>
+    </section>
 
-        <div class="portfolio-simple-card">
-          <h3>Inside the PDF</h3>
-          <ul>
-            <li>Branding examples</li>
-            <li>Website examples</li>
-            <li>Marketing systems</li>
-            <li>Client growth projects</li>
-            <li>Consulting philosophy</li>
-          </ul>
+    <section class="paper section">
+      <div class="container wide">
+        <div class="head center mx-auto"><p class="label center mx-auto">Prefer the full story?</p><h2>Explore the work and case studies.</h2></div>
+        <div class="grid-3">
+          <a href="/work.html" class="card num-card"><h3>Selected work</h3><p class="muted">Clients, platforms, and results across the whole stack.</p><span class="text-link mt-s">View work <span class="arrow">→</span></span></a>
+          <a href="/ao-case-study.html" class="card num-card"><h3>A&amp;O case study</h3><p class="muted">A complete local growth project, start to finish.</p><span class="text-link mt-s">Read it <span class="arrow">→</span></span></a>
+          <a href="/services.html" class="card num-card"><h3>Capabilities</h3><p class="muted">Software, strategy, research, and marketing.</p><span class="text-link mt-s">Explore <span class="arrow">→</span></span></a>
         </div>
       </div>
     </section>
   </main>
+
+  <style>
+    .summary-card { align-self: stretch; }
+    @media (max-width: 900px) { .hero-split { grid-template-columns: 1fr; } .grid-3 { grid-template-columns: 1fr; } }
+  </style>
 </Base>

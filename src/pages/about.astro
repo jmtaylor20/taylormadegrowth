@@ -6,107 +6,79 @@ import headshot from '../assets/Taylor_headshot.png';
 
 <Base
   title="About | Taylormade Brands"
-  description="Learn about Josh Taylor and Taylormade Brands, a local business growth partner focused on websites, branding, Google visibility, and practical marketing systems."
+  description="Josh Taylor and Taylormade Brands — a growth partner for owner-led businesses, combining custom software, strategy, research, and marketing with a background in leadership and systems."
 >
   <main>
-    <section class="about-hero">
-      <div class="container about-hero-grid">
-        <div>
-          <p class="eyebrow">About Taylormade Brands</p>
-          <h1>Built for local businesses that need practical growth, not marketing fluff.</h1>
-          <p>
-            I help local businesses look more professional, get found online,
-            and build simple systems that turn attention into real opportunities.
-          </p>
-
-          <div class="button-row">
-            <a href="/growth-assessment.html" class="button primary">Start Assessment</a>
-            <a href="/work.html" class="button secondary">View Work</a>
-          </div>
-        </div>
-
-        <div class="about-photo-card">
-          <Image src={headshot} alt="Josh Taylor" width={520} />
+    <!-- HERO -->
+    <section class="ink page-hero grid-bg glow-gold">
+      <div class="container wide">
+        <div class="hero-split">
           <div>
-            <h3>Josh Taylor</h3>
-            <p>Founder, Taylormade Brands</p>
+            <p class="label">About</p>
+            <h1 class="display">A partner in the business, not a vendor to it.</h1>
+            <p class="lead muted">
+              I help owner-led businesses run better and grow — with custom software, clear strategy,
+              honest research, and marketing that actually connects. One person accountable for the
+              whole picture.
+            </p>
+            <div class="btn-row mt-m">
+              <a href="/growth-assessment.html" class="btn btn-primary">Start an assessment <span class="arrow">→</span></a>
+              <a href="/work.html" class="btn btn-ghost">See the work</a>
+            </div>
+          </div>
+          <div class="about-card card reveal">
+            <div class="about-photo"><Image src={headshot} alt="Josh Taylor" width={560} /></div>
+            <div class="about-id">
+              <h3>Josh Taylor</h3>
+              <p class="label plain">Founder · Taylormade Brands</p>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="section about-story-section">
-      <div class="container about-story-grid">
+    <!-- STORY -->
+    <section class="paper section">
+      <div class="container wide split">
         <div>
-          <p class="eyebrow dark">Why It Exists</p>
-          <h2>I saw good businesses doing good work, but their marketing did not show it.</h2>
+          <p class="label">Why it exists</p>
+          <h2>Good businesses lose ground when their systems can't keep up.</h2>
         </div>
+        <div class="story-body">
+          <p>I kept seeing the same thing: owners doing excellent work, held back not by the work itself but by everything around it — a website that undersold them, a Google presence that was invisible, and operations still living in a notebook or a dozen spreadsheets.</p>
+          <p>Taylormade Brands started as branding and websites. But the businesses I worked with kept needing more — a way to capture leads, a system to run the day, real numbers to make decisions. So the work grew into what it is now: custom software, strategy, research, and reporting, alongside the marketing.</p>
+          <p>That's the difference between a vendor and a partner. A vendor hands you a deliverable. A partner stays in the business with you and builds what it actually needs next.</p>
+        </div>
+      </div>
+    </section>
 
+    <!-- APPROACH -->
+    <section class="ink section">
+      <div class="container wide">
+        <div class="head">
+          <p class="label">How I work</p>
+          <h2>Systems beat scattered effort.</h2>
+        </div>
+        <div class="grid-4">
+          <div class="card num-card reveal"><span class="index">01</span><h3>Understand first</h3><p class="muted">Before building anything, I learn how the business really runs and where growth is leaking.</p></div>
+          <div class="card num-card reveal"><span class="index">02</span><h3>Build the system</h3><p class="muted">Software, brand, and lead flow designed to work together and remove the busywork.</p></div>
+          <div class="card num-card reveal"><span class="index">03</span><h3>Measure honestly</h3><p class="muted">Research and reporting so decisions are made on evidence, and you can see what's working.</p></div>
+          <div class="card num-card reveal"><span class="index">04</span><h3>Grow together</h3><p class="muted">We iterate as a partnership, and the system compounds over time.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BACKGROUND -->
+    <section class="paper section">
+      <div class="container wide split">
         <div>
-          <p>
-            Taylormade Brands exists to help local businesses close that gap.
-            A lot of owners are already doing quality work. The problem is that customers
-            cannot always see it clearly online.
-          </p>
-
-          <p>
-            That is where branding, websites, Google visibility, reviews, lead capture,
-            and follow-up systems matter. When those pieces work together, a business
-            looks more professional and becomes easier to trust.
-          </p>
+          <p class="label">Background</p>
+          <h2>Leadership and systems, before software.</h2>
+          <p class="lead muted mt-s">My path isn't traditional agency work. It comes from education leadership, coaching, ministry, and community — years spent building systems, leading teams, and solving practical problems. That's what shapes how I partner with businesses today.</p>
         </div>
-      </div>
-    </section>
-
-    <section class="section about-values-section">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow dark">My Approach</p>
-          <h2>Simple systems beat scattered marketing.</h2>
-        </div>
-
-        <div class="about-values-grid">
-          <div class="about-value-card">
-            <span>01</span>
-            <h3>Look Professional</h3>
-            <p>Your brand, website, and customer materials should match the quality of your work.</p>
-          </div>
-
-          <div class="about-value-card">
-            <span>02</span>
-            <h3>Get Found</h3>
-            <p>Your Google presence, service pages, reviews, and ads should help customers find you.</p>
-          </div>
-
-          <div class="about-value-card">
-            <span>03</span>
-            <h3>Generate Leads</h3>
-            <p>Your website, forms, phone number, and customer touchpoints should make action easy.</p>
-          </div>
-
-          <div class="about-value-card">
-            <span>04</span>
-            <h3>Grow Smarter</h3>
-            <p>Lead tracking, follow-up, reviews, and planning help the business grow with direction.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section about-background-section">
-      <div class="container about-background-grid">
-        <div class="about-background-card">
-          <p class="eyebrow">Background</p>
-          <h2>Leadership, systems, coaching, and community.</h2>
-          <p>
-            My background is not traditional agency work. It comes from education leadership,
-            coaching, ministry, and local community involvement. That shapes how I work with businesses.
-          </p>
-        </div>
-
-        <div class="about-list-card">
-          <h3>Experience That Shapes the Work</h3>
-          <ul>
+        <div class="card bg-list reveal">
+          <h4>Experience that shapes the work</h4>
+          <ul class="check-list mt-m">
             <li>Education leadership and statewide systems work</li>
             <li>Former school administrator</li>
             <li>Youth sports coach and local league volunteer</li>
@@ -118,65 +90,54 @@ import headshot from '../assets/Taylor_headshot.png';
       </div>
     </section>
 
-    <section class="section local-section">
-      <div class="container local-grid">
-        <div>
-          <p class="eyebrow dark">Local Roots</p>
-          <h2>I care about local businesses because I care about local communities.</h2>
-          <p>
-            I grew up in this area, raise my family here, coach here, serve here,
-            and understand how much local reputation matters. Small businesses are not
-            logos on a screen. They are families, jobs, relationships, and community trust.
-          </p>
-        </div>
+    <!-- LOCAL -->
+    <section class="ink-2 section">
+      <div class="container narrow center">
+        <p class="label center mx-auto">Local roots</p>
+        <h2 class="mt-s">I care about local businesses because I care about local communities.</h2>
+        <p class="lead muted mt-m mx-auto" style="max-width:64ch;">I grew up in this area, raise my family here, coach here, and serve here. Small businesses aren't logos on a screen — they're families, jobs, and community trust. I don't build things to look good in a portfolio. I build them to help real businesses earn attention, build trust, and create opportunities.</p>
+      </div>
+    </section>
 
-        <div class="local-callout">
-          <h3>What That Means</h3>
-          <p>
-            I do not build marketing pieces to look good in a portfolio.
-            I build them to help real businesses earn attention, build trust,
-            and create opportunities.
-          </p>
+    <!-- FIT -->
+    <section class="paper section">
+      <div class="container wide">
+        <div class="head center mx-auto">
+          <p class="label center mx-auto">Who I work best with</p>
+          <h2>Owners who want a partner and clear next steps.</h2>
+        </div>
+        <div class="grid-3">
+          <div class="card num-card"><h3>Local service businesses</h3><p class="muted">Trades, contractors, farms, and owner-led companies that do great work and want it to show.</p></div>
+          <div class="card num-card"><h3>Teams &amp; organizations</h3><p class="muted">Leagues, teams, churches, schools, and nonprofits that need a stronger presence and better systems.</p></div>
+          <div class="card num-card"><h3>Growing businesses</h3><p class="muted">Companies that have outgrown spreadsheets and off-the-shelf tools and need something built for them.</p></div>
         </div>
       </div>
     </section>
 
-    <section class="section about-fit-section">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow dark">Who I Work Best With</p>
-          <h2>Best fit businesses want practical help and clear next steps.</h2>
+    <!-- CTA -->
+    <section class="ink section">
+      <div class="container narrow center">
+        <p class="label center mx-auto">Start here</p>
+        <h2 class="mt-s">Let's talk about where your business is headed.</h2>
+        <p class="lead muted mt-s mx-auto" style="max-width:54ch;">Take the growth assessment and I'll review where you are, what's missing, and the best place to start.</p>
+        <div class="btn-row mt-m" style="justify-content:center;">
+          <a href="/growth-assessment.html" class="btn btn-primary">Start assessment <span class="arrow">→</span></a>
+          <a href="/contact.html" class="btn btn-ghost">Contact me</a>
         </div>
-
-        <div class="fit-grid">
-          <div class="fit-card">
-            <h3>Local Service Businesses</h3>
-            <p>Tree services, contractors, trades, farms, outdoor services, and owner-led companies.</p>
-          </div>
-
-          <div class="fit-card">
-            <h3>Community Organizations</h3>
-            <p>Churches, schools, teams, nonprofits, leagues, and local groups that need a stronger presence.</p>
-          </div>
-
-          <div class="fit-card">
-            <h3>Growing Businesses</h3>
-            <p>Businesses that already do good work but need better systems to support growth.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section cta-section">
-      <div class="container narrow">
-        <p class="eyebrow">Start Here</p>
-        <h2>Want to know what your business needs first?</h2>
-        <p>
-          Take the growth assessment and I'll review your website, Google presence,
-          branding, reviews, and lead flow.
-        </p>
-        <a href="/growth-assessment.html" class="button primary">Start Assessment</a>
       </div>
     </section>
   </main>
+
+  <style>
+    .about-card { padding: 0; overflow: hidden; }
+    .about-photo :global(img) { width: 100%; height: auto; display: block; }
+    .about-id { padding: 22px 26px 26px; }
+    .about-id h3 { margin-bottom: 8px; }
+    .story-body p { margin-bottom: 18px; }
+    .story-body p:last-child { margin-bottom: 0; }
+    .paper .story-body p { color: var(--l-muted); }
+    .bg-list h4 { font-size: 1.15rem; }
+    @media (max-width: 900px) { .split, .hero-split { grid-template-columns: 1fr; } .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+    @media (min-width: 561px) and (max-width: 900px) { .grid-4 { grid-template-columns: 1fr 1fr; } }
+  </style>
 </Base>

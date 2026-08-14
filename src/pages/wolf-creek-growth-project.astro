@@ -1,214 +1,148 @@
 ---
 import Base from '../layouts/Base.astro';
-import { Image, getImage } from 'astro:assets';
-import heroSrc from '../assets/wolfcreek_hero.png';
+import { Image } from 'astro:assets';
 import wcLogo from '../assets/wolfcreek_logo.png';
 import wcWebsite from '../assets/wolfcreek_website.png';
 import wcBusinessCard from '../assets/wolfcreek_business_card.png';
 import wcTailgate from '../assets/wolfcreek_tailgate_wrap.png';
 import wcSocial from '../assets/wolfcreek_social_post.png';
 import wcBadge from '../assets/wolf-creek-badge-logo.png';
-import wcWorkPhoto from '../assets/wolfcreek_work_photo.png';
 
-const hero = await getImage({ src: heroSrc, format: 'webp', width: 1600 });
+const built = [
+  { n: '01', title: 'Brand identity', body: 'Logo, colors, and a stronger brand feel built around land, equipment, and trust.' },
+  { n: '02', title: 'Website', body: 'A service-focused site that explains what Wolf Creek does and drives contact.' },
+  { n: '03', title: 'Print materials', body: 'Business cards and customer pieces that create a professional first impression.' },
+  { n: '04', title: 'Social media', body: 'Launch and partnership graphics that make the brand recognizable online.' },
+];
+
+const gallery = [
+  { src: wcBusinessCard, label: 'Business card' },
+  { src: wcTailgate, label: 'Tailgate wrap concept' },
+  { src: wcSocial, label: 'Social launch graphic' },
+  { src: wcBadge, label: 'Logo system' },
+];
 ---
 
 <Base
   title="Wolf Creek Farms Growth Project | Taylormade Brands"
-  description="See how Taylormade Brands partnered with Wolf Creek Farms to build a stronger brand, website, print materials, and growth foundation."
+  description="How Taylormade Brands partnered with Wolf Creek Farms on a rebrand, website, print materials, and a growth foundation for a land-management company."
 >
   <main>
-    <section class="wolf-hero" style={`--hero-bg: url(${hero.src})`}>
-      <div class="container wolf-hero-grid">
-        <div>
-          <p class="eyebrow">Growth Project</p>
-          <h1>Wolf Creek Farms</h1>
-          <p>
-            Rebranding a respected land management company with a stronger visual identity,
-            cleaner website, and practical marketing foundation for future growth.
-          </p>
-
-          <div class="button-row">
-            <a href="/growth-assessment.html" class="button primary">Start Assessment</a>
-            <a href="/portfolio.html" class="button secondary">View Portfolio</a>
+    <!-- HERO -->
+    <section class="ink page-hero grid-bg glow-gold">
+      <div class="container wide">
+        <div class="hero-split">
+          <div>
+            <p class="label">Growth project · Land management</p>
+            <h1 class="display">Wolf Creek Farms</h1>
+            <p class="lead muted">Rebranding a respected land-management company with a stronger visual identity, a cleaner website, and a practical foundation for future growth.</p>
+            <div class="btn-row mt-m">
+              <a href="/growth-assessment.html" class="btn btn-primary">Start an assessment <span class="arrow">→</span></a>
+              <a href="/work.html" class="btn btn-ghost">See more work</a>
+            </div>
           </div>
-        </div>
-
-        <div class="wolf-hero-card">
-          <Image src={wcLogo} alt="Wolf Creek Farms logo" width={400} />
-          <h3>Project Included</h3>
-          <ul>
-            <li>Complete Rebrand</li>
-            <li>New Website</li>
-            <li>Business Cards</li>
-            <li>Tailgate Wrap Concept</li>
-            <li>Social Media Graphics</li>
-            <li>Growth Strategy</li>
-          </ul>
+          <div class="card summary-card reveal">
+            <span class="wc-logo-plate"><Image src={wcLogo} alt="Wolf Creek Farms logo" width={360} /></span>
+            <p class="label plain mt-m">Project included</p>
+            <ul class="check-list mt-s">
+              <li>Complete rebrand</li>
+              <li>New website</li>
+              <li>Business cards</li>
+              <li>Tailgate wrap concept</li>
+              <li>Social media graphics</li>
+              <li>Growth strategy</li>
+            </ul>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="section wolf-challenge-section">
-      <div class="container wolf-split-grid">
+    <!-- CHALLENGE -->
+    <section class="paper section">
+      <div class="container wide split">
         <div>
-          <p class="eyebrow dark">The Challenge</p>
-          <h2>A strong company needed a brand presence that matched the quality of the work.</h2>
-          <p>
-            Wolf Creek Farms already had experience, equipment, and reputation. The opportunity was to
-            create a sharper public image that could support trust, visibility, and future lead generation.
-          </p>
+          <p class="label">The challenge</p>
+          <h2>A strong company needed a brand that matched the quality of the work.</h2>
+          <p class="lead muted mt-s">Wolf Creek already had experience, equipment, and reputation. The opportunity was a sharper public image to support trust, visibility, and future lead generation.</p>
         </div>
-
-        <div class="wolf-list-card">
-          <h3>What Needed To Improve</h3>
-          <ul>
+        <div class="card">
+          <h4>What needed to improve</h4>
+          <ul class="check-list mt-m">
             <li>More professional brand presentation</li>
             <li>Clearer service communication</li>
             <li>Modern website presence</li>
             <li>Consistent visual identity</li>
-            <li>Better customer-facing marketing pieces</li>
-            <li>Stronger foundation for Google and social growth</li>
+            <li>Better customer-facing pieces</li>
+            <li>Foundation for Google &amp; social growth</li>
           </ul>
         </div>
       </div>
     </section>
 
-    <section class="section wolf-built-section">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow dark">What We Built</p>
-          <h2>A brand system built for land clearing, land management, and growth.</h2>
-        </div>
-
-        <div class="wolf-card-grid">
-          <div class="wolf-card">
-            <span>01</span>
-            <h3>Brand Identity</h3>
-            <p>Logo, visual direction, colors, and a stronger brand feel built around land, equipment, and trust.</p>
-          </div>
-
-          <div class="wolf-card">
-            <span>02</span>
-            <h3>Website</h3>
-            <p>Service-focused website structure designed to explain what Wolf Creek does and help customers make contact.</p>
-          </div>
-
-          <div class="wolf-card">
-            <span>03</span>
-            <h3>Print Materials</h3>
-            <p>Business cards and customer-facing pieces that create a more professional first impression.</p>
-          </div>
-
-          <div class="wolf-card">
-            <span>04</span>
-            <h3>Social Media</h3>
-            <p>Launch and partnership graphics that make the brand easier to recognize and share online.</p>
-          </div>
+    <!-- BUILT -->
+    <section class="ink section">
+      <div class="container wide">
+        <div class="head"><p class="label">What we built</p><h2>A brand system built for land work — and growth.</h2></div>
+        <div class="grid-4">
+          {built.map((b) => (
+            <div class="card num-card reveal"><span class="index">{b.n}</span><h3>{b.title}</h3><p class="muted">{b.body}</p></div>
+          ))}
         </div>
       </div>
     </section>
 
-    <section class="section wolf-gallery-section">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow dark">Brand Gallery</p>
-          <h2>Visual pieces designed to make the company look established.</h2>
-        </div>
-
-        <div class="wolf-gallery-grid">
-          <article class="wolf-gallery-item website-feature">
-            <Image src={wcWebsite} alt="Wolf Creek Farms website screenshot" width={1100} />
-            <div>
-              <h3>Website</h3>
-              <p>A cleaner digital home for land clearing, land management, road building, drainage, and related services.</p>
-            </div>
-          </article>
-
-          <article class="wolf-gallery-item">
-            <Image src={wcBusinessCard} alt="Wolf Creek Farms business card" width={720} />
-            <div>
-              <h3>Business Card</h3>
-              <p>Professional contact piece for estimates, referrals, and customer conversations.</p>
-            </div>
-          </article>
-
-          <article class="wolf-gallery-item">
-            <Image src={wcTailgate} alt="Wolf Creek Farms tailgate wrap concept" width={720} />
-            <div>
-              <h3>Tailgate Wrap</h3>
-              <p>Vehicle branding concept built for high local visibility.</p>
-            </div>
-          </article>
-
-          <article class="wolf-gallery-item">
-            <Image src={wcSocial} alt="Wolf Creek Farms social media graphic" width={720} />
-            <div>
-              <h3>Social Launch Graphic</h3>
-              <p>Branded content to help introduce the new direction online.</p>
-            </div>
-          </article>
-
-          <article class="wolf-gallery-item">
-            <Image src={wcBadge} alt="Wolf Creek Farms logo" width={720} />
-            <div>
-              <h3>Logo System</h3>
-              <p>A stronger mark built around land, timber, equipment, and trust.</p>
-            </div>
-          </article>
+    <!-- GALLERY -->
+    <section class="paper section">
+      <div class="container wide">
+        <div class="head"><p class="label">Brand gallery</p><h2>Pieces designed to make the company look established.</h2></div>
+        <div class="feature-shot reveal"><Image src={wcWebsite} alt="Wolf Creek Farms website" width={1200} /></div>
+        <div class="grid-4 mt-m">
+          {gallery.map((g) => (
+            <figure class="gallery-item reveal"><Image src={g.src} alt={g.label} width={640} /><figcaption>{g.label}</figcaption></figure>
+          ))}
         </div>
       </div>
     </section>
 
-    <section class="section wolf-showcase-section">
-      <div class="container wolf-showcase-grid">
-        <div>
-          <p class="eyebrow">Website Foundation</p>
-          <h2>Built to turn land service searches into real conversations.</h2>
-          <p>
-            The website gives customers a clear way to understand services, see the business as credible,
-            and reach out for work related to land clearing, land preparation, road building, drainage,
-            house pads, RV lots, fire breaks, hunting land development, pond building, and clay gravel.
-          </p>
-          <a href="/growth-assessment.html" class="button primary">Start Your Growth Assessment</a>
-        </div>
-
-        <div class="wolf-showcase-image">
-          <Image src={wcWorkPhoto} alt="Wolf Creek Farms work photo" width={900} />
+    <!-- FOUNDATION -->
+    <section class="ink-2 section">
+      <div class="container wide">
+        <div class="head center mx-auto"><p class="label center mx-auto">Growth foundation</p><h2>The goal wasn't one graphic. It was a system.</h2></div>
+        <div class="grid-4 foundation">
+          <div class="card">SEO-focused service structure</div>
+          <div class="card">Lead capture pathway</div>
+          <div class="card">Google-ready presence</div>
+          <div class="card">Brand consistency</div>
+          <div class="card">Customer trust pieces</div>
+          <div class="card">Social launch assets</div>
+          <div class="card">Print-ready tools</div>
+          <div class="card">Advertising foundation</div>
         </div>
       </div>
     </section>
 
-    <section class="section wolf-foundation-section">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow dark">Growth Foundation</p>
-          <h2>The goal was not one graphic. It was a system.</h2>
-        </div>
-
-        <div class="wolf-foundation-grid">
-          <div>SEO-focused service structure</div>
-          <div>Lead capture pathway</div>
-          <div>Google-ready business presence</div>
-          <div>Professional brand consistency</div>
-          <div>Customer trust pieces</div>
-          <div>Social media launch assets</div>
-          <div>Print-ready marketing tools</div>
-          <div>Future advertising foundation</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section cta-section">
-      <div class="container narrow">
-        <p class="eyebrow">Start Here</p>
-        <h2>Ready to modernize your business?</h2>
-        <p>
-          Take the growth assessment and I'll review your website, Google presence,
-          branding, reviews, and lead flow.
-        </p>
-        <a href="/growth-assessment.html" class="button primary">Start Assessment</a>
+    <!-- CTA -->
+    <section class="ink section">
+      <div class="container narrow center">
+        <p class="label center mx-auto">Start here</p>
+        <h2 class="mt-s">Ready to modernize your business?</h2>
+        <p class="lead muted mt-s mx-auto" style="max-width:54ch;">Take the growth assessment and I'll review your brand, presence, and lead flow.</p>
+        <a href="/growth-assessment.html" class="btn btn-primary mt-m">Start assessment <span class="arrow">→</span></a>
       </div>
     </section>
   </main>
+
+  <style>
+    .summary-card { align-self: stretch; }
+    .wc-logo-plate { display: flex; align-items: center; justify-content: center; background: var(--paper); border: 1px solid var(--line-d); border-radius: 12px; padding: 22px; }
+    .wc-logo-plate :global(img) { max-height: 90px; width: auto; object-fit: contain; }
+    .feature-shot { border: 1px solid var(--line-l); border-radius: 16px; overflow: hidden; box-shadow: 0 40px 90px -55px rgba(11,14,20,.4); aspect-ratio: 16 / 9; }
+    .feature-shot :global(img) { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+    .gallery-item { border: 1px solid var(--line-l); border-radius: 14px; overflow: hidden; background: var(--paper-2); }
+    .gallery-item :global(img) { width: 100%; height: 190px; object-fit: cover; object-position: center; }
+    .gallery-item figcaption { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.06em; color: var(--l-muted); padding: 13px 16px; border-top: 1px solid var(--line-l); }
+    .foundation .card { display: flex; align-items: center; font-weight: 500; }
+    @media (max-width: 900px) { .split, .hero-split { grid-template-columns: 1fr; } .grid-4 { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 560px) { .grid-4 { grid-template-columns: 1fr; } }
+  </style>
 </Base>

@@ -1,36 +1,33 @@
 ---
 import { Image } from 'astro:assets';
-import logo from '../assets/TMB_Horizontal_Logo.png';
+import logo from '../assets/TMB_Horizontal_White_Logo.png';
 
-// Trimmed, consistent navigation (case studies now live under Work).
 const links = [
   { href: '/index.html', label: 'Home' },
-  { href: '/services.html', label: 'Services' },
-  { href: '/investment.html', label: 'Investment' },
+  { href: '/services.html', label: 'Capabilities' },
   { href: '/work.html', label: 'Work' },
+  { href: '/investment.html', label: 'Engagements' },
   { href: '/about.html', label: 'About' },
   { href: '/contact.html', label: 'Contact' },
 ];
 
-// Normalize current path so "/" and "/index.html" both light up Home.
 const current = Astro.url.pathname.replace(/\/$/, '') || '/index.html';
-const isActive = (href) =>
-  href === current || (href === '/index.html' && current === '/');
+const isActive = (href) => href === current || (href === '/index.html' && current === '/');
 ---
 
 <header class="site-header">
-  <div class="container nav-wrap">
+  <div class="container wide nav-wrap">
     <a href="/index.html" class="logo-link" aria-label="Taylormade Brands home">
-      <Image src={logo} alt="Taylormade Brands logo" class="site-logo" width={360} densities={[1, 2]} loading="eager" />
+      <Image src={logo} alt="Taylormade Brands" class="site-logo" width={320} densities={[1, 2]} loading="eager" />
     </a>
 
-    <button class="mobile-menu-toggle" aria-label="Open menu" aria-expanded="false">☰</button>
+    <button class="menu-toggle" aria-label="Open menu" aria-expanded="false">☰</button>
 
     <nav class="site-nav">
       {links.map((l) => (
-        <a href={l.href} aria-current={isActive(l.href) ? 'page' : undefined}>{l.label}</a>
+        <a href={l.href} class="nav-item" aria-current={isActive(l.href) ? 'page' : undefined}>{l.label}</a>
       ))}
-      <a href="/growth-assessment.html" class="nav-button">Start Assessment</a>
+      <a href="/growth-assessment.html" class="btn btn-primary nav-cta">Start Here</a>
     </nav>
   </div>
 </header>

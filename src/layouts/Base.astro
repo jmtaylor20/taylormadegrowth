@@ -6,16 +6,15 @@ import CookieConsent from '../components/CookieConsent.astro';
 import '../styles/global.css';
 
 // Self-hosted fonts (bundled at build time — no external network requests).
+import '@fontsource-variable/fraunces/opsz.css';
 import '@fontsource/inter/400.css';
 import '@fontsource/inter/500.css';
 import '@fontsource/inter/600.css';
-import '@fontsource/sora/500.css';
-import '@fontsource/sora/600.css';
-import '@fontsource/sora/700.css';
+import '@fontsource-variable/jetbrains-mono';
 
 const {
   title,
-  description = 'Taylormade Brands helps local businesses grow through websites, branding, Google Business Profile support, ads, and practical marketing systems.',
+  description = 'Taylormade Brands is a growth partner for owner-led businesses — custom software, growth strategy, research, and reporting that make good businesses run and grow better.',
   bodyClass = '',
   chrome = true,
 } = Astro.props;
@@ -32,6 +31,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
     <link rel="icon" type="image/png" sizes="32x32" href="/TMB_favicon_32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/TMB_favicon_16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/TMB_favicon_180.png" />
+    <meta name="theme-color" content="#0b0e14" />
+    <script is:inline>document.documentElement.classList.add('js');</script>
 
     <title>{title}</title>
     <meta name="description" content={description} />
@@ -55,18 +56,41 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
     {chrome && <Footer />}
     <CookieConsent />
 
-    {chrome && (
-      <script>
-        const toggle = document.querySelector('.mobile-menu-toggle');
-        const nav = document.querySelector('.site-nav');
-        if (toggle && nav) {
-          toggle.addEventListener('click', () => {
-            const open = nav.classList.toggle('active');
-            toggle.textContent = open ? '×' : '☰';
-            toggle.setAttribute('aria-expanded', String(open));
-          });
-        }
-      </script>
-    )}
+    <script>
+      // Mobile nav
+      const toggle = document.querySelector('.menu-toggle');
+      const nav = document.querySelector('.site-nav');
+      if (toggle && nav) {
+        toggle.addEventListener('click', () => {
+          const open = nav.classList.toggle('open');
+          toggle.textContent = open ? '×' : '☰';
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+        nav.querySelectorAll('a').forEach((a) =>
+          a.addEventListener('click', () => {
+            nav.classList.remove('open');
+            toggle.textContent = '☰';
+            toggle.setAttribute('aria-expanded', 'false');
+          })
+        );
+      }
+
+      // Scroll reveal
+      const els = document.querySelectorAll('.reveal');
+      if (els.length) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((e) => {
+              if (e.isIntersecting) {
+                e.target.classList.add('in');
+                io.unobserve(e.target);
+              }
+            });
+          },
+          { rootMargin: '0px 0px -8% 0px', threshold: 0.08 }
+        );
+        els.forEach((el) => io.observe(el));
+      }
+    </script>
   </body>
 </html>

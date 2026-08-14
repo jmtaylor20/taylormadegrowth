@@ -1,291 +1,242 @@
 ---
 import Base from '../layouts/Base.astro';
-import { Image, getImage } from 'astro:assets';
-import heroSrc from '../assets/TMB_Hero.png';
-import growthSystem from '../assets/growth_system.png';
-import aoBusinessCard from '../assets/ao_business_card.png';
+import { Image } from 'astro:assets';
 import aoWebsite from '../assets/ao_website.png';
-import aoGoogleProfile from '../assets/ao_google_profile.png';
-import aoReviewCard from '../assets/ao_review_card.png';
-import aoWorkPhoto from '../assets/ao_work_photo.png';
-
-const hero = await getImage({ src: heroSrc, format: 'webp', width: 1600 });
 ---
 
 <Base
-  title="Services | Taylormade Brands"
-  description="Taylormade Brands helps local businesses look professional, get found, generate leads, and grow through websites, branding, Google tools, and marketing systems."
+  title="Capabilities | Taylormade Brands"
+  description="Taylormade Brands builds custom software, growth strategy, research and reporting, and marketing systems for owner-led businesses — one partner across the whole stack."
 >
   <main>
-    <section class="services-hero" style={`--hero-bg: url(${hero.src})`}>
-      <div class="container services-hero-grid">
-        <div>
-          <p class="eyebrow">Services</p>
-          <h1>The systems local businesses need to look better, get found, and grow.</h1>
-          <p>
-            Most businesses do not need random marketing. They need the right pieces working together:
-            branding, website, Google visibility, reviews, lead capture, and follow-up.
-          </p>
+    <!-- HERO -->
+    <section class="ink page-hero grid-bg glow-gold">
+      <div class="container wide">
+        <div class="hero-split">
+          <div>
+            <p class="label">Capabilities</p>
+            <h1 class="display">One partner across the whole stack.</h1>
+            <p class="lead muted">
+              Most businesses don't need more vendors. They need one partner who can build the software,
+              set the strategy, do the research, and run the marketing — so every piece works together
+              instead of pulling in different directions.
+            </p>
+            <div class="btn-row mt-m">
+              <a href="/growth-assessment.html" class="btn btn-primary">Start with an assessment <span class="arrow">→</span></a>
+              <a href="/investment.html" class="btn btn-ghost">See engagements</a>
+            </div>
+          </div>
 
-          <div class="button-row">
-            <a href="/growth-assessment.html" class="button primary">Start Assessment</a>
-            <a href="/work.html" class="button secondary">View Work</a>
+          <div class="cap-index card reveal">
+            <p class="label plain">Four disciplines</p>
+            <ol class="cap-list">
+              <li><a href="#software"><span class="index">01</span> Custom Software &amp; Web Apps</a></li>
+              <li><a href="#strategy"><span class="index">02</span> Growth Strategy</a></li>
+              <li><a href="#research"><span class="index">03</span> Research &amp; Reporting</a></li>
+              <li><a href="#marketing"><span class="index">04</span> Marketing, Brand &amp; Web</a></li>
+            </ol>
           </div>
         </div>
+      </div>
+    </section>
 
-        <div class="services-hero-card">
-          <h3>Core Focus</h3>
-          <ul>
-            <li>Look Professional</li>
-            <li>Get Found</li>
-            <li>Generate Leads</li>
-            <li>Grow Consistently</li>
+    <!-- 01 SOFTWARE -->
+    <section class="paper section" id="software">
+      <div class="container wide split lean">
+        <div>
+          <p class="label">01 — Custom Software &amp; Web Apps</p>
+          <h2>Software built around your business — not the other way around.</h2>
+          <p class="lead muted mt-s">
+            Off-the-shelf tools force you to change how you work. I build web apps and platforms that
+            fit the way your business already runs, then remove the busywork around it.
+          </p>
+          <ul class="feature-list mt-m">
+            <li><strong>Client &amp; customer portals</strong> — logins, dashboards, and self-serve tools for the people you work with.</li>
+            <li><strong>Registration &amp; booking systems</strong> — online sign-ups, rosters, and scheduling that run themselves.</li>
+            <li><strong>Internal operations tools</strong> — CRM, pipeline, invoicing, and workflow apps that replace spreadsheets.</li>
+            <li><strong>Dashboards &amp; automation</strong> — live numbers and automated steps that save hours every week.</li>
+          </ul>
+        </div>
+        <div class="mock reveal">
+          <div class="mock-head"><span class="rdot active"></span> operations · pipeline</div>
+          <div class="mini-cols">
+            <div><span class="mc-label">New</span><span class="mc-chip">Estimate request</span><span class="mc-chip">Referral</span></div>
+            <div><span class="mc-label">Building</span><span class="mc-chip gold">Client portal</span><span class="mc-chip">Website</span></div>
+            <div><span class="mc-label">Live</span><span class="mc-chip">Reg. system</span><span class="mc-chip">Reporting</span></div>
+          </div>
+          <div class="mock-rows mt-m">
+            <div class="mock-row"><span>Active clients</span><b>12</b></div>
+            <div class="mock-row"><span>Open invoices</span><b class="gold">$8,400</b></div>
+            <div class="mock-row"><span>Tasks this week</span><b>23</b></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 STRATEGY -->
+    <section class="ink section" id="strategy">
+      <div class="container wide split lean">
+        <div class="strat-visual reveal">
+          <div class="roadmap-mock">
+            <div class="rm-step"><span class="index">Now</span><h4>Fix what's leaking</h4><p class="muted">Close the obvious gaps — trust, visibility, follow-up.</p></div>
+            <div class="rm-step"><span class="index">Next</span><h4>Build the system</h4><p class="muted">Software, brand, and lead flow working together.</p></div>
+            <div class="rm-step"><span class="index">Later</span><h4>Compound it</h4><p class="muted">Reporting, iteration, and scale as a partnership.</p></div>
+          </div>
+        </div>
+        <div>
+          <p class="label">02 — Growth Strategy</p>
+          <h2>A clear plan, and a partner to run it with.</h2>
+          <p class="lead muted mt-s">
+            Strategy isn't a slide deck that sits in a drawer. It's a prioritized plan for what to fix
+            first, what to build next, and how to tell it's working — and someone in the business with you
+            to keep it moving.
+          </p>
+          <ul class="feature-list mt-m">
+            <li><strong>Growth roadmap</strong> — what to do now, next, and later, ranked by impact.</li>
+            <li><strong>Systems thinking</strong> — connecting operations, marketing, and follow-up into one flow.</li>
+            <li><strong>Ongoing partnership</strong> — regular working sessions, not a one-time engagement.</li>
+            <li><strong>Owner's-seat advice</strong> — practical calls made with your goals and margins in mind.</li>
           </ul>
         </div>
       </div>
     </section>
 
-    <section class="section growth-system-section">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow dark">The Growth System</p>
-          <h2>Every piece should support the next one.</h2>
-          <p>
-            A good website matters. So does branding. So does Google. The real power comes when those pieces work together.
-          </p>
-        </div>
-
-        <div class="growth-system-image-wrap">
-          <Image src={growthSystem} alt="Local business growth system diagram" width={1100} />
-        </div>
-      </div>
-    </section>
-
-    <section class="section services-category-section">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow dark">How I Help</p>
-          <h2>Services built around outcomes, not random deliverables.</h2>
-        </div>
-
-        <div class="services-grid">
-          <article class="service-detail-card">
-            <Image src={aoBusinessCard} alt="Branding and business card example" width={720} />
-            <div>
-              <span>01</span>
-              <h3>Branding &amp; Print Materials</h3>
-              <p>
-                Build trust before the customer ever calls. This includes logos, brand kits,
-                business cards, review cards, estimate sheets, yard signs, and other customer touchpoints.
-              </p>
-              <ul>
-                <li>Logo design and brand kit</li>
-                <li>Business cards and review cards</li>
-                <li>Estimate sheets and printed materials</li>
-                <li>Signs, flyers, and branded customer pieces</li>
-              </ul>
-            </div>
-          </article>
-
-          <article class="service-detail-card">
-            <Image src={aoWebsite} alt="Website design example" width={720} />
-            <div>
-              <span>02</span>
-              <h3>Websites</h3>
-              <p>
-                A website should explain what you do, build trust, and make it easy for customers
-                to contact you. Pretty is not enough. It has to work.
-              </p>
-              <ul>
-                <li>Service business websites</li>
-                <li>Mobile-friendly design</li>
-                <li>Lead capture forms</li>
-                <li>Service pages and trust-building content</li>
-              </ul>
-            </div>
-          </article>
-
-          <article class="service-detail-card">
-            <Image src={aoGoogleProfile} alt="Google Business Profile example" width={720} />
-            <div>
-              <span>03</span>
-              <h3>Google Growth</h3>
-              <p>
-                Customers search Google when they are ready to act. Your profile, reviews,
-                photos, service pages, and ads need to support that moment.
-              </p>
-              <ul>
-                <li>Google Business Profile support</li>
-                <li>Review generation systems</li>
-                <li>Google Ads setup and support</li>
-                <li>Local visibility improvements</li>
-              </ul>
-            </div>
-          </article>
-
-          <article class="service-detail-card">
-            <Image src={aoReviewCard} alt="Review generation system example" width={720} />
-            <div>
-              <span>04</span>
-              <h3>Marketing &amp; Growth Systems</h3>
-              <p>
-                Growth gets easier when leads, reviews, follow-up, and customer touchpoints are organized.
-                I help build the system behind the marketing.
-              </p>
-              <ul>
-                <li>Lead tracking and follow-up</li>
-                <li>Referral and review systems</li>
-                <li>Seasonal campaign planning</li>
-                <li>Growth consulting and ongoing management</li>
-              </ul>
-            </div>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section business-needs-section">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow dark">Where You Fit</p>
-          <h2>Different businesses need different starting points.</h2>
-        </div>
-
-        <div class="needs-grid">
-          <div class="need-card">
-            <h3>New Business</h3>
-            <p>You need to look legitimate fast.</p>
-            <ul>
-              <li>Logo and brand kit</li>
-              <li>Website</li>
-              <li>Google Business Profile</li>
-              <li>Basic print materials</li>
-            </ul>
-          </div>
-
-          <div class="need-card">
-            <h3>Established Business</h3>
-            <p>You have customers, but your online presence needs to catch up.</p>
-            <ul>
-              <li>Website refresh</li>
-              <li>Review system</li>
-              <li>Google profile cleanup</li>
-              <li>Brand consistency</li>
-            </ul>
-          </div>
-
-          <div class="need-card">
-            <h3>Growing Business</h3>
-            <p>You need a repeatable system, not one-off marketing.</p>
-            <ul>
-              <li>Google Ads</li>
-              <li>Lead tracking</li>
-              <li>Follow-up process</li>
-              <li>Ongoing marketing support</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section pathways-section">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow dark">Recommended Pathways</p>
-          <h2>Pick the starting point that matches the problem.</h2>
-        </div>
-
-        <div class="pathway-grid">
-          <div class="pathway-card">
-            <span>Foundation</span>
-            <h3>Get Professional</h3>
-            <p>Branding, website, Google profile, and basic customer materials.</p>
-          </div>
-
-          <div class="pathway-card featured-pathway">
-            <span>Growth</span>
-            <h3>Get Found</h3>
-            <p>Website improvements, Google visibility, review system, and local search support.</p>
-          </div>
-
-          <div class="pathway-card">
-            <span>Momentum</span>
-            <h3>Scale What Works</h3>
-            <p>Google Ads, lead tracking, follow-up systems, and ongoing growth support.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section service-proof-section">
-      <div class="container service-proof-grid">
+    <!-- 03 RESEARCH & REPORTING -->
+    <section class="paper section" id="research">
+      <div class="container wide split lean">
         <div>
-          <p class="eyebrow">Proof</p>
-          <h2>A&amp;O Tree Service shows how the pieces work together.</h2>
-          <p>
-            Website launch, Google Business Profile support, Google Ads, print materials,
-            review generation, and lead capture all worked together as one growth foundation.
+          <p class="label">03 — Research &amp; Reporting</p>
+          <h2>Decisions made on evidence, not guesswork.</h2>
+          <p class="lead muted mt-s">
+            I dig into the market, the competition, and your own numbers — then turn it into plain-language
+            reporting you can actually act on. Every engagement is measured, so you always know what your
+            investment is producing.
           </p>
-          <a href="/ao-case-study.html" class="button primary">View Case Study</a>
+          <ul class="feature-list mt-m">
+            <li><strong>Market &amp; competitor research</strong> — where the demand is and how you stack up.</li>
+            <li><strong>Performance reporting</strong> — leads, calls, traffic, and pipeline in one monthly view.</li>
+            <li><strong>Value reporting</strong> — a clear record of what was built and what it's worth.</li>
+            <li><strong>Recommendations</strong> — the "so what" and "what's next," in language that's useful.</li>
+          </ul>
+          <div class="research-eg mt-m">
+            <span class="label plain">Recent example</span>
+            <p>A full market-research report for a prospective client weighing entry into a new service market — competitive landscape, demand signals, pricing, positioning, and a clear go / no-go recommendation.</p>
+          </div>
         </div>
-
-        <div class="service-proof-image">
-          <Image src={aoWorkPhoto} alt="A&O Tree Service work photo" width={900} />
-        </div>
-      </div>
-    </section>
-
-    <section class="section faq-section">
-      <div class="container narrow">
-        <div class="section-heading">
-          <p class="eyebrow dark">Common Questions</p>
-          <h2>Questions business owners usually ask first.</h2>
-        </div>
-
-        <div class="faq-list">
-          <details>
-            <summary>Do I need a website?</summary>
-            <p>
-              If customers search for your service online, yes. Your website gives people a clear place
-              to learn, trust, and contact you.
-            </p>
-          </details>
-
-          <details>
-            <summary>Do you manage everything?</summary>
-            <p>
-              I can help with strategy, setup, design, launch, and ongoing management depending on what the business needs.
-            </p>
-          </details>
-
-          <details>
-            <summary>Should I run Google Ads?</summary>
-            <p>
-              Google Ads work best when your website, Google profile, reviews, and lead process are ready first.
-            </p>
-          </details>
-
-          <details>
-            <summary>Do you only work with tree services?</summary>
-            <p>
-              No. The system works for many local businesses, especially service companies, churches, team stores,
-              contractors, and community-based organizations.
-            </p>
-          </details>
+        <div class="mock reveal">
+          <div class="mock-head"><span class="rdot done"></span> reporting · monthly growth report</div>
+          <div class="mock-rows">
+            <div class="mock-row"><span>Leads captured</span><b>148</b></div>
+            <div class="mock-row"><span>Calls from Google</span><b>96</b></div>
+            <div class="mock-row"><span>Est. pipeline value</span><b class="gold">$41,200</b></div>
+            <div class="mock-row"><span>New 5-star reviews</span><b>27</b></div>
+            <div class="mock-row"><span>Report status</span><b class="tag" style="font-family:var(--font-mono);font-size:.7rem;">delivered</b></div>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="section cta-section">
+    <!-- 04 MARKETING -->
+    <section class="ink section" id="marketing">
+      <div class="container wide split lean">
+        <div class="reveal">
+          <div class="shot-frame">
+            <Image src={aoWebsite} alt="Example client website built by Taylormade Brands" width={900} />
+          </div>
+        </div>
+        <div>
+          <p class="label">04 — Marketing, Brand &amp; Web</p>
+          <h2>The front door to everything else.</h2>
+          <p class="lead muted mt-s">
+            Websites, branding, Google visibility, and lead systems still matter — they're how customers
+            find and trust you. I build them to match the quality of the work behind them, and to feed the
+            systems above.
+          </p>
+          <ul class="feature-list mt-m">
+            <li><strong>Websites</strong> — fast, mobile-first sites built to turn visitors into leads.</li>
+            <li><strong>Branding &amp; print</strong> — logos, brand kits, cards, signs, and customer touchpoints.</li>
+            <li><strong>Google growth</strong> — Business Profile, reviews, local SEO, and Google Ads.</li>
+            <li><strong>Lead systems</strong> — forms, QR codes, review generation, and follow-up.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- WHO IT'S FOR -->
+    <section class="paper-2 section">
+      <div class="container wide">
+        <div class="head center mx-auto">
+          <p class="label center mx-auto">Where you fit</p>
+          <h2>Different businesses start in different places.</h2>
+        </div>
+        <div class="grid-3">
+          <div class="card num-card"><span class="index">01</span><h3>Getting established</h3><p class="muted">You need to look legitimate and get found fast — brand, website, and a Google foundation.</p></div>
+          <div class="card num-card"><span class="index">02</span><h3>Ready for leads</h3><p class="muted">You have customers but your online presence and follow-up need to catch up and convert.</p></div>
+          <div class="card num-card"><span class="index">03</span><h3>Ready to scale</h3><p class="muted">You need custom software, reporting, and a repeatable system — a real growth partner.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="ink section">
       <div class="container narrow">
-        <p class="eyebrow">Start Here</p>
-        <h2>Ready to see where your business stands?</h2>
-        <p>
-          Take the growth assessment and I'll review your current website, Google presence,
-          branding, reviews, and lead flow.
-        </p>
-        <a href="/growth-assessment.html" class="button primary">Start Assessment</a>
+        <div class="head">
+          <p class="label">Common questions</p>
+          <h2>What owners usually ask first.</h2>
+        </div>
+        <div class="faq">
+          <details><summary>Do I have to buy everything at once?</summary><p>No. Most partnerships start with one high-leverage piece — often a website or a specific system — and grow from there as it proves out.</p></details>
+          <details><summary>What kind of software do you actually build?</summary><p>Web apps that run in the browser and on phones — client portals, registration and booking systems, internal CRM and operations tools, dashboards, and reporting. All custom to the business.</p></details>
+          <details><summary>Do you only work with local service businesses?</summary><p>That's where a lot of the work has been, but the approach fits any owner-led business — trades, teams and leagues, community organizations, and growing companies that have outgrown spreadsheets.</p></details>
+          <details><summary>How is this different from a marketing agency?</summary><p>An agency sells you tasks. I work as a partner across software, strategy, research, and marketing — and everything is measured and reported, so you can see what it's producing.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="ink-2 section">
+      <div class="container narrow center">
+        <p class="label center mx-auto">Start here</p>
+        <h2 class="mt-s">Not sure where to start?</h2>
+        <p class="lead muted mt-s mx-auto" style="max-width:56ch;">Take the growth assessment and I'll recommend the highest-leverage place to begin — and what to build after it.</p>
+        <div class="btn-row mt-m" style="justify-content:center;">
+          <a href="/growth-assessment.html" class="btn btn-primary">Take the assessment <span class="arrow">→</span></a>
+          <a href="/contact.html" class="btn btn-ghost">Book a conversation</a>
+        </div>
       </div>
     </section>
   </main>
+
+  <style>
+    .cap-index { align-self: stretch; }
+    .cap-list { list-style: none; margin-top: 18px; display: grid; gap: 2px; }
+    .cap-list li a { display: flex; align-items: center; gap: 14px; padding: 15px 0; border-bottom: 1px solid var(--line-d); font-family: var(--font-display); font-size: 1.15rem; color: var(--d-text); transition: color .2s var(--ease), gap .2s var(--ease); }
+    .cap-list li:last-child a { border-bottom: 0; }
+    .cap-list li a:hover { color: var(--gold); gap: 18px; }
+
+    .mini-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .mc-label { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--d-faint); display: block; margin-bottom: 8px; }
+    .mc-chip { display: block; background: var(--ink-3); border: 1px solid var(--line-d); border-radius: 8px; padding: 8px 10px; font-size: 0.74rem; color: var(--d-muted); margin-bottom: 8px; }
+    .mc-chip.gold { border-color: var(--gold-deep); color: var(--gold-soft); }
+
+    .roadmap-mock { display: grid; gap: 14px; }
+    .rm-step { background: var(--ink-2); border: 1px solid var(--line-d); border-left: 2px solid var(--gold); border-radius: 12px; padding: 20px 22px; }
+    .rm-step .index { text-transform: uppercase; letter-spacing: 0.12em; }
+    .rm-step h4 { margin: 8px 0 6px; font-size: 1.15rem; }
+    .rm-step p { font-size: 0.92rem; }
+
+    .research-eg { border-left: 2px solid var(--gold); background: var(--paper-2); border-radius: 0 12px 12px 0; padding: 16px 20px; }
+    .research-eg .label { margin-bottom: 8px; }
+    .research-eg p { font-size: 0.98rem; color: var(--l-muted); }
+
+    .shot-frame { border: 1px solid var(--line-d-2); border-radius: 16px; overflow: hidden; box-shadow: 0 40px 90px -55px #000; aspect-ratio: 4 / 3; }
+    .shot-frame :global(img) { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+
+    @media (max-width: 900px) {
+      .split, .hero-split { grid-template-columns: 1fr; }
+      .split.lean { grid-template-columns: 1fr; }
+      .strat-visual { order: 2; }
+      .grid-3 { grid-template-columns: 1fr; }
+    }
+  </style>
 </Base>
