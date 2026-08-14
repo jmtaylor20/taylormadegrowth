@@ -114,12 +114,24 @@ export const TASK_CATEGORY = [
   { key: 'onboarding', label: 'Onboarding' },
   { key: 'build',      label: 'Website build' },
   { key: 'content',    label: 'Content' },
+  { key: 'renewal',    label: 'Renewal' },
   { key: 'general',    label: 'General' },
 ];
 export const TASK_STATUS = [
   { key: 'todo',  label: 'To do',       tone: 'gray' },
   { key: 'doing', label: 'In progress', tone: 'blue' },
   { key: 'done',  label: 'Done',        tone: 'green' },
+];
+
+// Recurrence intervals (renewals use the longer ones).
+export const RECUR_INTERVAL = [
+  { key: 'none',       label: 'One-time',   months: 0 },
+  { key: 'weekly',     label: 'Weekly',     months: 0, days: 7 },
+  { key: 'monthly',    label: 'Monthly',    months: 1 },
+  { key: 'quarterly',  label: 'Quarterly',  months: 3 },
+  { key: 'semiannual', label: 'Every 6 mo', months: 6 },
+  { key: 'annual',     label: 'Annually',   months: 12 },
+  { key: 'triennial',  label: 'Every 3 yrs',months: 36 },
 ];
 export const CONTENT_CHANNEL = [
   { key: 'instagram', label: 'Instagram' },

@@ -14,7 +14,8 @@ import {
 import { openClientForm } from './forms.js';
 import { openReport } from './report.js';
 import { openInvoiceForm } from './invoices.js';
-import { openTaskForm } from './tasks.js';
+import { openTaskForm, markTaskDone } from './tasks.js';
+import { RECUR_INTERVAL } from './config.js';
 
 const initials = (name) => (name || '?').split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
@@ -183,7 +184,23 @@ export async function openClient(id, onChange) {
       el('dt', { text: 'Email' }), el('dd', { text: client.email_provider || '—' }),
       el('dt', { text: 'Email renews' }), el('dd', { text: client.email_renews_on ? fmtDate(client.email_renews_on) : '—' }),
     ]));
-    pane.append(el('div.mt-8', {}, [el('button.btn.btn-ghost.btn-sm', { text: 'Edit renewals', onclick: () => openRenewalForm(client, rerender) })]));
+    pane.append(el('div.pill-row.mt-8', {}, [
+      el('button.btn.btn-ghost.btn-sm', { text: 'Edit renewals', onclick: () => openRenewalForm(client, rerender) }),
+      el('button.btn.btn-ghost.btn-sm', { text: 'Add renewal tasks', title: 'Create annual renewal reminders from the dates above', onclick: async () => {
+        const jobs = [
+          ['Domain renewal', client.domain_name, client.domain_renews_on],
+          ['Hosting renewal', client.hosting_provider, client.hosting_renews_on],
+          ['Email renewal', client.email_provider, client.email_renews_on],
+        ].filter(([, , date]) => date);
+        if (!jobs.length) { toast('Add renewal dates first', 'err'); return; }
+        try {
+          for (const [title, who, date] of jobs) {
+            await Tasks.create({ client_id: id, title: title + (who ? ` (${who})` : ''), category: 'renewal', recur_interval: 'annual', recurring: true, due_date: date, assignee: 'Josh' });
+          }
+          toast(`${jobs.length} renewal task(s) added`); rerender();
+        } catch (e) { toast(e.message, 'err'); }
+      } }),
+    ]));
   }
 
   // ---- Work (tasks) -------------------------------------------------------
@@ -193,10 +210,11 @@ export async function openClient(id, onChange) {
       el('div.pill-row', {}, [
         el('button.btn.btn-ghost.btn-sm', { text: '+ Monthly set', onclick: async () => {
           try {
-            for (const title of MONTHLY_TEMPLATE) await Tasks.create({ client_id: id, title, category: 'monthly', recurring: true, assignee: 'Josh' });
+            for (const title of MONTHLY_TEMPLATE) await Tasks.create({ client_id: id, title, category: 'monthly', recurring: true, recur_interval: 'monthly', assignee: 'Josh' });
             toast('Monthly tasks added'); rerender();
           } catch (e) { toast(e.message, 'err'); }
         } }),
+        el('button.btn.btn-ghost.btn-sm', { text: '+ Renewal', onclick: () => openTaskForm({ client_id: id, category: 'renewal', recur_interval: 'annual' }, rerender, client) }),
         el('button.btn.btn-primary.btn-sm', { text: '+ Task', onclick: () => openTaskForm({ client_id: id }, rerender, client) }),
       ]),
     ]));
@@ -347,17 +365,21 @@ export async function openClient(id, onChange) {
 // ---- shared row renderers (exported for reuse) ----------------------------
 export function taskRow(t, refresh) {
   const done = t.status === 'done';
+  const recur = t.recur_interval && t.recur_interval !== 'none';
+  const recurLabel = (RECUR_INTERVAL.find((r) => r.key === t.recur_interval) || {}).label;
   return el('div.row', {}, [
     el('input.checkbox', { type: 'checkbox', checked: done, onchange: async (e) => {
-      await Tasks.update(t.id, { status: e.target.checked ? 'done' : 'todo', completed_at: e.target.checked ? new Date().toISOString() : null });
+      const r = await markTaskDone(t, e.target.checked);
+      if (r.recurred) toast('Recurring — next due ' + fmtDate(r.next));
       refresh?.();
     } }),
     el('div.row-main', {}, [
       el('div.row-title', { text: t.title, style: done ? 'text-decoration:line-through;color:var(--muted)' : '' }),
       el('div.row-sub', {}, [
         badge(t.assignee, 'gold'),
-        badge(labelOf([{ key: 'monthly', label: 'Monthly' }, { key: 'onboarding', label: 'Onboarding' }, { key: 'build', label: 'Build' }, { key: 'content', label: 'Content' }, { key: 'general', label: 'General' }], t.category), 'gray'),
+        badge(labelOf([{ key: 'monthly', label: 'Monthly' }, { key: 'onboarding', label: 'Onboarding' }, { key: 'build', label: 'Build' }, { key: 'content', label: 'Content' }, { key: 'renewal', label: 'Renewal' }, { key: 'general', label: 'General' }], t.category), t.category === 'renewal' ? 'violet' : 'gray'),
         t.due_date ? el('span', { class: dueClass(t.due_date, done), text: relDue(t.due_date) }) : null,
+        recur ? badge(recurLabel, 'blue') : null,
       ]),
     ]),
     el('button.icon-btn', { html: iconSvg('trash', 16), onclick: async () => { if (await confirmDialog('Delete this task?')) { await Tasks.remove(t.id); refresh?.(); } } }),
