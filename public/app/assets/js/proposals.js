@@ -1,7 +1,15 @@
 // Proposals — build a proposal from line items, track its status, and track the
 // contract through to signed. Generate a clean printable proposal to send.
 import { Proposals, Clients } from './db.js';
-import { PROPOSAL_STATUS, CONTRACT_STATUS, SERVICES, DOC_TYPE, SEND_STATUS, DRIVE_STATUS, BUSINESS, OWNER } from './config.js';
+import { PROPOSAL_STATUS, CONTRACT_STATUS, SERVICES, DOC_TYPE, SEND_STATUS, DRIVE_STATUS, BUSINESS, OWNER, CONTRACT_TERMS } from './config.js';
+
+// Default scope-of-work areas for a growth partnership (editable per proposal).
+const SCOPE_STARTER = [
+  { area: 'Positioning & offer', detail: 'Refine the core offer, target customers, and messaging so it’s clear and easy to buy.' },
+  { area: 'Digital foundation', detail: 'Website/landing strategy, Google Business Profile optimization, local SEO, and a review system.' },
+  { area: 'Lead generation', detail: 'Organic search, referral/partner strategy, content direction, and paid search when the foundation is ready.' },
+  { area: 'Monthly management', detail: 'Ongoing management, reporting, optimization, and next-step recommendations each month.' },
+];
 import {
   el, clear, money, iconSvg, pageHeader, badge, statusBadge, labelOf, fmtDate,
   emptyState, primaryBtn, field, textInput, numberInput, textArea, selectInput,
@@ -105,16 +113,46 @@ function openProposalForm(existing = {}, onSaved, list) {
   }
   renderItems(); totals();
 
+  // Scope of work — repeatable {area, detail} rows.
+  let scope = (D.scope_items && D.scope_items.length) ? D.scope_items.map((x) => ({ ...x })) : [{ area: '', detail: '' }];
+  const scopeWrap = el('div');
+  function renderScope() {
+    clear(scopeWrap);
+    scope.forEach((s, i) => {
+      const a = textInput('sa', s.area, { placeholder: 'Focus area' });
+      const d = textInput('sd', s.detail, { placeholder: 'What TaylorMade delivers' });
+      a.addEventListener('input', () => { s.area = a.value; });
+      d.addEventListener('input', () => { s.detail = d.value; });
+      scopeWrap.append(el('div', { style: 'display:grid;grid-template-columns:1fr 1.5fr 32px;gap:6px;margin-bottom:6px' }, [
+        a, d, el('button.icon-btn', { html: iconSvg('trash', 16), onclick: () => { scope.splice(i, 1); renderScope(); } }),
+      ]));
+    });
+    scopeWrap.append(el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:4px' }, [
+      el('button.btn.btn-ghost.btn-sm', { html: `${iconSvg('plus', 14)} Scope area`, onclick: () => { scope.push({ area: '', detail: '' }); renderScope(); } }),
+      el('button.btn.btn-ghost.btn-sm', { text: 'Starter set', onclick: () => { scope = SCOPE_STARTER.map((x) => ({ ...x })); renderScope(); } }),
+    ]));
+  }
+  renderScope();
+
   const node = el('div.form', {}, [
-    field('Title', textInput('title', existing.title, { placeholder: 'Growth Plan for ABC Co.' })),
+    field('Title', textInput('title', existing.title, { placeholder: 'Growth Partnership Proposal for ABC Co.' })),
     el('div.form-grid.cols-2', {}, [
       field('Document type', selectInput('doc_type', DOC_TYPE, existing.doc_type || 'proposal')),
       field('Client', selectInput('client_id', clientOptions, existing.client_id || '')),
       field('Status', selectInput('status', PROPOSAL_STATUS, existing.status || 'draft')),
     ]),
-    field('Summary / cover note', textArea('summary', existing.summary, { rows: 2, placeholder: 'What you’ll do and why it matters. (Used as “Desired outcome” if that’s blank.)' })),
-    field('Line items', el('div', {}, [itemsWrap, totalsBar])),
-    el('div.section-title', {}, [el('h3', { text: 'Scope & terms' })]),
+    field('Summary / cover note', textArea('summary', existing.summary, { rows: 3, placeholder: 'The objective and why it matters — sets up the proposal.' })),
+    el('div.section-title', {}, [el('h3', { text: 'Scope of work' })]),
+    el('div', {}, [el('span.field-hint', { text: 'Focus areas and what TaylorMade delivers for each.' }), scopeWrap]),
+    el('div.section-title', {}, [el('h3', { text: 'Investment' })]),
+    field('Line items (build = one-time, retainer = monthly)', el('div', {}, [itemsWrap, totalsBar])),
+    el('div.section-title', {}, [el('h3', { text: 'Partnership' })]),
+    el('div.form-grid.cols-2', {}, [
+      field('Agreement length', selectInput('contract_term', CONTRACT_TERMS, D.contract_term || (existing.contract_status === 'signed' ? '12-month' : 'No contract'))),
+      field('Prepared by', textInput('prepared_by', D.prepared_by || OWNER)),
+    ]),
+    field('Monthly agreement / partnership terms', textArea('partnership_terms', D.partnership_terms, { rows: 3, placeholder: 'What the monthly retainer covers, cadence, review points, what each side owns…' })),
+    el('div.section-title', {}, [el('h3', { text: 'Details (optional)' })]),
     el('div.form-grid.cols-2', {}, [
       field('Prepared by', textInput('prepared_by', D.prepared_by || OWNER)),
       field('Revision allowance', textInput('revision_allowance', D.revision_allowance, { placeholder: 'e.g. 2 rounds' })),
@@ -165,9 +203,10 @@ function openProposalForm(existing = {}, onSaved, list) {
     // Pull the scope/terms fields out of the flat form object into `details`.
     const DETAIL_KEYS = ['prepared_by', 'desired_outcome', 'deliverables', 'timeline',
       'revision_allowance', 'client_responsibilities', 'third_party_costs', 'approval_method',
-      'not_included', 'scope_change_notes', 'price_difference'];
+      'not_included', 'scope_change_notes', 'price_difference', 'partnership_terms', 'contract_term'];
     const details = {};
     DETAIL_KEYS.forEach((k) => { if (v[k] != null && String(v[k]).trim() !== '') details[k] = v[k]; delete v[k]; });
+    details.scope_items = scope.filter((s) => s.area || s.detail);
     v.details = details;
     return v;
   }
@@ -200,71 +239,98 @@ function feesText(p) {
   return parts.join('; ') + (totals.length ? `.  Total: ${totals.join(' + ')}` : '');
 }
 
-// Build the branded document HTML (shared shape used by the Apps Script PDF).
+// Build the branded partnership-proposal HTML (shared with the Apps Script PDF).
 export function proposalDocHtml(p, clientName, opts = {}) {
   const D = p.details || {};
   const logo = opts.logo || 'https://taylormadegrowth.com/app/assets/img/logo-proposal.png';
   const docType = (labelOf(DOC_TYPE, p.doc_type || 'proposal')).toUpperCase();
-  const scopeHead = (labelOf(DOC_TYPE, p.doc_type || 'proposal')) + ' &amp; Scope';
   const dateStr = p.sent_on ? fmtDate(p.sent_on) : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-  const services = (p.line_items || []).map((i) => i.label).filter(Boolean).join(', ');
-  const row = (label, value) => `<div class="row"><span class="lbl">${esc(label)}:</span><span class="val${value ? '' : ' blank'}">${value ? esc(value) : ''}</span></div>`;
-  const half = (label, value) => `<div class="row"><span class="lbl">${esc(label)}:</span><span class="val${value ? '' : ' blank'}">${value ? esc(value) : ''}</span></div>`;
+  const items = p.line_items || [];
+  const m = items.reduce((s, x) => s + Number(x.monthly || 0), 0);
+  const o = items.reduce((s, x) => s + Number(x.oneTime || 0), 0);
+  const scopeItems = (D.scope_items || []).filter((s) => s.area || s.detail);
+  const term = D.contract_term || 'No contract';
+  const P = (txt) => (txt ? `<p class="body">${esc(txt)}</p>` : '');
+
+  const scopeRows = scopeItems.length
+    ? scopeItems.map((s) => `<tr><td class="area">${esc(s.area)}</td><td>${esc(s.detail)}</td></tr>`).join('')
+    : (D.deliverables ? `<tr><td class="area">Deliverables</td><td>${esc(D.deliverables)}</td></tr>` : '<tr><td colspan="2" class="muted">To be scoped together.</td></tr>');
+  const priceRows = items.length
+    ? items.map((it) => `<tr><td>${esc(it.label)}</td><td class="r">${it.monthly ? money(it.monthly) + '/mo' : '—'}</td><td class="r">${it.oneTime ? money(it.oneTime) : '—'}</td></tr>`).join('')
+    : '<tr><td colspan="3" class="muted">To be scoped.</td></tr>';
+
+  const extras = [
+    ['Timeline & milestones', D.timeline],
+    ['Revision allowance', D.revision_allowance],
+    ['Client responsibilities', D.client_responsibilities],
+    ['Not included', D.not_included],
+    ['Approval', D.approval_method],
+  ].filter(([, v]) => v);
+  const extrasHtml = extras.length
+    ? '<div class="sec">Terms</div>' + extras.map(([l, v]) => `<div class="trow"><span class="tl">${esc(l)}</span><span class="tv">${esc(v)}</span></div>`).join('')
+    : '';
+
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(p.title || docType)}</title><style>
     *{box-sizing:border-box}html,body{margin:0}
-    body{font-family:Georgia,'Times New Roman',serif;color:#1c1c1c;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .frame{border:2px solid #dcdcdc;border-radius:12px;margin:12px;padding:20px 30px 22px}
-    .top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}
-    .logo{width:238px;max-width:52%;height:auto}
-    .contact{text-align:right;font-size:12.5px;line-height:1.5;color:#2a2a2a}
-    .title{text-align:center;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:27px;letter-spacing:3px;margin:6px 0 12px;color:#111}
-    .sec{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:#111;border-bottom:1.5px solid #111;padding-bottom:3px;margin:13px 0 6px}
-    .grid2{display:flex;gap:30px}.grid2>.row{flex:1}
-    .row{display:flex;align-items:baseline;gap:8px;font-size:13.5px;line-height:1.45;margin:4px 0}
-    .row .lbl{font-weight:bold;white-space:nowrap;font-family:Arial,Helvetica,sans-serif;font-size:12px}
-    .row .val{flex:1}
-    .row .val.blank{border-bottom:1px solid #666;min-height:1.05em;align-self:flex-end}
-    .approve{display:flex;gap:46px;font-size:14.5px;margin:6px 0 3px}
-    .box{font-family:Arial;font-size:16px;margin-right:7px}
-    .dline{display:inline-block;border-bottom:1px solid #666;min-width:150px}
-    .sign{font-size:13.5px;margin-top:10px;display:flex;align-items:baseline;gap:8px}
-    .sign .lbl{font-family:Arial;font-weight:bold}.sign .u{flex:1;border-bottom:1px solid #666;min-height:1.05em}
-    .foot{margin-top:14px;text-align:center;color:#888;font-size:11px;font-family:Arial}
+    body{font-family:Georgia,'Times New Roman',serif;color:#1b1b1b;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .page{max-width:720px;margin:0 auto;padding:30px 42px 40px}
+    .top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;border-bottom:3px solid #13294b;padding-bottom:16px}
+    .logo{width:230px;height:auto}
+    .contact{text-align:right;font-size:13px;line-height:1.55;color:#333}
+    .eyebrow{font-family:Arial,Helvetica,sans-serif;font-weight:800;letter-spacing:3px;font-size:12px;color:#b98d1a;margin-top:24px}
+    h1{font-family:Arial,Helvetica,sans-serif;font-size:30px;line-height:1.15;color:#0d1b30;margin:4px 0 8px}
+    .subline{font-size:15px;color:#444}
+    .sec{font-family:Arial,Helvetica,sans-serif;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;font-size:13px;color:#0d1b30;border-bottom:1.5px solid #0d1b30;padding-bottom:5px;margin:26px 0 12px}
+    .body{font-size:15px;line-height:1.6;margin:0 0 10px}
+    table{width:100%;border-collapse:collapse}
+    .scope td,.price td{padding:10px 8px;border-bottom:1px solid #e4e4e4;font-size:14.5px;vertical-align:top}
+    .scope .area{font-family:Arial,Helvetica,sans-serif;font-weight:700;width:33%;color:#0d1b30}
+    .price th{font-family:Arial,Helvetica,sans-serif;text-transform:uppercase;font-size:11px;letter-spacing:.04em;color:#666;text-align:left;padding:6px 8px;border-bottom:1.5px solid #0d1b30}
+    .price td.r,.price th.r{text-align:right}
+    .price tfoot td{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:15px;border-top:2px solid #0d1b30;border-bottom:0;color:#0d1b30}
+    .muted{color:#888}
+    .chips{margin-top:14px}
+    .chip{display:inline-block;background:#13294b;color:#fff;padding:12px 20px;border-radius:12px;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:16px;margin-right:10px}
+    .chip small{display:block;color:#d4af37;font-weight:700;font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+    .term{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:15px;color:#0d1b30;background:#f6f1df;border:1px solid #e6dcb8;border-radius:10px;padding:9px 15px;display:inline-block;margin-bottom:10px}
+    .trow{display:flex;gap:12px;font-size:14px;line-height:1.5;margin:6px 0}
+    .tl{font-family:Arial,Helvetica,sans-serif;font-weight:700;min-width:170px;color:#0d1b30}.tv{flex:1}
+    .approve{font-size:15px;margin:8px 0}.box{font-size:17px;margin-right:8px}
+    .sign{font-size:15px;margin-top:14px;display:flex;align-items:baseline;gap:8px}
+    .sign .lbl{font-family:Arial,Helvetica,sans-serif;font-weight:bold}.sign .u{flex:1;border-bottom:1px solid #666;min-height:1.1em}
+    .foot{margin-top:26px;border-top:1px solid #e4e4e4;padding-top:12px;text-align:center;color:#888;font-size:12px;font-family:Arial,Helvetica,sans-serif}
     @page{margin:0}
-  </style></head><body><div class="frame">
-    <div class="top">
-      <img class="logo" src="${logo}" alt="TaylorMade Brands">
-      <div class="contact">${esc(BUSINESS.address1)}<br>${esc(BUSINESS.address2)}<br>${esc(BUSINESS.phone)}<br>${esc(BUSINESS.email)}</div>
-    </div>
-    <div class="title">${esc(docType)}</div>
+  </style></head><body><div class="page">
+    <div class="top"><img class="logo" src="${logo}" alt="TaylorMade Brands"><div class="contact">${esc(BUSINESS.name)}<br>${esc(BUSINESS.address1)}<br>${esc(BUSINESS.address2)}<br>${esc(BUSINESS.phone)}<br>${esc(BUSINESS.email)}</div></div>
+    <div class="eyebrow">${esc(docType)}</div>
+    <h1>${esc(p.title || 'Growth Partnership Proposal')}</h1>
+    <div class="subline">Prepared for <b>${esc(clientName || 'your business')}</b> · ${esc(dateStr)}${D.prepared_by ? ' · by ' + esc(D.prepared_by) : ''}</div>
 
-    <div class="sec">Client / Project</div>
-    <div class="grid2">${half('Client', clientName)}${half('Project', p.title)}</div>
-    <div class="grid2">${half('Prepared by', D.prepared_by || 'Josh')}${half('Date', dateStr)}</div>
+    ${p.summary ? '<div class="sec">Proposal Summary</div>' + P(p.summary) : ''}
 
-    <div class="sec">${scopeHead}</div>
-    ${row('Desired outcome', D.desired_outcome || p.summary)}
-    ${row('Services included', services)}
-    ${row('Deliverables', D.deliverables)}
-    ${row('Timeline and milestones', D.timeline)}
-    ${row('Revision allowance', D.revision_allowance)}
-    ${row('Client responsibilities', D.client_responsibilities)}
-    ${row('Fees / Payment schedule', feesText(p))}
-    ${row('Third-party costs', D.third_party_costs)}
-    ${row('Not included', D.not_included)}
-    ${row('Approval method / Deadline', D.approval_method)}
+    <div class="sec">Scope of Work</div>
+    <table class="scope"><tbody>${scopeRows}</tbody></table>
 
-    <div class="sec">Changes</div>
-    ${row('Scope Change Notes', D.scope_change_notes)}
-    ${row('Price Difference & Reasoning', D.price_difference)}
+    <div class="sec">Investment</div>
+    <table class="price"><thead><tr><th>Item</th><th class="r">Monthly</th><th class="r">One-time</th></tr></thead>
+      <tbody>${priceRows}</tbody>
+      <tfoot><tr><td>Total</td><td class="r">${money(m)}/mo</td><td class="r">${money(o)}</td></tr></tfoot></table>
+    <div class="chips"><span class="chip"><small>Initial build</small>${money(o)}</span><span class="chip"><small>Monthly</small>${money(m)}</span></div>
+    ${D.third_party_costs ? `<p class="body" style="margin-top:12px"><b>Third-party costs:</b> ${esc(D.third_party_costs)}</p>` : ''}
 
-    <div class="sec">Approve / Denial</div>
-    <div class="approve"><span><span class="box">☐</span>Approve / Proceed</span><span><span class="box">☐</span>Denial / Reason: <span class="dline">&nbsp;</span></span></div>
+    <div class="sec">Partnership</div>
+    <div class="term">Agreement: ${esc(term)}</div>
+    ${P(D.partnership_terms)}
+
+    ${extrasHtml}
+
+    <div class="sec">Approve / Decline</div>
+    <div class="approve"><span class="box">☐</span>Approve / Proceed &nbsp;&nbsp;&nbsp;&nbsp;<span class="box">☐</span>Decline</div>
     <div class="sign"><span class="lbl">Name:</span><span class="u"></span></div>
     <div class="sign"><span class="lbl">Signature:</span><span class="u"></span></div>
     <div class="sign"><span class="lbl">Date:</span><span class="u"></span></div>
 
-    <div class="foot">${esc(BUSINESS.name)} · ${esc(BUSINESS.website)}</div>
+    <div class="foot">${esc(BUSINESS.name)} · ${esc(BUSINESS.website)} · Let’s grow something great together.</div>
   </div></body></html>`;
 }
 
