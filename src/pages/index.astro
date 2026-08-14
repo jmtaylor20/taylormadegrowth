@@ -283,7 +283,30 @@ const pillars = [
     .hero-meta-rule { width: 1px; height: 54px; background: var(--line-d); }
 
     /* App window motif */
-    .app-window { background: linear-gradient(180deg, var(--ink-3), var(--ink-2)); border: 1px solid var(--line-d-2); border-radius: 18px; box-shadow: 0 40px 90px -40px rgba(0,0,0,.8); overflow: hidden; }
+    .hero-app { position: relative; }
+    .hero-app::before {
+      content: "";
+      position: absolute;
+      inset: -14% -10% -18% -10%;
+      background:
+        radial-gradient(52% 48% at 58% 28%, rgba(126,168,255,.22), transparent 70%),
+        radial-gradient(46% 46% at 84% 82%, rgba(201,162,74,.20), transparent 70%);
+      filter: blur(14px);
+      z-index: 0;
+      pointer-events: none;
+    }
+    .app-window {
+      position: relative;
+      z-index: 1;
+      background: linear-gradient(180deg, #1b2433 0%, #10161f 100%);
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 18px;
+      box-shadow:
+        0 34px 80px -28px rgba(0,0,0,.9),
+        0 0 0 1px rgba(126,168,255,.10),
+        inset 0 1px 0 rgba(255,255,255,.08);
+      overflow: hidden;
+    }
     .app-bar { display: flex; align-items: center; gap: 7px; padding: 13px 16px; border-bottom: 1px solid var(--line-d); }
     .app-bar .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line-d-2); }
     .app-title { font-family: var(--font-mono); font-size: 0.72rem; color: var(--d-faint); margin-left: 10px; letter-spacing: 0.04em; }
