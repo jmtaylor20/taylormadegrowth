@@ -1,6 +1,6 @@
 // Client detail sheet — the hub that pulls a client's package, statuses,
 // onboarding, tasks, invoices, activity, and monthly report into one place.
-import { Clients, Invoices, Tasks, Activities, Reviews, Payments, clientBundle, clientFinance } from './db.js';
+import { Clients, Invoices, Tasks, Activities, Reviews, Payments, clientBundle, clientFinance, setStage } from './db.js';
 import {
   SERVICE_LABEL, STAGES, STAGE_LABEL, WEBSITE_STATUS, GBP_STATUS, ADS_STATUS,
   INVOICE_STATUS, INVOICE_TYPE, TASK_STATUS, REVIEW_STATUS, TEAM, MONTHLY_TEMPLATE, CONTRACT_STATUS,
@@ -96,7 +96,10 @@ export async function openClient(id, onChange) {
     pane.append(el('div.section-title', {}, [el('h3', { text: 'Pipeline stage' })]));
     const stageRow = el('div.pill-row');
     STAGES.forEach((s) => stageRow.append(el('button.chip' + (client.stage === s.key ? '.on' : ''), {
-      text: s.label, onclick: () => patch({ stage: s.key }),
+      text: s.label, onclick: async () => {
+        try { const { client: updated, welcomed } = await setStage(client, s.key); client = updated; toast(welcomed ? 'Now a client 🎉 Welcome email queued' : 'Saved'); paint(); onChange?.(); }
+        catch (e) { toast(e.message || 'Save failed', 'err'); }
+      },
     })));
     pane.append(stageRow);
 

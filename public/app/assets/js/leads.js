@@ -1,7 +1,7 @@
 // Leads & Prospects — the sales side of the pipeline. Leads and prospects
 // (and deferred), grouped by stage, each with quick Won / Lost / Deferred
 // actions. Won → becomes a client; Lost/Deferred move it out of the active list.
-import { Clients } from './db.js';
+import { Clients, setStage } from './db.js';
 import { STAGES, STAGE_LABEL, STAGE_TONE, CATEGORIES, SERVICE_LABEL } from './config.js';
 import { el, clear, money, iconSvg, pageHeader, badge, statusBadge, fmtDate, relDue, daysUntil, emptyState, primaryBtn, toast, confirmDialog } from './ui.js';
 import { openClient } from './client-detail.js';
@@ -91,8 +91,11 @@ export async function renderLeads(root) {
   }
 
   async function mark(c, stage, msg) {
-    try { await Clients.update(c.id, { stage }); toast(msg); refreshAfter(); }
-    catch (e) { toast(e.message, 'err'); }
+    try {
+      const { welcomed } = await setStage(c, stage);
+      toast(welcomed ? 'Won! 🎉 Welcome email queued' : msg);
+      refreshAfter();
+    } catch (e) { toast(e.message, 'err'); }
   }
 
   async function refreshAfter() { await load(); refresh(); }
