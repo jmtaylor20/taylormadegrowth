@@ -84,22 +84,34 @@ export async function clientBundle(clientId) {
   return { tasks, invoices, activities, content, assets, reviews, proposals, payments };
 }
 
-// Financial rollup for a client: invoiced, collected (paid invoices + payments),
-// outstanding, and build-fee status.
+// Financial rollup for one client, split into the two money buckets:
+//   build   = initial one-time builds (build_fee / one_time invoices, build &
+//             deposit payments)
+//   monthly = recurring retainer (MRR, monthly invoices & payments)
+const isBuildInvoice = (i) => i.type === 'build_fee' || i.type === 'one_time';
+const n = (x) => Number(x || 0);
+
 export function clientFinance(client, bundle) {
   const inv = bundle.invoices || [];
   const pays = bundle.payments || [];
-  const invoicedOpen = inv.filter((i) => i.status === 'sent' || i.status === 'overdue').reduce((s, i) => s + Number(i.amount || 0), 0);
-  const invoicePaid = inv.filter((i) => i.status === 'paid').reduce((s, i) => s + Number(i.amount || 0), 0);
-  const payTotal = pays.reduce((s, p) => s + Number(p.amount || 0), 0);
-  const buildFee = Number(client.build_fee || 0);
-  const buildPaid = pays.filter((p) => p.kind === 'build').reduce((s, p) => s + Number(p.amount || 0), 0);
+  const sum = (arr) => arr.reduce((s, x) => s + n(x.amount), 0);
+
+  // --- Build (initial) bucket ---
+  const buildFee = n(client.build_fee);
+  const buildCollected = sum(inv.filter((i) => isBuildInvoice(i) && i.status === 'paid'))
+    + sum(pays.filter((p) => p.kind === 'build' || p.kind === 'deposit'));
+  const buildOutstanding = client.build_fee_paid ? 0 : Math.max(0, buildFee - buildCollected);
+
+  // --- Monthly (recurring) bucket ---
+  const mrr = n(client.mrr);
+  const monthlyCollected = sum(inv.filter((i) => i.type === 'monthly' && i.status === 'paid'))
+    + sum(pays.filter((p) => p.kind === 'monthly'));
+  const monthlyOutstanding = sum(inv.filter((i) => i.type === 'monthly' && (i.status === 'sent' || i.status === 'overdue')));
+
   return {
-    collected: invoicePaid + payTotal,
-    outstanding: invoicedOpen,
-    buildFee,
-    buildPaid,
-    buildOutstanding: Math.max(0, buildFee - buildPaid - (client.build_fee_paid ? buildFee : 0)),
-    payTotal,
+    buildFee, buildCollected, buildOutstanding,
+    mrr, monthlyCollected, monthlyOutstanding,
+    collected: buildCollected + monthlyCollected,
+    outstanding: buildOutstanding + monthlyOutstanding,
   };
 }

@@ -213,27 +213,30 @@ export async function openClient(id, onChange) {
     const pays = bundle.payments || [];
     const fin = clientFinance(client, bundle);
 
-    // Summary tiles
-    pane.append(el('div.grid.grid-3', {}, [
-      el('div.stat', {}, [el('div.stat-value', { text: money(fin.collected) }), el('div.stat-label', { text: 'Collected' })]),
-      el('div.stat' + (fin.outstanding ? '.stat-gold' : ''), {}, [el('div.stat-value', { text: money(fin.outstanding) }), el('div.stat-label', { text: 'Outstanding' })]),
-      el('div.stat', {}, [el('div.stat-value', { text: money(client.mrr) }), el('div.stat-label', { text: 'Monthly (MRR)' })]),
-    ]));
-
-    // Quick editable money fields (catch-up friendly)
-    const editRow = (labelText, name, value, after) => {
+    const editInput = (name, value) => {
       const inp = numberInput(name, value ?? '', { placeholder: '0' });
       inp.addEventListener('change', () => patch({ [name]: inp.value === '' ? 0 : Number(inp.value) }));
-      return el('div.status-cell', {}, [el('div.lbl', { text: labelText }), el('div.val.mt-8', {}, [inp]), after || null]);
+      return inp;
     };
-    const buildToggle = el('label.field-row.mt-8', {}, [
+
+    // Bucket 1 — Initial build (one-time)
+    pane.append(el('div.section-title', {}, [el('h3', { text: 'Initial build' })]));
+    pane.append(el('div.grid.grid-3', {}, [
+      el('div.stat', {}, [el('div.stat-value.mt-8', {}, [editInput('build_fee', client.build_fee)]), el('div.stat-label', { text: 'Build fee' })]),
+      el('div.stat', {}, [el('div.stat-value', { text: money(fin.buildCollected) }), el('div.stat-label', { text: 'Collected' })]),
+      el('div.stat' + (fin.buildOutstanding ? '.stat-gold' : ''), {}, [el('div.stat-value', { text: money(fin.buildOutstanding) }), el('div.stat-label', { text: 'Outstanding' })]),
+    ]));
+    pane.append(el('label.field-row.mt-8', {}, [
       el('input.checkbox', { type: 'checkbox', checked: !!client.build_fee_paid, onchange: (e) => patch({ build_fee_paid: e.target.checked }) }),
-      el('span', { text: 'Build fee fully paid' }),
-    ]);
-    pane.append(el('div.section-title', {}, [el('h3', { text: 'Balances' })]));
-    pane.append(el('div.status-grid', {}, [
-      editRow('Monthly (MRR)', 'mrr', client.mrr),
-      editRow('Build fee', 'build_fee', client.build_fee, buildToggle),
+      el('span', { text: 'Build fully paid' }),
+    ]));
+
+    // Bucket 2 — Monthly recurring
+    pane.append(el('div.section-title', {}, [el('h3', { text: 'Monthly recurring' })]));
+    pane.append(el('div.grid.grid-3', {}, [
+      el('div.stat', {}, [el('div.stat-value.mt-8', {}, [editInput('mrr', client.mrr)]), el('div.stat-label', { text: 'MRR' })]),
+      el('div.stat', {}, [el('div.stat-value', { text: money(fin.monthlyCollected) }), el('div.stat-label', { text: 'Collected' })]),
+      el('div.stat' + (fin.monthlyOutstanding ? '.stat-gold' : ''), {}, [el('div.stat-value', { text: money(fin.monthlyOutstanding) }), el('div.stat-label', { text: 'Outstanding' })]),
     ]));
 
     // Payments ledger

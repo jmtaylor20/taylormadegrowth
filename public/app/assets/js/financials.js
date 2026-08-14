@@ -23,7 +23,7 @@ export async function renderFinancials(root) {
   ]);
   root.append(actions);
 
-  const summary = el('div.grid.grid-4');
+  const summary = el('div');
   root.append(summary);
 
   const seg = el('div.segmented.mt-16');
@@ -46,18 +46,35 @@ export async function renderFinancials(root) {
   function refresh() {
     clear(summary); clear(wrap);
     const active = list.filter((c) => c.stage === 'client');
-    const mrr = active.reduce((s, c) => s + Number(c.mrr || 0), 0);
-    const paidThisMonth = invoices.filter((i) => i.status === 'paid' && i.paid_on && sameMonth(i.paid_on)).reduce((s, i) => s + n(i.amount), 0)
-      + payments.filter((p) => p.paid_on && sameMonth(p.paid_on)).reduce((s, p) => s + n(p.amount), 0);
-    const outstanding = invoices.filter((i) => i.status === 'sent' || i.status === 'overdue').reduce((s, i) => s + n(i.amount), 0);
-    const buildOutstanding = list.filter((c) => n(c.build_fee) > 0 && !c.build_fee_paid).reduce((s, c) => s + n(c.build_fee), 0)
-      - payments.filter((p) => p.kind === 'build').reduce((s, p) => s + n(p.amount), 0);
-    summary.append(
+    const isBuildInv = (i) => i.type === 'build_fee' || i.type === 'one_time';
+
+    // --- Bucket 1: Initial builds (one-time) ---
+    const buildCollectedBy = {};
+    payments.filter((p) => p.kind === 'build' || p.kind === 'deposit').forEach((p) => { buildCollectedBy[p.client_id] = (buildCollectedBy[p.client_id] || 0) + n(p.amount); });
+    invoices.filter((i) => isBuildInv(i) && i.status === 'paid').forEach((i) => { buildCollectedBy[i.client_id] = (buildCollectedBy[i.client_id] || 0) + n(i.amount); });
+    const buildFeesTotal = list.reduce((s, c) => s + n(c.build_fee), 0);
+    const buildCollected = Object.values(buildCollectedBy).reduce((a, b) => a + b, 0)
+      + payments.filter((p) => (p.kind === 'build' || p.kind === 'deposit') && !p.client_id).reduce((s, p) => s + n(p.amount), 0);
+    const buildOutstanding = list.reduce((s, c) => s + (c.build_fee_paid ? 0 : Math.max(0, n(c.build_fee) - (buildCollectedBy[c.id] || 0))), 0);
+
+    // --- Bucket 2: Monthly recurring ---
+    const mrr = active.reduce((s, c) => s + n(c.mrr), 0);
+    const monthlyCollectedMo = invoices.filter((i) => i.type === 'monthly' && i.status === 'paid' && i.paid_on && sameMonth(i.paid_on)).reduce((s, i) => s + n(i.amount), 0)
+      + payments.filter((p) => p.kind === 'monthly' && p.paid_on && sameMonth(p.paid_on)).reduce((s, p) => s + n(p.amount), 0);
+    const monthlyOutstanding = invoices.filter((i) => i.type === 'monthly' && (i.status === 'sent' || i.status === 'overdue')).reduce((s, i) => s + n(i.amount), 0);
+
+    summary.append(el('div.section-title', {}, [el('h3', { text: 'Initial builds' })]));
+    summary.append(el('div.grid.grid-3', {}, [
+      el('div.stat', {}, [el('div.stat-value', { text: money(buildFeesTotal) }), el('div.stat-label', { text: 'Build fees' })]),
+      el('div.stat', {}, [el('div.stat-value', { text: money(buildCollected) }), el('div.stat-label', { text: 'Collected' })]),
+      el('div.stat' + (buildOutstanding ? '.stat-gold' : ''), {}, [el('div.stat-value', { text: money(buildOutstanding) }), el('div.stat-label', { text: 'Outstanding' })]),
+    ]));
+    summary.append(el('div.section-title', {}, [el('h3', { text: 'Monthly recurring' })]));
+    summary.append(el('div.grid.grid-3', {}, [
       el('div.stat.stat-gold', {}, [el('div.stat-value', { text: money(mrr) }), el('div.stat-label', { text: 'MRR' }), el('div.stat-sub', { text: active.length + ' clients' })]),
-      el('div.stat', {}, [el('div.stat-value', { text: money(paidThisMonth) }), el('div.stat-label', { text: 'Collected (mo)' })]),
-      el('div.stat', {}, [el('div.stat-value', { text: money(outstanding) }), el('div.stat-label', { text: 'Outstanding' })]),
-      el('div.stat', {}, [el('div.stat-value', { text: money(Math.max(0, buildOutstanding)) }), el('div.stat-label', { text: 'Build fees owed' })]),
-    );
+      el('div.stat', {}, [el('div.stat-value', { text: money(monthlyCollectedMo) }), el('div.stat-label', { text: 'Collected (mo)' })]),
+      el('div.stat' + (monthlyOutstanding ? '.stat-gold' : ''), {}, [el('div.stat-value', { text: money(monthlyOutstanding) }), el('div.stat-label', { text: 'Outstanding' })]),
+    ]));
 
     if (state.view === 'invoices') viewInvoices();
     else if (state.view === 'payments') viewPayments();
