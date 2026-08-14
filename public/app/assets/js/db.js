@@ -50,6 +50,7 @@ export const Reviews   = table('reviews');
 export const Proposals = table('proposals');
 export const Activities = table('activities');
 export const Payments  = table('payments');
+export const Reports   = table('reports');
 
 // ---- Purpose-built loaders -------------------------------------------------
 
@@ -82,6 +83,21 @@ export async function clientBundle(clientId) {
     Payments.list({ eq: { client_id: clientId }, order: { col: 'paid_on', asc: false } }),
   ]);
   return { tasks, invoices, activities, content, assets, reviews, proposals, payments };
+}
+
+// Move a client to a new stage. When they become a client for the first time
+// (and have an email + haven't been welcomed), queue the welcome email.
+// Returns { client, welcomed }.
+export async function setStage(client, newStage) {
+  const patch = { stage: newStage };
+  let welcomed = false;
+  if (newStage === 'client' && client.stage !== 'client' && !client.welcome_status && client.email) {
+    patch.welcome_status = 'queued';
+    patch.welcome_to = client.email;
+    welcomed = true;
+  }
+  const updated = await Clients.update(client.id, patch);
+  return { client: updated, welcomed };
 }
 
 // Financial rollup for one client, split into the two money buckets:

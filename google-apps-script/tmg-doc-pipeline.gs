@@ -38,6 +38,8 @@ var CONFIG = {
 function processQueue() {
   processTable_('proposals');
   processTable_('invoices');
+  processTable_('reports');
+  processWelcome_();
 }
 
 /** Run once to grant Drive + Gmail + external-request permissions. */
@@ -78,24 +80,23 @@ function processTable_(table) {
 
 function processRow_(table, row) {
   var client = row.client_id ? (sbGet_('clients?id=eq.' + row.client_id + '&select=business_name,contact_name,email,phone,city,state')[0] || {}) : {};
-  var isProposal = table === 'proposals';
-  var docLabel = isProposal ? titleCase_(row.doc_type || 'proposal') : 'Invoice';
-  var fileName = [client.business_name || 'Client', docLabel, dateStamp_()].join(' - ') + (isProposal && row.title ? '' : (row.number ? ' ' + row.number : '')) + '.pdf';
+  var type = table === 'proposals' ? 'proposal' : (table === 'reports' ? 'report' : 'invoice');
+  var docLabel = type === 'proposal' ? titleCase_(row.doc_type || 'proposal') : (type === 'report' ? 'Report' : 'Invoice');
+  var stamp = type === 'report' ? (row.period || dateStamp_()) : dateStamp_();
+  var fileName = [client.business_name || 'Client', docLabel, stamp].join(' - ') + (type === 'invoice' && row.number ? ' ' + row.number : '') + '.pdf';
 
-  var html = isProposal ? proposalHtml_(row, client) : invoiceHtml_(row, client);
+  var html = type === 'proposal' ? proposalHtml_(row, client) : (type === 'report' ? reportHtml_(row, client) : invoiceHtml_(row, client));
   var pdf = Utilities.newBlob(html, 'text/html', fileName).getAs('application/pdf').setName(fileName);
 
   var patch = {};
 
   // ---- Save to Drive (needed for the archive AND to attach when emailing) ----
-  var driveUrl = row.drive_url || null;
   var needDrive = row.drive_status === 'queued' || row.send_status === 'queued';
   if (needDrive && row.drive_status !== 'saved') {
     var folder = targetFolder_(client.business_name);
     var file = folder.createFile(pdf);
-    driveUrl = file.getUrl();
     patch.drive_status = 'saved';
-    patch.drive_url = driveUrl;
+    patch.drive_url = file.getUrl();
     patch.drive_saved_at = nowIso_();
     patch.drive_error = null;
   }
@@ -107,13 +108,14 @@ function processRow_(table, row) {
       patch.send_status = 'error';
       patch.send_error = 'No client email on file';
     } else {
-      var subject = isProposal
-        ? ('Your ' + docLabel + ' from ' + CONFIG.BUSINESS_NAME + (row.title ? ' — ' + row.title : ''))
-        : ('Invoice ' + (row.number || '') + ' from ' + CONFIG.BUSINESS_NAME).trim();
-      GmailApp.sendEmail(to, subject, emailPlain_(isProposal, row, client), {
+      var subject;
+      if (type === 'proposal') subject = 'Your ' + docLabel + ' from ' + CONFIG.BUSINESS_NAME + (row.title ? ' — ' + row.title : '');
+      else if (type === 'report') subject = 'Your ' + (row.period ? row.period + ' ' : '') + 'growth report from ' + CONFIG.BUSINESS_NAME;
+      else subject = ('Invoice ' + (row.number || '') + ' from ' + CONFIG.BUSINESS_NAME).trim();
+      GmailApp.sendEmail(to, subject, emailPlain_(type, row, client), {
         name: CONFIG.FROM_NAME,
         replyTo: CONFIG.REPLY_TO,
-        htmlBody: emailHtml_(isProposal, row, client),
+        htmlBody: emailHtml_(type, row, client),
         attachments: [pdf],
       });
       patch.send_status = 'sent';
@@ -124,6 +126,26 @@ function processRow_(table, row) {
   }
 
   if (Object.keys(patch).length) sbPatch_(table, row.id, patch);
+}
+
+// ==== WELCOME EMAILS =======================================================
+
+function processWelcome_() {
+  var rows = sbGet_('clients?welcome_status=eq.queued&select=id,business_name,contact_name,email,welcome_to');
+  for (var i = 0; i < rows.length; i++) {
+    var c = rows[i];
+    try {
+      var to = c.welcome_to || c.email;
+      if (!to) { sbPatch_('clients', c.id, { welcome_status: 'error', welcome_error: 'No email' }); continue; }
+      GmailApp.sendEmail(to, 'Welcome to the TaylorMade family', welcomePlain_(c), {
+        name: CONFIG.FROM_NAME, replyTo: CONFIG.REPLY_TO, htmlBody: welcomeHtml_(c),
+      });
+      sbPatch_('clients', c.id, { welcome_status: 'sent', welcome_sent_at: nowIso_(), welcome_to: to, welcome_error: null });
+    } catch (err) {
+      sbPatch_('clients', c.id, { welcome_status: 'error', welcome_error: String(err).slice(0, 400) });
+      Logger.log('Welcome error ' + c.id + ': ' + err);
+    }
+  }
 }
 
 // ==== DRIVE ================================================================
@@ -283,27 +305,103 @@ function footer_() {
 
 // ==== EMAIL BODIES =========================================================
 
-function emailPlain_(isProposal, row, client) {
+function emailPlain_(type, row, client) {
   var hi = 'Hi ' + (client.contact_name || '') + ',\n\n';
-  if (isProposal) {
+  var sign = '\n\nThanks,\n' + CONFIG.FROM_NAME + '\n' + CONFIG.WEBSITE;
+  if (type === 'proposal') {
     return hi + (row.summary || 'Here is the ' + (row.doc_type || 'proposal') + ' we put together for you.') +
-      '\n\nThe full details are in the attached PDF. Ready to move forward? Just reply and we’ll get you set up.\n\n' +
-      'Thanks,\n' + CONFIG.FROM_NAME + '\n' + CONFIG.WEBSITE;
+      '\n\nThe full details are in the attached PDF. Ready to move forward? Just reply and we’ll get you set up.' + sign;
+  }
+  if (type === 'report') {
+    return hi + 'Here’s your ' + (row.period ? row.period + ' ' : '') + 'growth report — a snapshot of your marketing this month is attached.' +
+      (row.highlights ? '\n\n' + row.highlights : '') + sign;
   }
   return hi + 'Please find your invoice' + (row.number ? ' ' + row.number : '') + ' attached' +
-    (row.due_on ? ', due ' + row.due_on : '') + '. The amount due is ' + money_(row.amount) + '.\n\n' +
-    'Thanks for your business,\n' + CONFIG.FROM_NAME + '\n' + CONFIG.WEBSITE;
+    (row.due_on ? ', due ' + row.due_on : '') + '. The amount due is ' + money_(row.amount) + '.\n\nThanks for your business,\n' + CONFIG.FROM_NAME + '\n' + CONFIG.WEBSITE;
 }
-function emailHtml_(isProposal, row, client) {
+function emailHtml_(type, row, client) {
+  var body;
+  if (type === 'proposal') {
+    body = '<p>' + esc_(row.summary || 'Here is the ' + (row.doc_type || 'proposal') + ' we put together for you.') +
+      '</p><p>The full details are in the attached PDF. Ready to move forward? Just reply and we’ll get you set up.</p>';
+  } else if (type === 'report') {
+    body = '<p>Here’s your ' + (row.period ? esc_(row.period) + ' ' : '') + 'growth report — a snapshot of your marketing this month is attached.</p>' +
+      (row.highlights ? '<p>' + esc_(row.highlights) + '</p>' : '');
+  } else {
+    body = '<p>Please find your invoice' + (row.number ? ' ' + esc_(row.number) : '') + ' attached' +
+      (row.due_on ? ', due ' + esc_(row.due_on) : '') + '. The amount due is <b>' + money_(row.amount) + '</b>.</p>';
+  }
   return '<div style="font-family:Arial,sans-serif;color:#101827;line-height:1.55">' +
-    '<p>Hi ' + esc_(client.contact_name || '') + ',</p>' +
-    (isProposal
-      ? '<p>' + esc_(row.summary || 'Here is the ' + (row.doc_type || 'proposal') + ' we put together for you.') +
-        '</p><p>The full details are in the attached PDF. Ready to move forward? Just reply and we’ll get you set up.</p>'
-      : '<p>Please find your invoice' + (row.number ? ' ' + esc_(row.number) : '') + ' attached' +
-        (row.due_on ? ', due ' + esc_(row.due_on) : '') + '. The amount due is <b>' + money_(row.amount) + '</b>.</p>') +
+    '<p>Hi ' + esc_(client.contact_name || '') + ',</p>' + body +
     '<p style="margin-top:18px">Thanks,<br><b>' + esc_(CONFIG.FROM_NAME) + '</b><br>' +
     '<a href="https://' + esc_(CONFIG.WEBSITE) + '">' + esc_(CONFIG.WEBSITE) + '</a></p></div>';
+}
+
+// ==== REPORT PDF ===========================================================
+
+var REPORT_METRICS_ = [
+  { key: 'impressions', label: 'Impressions' }, { key: 'reach', label: 'Reach' },
+  { key: 'engagements', label: 'Engagements' }, { key: 'clicks', label: 'Clicks' },
+  { key: 'ctr', label: 'Click-through rate', suffix: '%' }, { key: 'sessions', label: 'Website visits' },
+  { key: 'calls', label: 'Phone calls' }, { key: 'forms', label: 'Form submissions' },
+  { key: 'conversions', label: 'Conversions / leads' }, { key: 'reviews', label: 'New reviews' },
+  { key: 'ad_spend', label: 'Ad spend', prefix: '$' }, { key: 'cost_per_lead', label: 'Cost per lead', prefix: '$' },
+];
+function reportHtml_(r, client) {
+  var LOGO = 'https://taylormadegrowth.com/app/assets/img/logo-proposal.png';
+  var metrics = r.metrics || {};
+  var tiles = '';
+  for (var i = 0; i < REPORT_METRICS_.length; i++) {
+    var m = REPORT_METRICS_[i], v = metrics[m.key];
+    if (v == null || v === '') continue;
+    var num = Number(v).toLocaleString('en-US', { maximumFractionDigits: m.key === 'ctr' ? 1 : 0 });
+    tiles += '<div class="tile"><div class="tv">' + (m.prefix || '') + num + (m.suffix || '') + '</div><div class="tl">' + esc_(m.label) + '</div></div>';
+  }
+  if (!tiles) tiles = '<div class="muted">No metrics entered.</div>';
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><style>' +
+    'html,body{margin:0}body{font-family:Georgia,"Times New Roman",serif;color:#1b1b1b}' +
+    '.page{padding:26px 34px 34px}' +
+    '.top{display:flex;justify-content:space-between;border-bottom:3px solid #13294b;padding-bottom:14px}' +
+    '.logo{width:220px;height:auto}.contact{text-align:right;font-size:12.5px;line-height:1.5;color:#333}' +
+    '.eyebrow{font-family:Arial,Helvetica,sans-serif;font-weight:800;letter-spacing:3px;font-size:12px;color:#b98d1a;margin-top:20px}' +
+    'h1{font-family:Arial,Helvetica,sans-serif;font-size:28px;color:#0d1b30;margin:3px 0 6px}.subline{font-size:14px;color:#444}' +
+    '.sec{font-family:Arial,Helvetica,sans-serif;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;font-size:12.5px;color:#0d1b30;border-bottom:1.5px solid #0d1b30;padding-bottom:4px;margin:20px 0 10px;page-break-after:avoid}' +
+    '.body{font-size:14.5px;line-height:1.55;margin:0 0 9px}' +
+    '.grid{display:flex;flex-wrap:wrap;gap:12px}' +
+    '.tile{border:1.5px solid #d8dbe2;border-radius:12px;padding:12px 15px;min-width:150px;page-break-inside:avoid}' +
+    '.tile .tv{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:23px;color:#0d1b30}' +
+    '.tile .tl{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#666;font-family:Arial,Helvetica,sans-serif;margin-top:3px}' +
+    '.muted{color:#888}.foot{margin-top:22px;border-top:1px solid #e4e4e4;padding-top:10px;text-align:center;color:#888;font-size:11px;font-family:Arial,Helvetica,sans-serif}' +
+    '</style></head><body><div class="page">' +
+    '<div class="top"><img class="logo" src="' + LOGO + '"><div class="contact">TaylorMade Brands<br>334.391.6641<br>josh@taylormadegrowth.com</div></div>' +
+    '<div class="eyebrow">MONTHLY GROWTH REPORT</div><h1>' + esc_(client.business_name || 'Your business') + '</h1>' +
+    '<div class="subline">' + esc_(r.period || '') + '</div>' +
+    (r.highlights ? '<div class="sec">Highlights</div><p class="body">' + esc_(r.highlights) + '</p>' : '') +
+    '<div class="sec">The Numbers</div><div class="grid">' + tiles + '</div>' +
+    (r.notes ? '<div class="sec">Notes</div><p class="body">' + esc_(r.notes) + '</p>' : '') +
+    (r.next_steps ? '<div class="sec">What’s Next</div><p class="body">' + esc_(r.next_steps) + '</p>' : '') +
+    '<div class="foot">TaylorMade Brands · taylormadegrowth.com · Growing your business, together.</div>' +
+    '</div></body></html>';
+}
+
+// ==== WELCOME EMAIL ========================================================
+
+function welcomePlain_(c) {
+  return 'Hi ' + (c.contact_name || '') + ',\n\nWelcome to the TaylorMade family! We’re thrilled to partner with ' +
+    (c.business_name || 'you') + '. Our whole focus now is helping your business grow — and you’ll start seeing us get to work right away.\n\n' +
+    'We’ll be in touch shortly with your onboarding steps. In the meantime, just reply here if you have any questions.\n\n' +
+    'Here’s to growing something great together,\n' + CONFIG.FROM_NAME + '\n' + CONFIG.WEBSITE;
+}
+function welcomeHtml_(c) {
+  var BANNER = 'https://taylormadegrowth.com/app/assets/img/welcome-banner.png';
+  return '<div style="font-family:Arial,Helvetica,sans-serif;color:#101827;line-height:1.6;max-width:600px">' +
+    '<img src="' + BANNER + '" alt="TaylorMade Brands" style="width:100%;border-radius:14px;display:block">' +
+    '<h1 style="font-size:26px;color:#0d1b30;margin:22px 0 6px">Welcome to the TaylorMade family!</h1>' +
+    '<p>Hi ' + esc_(c.contact_name || '') + ',</p>' +
+    '<p>We’re thrilled to partner with <b>' + esc_(c.business_name || 'you') + '</b>. Our whole focus now is helping your business grow — and you’ll start seeing us get to work right away.</p>' +
+    '<p>We’ll follow up shortly with your onboarding steps. In the meantime, just reply here with anything at all.</p>' +
+    '<p style="margin-top:18px">Here’s to growing something great together,<br><b>' + esc_(CONFIG.FROM_NAME) + '</b><br>' +
+    '<a href="https://' + esc_(CONFIG.WEBSITE) + '" style="color:#13294b">' + esc_(CONFIG.WEBSITE) + '</a></p></div>';
 }
 
 // ==== HELPERS ==============================================================

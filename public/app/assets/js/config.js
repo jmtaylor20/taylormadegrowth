@@ -195,6 +195,31 @@ export const DOC_TYPE = [
 // Partnership / agreement length options.
 export const CONTRACT_TERMS = ['No contract', 'Month-to-month', '3-month', '6-month', '12-month', '24-month'];
 
+// Monthly report metrics. Any left blank are omitted from the report.
+export const REPORT_METRICS = [
+  { key: 'impressions',  label: 'Impressions' },
+  { key: 'reach',        label: 'Reach' },
+  { key: 'engagements',  label: 'Engagements' },
+  { key: 'clicks',       label: 'Clicks' },
+  { key: 'ctr',          label: 'Click-through rate', suffix: '%' },
+  { key: 'sessions',     label: 'Website visits' },
+  { key: 'calls',        label: 'Phone calls' },
+  { key: 'forms',        label: 'Form submissions' },
+  { key: 'conversions',  label: 'Conversions / leads' },
+  { key: 'reviews',      label: 'New reviews' },
+  { key: 'ad_spend',     label: 'Ad spend', prefix: '$' },
+  { key: 'cost_per_lead',label: 'Cost per lead', prefix: '$' },
+];
+
+// Universal prefill language for a monthly report (edit per report).
+export const REPORT_HIGHLIGHTS_TEMPLATE =
+  'Here’s your growth snapshot for the month. We continued managing your digital presence — optimizing your Google Business Profile, publishing content, and monitoring performance across channels. The numbers below show the reach and engagement your business earned, and what we’re focused on next.';
+export const REPORT_NEXTSTEPS_TEMPLATE =
+  'Next month we’ll keep building on what’s working — sharpening the highest-performing channels, requesting more reviews, and refining the offer to turn more attention into booked business.';
+
+// Welcome email fired when a lead/proposal becomes a client.
+export const WELCOME_SUBJECT = 'Welcome to the TaylorMade family 🎉';
+
 // Document pipeline state (email send + Google Drive archive), driven by the
 // Google Apps Script in /google-apps-script.
 export const SEND_STATUS = [
