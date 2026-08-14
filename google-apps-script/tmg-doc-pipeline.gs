@@ -211,6 +211,7 @@ function proposalHtml_(p, client) {
     '.approve{font-size:15px;margin:8px 0}.box{font-size:16px;margin-right:8px}' +
     '.sign{font-size:14px;margin-top:12px;display:flex}.sign .lbl{font-family:Arial,Helvetica,sans-serif;font-weight:bold;padding-right:8px}.sign .u{flex:1;border-bottom:1px solid #666}' +
     '.foot{margin-top:22px;border-top:1px solid #e4e4e4;padding-top:10px;text-align:center;color:#888;font-size:11px;font-family:Arial,Helvetica,sans-serif}' +
+    '.sec{page-break-after:avoid}table,tr,.chips,.trow,.sign,.term,.top{page-break-inside:avoid}' +
     '</style></head><body><div class="page">' +
     '<div class="top"><img class="logo" src="' + LOGO + '"><div class="contact">TaylorMade Brands<br>1346 Tallapoosa Street<br>Notasulga, AL 36866<br>334.391.6641<br>josh@taylormadegrowth.com</div></div>' +
     '<div class="eyebrow">' + e(docType) + '</div><h1>' + e(p.title || 'Growth Partnership Proposal') + '</h1>' +

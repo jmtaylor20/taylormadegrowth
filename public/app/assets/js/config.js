@@ -54,6 +54,21 @@ export const SERVICES = [
 ];
 export const SERVICE_LABEL = Object.fromEntries(SERVICES.map((s) => [s.key, s.label]));
 
+// Common services offered as one-tap checkboxes on the proposal builder.
+// Checking one adds a priced line item + a scope-of-work entry (both editable).
+// bucket: 'oneTime' or 'monthly' → which price column it defaults into.
+export const PROPOSAL_SERVICES = [
+  { key: 'website_build',      label: 'Website build',            bucket: 'oneTime', scope: 'Design and build a fast, mobile-friendly website with the pages needed to convert visitors.' },
+  { key: 'branding',          label: 'Logo & branding',           bucket: 'oneTime', scope: 'Logo design and a cohesive brand identity.' },
+  { key: 'google_ads',        label: 'Google Ads campaign',       bucket: 'oneTime', scope: 'Build, structure, and launch Google Ads campaigns targeted to the right service area.' },
+  { key: 'ads_management',    label: 'Ads management',            bucket: 'monthly', scope: 'Ongoing Google Ads management, optimization, and reporting.' },
+  { key: 'gbp',               label: 'Google Business Profile',   bucket: 'monthly', scope: 'Claim, optimize, and manage the Google Business Profile with posts and review requests.' },
+  { key: 'monthly_management',label: 'Monthly management',        bucket: 'monthly', scope: 'Ongoing management, reporting, optimization, and next-step recommendations each month.' },
+  { key: 'social',            label: 'Social / content',          bucket: 'monthly', scope: 'Monthly social content creation and scheduling.' },
+  { key: 'print',             label: 'Print materials',           bucket: 'oneTime', scope: 'Design of business cards, flyers, and other print materials.' },
+  { key: 'hosting',           label: 'Hosting / domain / email',  bucket: 'monthly', scope: 'Hosting, domain, and business email setup and management.' },
+];
+
 // ---- Pipeline stages ------------------------------------------------------
 export const STAGES = [
   { key: 'lead',       label: 'Lead',        hint: 'New — needs first contact' },

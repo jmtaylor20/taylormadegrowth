@@ -1,7 +1,7 @@
 // Proposals — build a proposal from line items, track its status, and track the
 // contract through to signed. Generate a clean printable proposal to send.
 import { Proposals, Clients } from './db.js';
-import { PROPOSAL_STATUS, CONTRACT_STATUS, SERVICES, DOC_TYPE, SEND_STATUS, DRIVE_STATUS, BUSINESS, OWNER, CONTRACT_TERMS } from './config.js';
+import { PROPOSAL_STATUS, CONTRACT_STATUS, SERVICES, DOC_TYPE, SEND_STATUS, DRIVE_STATUS, BUSINESS, OWNER, CONTRACT_TERMS, PROPOSAL_SERVICES } from './config.js';
 
 // Default scope-of-work areas for a growth partnership (editable per proposal).
 const SCOPE_STARTER = [
@@ -80,8 +80,7 @@ function openProposalForm(existing = {}, onSaved, list) {
   const isNew = !existing.id;
   const D = existing.details || {};
   const clientOptions = [{ key: '', label: '— Select client —' }, ...list.map((c) => ({ key: c.id, label: c.business_name }))];
-  let items = (existing.line_items && existing.line_items.length) ? existing.line_items.map((x) => ({ ...x }))
-    : [{ label: 'Website build', monthly: 0, oneTime: 0 }];
+  let items = (existing.line_items && existing.line_items.length) ? existing.line_items.map((x) => ({ ...x })) : [];
 
   const itemsWrap = el('div');
   const totalsBar = el('div', { style: 'display:flex;gap:16px;font-weight:700;color:var(--navy-dark);padding:6px 2px' });
@@ -100,9 +99,8 @@ function openProposalForm(existing = {}, onSaved, list) {
         el('button.icon-btn', { html: iconSvg('trash', 16), onclick: () => { items.splice(i, 1); renderItems(); totals(); } }),
       ]));
     });
-    itemsWrap.append(el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:4px' }, [
-      el('button.btn.btn-ghost.btn-sm', { html: `${iconSvg('plus', 14)} Line`, onclick: () => { items.push({ label: '', monthly: 0, oneTime: 0 }); renderItems(); } }),
-      ...SERVICES.map((s) => el('button.btn.btn-ghost.btn-sm', { text: '+ ' + s.label, onclick: () => { items.push({ label: s.label, monthly: 0, oneTime: 0 }); renderItems(); } })),
+    itemsWrap.append(el('div', { style: 'margin-top:4px' }, [
+      el('button.btn.btn-ghost.btn-sm', { html: `${iconSvg('plus', 14)} Custom line`, onclick: () => { items.push({ label: '', monthly: 0, oneTime: 0 }); renderItems(); } }),
     ]));
   }
   function totals() {
@@ -114,7 +112,7 @@ function openProposalForm(existing = {}, onSaved, list) {
   renderItems(); totals();
 
   // Scope of work — repeatable {area, detail} rows.
-  let scope = (D.scope_items && D.scope_items.length) ? D.scope_items.map((x) => ({ ...x })) : [{ area: '', detail: '' }];
+  let scope = (D.scope_items && D.scope_items.length) ? D.scope_items.map((x) => ({ ...x })) : [];
   const scopeWrap = el('div');
   function renderScope() {
     clear(scopeWrap);
@@ -134,47 +132,66 @@ function openProposalForm(existing = {}, onSaved, list) {
   }
   renderScope();
 
+  // Service checkboxes — one tap adds/removes a priced line item + scope entry.
+  const chipsWrap = el('div.chipset');
+  const svcIdx = (svc) => items.findIndex((it) => it.svc === svc.key || it.label === svc.label);
+  function toggleService(svc) {
+    const i = svcIdx(svc);
+    if (i >= 0) {
+      items.splice(i, 1);
+      const si = scope.findIndex((s) => s.svc === svc.key || s.area === svc.label);
+      if (si >= 0) scope.splice(si, 1);
+    } else {
+      items.push({ label: svc.label, monthly: 0, oneTime: 0, svc: svc.key });
+      if (!scope.some((s) => s.area === svc.label)) scope.push({ area: svc.label, detail: svc.scope || '', svc: svc.key });
+    }
+    renderChips(); renderItems(); totals(); renderScope();
+  }
+  function renderChips() {
+    clear(chipsWrap);
+    PROPOSAL_SERVICES.forEach((svc) => {
+      const on = svcIdx(svc) >= 0;
+      chipsWrap.append(el('button.chip' + (on ? '.on' : ''), { type: 'button', text: svc.label, onclick: () => toggleService(svc) }));
+    });
+  }
+  renderChips();
+
   const node = el('div.form', {}, [
     field('Title', textInput('title', existing.title, { placeholder: 'Growth Partnership Proposal for ABC Co.' })),
     el('div.form-grid.cols-2', {}, [
       field('Document type', selectInput('doc_type', DOC_TYPE, existing.doc_type || 'proposal')),
       field('Client', selectInput('client_id', clientOptions, existing.client_id || '')),
       field('Status', selectInput('status', PROPOSAL_STATUS, existing.status || 'draft')),
+      field('Agreement length', selectInput('contract_term', CONTRACT_TERMS, D.contract_term || 'No contract')),
     ]),
     field('Summary / cover note', textArea('summary', existing.summary, { rows: 3, placeholder: 'The objective and why it matters — sets up the proposal.' })),
+    el('div.section-title', {}, [el('h3', { text: 'Services & investment' })]),
+    el('div', {}, [el('span.field-hint', { text: 'Tap the services included — each adds a priced line and a scope entry you can edit.' }), chipsWrap]),
+    el('div.mt-8', {}, [itemsWrap, totalsBar]),
     el('div.section-title', {}, [el('h3', { text: 'Scope of work' })]),
-    el('div', {}, [el('span.field-hint', { text: 'Focus areas and what TaylorMade delivers for each.' }), scopeWrap]),
-    el('div.section-title', {}, [el('h3', { text: 'Investment' })]),
-    field('Line items (build = one-time, retainer = monthly)', el('div', {}, [itemsWrap, totalsBar])),
+    el('div', {}, [el('span.field-hint', { text: 'Auto-filled from the services above — edit freely or add your own.' }), scopeWrap]),
     el('div.section-title', {}, [el('h3', { text: 'Partnership' })]),
-    el('div.form-grid.cols-2', {}, [
-      field('Agreement length', selectInput('contract_term', CONTRACT_TERMS, D.contract_term || (existing.contract_status === 'signed' ? '12-month' : 'No contract'))),
-      field('Prepared by', textInput('prepared_by', D.prepared_by || OWNER)),
-    ]),
     field('Monthly agreement / partnership terms', textArea('partnership_terms', D.partnership_terms, { rows: 3, placeholder: 'What the monthly retainer covers, cadence, review points, what each side owns…' })),
-    el('div.section-title', {}, [el('h3', { text: 'Details (optional)' })]),
-    el('div.form-grid.cols-2', {}, [
-      field('Prepared by', textInput('prepared_by', D.prepared_by || OWNER)),
-      field('Revision allowance', textInput('revision_allowance', D.revision_allowance, { placeholder: 'e.g. 2 rounds' })),
-    ]),
-    field('Desired outcome', textArea('desired_outcome', D.desired_outcome, { rows: 2, placeholder: 'What success looks like for the client.' })),
-    field('Deliverables', textArea('deliverables', D.deliverables, { rows: 2 })),
-    field('Timeline & milestones', textArea('timeline', D.timeline, { rows: 2 })),
-    field('Client responsibilities', textArea('client_responsibilities', D.client_responsibilities, { rows: 2 })),
-    el('div.form-grid.cols-2', {}, [
-      field('Third-party costs', textInput('third_party_costs', D.third_party_costs, { placeholder: 'e.g. hosting, stock photos' })),
-      field('Approval method / deadline', textInput('approval_method', D.approval_method, { placeholder: 'e.g. Sign below by Fri' })),
-    ]),
-    field('Not included', textArea('not_included', D.not_included, { rows: 2 })),
-    el('div.section-title', {}, [el('h3', { text: 'Changes (optional)' })]),
-    field('Scope change notes', textArea('scope_change_notes', D.scope_change_notes, { rows: 2 })),
-    field('Price difference & reasoning', textArea('price_difference', D.price_difference, { rows: 2 })),
-    el('div.section-title', {}, [el('h3', { text: 'Contract' })]),
-    el('div.form-grid.cols-2', {}, [
-      field('Contract status', selectInput('contract_status', CONTRACT_STATUS, existing.contract_status || 'none')),
-      field('Signed on', dateInput('contract_signed_on', existing.contract_signed_on)),
-      field('Sent on', dateInput('sent_on', existing.sent_on)),
-      field('Contract link', textInput('contract_url', existing.contract_url, { placeholder: 'e-sign link' })),
+    el('details.form-more', {}, [
+      el('summary', { text: 'More detail (optional)' }),
+      el('div.form', {}, [
+        el('div.form-grid.cols-2', {}, [
+          field('Prepared by', textInput('prepared_by', D.prepared_by || OWNER)),
+          field('Revision allowance', textInput('revision_allowance', D.revision_allowance, { placeholder: 'e.g. 2 rounds' })),
+          field('Third-party costs', textInput('third_party_costs', D.third_party_costs, { placeholder: 'e.g. ad spend, photography' })),
+          field('Approval method / deadline', textInput('approval_method', D.approval_method, { placeholder: 'e.g. Sign below by Fri' })),
+        ]),
+        field('Timeline & milestones', textArea('timeline', D.timeline, { rows: 2 })),
+        field('Client responsibilities', textArea('client_responsibilities', D.client_responsibilities, { rows: 2 })),
+        field('Not included', textArea('not_included', D.not_included, { rows: 2 })),
+        el('div.section-title', {}, [el('h3', { text: 'Contract tracking' })]),
+        el('div.form-grid.cols-2', {}, [
+          field('Contract status', selectInput('contract_status', CONTRACT_STATUS, existing.contract_status || 'none')),
+          field('Signed on', dateInput('contract_signed_on', existing.contract_signed_on)),
+          field('Sent on', dateInput('sent_on', existing.sent_on)),
+          field('Contract link', textInput('contract_url', existing.contract_url, { placeholder: 'e-sign link' })),
+        ]),
+      ]),
     ]),
   ]);
 
@@ -201,9 +218,8 @@ function openProposalForm(existing = {}, onSaved, list) {
     v.monthly_total = v.line_items.reduce((s, x) => s + Number(x.monthly || 0), 0);
     v.build_total = v.line_items.reduce((s, x) => s + Number(x.oneTime || 0), 0);
     // Pull the scope/terms fields out of the flat form object into `details`.
-    const DETAIL_KEYS = ['prepared_by', 'desired_outcome', 'deliverables', 'timeline',
-      'revision_allowance', 'client_responsibilities', 'third_party_costs', 'approval_method',
-      'not_included', 'scope_change_notes', 'price_difference', 'partnership_terms', 'contract_term'];
+    const DETAIL_KEYS = ['prepared_by', 'timeline', 'revision_allowance', 'client_responsibilities',
+      'third_party_costs', 'approval_method', 'not_included', 'partnership_terms', 'contract_term'];
     const details = {};
     DETAIL_KEYS.forEach((k) => { if (v[k] != null && String(v[k]).trim() !== '') details[k] = v[k]; delete v[k]; });
     details.scope_items = scope.filter((s) => s.area || s.detail);
@@ -273,7 +289,7 @@ export function proposalDocHtml(p, clientName, opts = {}) {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(p.title || docType)}</title><style>
     *{box-sizing:border-box}html,body{margin:0}
     body{font-family:Georgia,'Times New Roman',serif;color:#1b1b1b;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .page{max-width:720px;margin:0 auto;padding:30px 42px 40px}
+    .page{max-width:720px;margin:0 auto;padding:24px 10px}
     .top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;border-bottom:3px solid #13294b;padding-bottom:16px}
     .logo{width:230px;height:auto}
     .contact{text-align:right;font-size:13px;line-height:1.55;color:#333}
@@ -299,7 +315,10 @@ export function proposalDocHtml(p, clientName, opts = {}) {
     .sign{font-size:15px;margin-top:14px;display:flex;align-items:baseline;gap:8px}
     .sign .lbl{font-family:Arial,Helvetica,sans-serif;font-weight:bold}.sign .u{flex:1;border-bottom:1px solid #666;min-height:1.1em}
     .foot{margin-top:26px;border-top:1px solid #e4e4e4;padding-top:12px;text-align:center;color:#888;font-size:12px;font-family:Arial,Helvetica,sans-serif}
-    @page{margin:0}
+    .sec{page-break-after:avoid;break-after:avoid}
+    h1,.subline{page-break-after:avoid}
+    table,tr,.chips,.trow,.sign,.term,.top,.body{page-break-inside:avoid;break-inside:avoid}
+    @page{margin:0.5in}
   </style></head><body><div class="page">
     <div class="top"><img class="logo" src="${logo}" alt="TaylorMade Brands"><div class="contact">${esc(BUSINESS.name)}<br>${esc(BUSINESS.address1)}<br>${esc(BUSINESS.address2)}<br>${esc(BUSINESS.phone)}<br>${esc(BUSINESS.email)}</div></div>
     <div class="eyebrow">${esc(docType)}</div>
