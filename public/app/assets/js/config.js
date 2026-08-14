@@ -59,10 +59,23 @@ export const STAGES = [
   { key: 'lead',       label: 'Lead',        hint: 'New — needs first contact' },
   { key: 'prospect',   label: 'Prospect',    hint: 'In conversation / quoting' },
   { key: 'client',     label: 'Client',      hint: 'Active, paying' },
+  { key: 'deferred',   label: 'Deferred',    hint: 'On hold / revisit later' },
   { key: 'past_client',label: 'Past client', hint: 'Former client' },
   { key: 'lost',       label: 'Lost',        hint: 'Did not close' },
 ];
 export const STAGE_LABEL = Object.fromEntries(STAGES.map((s) => [s.key, s.label]));
+
+// Stage badge tones.
+export const STAGE_TONE = { lead: 'gray', prospect: 'blue', client: 'green', deferred: 'amber', past_client: 'gray', lost: 'red' };
+
+// ---- Payments (deposits / payments received) ------------------------------
+export const PAYMENT_KIND = [
+  { key: 'deposit',  label: 'Deposit' },
+  { key: 'build',    label: 'Build fee' },
+  { key: 'monthly',  label: 'Monthly' },
+  { key: 'other',    label: 'Other' },
+];
+export const PAYMENT_METHODS = ['Relay', 'QuickBooks', 'Card', 'Cash', 'Check', 'Zelle', 'Venmo', 'Other'];
 
 // ---- Status vocabularies (label + color token) ----------------------------
 export const WEBSITE_STATUS = [

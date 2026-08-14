@@ -2,30 +2,25 @@
 import { APP_PIN } from './config.js';
 import { CONFIGURED } from './db.js';
 import { el, clear, iconSvg } from './ui.js';
-import { renderDashboard } from './dashboard.js';
-import { renderPipeline } from './pipeline.js';
 import { renderClients } from './clients.js';
-import { renderProjects } from './projects.js';
+import { renderLeads } from './leads.js';
 import { renderTasks } from './tasks.js';
-import { renderInvoices } from './invoices.js';
-import { renderContent } from './content.js';
+import { renderFinancials } from './financials.js';
 import { renderProposals } from './proposals.js';
-import { renderRenewals } from './renewals.js';
+import { renderReports } from './reports.js';
 import { openClient } from './client-detail.js';
 
 const root = document.getElementById('root');
 
-// Nav: first 4 (+ Dashboard) show in the mobile tab bar; the rest live in "More".
+// Six-tab operating pipeline. First four show in the mobile tab bar; the rest
+// live in "More".
 export const NAV = [
-  { id: 'dashboard', label: 'Home',      icon: 'dashboard', render: renderDashboard, primary: true },
-  { id: 'pipeline',  label: 'Pipeline',  icon: 'pipeline',  render: renderPipeline,  primary: true },
-  { id: 'clients',   label: 'Clients',   icon: 'users',     render: renderClients,   primary: true },
-  { id: 'projects',  label: 'Projects',  icon: 'build',     render: renderProjects,  primary: true },
-  { id: 'tasks',     label: 'Tasks',     icon: 'tasks',     render: renderTasks },
-  { id: 'invoices',  label: 'Invoices',  icon: 'money',     render: renderInvoices },
-  { id: 'content',   label: 'Content',   icon: 'content',   render: renderContent },
-  { id: 'proposals', label: 'Proposals', icon: 'proposal',  render: renderProposals },
-  { id: 'renewals',  label: 'Renewals',  icon: 'renew',     render: renderRenewals },
+  { id: 'clients',    label: 'Clients',   icon: 'users',    render: renderClients,    primary: true },
+  { id: 'leads',      label: 'Leads',     icon: 'pipeline', render: renderLeads,      primary: true },
+  { id: 'tasks',      label: 'Tasks',     icon: 'tasks',    render: renderTasks,      primary: true },
+  { id: 'financials', label: 'Money',     icon: 'money',    render: renderFinancials, primary: true },
+  { id: 'proposals',  label: 'Proposals', icon: 'proposal', render: renderProposals },
+  { id: 'reports',    label: 'Reports',   icon: 'report',   render: renderReports },
 ];
 
 let mainEl;
@@ -33,7 +28,7 @@ let mainEl;
 function currentRoute() {
   const raw = location.hash.replace(/^#\//, '');
   const [id, arg] = raw.split('/');
-  return { id: id || 'dashboard', arg };
+  return { id: id || 'clients', arg };
 }
 
 async function route() {
@@ -138,7 +133,7 @@ function boot() {
   buildShell();
   window.removeEventListener('hashchange', route);
   window.addEventListener('hashchange', route);
-  if (!location.hash) location.hash = '#/dashboard';
+  if (!location.hash) location.hash = '#/clients';
   route();
   registerSW();
 }
