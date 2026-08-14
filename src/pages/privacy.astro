@@ -6,11 +6,16 @@ import Base from '../layouts/Base.astro';
   title="Privacy Policy | Taylormade Brands"
   description="How Taylormade Brands collects, uses, and protects information on this website."
 >
-  <main>
+  <main class="paper">
+    <section class="ink page-hero grid-bg">
+      <div class="container wide">
+        <p class="label">Privacy</p>
+        <h1 class="display">Privacy Policy</h1>
+        <p class="lead muted mt-s">How Taylormade Brands collects, uses, and protects information on this website.</p>
+      </div>
+    </section>
     <section class="section legal-page">
       <div class="container narrow">
-        <p class="eyebrow dark">Privacy</p>
-        <h1>Privacy Policy</h1>
         <p class="legal-updated">Last updated: August 2026</p>
 
         <p>
@@ -78,30 +83,32 @@ import Base from '../layouts/Base.astro';
 
   <style>
     .legal-page h2 {
-      margin-top: 34px;
-      margin-bottom: 10px;
-      font-size: 1.35rem;
-      color: var(--navy);
+      margin-top: 40px;
+      margin-bottom: 12px;
+      font-size: 1.4rem;
+      color: var(--l-text);
     }
     .legal-page p,
     .legal-page li {
-      color: var(--gray);
-      line-height: 1.7;
+      color: var(--l-muted);
+      line-height: 1.75;
     }
     .legal-page ul {
       padding-left: 20px;
-      margin: 8px 0;
+      margin: 10px 0;
     }
     .legal-page li {
       margin-bottom: 8px;
     }
     .legal-updated {
-      color: var(--gray);
-      font-size: 0.9rem;
-      margin-bottom: 24px;
+      font-family: var(--font-mono);
+      color: var(--l-faint);
+      font-size: 0.82rem;
+      letter-spacing: 0.04em;
+      margin-bottom: 28px;
     }
     .legal-page a {
-      color: var(--navy);
+      color: var(--gold-deep);
       font-weight: 600;
     }
   </style>

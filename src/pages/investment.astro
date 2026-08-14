@@ -1,497 +1,221 @@
 ---
 import Base from '../layouts/Base.astro';
+
+const engagements = [
+  {
+    tag: 'Partnership',
+    title: 'Growth Partnership',
+    price: 'Custom retainer',
+    body: 'The full relationship — strategy, software, research, reporting, and marketing under one partner, on an ongoing basis.',
+    points: ['Quarterly strategy & roadmap', 'Priority build capacity', 'Monthly research & reporting', 'One partner across the stack'],
+    cta: 'Book a conversation', href: '/contact.html', featured: true,
+  },
+  {
+    tag: 'Build',
+    title: 'Custom Software & Web Apps',
+    price: 'Scoped per project',
+    body: 'Client portals, registration systems, internal tools, and dashboards built around how your business runs.',
+    points: ['Discovery & scoping', 'Design, build & launch', 'Training & handoff', 'Ongoing support optional'],
+    cta: 'Discuss a build', href: '/contact.html', featured: false,
+  },
+  {
+    tag: 'Insight',
+    title: 'Research & Reporting',
+    price: 'Project or monthly',
+    body: 'Market and competitor research, performance reporting, and recommendations you can act on.',
+    points: ['Market & competitor research', 'Monthly performance reports', 'Value reporting', 'Plain-language recommendations'],
+    cta: 'Start with research', href: '/contact.html', featured: false,
+  },
+];
+
+const setups = [
+  { icon: '🌱', name: 'Launch', price: '$2,000', blurb: 'The essentials to look credible and get found.', pair: 'Essential Care · $250/mo',
+    items: ['Custom website, up to 5 pages', 'Mobile design, contact form, basic SEO', 'Analytics & Search Console', 'Google Business Profile foundation', 'Google Ads account foundation', 'Light brand refresh'], cta: 'navy' },
+  { icon: '📈', name: 'Grow', price: '$3,000', blurb: 'A stronger presence built to turn attention into leads.', pair: 'Growth Care · $800/mo', featured: true,
+    items: ['Everything in Launch, plus:', 'Professional website, up to 8 pages', 'One advanced feature or integration', 'Google optimization & review system', 'Google Ads setup & tracking', 'Visual identity & print templates'], cta: 'gold' },
+  { icon: '🏆', name: 'Lead', price: '$5,000', blurb: 'A full-service launch for businesses ready to lead their market.', pair: 'Market Leader · $1,500/mo',
+    items: ['Everything in Grow, plus:', 'Advanced website or Shopify (25 products)', 'Advanced forms, capture & automation', 'Advanced SEO & conversion tracking', 'Social setup + 30-day launch campaign', 'Marketing consultation & launch plan'], cta: 'navy' },
+];
+
+const care = [
+  { name: 'Essential Care', price: '$250/mo', items: ['Hosting, security & backups', 'Monthly maintenance & performance check', 'One scheduled content update', 'Email support'] },
+  { name: 'Growth Care', price: '$800/mo', featured: true, items: ['Everything in Essential Care', 'Weekly Google profile posts', 'Review monitoring & responses', 'Google Ads management', 'SEO, tracking & monthly reporting', 'Up to 2 hrs of updates + design pieces'] },
+  { name: 'Market Leader', price: 'from $1,500/mo', items: ['Everything in Growth Care', 'Social planning across 3 accounts', 'Up to 10 custom pieces / month', 'Print coordination', 'Monthly consultation & planning', 'Highest-priority support'] },
+];
 ---
 
 <Base
-  title="Investment | Taylormade Brands"
-  description="Explore Taylormade Brands investment options for websites, branding, Shopify, Google growth, marketing systems, and ongoing business support."
-  bodyClass="investment-page-simplified"
+  title="Engagements | Taylormade Brands"
+  description="Ways to work with Taylormade Brands — growth partnership, custom software, research and reporting, plus website and marketing setup packages and monthly care plans."
 >
   <main>
-    <section class="investment-hero">
-      <div class="container investment-hero-content">
-        <p class="eyebrow">Investment</p>
-        <h1>Invest in Your Business. Grow With Confidence.</h1>
-        <p>
-          Complete marketing systems built to help local businesses earn trust,
-          generate qualified leads, and create long-term growth.
+    <!-- HERO -->
+    <section class="ink page-hero grid-bg glow-gold">
+      <div class="container wide">
+        <p class="label">Engagements</p>
+        <h1 class="display" style="max-width: 15ch;">Invest in the business, not just the marketing.</h1>
+        <p class="lead muted" style="max-width: 60ch;">
+          Start with a defined package, or work together as an ongoing partner. Either way, everything is
+          scoped up front and measured after — so you always know what your investment is producing.
         </p>
-
-        <div class="button-row">
-          <a href="/contact.html" class="button gold-button">Schedule a Free Strategy Session</a>
-          <a href="#plans" class="button outline-light">Explore Plans</a>
+        <div class="btn-row mt-m">
+          <a href="/contact.html" class="btn btn-primary">Book a free strategy session <span class="arrow">→</span></a>
+          <a href="#setups" class="btn btn-ghost">See setup packages</a>
         </div>
       </div>
     </section>
 
-    <section class="section roadmap-section">
-      <div class="container narrow">
-        <p class="eyebrow dark">A Simple Path Forward</p>
-        <h2>Start with what you need. Add support as you grow.</h2>
-
-        <div class="roadmap">
-          <div><span>1</span><strong>Choose Your Setup</strong></div>
-          <div class="roadmap-line"></div>
-          <div><span>2</span><strong>Add Monthly Care</strong></div>
-          <div class="roadmap-line"></div>
-          <div><span>3</span><strong>Customize With Add-Ons</strong></div>
+    <!-- PREMIUM ENGAGEMENTS -->
+    <section class="ink-2 section">
+      <div class="container wide">
+        <div class="head">
+          <p class="label">Ways to work together</p>
+          <h2>Partner-level engagements.</h2>
+          <p>For businesses ready for more than marketing — custom software, research, and an ongoing growth partnership.</p>
         </div>
-
-        <p>
-          Most clients pair each setup package with its recommended monthly plan.
-          Need something different? Every pairing can be tailored to your business.
-        </p>
+        <div class="grid-3">
+          {engagements.map((e) => (
+            <article class={`card price-card reveal ${e.featured ? 'price-featured' : ''}`}>
+              {e.featured && <span class="ribbon">Most complete</span>}
+              <span class="tag">{e.tag}</span>
+              <h3 class="mt-s">{e.title}</h3>
+              <p class="price">{e.price}</p>
+              <p class="muted">{e.body}</p>
+              <ul class="feature-list mt-m">{e.points.map((p) => <li>{p}</li>)}</ul>
+              <a href={e.href} class={`btn ${e.featured ? 'btn-primary' : 'btn-ghost'} price-cta`}>{e.cta}</a>
+            </article>
+          ))}
+        </div>
       </div>
     </section>
 
-    <section class="section investment-plans-section" id="plans">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow dark">Step 1 · Choose Your Setup</p>
+    <!-- SETUP PACKAGES -->
+    <section class="paper section" id="setups">
+      <div class="container wide">
+        <div class="head">
+          <p class="label">Setup packages</p>
           <h2>Choose the foundation your business needs now.</h2>
-          <p>
-            Each one-time build gives you a clear starting point. Pair it with the care plan
-            that matches how much ongoing support you want after launch.
-          </p>
+          <p>Each one-time build gives you a clear starting point. Pair it with the care plan that matches how much ongoing support you want.</p>
         </div>
-
-        <div class="investment-card-grid">
-          <article class="investment-card">
-            <div class="plan-icon">🌱</div>
-            <h3>Launch</h3>
-            <p class="price-label">Starting at</p>
-            <p class="plan-price">$2,000</p>
-            <p>Get off the ground with the essentials your business needs to look credible and get found.</p>
-
-            <h4>Includes</h4>
-            <ul>
-              <li>Simple custom website, up to 5 pages</li>
-              <li>Mobile design, contact form, and basic SEO</li>
-              <li>Analytics and Search Console</li>
-              <li>Google Business Profile foundation</li>
-              <li>Google Ads account foundation</li>
-              <li>Light brand refresh, as needed</li>
-            </ul>
-
-            <div class="plan-footer">
-              <span>Best paired with</span>
-              <strong>Essential Care · $250/month</strong>
-            </div>
-
-            <a href="/contact.html" class="button navy-button">Launch My Brand</a>
-          </article>
-
-          <article class="investment-card featured-investment-card">
-            <div class="popular-ribbon">Most Popular</div>
-            <div class="plan-icon">📈</div>
-            <h3>Grow</h3>
-            <p class="price-label">Starting at</p>
-            <p class="plan-price">$3,000</p>
-            <p>Build a stronger, more professional presence designed to turn attention into leads.</p>
-
-            <h4>Everything in Launch plus</h4>
-            <ul>
-              <li>Professional website, up to 8 core pages</li>
-              <li>One agreed advanced feature or integration</li>
-              <li>Google profile optimization and review system</li>
-              <li>Google Ads campaign setup and tracking</li>
-              <li>Social templates and visual identity updates</li>
-              <li>Print marketing template setup</li>
-            </ul>
-
-            <div class="plan-footer">
-              <span>Best paired with</span>
-              <strong>Growth Care · $800/month</strong>
-            </div>
-
-            <a href="/contact.html" class="button gold-button">Grow My Business</a>
-          </article>
-
-          <article class="investment-card">
-            <div class="plan-icon">🏆</div>
-            <h3>Lead</h3>
-            <p class="price-label">Starting at</p>
-            <p class="plan-price">$5,000</p>
-            <p>A full-service launch for businesses ready to lead their market and connect every part of their marketing.</p>
-
-            <h4>Everything in Grow plus</h4>
-            <ul>
-              <li>Advanced website with agreed integrations</li>
-              <li>Or a Shopify store with up to 25 products</li>
-              <li>Advanced forms, lead capture, or automation</li>
-              <li>Advanced SEO and conversion tracking</li>
-              <li>Social profile setup for up to 3 accounts</li>
-              <li>30-day social launch campaign</li>
-              <li>Marketing consultation and launch plan</li>
-            </ul>
-
-            <div class="plan-footer">
-              <span>Best paired with</span>
-              <strong>Market Leader · $1,500/month</strong>
-            </div>
-
-            <a href="/contact.html" class="button navy-button">Request Proposal</a>
-          </article>
+        <div class="grid-3">
+          {setups.map((s) => (
+            <article class={`card price-card reveal ${s.featured ? 'price-featured light' : ''}`}>
+              {s.featured && <span class="ribbon">Most popular</span>}
+              <div class="plan-icon">{s.icon}</div>
+              <h3>{s.name}</h3>
+              <p class="price-label">Starting at</p>
+              <p class="price">{s.price}</p>
+              <p class="muted">{s.blurb}</p>
+              <ul class="check-list mt-m">{s.items.map((i) => <li>{i}</li>)}</ul>
+              <div class="pair">Best paired with<strong>{s.pair}</strong></div>
+              <a href="/contact.html" class={`btn ${s.cta === 'gold' ? 'btn-primary' : 'btn-dark'} price-cta`}>Get started</a>
+            </article>
+          ))}
         </div>
       </div>
     </section>
 
-    <section class="section care-section">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow dark">Step 2 · Choose Monthly Care</p>
-          <h2>Keep your marketing moving after launch.</h2>
-          <p>
-            Pick the matching plan above or choose the level of support that fits your business.
-          </p>
+    <!-- CARE PLANS -->
+    <section class="ink section">
+      <div class="container wide">
+        <div class="head">
+          <p class="label">Monthly care</p>
+          <h2>Keep it moving after launch.</h2>
+          <p>Pick the matching plan or the level of ongoing support that fits your business.</p>
         </div>
+        <div class="grid-3">
+          {care.map((c) => (
+            <article class={`card price-card reveal ${c.featured ? 'price-featured' : ''}`}>
+              {c.featured && <span class="ribbon">Recommended</span>}
+              <h3>{c.name}</h3>
+              <p class="price">{c.price}</p>
+              <ul class="check-list mt-m">{c.items.map((i) => <li>{i}</li>)}</ul>
+            </article>
+          ))}
+        </div>
+        <p class="disclaimer mt-l">Advertising spend, printing, postage, premium software, and other third-party costs are separate. Scope and allowances are confirmed in your proposal.</p>
+      </div>
+    </section>
 
-        <div class="care-grid">
-          <div class="care-card">
-            <h3>Essential Care</h3>
-            <p class="care-price">$250/month</p>
-            <ul>
-              <li>Hosting, security, and backups</li>
-              <li>Monthly maintenance and performance check</li>
-              <li>One scheduled content update, up to 30 minutes</li>
-              <li>Email support</li>
+    <!-- VALUE / COMPARE -->
+    <section class="paper-2 section">
+      <div class="container wide">
+        <div class="head center mx-auto">
+          <p class="label center mx-auto">The difference</p>
+          <h2>Agency-level work, without agency-level waste.</h2>
+          <p class="mx-auto">One partner instead of five vendors, flexible plans instead of long contracts, and reporting that shows the value being built.</p>
+        </div>
+        <div class="compare">
+          <div class="card compare-col">
+            <h4 class="muted">Typical marketing agency</h4>
+            <ul class="compare-list">
+              <li>Website: $5,000–25,000</li>
+              <li>Monthly marketing: $3,000–8,000+</li>
+              <li>Brand development: $5,000–15,000</li>
+              <li>Multiple vendors to coordinate</li>
+              <li>Long contracts</li>
+              <li>Generic templates</li>
             </ul>
           </div>
-
-          <div class="care-card highlighted-care">
-            <h3>Growth Care</h3>
-            <p class="care-price">$800/month</p>
-            <ul>
-              <li>Everything in Essential Care</li>
-              <li>Weekly Google profile posts and optimization</li>
-              <li>Google review monitoring and responses</li>
-              <li>Google Ads management and optimization</li>
-              <li>SEO, conversion tracking, and monthly reporting</li>
-              <li>Up to 2 hours of website and content updates</li>
-              <li>Up to 3 standard design or print pieces per month</li>
-              <li>Print coordination, quarterly strategy, and priority support</li>
-            </ul>
-          </div>
-
-          <div class="care-card">
-            <h3>Market Leader</h3>
-            <p class="price-label">Starting at</p>
-            <p class="care-price">$1,500/month</p>
-            <ul>
-              <li>Everything in Growth Care</li>
-              <li>Social planning and posting across up to 3 accounts</li>
-              <li>Up to 10 custom content or design pieces per month</li>
-              <li>Print ordering and pickup coordination</li>
-              <li>Monthly consultation and campaign planning</li>
-              <li>Advanced optimization and highest-priority support</li>
+          <div class="card compare-col compare-us">
+            <h4>Taylormade Brands</h4>
+            <ul class="compare-list">
+              <li>Setup from $2,000</li>
+              <li>Care from $250/mo</li>
+              <li>Custom software &amp; reporting included in partnership</li>
+              <li>One dedicated partner</li>
+              <li>Flexible, no long-term lock-in</li>
+              <li>Value report with every plan</li>
             </ul>
           </div>
         </div>
-
-        <div class="care-plan-note">
-          <p>
-            Advertising spend, printing, postage, premium software, and other third-party costs are separate.
-            Creative allowances and advertising scope are confirmed in your proposal.
-          </p>
-        </div>
+        <p class="disclaimer center mx-auto mt-l">Pricing varies by scope. Market ranges are based on publicly available U.S. agency pricing and are for general comparison only.</p>
       </div>
     </section>
 
-    <section class="section recommended-combos-section">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow dark">Recommended Combinations</p>
-          <h2>Most businesses need a buildout plus monthly support.</h2>
+    <!-- CTA -->
+    <section class="ink-2 section">
+      <div class="container narrow center">
+        <p class="label center mx-auto">Start here</p>
+        <h2 class="mt-s">Let's build something that works as hard as you do.</h2>
+        <p class="lead muted mt-s mx-auto" style="max-width:56ch;">Book a free strategy session and I'll recommend the right engagement for where your business is now.</p>
+        <div class="btn-row mt-m" style="justify-content:center;">
+          <a href="/contact.html" class="btn btn-primary">Schedule your session <span class="arrow">→</span></a>
+          <a href="/growth-assessment.html" class="btn btn-ghost">Take the assessment</a>
         </div>
-
-        <div class="combo-grid">
-          <div class="combo-card">
-            <span>New Business</span>
-            <h3>Launch + Essential Care</h3>
-            <p>Best for getting your brand, website, and Google foundation in place.</p>
-          </div>
-
-          <div class="combo-card combo-featured">
-            <span>Ready for Leads</span>
-            <h3>Grow + Growth Care</h3>
-            <p>Best for businesses ready to generate leads, improve visibility, and build trust.</p>
-          </div>
-
-          <div class="combo-card">
-            <span>Market Leader</span>
-            <h3>Lead + Market Leader</h3>
-            <p>Best for businesses ready for deeper strategy, content, ads, SEO, and reporting.</p>
-          </div>
-
-          <div class="combo-card">
-            <span>Flexible Support</span>
-            <h3>Choose Your Own Pairing</h3>
-            <p>Any setup package can be paired with the care plan that best fits your goals and capacity.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section compare-section">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow dark">Compare Our Setup Plans</p>
-          <h2>Find the right starting point.</h2>
-        </div>
-
-        <div class="comparison-table-wrap">
-          <table class="comparison-table">
-            <thead>
-              <tr>
-                <th>Features</th>
-                <th>Launch</th>
-                <th>Grow</th>
-                <th>Lead</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td>Discovery and strategy</td><td>✓</td><td>✓</td><td>✓</td></tr>
-              <tr><td>Simple website, up to 5 pages</td><td>✓</td><td>✓</td><td>✓</td></tr>
-              <tr><td>Professional website, up to 8 pages</td><td>—</td><td>✓</td><td>✓</td></tr>
-              <tr><td>Advanced website or Shopify, up to 25 products</td><td>—</td><td>—</td><td>✓</td></tr>
-              <tr><td>Advanced feature or integration</td><td>—</td><td>1</td><td>Custom</td></tr>
-              <tr><td>Google Business Profile foundation</td><td>✓</td><td>✓</td><td>✓</td></tr>
-              <tr><td>Review request system</td><td>—</td><td>✓</td><td>✓</td></tr>
-              <tr><td>Google Ads account foundation</td><td>✓</td><td>✓</td><td>✓</td></tr>
-              <tr><td>Google Ads campaign and tracking setup</td><td>—</td><td>✓</td><td>✓</td></tr>
-              <tr><td>Light brand refresh</td><td>✓</td><td>✓</td><td>✓</td></tr>
-              <tr><td>Logo and visual identity updates</td><td>—</td><td>✓</td><td>✓</td></tr>
-              <tr><td>Social media template starter kit</td><td>—</td><td>✓</td><td>✓</td></tr>
-              <tr><td>Print marketing template setup</td><td>—</td><td>✓</td><td>✓</td></tr>
-              <tr><td>30-day social launch campaign</td><td>—</td><td>—</td><td>✓</td></tr>
-              <tr><td>Priority launch support</td><td>—</td><td>✓</td><td>✓</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="table-note">
-          <h3>Not sure which package fits your business?</h3>
-          <p>
-            Every advanced feature, integration, product catalog, and campaign is scoped before work begins.
-            Schedule a free strategy session and we'll recommend the right starting point.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <section class="section shopify-section">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow">E-Commerce &amp; Shopify</p>
-          <h2>Online stores need more than a website.</h2>
-          <p>
-            Shopify projects include store structure, products, payments, shipping, taxes,
-            collections, email tools, and launch support.
-          </p>
-        </div>
-
-        <div class="shopify-grid">
-          <article class="shopify-card">
-            <h3>Shopify Starter Store</h3>
-            <p class="plan-price">Starting at $2,500</p>
-            <p>Best for small boutiques, team stores, spirit wear, and simple product-based businesses.</p>
-            <ul>
-              <li>Shopify setup</li>
-              <li>Theme customization</li>
-              <li>Homepage design</li>
-              <li>Collection setup</li>
-              <li>Up to 25 products</li>
-              <li>Payment and shipping setup</li>
-              <li>Basic email setup</li>
-              <li>Mobile optimization</li>
-              <li>Launch support</li>
-            </ul>
-          </article>
-
-          <article class="shopify-card shopify-featured">
-            <h3>Shopify Growth Store</h3>
-            <p class="plan-price">Starting at $4,000</p>
-            <p>Best for stores that need more products, stronger organization, and better sales systems.</p>
-            <ul>
-              <li>Everything in Starter</li>
-              <li>Up to 75 products</li>
-              <li>Product mockup support</li>
-              <li>Email capture</li>
-              <li>Abandoned cart setup</li>
-              <li>SEO product structure</li>
-              <li>Promotional graphics</li>
-              <li>Launch campaign</li>
-            </ul>
-          </article>
-
-          <article class="shopify-card">
-            <h3>E-Commerce Care</h3>
-            <p class="plan-price">Starting at $500/month</p>
-            <p>Best for stores that need regular updates, campaigns, and product support.</p>
-            <ul>
-              <li>Product updates</li>
-              <li>Collection updates</li>
-              <li>Promo banners</li>
-              <li>Email campaigns</li>
-              <li>Store maintenance</li>
-              <li>Monthly reporting</li>
-            </ul>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section individual-services-section">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow dark">Step 3 · Add-Ons</p>
-          <h2>Add only what your business needs.</h2>
-          <p>Enhance any setup package or monthly plan with individual services.</p>
-        </div>
-
-        <div class="service-price-grid">
-          <div class="service-price-card"><h3>Branding</h3><p>Logo Design — Starting at $300</p><p>Brand Identity — Starting at $1,000</p><p>Business Cards — $100</p><p>Vehicle Wrap Design — Starting at $500</p><p>Print Marketing — Starting at $175</p></div>
-          <div class="service-price-card"><h3>Websites</h3><p>Website Design — Starting at $1,500</p><p>Landing Pages — Starting at $750</p><p>Website Maintenance — Starting at $250/month</p></div>
-          <div class="service-price-card"><h3>Google</h3><p>Google Business Profile Setup — $350</p><p>Google Business Profile Management — $200/month</p><p>Google Ads Setup — $500</p><p>Google Ads Management — Starting at $300/month</p></div>
-          <div class="service-price-card"><h3>SEO</h3><p>Local SEO — Starting at $250/month</p><p>Technical SEO — Custom Proposal</p><p>Keyword Research — Starting at $250</p></div>
-          <div class="service-price-card"><h3>Social Media</h3><p>Management — Starting at $250/month</p><p>Custom Graphics — Starting at $75</p><p>Facebook Cover Design — $75</p><p>Content Calendars — Custom Quote</p></div>
-          <div class="service-price-card"><h3>Photography</h3><p>Professional Photography — Starting at $300</p><p>Drone Photography — Starting at $300</p><p>Drone Video — Starting at $500</p></div>
-          <div class="service-price-card"><h3>Marketing</h3><p>Email Marketing — Starting at $250/month</p><p>Newsletter Design — Starting at $250/month</p><p>Sales Packets — Starting at $500</p><p>Marketing Consulting — $250/hour</p></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section agency-compare-section">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow dark">Premium Results. Local Business Pricing.</p>
-          <h2>Agency-level work without agency-level waste.</h2>
-        </div>
-
-        <div class="agency-compare-grid">
-          <div class="agency-column">
-            <h3>Typical Marketing Agency</h3>
-            <p>Website: $5,000–25,000</p>
-            <p>Monthly Marketing: $3,000–8,000+</p>
-            <p>Brand Development: $5,000–15,000</p>
-            <p>Multiple Vendors</p>
-            <p>Long Contracts</p>
-            <p>Generic Templates</p>
-          </div>
-
-          <div class="agency-column tmb-column">
-            <h3>Taylormade Brands</h3>
-            <p>Starting at $1,500</p>
-            <p>Starting at $250</p>
-            <p>Starting at $300</p>
-            <p>One Dedicated Partner</p>
-            <p>Flexible Growth Plans</p>
-            <p>No Long-term Commitments</p>
-          </div>
-        </div>
-
-        <p class="disclaimer">
-          Pricing varies by project scope. Market ranges are based on publicly available U.S. marketing agency pricing and are provided for general comparison only.
-        </p>
-      </div>
-    </section>
-
-    <section class="section worth-section">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow dark">What Is Your Marketing Worth?</p>
-          <h2>Most businesses compare price. Smart businesses compare value.</h2>
-          <p>
-            A website alone is one piece. A growth system connects the pieces that actually help your business earn trust, get found, and turn interest into leads.
-          </p>
-        </div>
-
-        <div class="worth-compare-grid">
-          <article class="worth-card worth-them">
-            <h3>What Others Usually Sell</h3>
-            <p class="worth-label">Basic Website Package</p>
-            <ul>
-              <li>Website pages</li>
-              <li>Basic contact form</li>
-              <li>Generic layout</li>
-              <li>Little strategy</li>
-              <li>No real growth system</li>
-            </ul>
-          </article>
-
-          <article class="worth-card worth-us">
-            <h3>What Taylormade Builds</h3>
-            <p class="worth-label">Complete Growth System</p>
-            <ul>
-              <li>Professional website</li>
-              <li>Brand identity</li>
-              <li>Google Business Profile</li>
-              <li>Google Ads foundation</li>
-              <li>Local SEO structure</li>
-              <li>Marketing materials</li>
-              <li>Lead capture strategy</li>
-            </ul>
-          </article>
-
-          <article class="worth-card worth-them">
-            <h3>Typical Retail Value</h3>
-            <p class="worth-number">$8,000–25,000+</p>
-            <p>
-              When purchased separately through multiple vendors, the retail value of these services can add up fast.
-            </p>
-          </article>
-
-          <article class="worth-card worth-us worth-featured">
-            <h3>Your Taylormade Investment</h3>
-            <p class="worth-number">Starting at $2,000</p>
-            <p>
-              You get a connected system, one clear partner, and a value report showing what was built and what it is worth.
-            </p>
-          </article>
-        </div>
-
-        <div class="worth-summary">
-          <h3>The point is not cheaper work. The point is smarter value.</h3>
-          <p>
-            Every project includes a personalized Taylormade Value Report documenting the retail value of services delivered, completed work, and measurable progress over time.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <section class="section difference-section">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow dark">The Taylormade Difference</p>
-          <h2>Built for owners who want a partner, not random marketing tasks.</h2>
-        </div>
-
-        <div class="difference-grid">
-          <div><h3>Built Around Your Business</h3><p>Every strategy is tailored to your goals, industry, and market.</p></div>
-          <div><h3>Focused on Growth</h3><p>Every decision is made with one objective: measurable business growth.</p></div>
-          <div><h3>One Trusted Partner</h3><p>Branding, websites, Google, advertising, print, SEO, and strategy under one roof.</p></div>
-          <div><h3>Long-Term Value</h3><p>We build marketing systems that continue creating value after launch.</p></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="trust-strip">
-      <div class="container trust-strip-grid">
-        <div>No long-term contracts required</div>
-        <div>Custom strategy for every client</div>
-        <div>Transparent reporting with every growth plan</div>
-      </div>
-    </section>
-
-    <section class="section final-investment-cta">
-      <div class="container narrow">
-        <h2>Ready to Build a Brand That Works as Hard as You Do?</h2>
-        <p>
-          Let's create a marketing system that attracts customers, builds trust,
-          and helps your business grow for years to come.
-        </p>
-        <a href="/contact.html" class="button gold-button">Schedule Your Free Strategy Session</a>
       </div>
     </section>
   </main>
+
+  <style>
+    .price-card { display: flex; flex-direction: column; position: relative; }
+    .price-featured { border-color: var(--gold-deep); box-shadow: 0 30px 70px -45px rgba(201,162,74,.4); }
+    .price-featured.light { border-color: var(--gold-deep); }
+    .ribbon { position: absolute; top: -11px; left: 30px; background: var(--gold); color: #201808; font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 12px; border-radius: 999px; }
+    .plan-icon { font-size: 1.9rem; margin-bottom: 10px; }
+    .price-label { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; }
+    .ink .price-label, .ink-2 .price-label { color: var(--d-faint); }
+    .paper .price-label, .paper-2 .price-label { color: var(--l-faint); }
+    .price { font-family: var(--font-display); font-weight: 480; font-size: 2rem; letter-spacing: -0.02em; margin: 4px 0 12px; }
+    .gold-price { color: var(--gold); }
+    .check-list, .compare-list { list-style: none; display: grid; gap: 11px; }
+    .check-list li, .compare-list li { position: relative; padding-left: 26px; font-size: 0.95rem; }
+    .ink .check-list li, .ink-2 .check-list li { color: var(--d-muted); }
+    .paper .check-list li, .paper-2 .check-list li { color: var(--l-muted); }
+    .check-list li::before { content: "✓"; position: absolute; left: 0; color: var(--gold); font-weight: 700; }
+    .pair { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line-l); font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; }
+    .ink .pair, .ink-2 .pair { border-top-color: var(--line-d); color: var(--d-faint); }
+    .paper .pair, .paper-2 .pair { color: var(--l-faint); }
+    .pair strong { display: block; margin-top: 6px; text-transform: none; letter-spacing: 0; font-family: var(--font-sans); font-size: 0.9rem; color: var(--gold); }
+    .price-cta { margin-top: 24px; width: 100%; }
+    .price-card ul { flex: 1 0 auto; }
+
+    .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .compare-list li::before { content: "—"; color: var(--l-faint); }
+    .compare-us { border-color: var(--gold-deep); }
+    .compare-us .compare-list li::before { content: "✓"; color: var(--gold-deep); font-weight: 700; }
+    .compare-col h4 { margin-bottom: 18px; font-size: 1.1rem; }
+
+    @media (max-width: 900px) { .grid-3, .compare { grid-template-columns: 1fr; } }
+  </style>
 </Base>

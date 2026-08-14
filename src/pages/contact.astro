@@ -1,151 +1,95 @@
 ---
 import Base from '../layouts/Base.astro';
-import { Image } from 'astro:assets';
-import headshot from '../assets/Taylor_headshot.png';
 ---
 
 <Base
   title="Contact | Taylormade Brands"
-  description="Contact Taylormade Brands to discuss websites, branding, Google growth, and local business marketing systems."
+  description="Contact Taylormade Brands to talk about custom software, growth strategy, research and reporting, or websites and marketing for your business."
 >
   <main>
-    <section class="contact-hero">
-      <div class="container contact-hero-grid">
-        <div>
-          <p class="eyebrow">Contact</p>
-          <h1>Let's talk about what your business needs next.</h1>
-          <p>
-            The best place to start is the Growth Assessment. If you already know what you need,
-            send a quick message and I'll follow up.
-          </p>
+    <!-- HERO -->
+    <section class="ink page-hero grid-bg glow-gold">
+      <div class="container wide">
+        <p class="label">Contact</p>
+        <h1 class="display" style="max-width: 16ch;">Let's talk about where your business is headed.</h1>
+        <p class="lead muted" style="max-width: 58ch;">
+          The best place to start is the growth assessment. If you already know what you need,
+          send a message and I'll follow up.
+        </p>
+      </div>
+    </section>
 
-          <div class="button-row">
-            <a href="/growth-assessment.html" class="button primary">Start Assessment</a>
-            <a href="#contact-form" class="button secondary">Send Message</a>
-          </div>
-        </div>
-
-        <div class="contact-photo-card">
-          <Image src={headshot} alt="Josh Taylor" width={520} />
-          <div>
-            <h3>Josh Taylor</h3>
-            <p>Taylormade Brands</p>
-          </div>
+    <!-- OPTIONS -->
+    <section class="paper section tight">
+      <div class="container wide">
+        <div class="grid-3">
+          <div class="card num-card"><span class="index">01</span><h3>Start with the assessment</h3><p class="muted">Best if you want a full review of your presence, operations, and lead flow.</p><a href="/growth-assessment.html" class="text-link mt-s">Take the assessment <span class="arrow">→</span></a></div>
+          <div class="card num-card"><span class="index">02</span><h3>Send a message</h3><p class="muted">Best if you already know what you need or want to ask about a specific project.</p><a href="#contact-form" class="text-link mt-s">Go to the form <span class="arrow">→</span></a></div>
+          <div class="card num-card"><span class="index">03</span><h3>View the portfolio</h3><p class="muted">See examples of software, websites, branding, and growth projects.</p><a href="/portfolio.html" class="text-link mt-s">View portfolio <span class="arrow">→</span></a></div>
         </div>
       </div>
     </section>
 
-    <section class="section contact-options-section">
-      <div class="container contact-options-grid">
-        <div class="contact-option-card">
-          <span>01</span>
-          <h3>Start With the Assessment</h3>
-          <p>
-            Best option if you want a full review of your website, Google presence,
-            branding, reviews, and lead flow.
-          </p>
-          <a href="/growth-assessment.html" class="text-link">Take the Assessment →</a>
-        </div>
-
-        <div class="contact-option-card">
-          <span>02</span>
-          <h3>Send a Quick Message</h3>
-          <p>
-            Best option if you already know what you need or want to ask about a specific project.
-          </p>
-          <a href="#contact-form" class="text-link">Go to Message Form →</a>
-        </div>
-
-        <div class="contact-option-card">
-          <span>03</span>
-          <h3>View the Portfolio</h3>
-          <p>
-            See examples of branding, websites, marketing systems, and growth projects.
-          </p>
-          <a href="/portfolio.html" class="text-link">View Portfolio →</a>
-        </div>
-      </div>
-    </section>
-
-    <section class="section contact-form-section" id="contact-form">
-      <div class="container contact-form-grid">
+    <!-- FORM -->
+    <section class="paper-2 section" id="contact-form">
+      <div class="container wide split">
         <div>
-          <p class="eyebrow dark">Quick Message</p>
+          <p class="label">Quick message</p>
           <h2>Tell me what you're thinking.</h2>
-          <p>
-            Keep it simple. Tell me who you are, what business you're working on,
-            and what kind of help you're looking for.
-          </p>
-
-          <div class="contact-info-box">
-            <h3>Contact Info</h3>
-            <p><strong>Email:</strong> <a href="mailto:josh@taylormadegrowth.com">josh@taylormadegrowth.com</a></p>
-            <p><strong>Phone:</strong> <a href="tel:+13343916641">334-391-6641</a></p>
+          <p class="lead muted mt-s">Keep it simple — who you are, what business you're working on, and what kind of help you're looking for.</p>
+          <div class="card contact-info mt-l">
+            <h4>Contact info</h4>
+            <p class="mt-s"><span class="ci-label">Email</span><a href="mailto:josh@taylormadegrowth.com">josh@taylormadegrowth.com</a></p>
+            <p><span class="ci-label">Phone</span><a href="tel:+13343916641">334-391-6641</a></p>
           </div>
         </div>
 
-        <form name="contact" method="POST" action="/thank-you.html" data-netlify="true" netlify-honeypot="bot-field" class="contact-form">
+        <form name="contact" method="POST" action="/thank-you.html" data-netlify="true" netlify-honeypot="bot-field" class="card field-form contact-form">
           <input type="hidden" name="form-name" value="contact" />
+          <p class="hidden"><label>Don't fill this out: <input name="bot-field" /></label></p>
 
-          <p class="hidden">
-            <label>Don't fill this out: <input name="bot-field" /></label>
-          </p>
-
-          <label>Name
-            <input type="text" name="name" required />
-          </label>
-
-          <label>Business Name
-            <input type="text" name="business-name" />
-          </label>
-
-          <label>Email
-            <input type="email" name="email" required />
-          </label>
-
-          <label>Phone
-            <input type="tel" name="phone" />
-          </label>
-
+          <label>Name<input type="text" name="name" required /></label>
+          <label>Business name<input type="text" name="business-name" /></label>
+          <label>Email<input type="email" name="email" required /></label>
+          <label>Phone<input type="tel" name="phone" /></label>
           <label>What do you need help with?
             <select name="project-type">
               <option value="">Select one</option>
+              <option>Custom software / web app</option>
+              <option>Growth strategy / consulting</option>
+              <option>Research &amp; reporting</option>
               <option>Website</option>
               <option>Branding</option>
-              <option>Google Business Profile</option>
-              <option>Google Ads</option>
-              <option>Review System</option>
-              <option>Marketing Management</option>
-              <option>Not Sure Yet</option>
+              <option>Google Business Profile / Ads</option>
+              <option>Ongoing partnership</option>
+              <option>Not sure yet</option>
             </select>
           </label>
-
-          <label>Message
-            <textarea name="message" rows="6" required></textarea>
-          </label>
-
-          <button type="submit" class="form-submit">Send Message</button>
+          <label>Message<textarea name="message" rows="6" required></textarea></label>
+          <button type="submit" class="btn btn-primary form-submit">Send message <span class="arrow">→</span></button>
         </form>
       </div>
     </section>
 
-    <section class="section portfolio-promo">
-      <div class="container narrow">
-        <p class="eyebrow dark">Want To Learn More?</p>
-        <h2>See examples of the work behind Taylormade Brands.</h2>
-        <a href="/portfolio.html" class="button navy-button">View Business Growth Portfolio</a>
-      </div>
-    </section>
-
-    <section class="section cta-section">
-      <div class="container narrow">
-        <p class="eyebrow">Best First Step</p>
-        <h2>Not sure what your business needs?</h2>
-        <p>
-          Take the Growth Assessment and I'll help identify the best starting point.
-        </p>
-        <a href="/growth-assessment.html" class="button primary">Start Assessment</a>
+    <!-- CTA -->
+    <section class="ink section">
+      <div class="container narrow center">
+        <p class="label center mx-auto">Best first step</p>
+        <h2 class="mt-s">Not sure what your business needs?</h2>
+        <p class="lead muted mt-s mx-auto" style="max-width:52ch;">Take the growth assessment and I'll help identify the best starting point.</p>
+        <a href="/growth-assessment.html" class="btn btn-primary mt-m">Start assessment <span class="arrow">→</span></a>
       </div>
     </section>
   </main>
+
+  <style>
+    .contact-info h4 { font-size: 1.1rem; }
+    .contact-info p { display: flex; flex-direction: column; gap: 2px; margin-bottom: 14px; }
+    .contact-info p:last-child { margin-bottom: 0; }
+    .ci-label { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--l-faint); }
+    .contact-info a { color: var(--gold-deep); font-weight: 600; }
+    .contact-form { display: grid; gap: 4px; }
+    .form-submit { margin-top: 12px; width: 100%; }
+    @media (max-width: 900px) { .split { grid-template-columns: 1fr; } .grid-3 { grid-template-columns: 1fr; } }
+  </style>
 </Base>

@@ -1,71 +1,75 @@
 ---
 import Base from '../layouts/Base.astro';
-import { Image, getImage } from 'astro:assets';
-import heroSrc from '../assets/ao_work_photo.png';
+import { Image } from 'astro:assets';
 import aoWebsite from '../assets/ao_website.png';
 import aoGoogleProfile from '../assets/ao_google_profile.png';
 import aoGoogleAds from '../assets/ao_google_ads.png';
 import aoBusinessCard from '../assets/ao_business_card.png';
 import aoReviewCard from '../assets/ao_review_card.png';
 
-const hero = await getImage({ src: heroSrc, format: 'webp', width: 1600 });
+const built = [
+  { n: '01', title: 'Website', body: 'Professional, mobile-first site with clear services and an estimate request form.' },
+  { n: '02', title: 'Branding', body: 'Business cards, review cards, and print materials with consistent presentation.' },
+  { n: '03', title: 'Google Profile', body: 'Profile support, service updates, photos, and a review strategy.' },
+  { n: '04', title: 'Google Ads', body: 'Search campaign structure, local targeting, lead generation, and tracking.' },
+  { n: '05', title: 'Review System', body: 'A QR review card and a simple process for asking happy customers for reviews.' },
+  { n: '06', title: 'Growth System', body: 'A marketing roadmap, lead tracking, and next-step planning as a partnership.' },
+];
+
+const gallery = [
+  { src: aoGoogleProfile, label: 'Google Business Profile' },
+  { src: aoGoogleAds, label: 'Google Ads' },
+  { src: aoBusinessCard, label: 'Business card' },
+  { src: aoReviewCard, label: 'QR review card' },
+];
 ---
 
 <Base
   title="A&O Tree Service Growth Project | Taylormade Brands"
-  description="See how Taylormade Brands helped A&O Tree Service improve its website, branding, Google presence, ads, reviews, and lead generation system."
+  description="How Taylormade Brands helped A&O Tree Service with a website, branding, Google presence, ads, reviews, and a lead generation system that works together."
 >
   <main>
-    <section class="case-hero" style={`--hero-bg: url(${hero.src})`}>
-      <div class="container case-hero-grid">
-        <div>
-          <p class="eyebrow">Featured Case Study</p>
-          <h1>A&amp;O Tree Service</h1>
-          <p class="hero-text">
-            From a strong local tree service company to a sharper online presence,
-            stronger branding, and a clearer lead generation system.
-          </p>
-
-          <div class="button-row">
-            <a href="https://aotrees.com" class="button primary" target="_blank" rel="noopener">View Website</a>
-            <a href="/growth-assessment.html" class="button secondary">Start Assessment</a>
+    <!-- HERO -->
+    <section class="ink page-hero grid-bg glow-gold">
+      <div class="container wide">
+        <div class="hero-split">
+          <div>
+            <p class="label">Case study · Auburn, Alabama</p>
+            <h1 class="display">A&amp;O Tree Service</h1>
+            <p class="lead muted">From a strong local tree service to a sharper online presence, stronger branding, and a clear lead generation system — built to work as one.</p>
+            <div class="btn-row mt-m">
+              <a href="https://aotrees.com" class="btn btn-primary" target="_blank" rel="noopener">View website <span class="arrow">→</span></a>
+              <a href="/growth-assessment.html" class="btn btn-ghost">Start an assessment</a>
+            </div>
           </div>
-        </div>
-
-        <div class="case-hero-card">
-          <h3>A&amp;O Tree Service</h3>
-
-          <p class="case-location">Auburn, Alabama</p>
-
-          <ul class="case-summary-list">
-            <li>Website Launch</li>
-            <li>Google Ads</li>
-            <li>Google Business Profile</li>
-            <li>Review Generation System</li>
-            <li>Business Cards &amp; Print Materials</li>
-            <li>Lead Generation Strategy</li>
-          </ul>
+          <div class="card summary-card reveal">
+            <p class="label plain">Project scope</p>
+            <ul class="check-list mt-m">
+              <li>Website launch</li>
+              <li>Google Business Profile</li>
+              <li>Google Ads</li>
+              <li>Review generation system</li>
+              <li>Business cards &amp; print</li>
+              <li>Lead generation strategy</li>
+            </ul>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="section case-summary-section">
-      <div class="container case-summary-grid">
+    <!-- CHALLENGE -->
+    <section class="paper section">
+      <div class="container wide split">
         <div>
-          <p class="eyebrow dark">The Challenge</p>
-          <h2>A&amp;O was doing quality work, but the online presence needed to catch up.</h2>
-          <p>
-            The business had strong service, real local trust, and growth potential.
-            The problem was that customers needed a clearer way to find them, trust them,
-            and request service online.
-          </p>
+          <p class="label">The challenge</p>
+          <h2>Quality work, but the online presence needed to catch up.</h2>
+          <p class="lead muted mt-s">The business had strong service, real local trust, and room to grow. Customers just needed a clearer way to find them, trust them, and request service online.</p>
         </div>
-
-        <div class="challenge-list">
-          <h3>Key Challenges</h3>
-          <ul>
+        <div class="card">
+          <h4>Key challenges</h4>
+          <ul class="check-list mt-m">
             <li>Limited online visibility</li>
-            <li>No modern lead-focused website</li>
+            <li>No modern, lead-focused website</li>
             <li>No clear review generation process</li>
             <li>Branding needed more consistency</li>
             <li>No structured Google Ads strategy</li>
@@ -75,147 +79,73 @@ const hero = await getImage({ src: heroSrc, format: 'webp', width: 1600 });
       </div>
     </section>
 
-    <section class="section build-section">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow dark">What We Built</p>
+    <!-- WHAT WE BUILT -->
+    <section class="ink section">
+      <div class="container wide">
+        <div class="head">
+          <p class="label">What we built</p>
           <h2>A complete local growth foundation.</h2>
         </div>
-
-        <div class="case-card-grid">
-          <div class="case-service-card">
-            <span>01</span>
-            <h3>Website</h3>
-            <p>Professional website, mobile layout, service structure, and estimate request form.</p>
-          </div>
-
-          <div class="case-service-card">
-            <span>02</span>
-            <h3>Branding</h3>
-            <p>Business cards, review cards, print materials, and consistent visual presentation.</p>
-          </div>
-
-          <div class="case-service-card">
-            <span>03</span>
-            <h3>Google Profile</h3>
-            <p>Profile support, service updates, photos, and review strategy.</p>
-          </div>
-
-          <div class="case-service-card">
-            <span>04</span>
-            <h3>Google Ads</h3>
-            <p>Search campaign structure, local targeting, lead generation, and tracking.</p>
-          </div>
-
-          <div class="case-service-card">
-            <span>05</span>
-            <h3>Review System</h3>
-            <p>QR review card and simple process for asking satisfied customers for reviews.</p>
-          </div>
-
-          <div class="case-service-card">
-            <span>06</span>
-            <h3>Growth System</h3>
-            <p>Marketing roadmap, lead tracking, customer touchpoints, and next-step planning.</p>
-          </div>
+        <div class="grid-3">
+          {built.map((b) => (
+            <div class="card num-card reveal"><span class="index">{b.n}</span><h3>{b.title}</h3><p class="muted">{b.body}</p></div>
+          ))}
         </div>
       </div>
     </section>
 
-    <section class="section visual-section">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow dark">Project Gallery</p>
-          <h2>Real assets built for a real local business.</h2>
-        </div>
-
-        <div class="portfolio-grid">
-          <div class="portfolio-item large">
-            <Image src={aoWebsite} alt="A&O Tree Service website" width={1100} />
-            <div>
-              <h3>Website</h3>
-              <p>Service-focused website with lead form and clear calls to action.</p>
-            </div>
-          </div>
-
-          <div class="portfolio-item">
-            <Image src={aoGoogleProfile} alt="A&O Tree Service Google Business Profile" width={720} />
-            <div>
-              <h3>Google Profile</h3>
-              <p>Stronger local visibility and customer trust.</p>
-            </div>
-          </div>
-
-          <div class="portfolio-item">
-            <Image src={aoGoogleAds} alt="A&O Tree Service Google Ads" width={720} />
-            <div>
-              <h3>Google Ads</h3>
-              <p>Local search campaign built to capture demand.</p>
-            </div>
-          </div>
-
-          <div class="portfolio-item">
-            <Image src={aoBusinessCard} alt="A&O Tree Service business card" width={720} />
-            <div>
-              <h3>Business Card</h3>
-              <p>Clean printed material for customer touchpoints.</p>
-            </div>
-          </div>
-
-          <div class="portfolio-item">
-            <Image src={aoReviewCard} alt="A&O Tree Service review card" width={720} />
-            <div>
-              <h3>Review Card</h3>
-              <p>QR-based review tool to build Google trust.</p>
-            </div>
-          </div>
+    <!-- GALLERY -->
+    <section class="paper section">
+      <div class="container wide">
+        <div class="head"><p class="label">Project gallery</p><h2>Real assets for a real local business.</h2></div>
+        <div class="feature-shot reveal"><Image src={aoWebsite} alt="A&O Tree Service website" width={1200} /></div>
+        <div class="grid-4 mt-m">
+          {gallery.map((g) => (
+            <figure class="gallery-item reveal"><Image src={g.src} alt={g.label} width={640} /><figcaption>{g.label}</figcaption></figure>
+          ))}
         </div>
       </div>
     </section>
 
-    <section class="section results-section">
-      <div class="container results-grid">
+    <!-- RESULTS -->
+    <section class="ink-2 section">
+      <div class="container wide split">
         <div>
-          <p class="eyebrow">Early Results</p>
+          <p class="label">Early results</p>
           <h2>Better visibility. Better trust. Better lead flow.</h2>
-          <p>
-            Since launch, A&amp;O has a stronger foundation for customer discovery,
-            online credibility, and lead generation.
-          </p>
+          <p class="lead muted mt-s">Since launch, A&amp;O has a stronger foundation for customer discovery, online credibility, and lead generation.</p>
         </div>
-
-        <div class="results-list">
-          <div>Increased lead activity</div>
-          <div>Expanded online visibility</div>
-          <div>New customer inquiries</div>
-          <div>Improved professional image</div>
-          <div>Stronger review process</div>
-          <div>Better marketing foundation</div>
+        <div class="grid-2 results-mini">
+          <div class="card">Increased lead activity</div>
+          <div class="card">Expanded online visibility</div>
+          <div class="card">New customer inquiries</div>
+          <div class="card">Improved professional image</div>
+          <div class="card">Stronger review process</div>
+          <div class="card">Better marketing foundation</div>
         </div>
       </div>
     </section>
 
-    <section class="section lesson-section">
-      <div class="container narrow">
-        <p class="eyebrow dark">The Biggest Lesson</p>
-        <h2>Most local businesses do not have a work problem. They have a visibility problem.</h2>
-        <p>
-          When customers can find you, trust you, and contact you without confusion,
-          growth becomes much easier.
-        </p>
-      </div>
-    </section>
-
-    <section class="section cta-section">
-      <div class="container narrow">
-        <p class="eyebrow">Start Here</p>
-        <h2>Want a growth system like this for your business?</h2>
-        <p>
-          Start with the client growth assessment. I'll review where you are,
-          what is missing, and what should happen first.
-        </p>
-        <a href="/growth-assessment.html" class="button primary">Start Assessment</a>
+    <!-- LESSON -->
+    <section class="ink section">
+      <div class="container narrow center">
+        <p class="label center mx-auto">The biggest lesson</p>
+        <h2 class="mt-s">Most local businesses don't have a work problem. They have a visibility problem.</h2>
+        <p class="lead muted mt-m mx-auto" style="max-width:56ch;">When customers can find you, trust you, and contact you without friction, growth gets a lot easier.</p>
+        <a href="/growth-assessment.html" class="btn btn-primary mt-m">Want a system like this? <span class="arrow">→</span></a>
       </div>
     </section>
   </main>
+
+  <style>
+    .summary-card { align-self: stretch; }
+    .feature-shot { border: 1px solid var(--line-l); border-radius: 16px; overflow: hidden; box-shadow: 0 40px 90px -55px rgba(11,14,20,.4); aspect-ratio: 16 / 9; }
+    .feature-shot :global(img) { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+    .gallery-item { border: 1px solid var(--line-l); border-radius: 14px; overflow: hidden; background: var(--paper-2); }
+    .gallery-item :global(img) { width: 100%; height: 190px; object-fit: cover; object-position: top; }
+    .gallery-item figcaption { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.06em; color: var(--l-muted); padding: 13px 16px; border-top: 1px solid var(--line-l); }
+    .results-mini .card { display: flex; align-items: center; font-weight: 500; }
+    @media (max-width: 900px) { .split, .hero-split { grid-template-columns: 1fr; } .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 560px) { .grid-3, .grid-4, .results-mini { grid-template-columns: 1fr !important; } }
+  </style>
 </Base>

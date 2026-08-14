@@ -7,19 +7,19 @@ import Base from '../layouts/Base.astro';
   description="Complete the Taylormade Brands growth assessment to identify what your business needs most."
 >
   <main>
-    <section class="page-hero assessment-hero">
-      <div class="container narrow">
-        <p class="eyebrow">Client Needs Assessment</p>
-        <h1>Let's find what your business needs first.</h1>
-        <p>
-          Fill this out as honestly as possible. I'll use it to review your current marketing,
-          identify gaps, and recommend the best next steps.
+    <section class="ink page-hero grid-bg glow-gold">
+      <div class="container wide">
+        <p class="label">Growth assessment</p>
+        <h1 class="display" style="max-width: 16ch;">Let's find what your business needs first.</h1>
+        <p class="lead muted" style="max-width: 60ch;">
+          Fill this out as honestly as possible. I'll use it to review your presence, operations, and
+          lead flow, identify the gaps, and recommend the highest-leverage next steps.
         </p>
       </div>
     </section>
 
-    <section class="section">
-      <div class="container form-container">
+    <section class="paper section">
+      <div class="container narrow field-form">
         <form name="growth-assessment" method="POST" action="/assessment-thank-you.html" data-netlify="true" netlify-honeypot="bot-field" class="assessment-form">
           <input type="hidden" name="form-name" value="growth-assessment" />
 
@@ -372,7 +372,7 @@ import Base from '../layouts/Base.astro';
             </label>
           </div>
 
-          <button type="submit" class="form-submit">Submit Growth Assessment</button>
+          <button type="submit" class="btn btn-primary form-submit-lg">Submit growth assessment <span class="arrow">→</span></button>
         </form>
       </div>
     </section>

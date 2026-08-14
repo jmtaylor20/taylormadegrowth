@@ -1,13 +1,10 @@
 ---
 import Base from '../layouts/Base.astro';
-import { Image, getImage } from 'astro:assets';
-import heroSrc from '../assets/TMB_Hero.png';
+import { Image } from 'astro:assets';
 import rhinoLogo from '../assets/clients/rhino-landworks.png';
 import millersLogo from '../assets/clients/millers-backhoe.png';
 import fordLogo from '../assets/clients/ford-paving.png';
 import beehiveLogo from '../assets/clients/beehive-stars.png';
-
-const hero = await getImage({ src: heroSrc, format: 'webp', width: 1600 });
 
 const clientLogos = [
   { src: rhinoLogo, name: 'Rhino Landworks' },
@@ -15,199 +12,358 @@ const clientLogos = [
   { src: fordLogo, name: 'Ford Paving & Sealing' },
   { src: beehiveLogo, name: 'Beehive Stars Baseball' },
 ];
+
+const pillars = [
+  {
+    n: '01',
+    title: 'Custom Software & Web Apps',
+    body: 'Client portals, dashboards, registration systems, and internal tools built around how your business actually operates — not off-the-shelf software you have to bend around.',
+    tags: ['Web apps', 'Portals', 'Dashboards', 'Automation'],
+  },
+  {
+    n: '02',
+    title: 'Growth Strategy',
+    body: 'A clear plan for what to fix first and what to build next. I work as an ongoing partner in the business, not a vendor who disappears after launch.',
+    tags: ['Roadmapping', 'Systems', 'Consulting'],
+  },
+  {
+    n: '03',
+    title: 'Research & Reporting',
+    body: 'Market and competitor research, performance reporting, and plain-language recommendations so decisions are made on evidence instead of guesswork.',
+    tags: ['Market research', 'Reporting', 'Analytics'],
+  },
+  {
+    n: '04',
+    title: 'Marketing, Brand & Web',
+    body: 'Websites, branding, Google visibility, and lead systems — the front door to everything above, built to match the quality of the work behind it.',
+    tags: ['Websites', 'Branding', 'Google', 'Ads'],
+  },
+];
 ---
 
 <Base
-  title="Taylormade Brands | Local Business Growth Systems"
-  description="Taylormade Brands helps local businesses grow through websites, branding, Google Business Profile support, ads, and practical marketing systems."
+  title="Taylormade Brands | Your Partner in Business Growth"
+  description="Taylormade Brands is a growth partner for owner-led businesses — custom software, growth strategy, research, and reporting that make good businesses run and grow better."
 >
   <main>
-    <section class="hero" style={`--hero-bg: url(${hero.src})`}>
-      <div class="container hero-grid">
-        <div class="hero-content">
-          <p class="eyebrow">Local Business Growth Systems</p>
-
-          <h1>Helping local businesses look sharper, get found, and grow.</h1>
-
-          <p class="hero-text">
-            Taylormade Brands builds websites, branding, Google Business Profiles,
-            ads, and follow-up systems for business owners who need practical growth,
-            not marketing fluff.
+    <!-- HERO -->
+    <section class="ink hero grid-bg glow-gold">
+      <div class="container wide hero-inner">
+        <div class="hero-copy">
+          <p class="label">Your partner in business growth</p>
+          <h1 class="display">
+            I build the <span class="gold serif-em">systems</span> good businesses grow on.
+          </h1>
+          <p class="lead muted">
+            Taylormade Brands is a growth partner for owner-led companies — custom software,
+            strategy, research, and reporting. Not one-off marketing tasks. The tools and systems
+            your business actually runs on.
           </p>
+          <div class="btn-row mt-m">
+            <a href="/growth-assessment.html" class="btn btn-primary">Start with an assessment <span class="arrow">→</span></a>
+            <a href="/work.html" class="btn btn-ghost">See the work</a>
+          </div>
 
-          <div class="button-row">
-            <a href="/growth-assessment.html" class="button primary">Start Assessment</a>
-            <a href="/work.html" class="button secondary">View My Work</a>
+          <div class="hero-meta">
+            <div><span class="stat-num">$300K+</span><p class="stat-label">new business generated for local clients</p></div>
+            <div class="hero-meta-rule"></div>
+            <div><span class="stat-num">4</span><p class="stat-label">custom platforms &amp; apps in production</p></div>
+          </div>
+        </div>
+
+        <!-- App/dashboard motif (pure HTML/CSS) -->
+        <div class="hero-app reveal" aria-hidden="true">
+          <div class="app-window">
+            <div class="app-bar">
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+              <span class="app-title">growth&nbsp;·&nbsp;client dashboard</span>
+            </div>
+            <div class="app-body">
+              <div class="app-kpis">
+                <div class="kpi"><span class="kpi-label">Leads / mo</span><span class="kpi-val">148</span><span class="kpi-up">▲ 32%</span></div>
+                <div class="kpi"><span class="kpi-label">Booked</span><span class="kpi-val">$41k</span><span class="kpi-up">▲ 18%</span></div>
+                <div class="kpi"><span class="kpi-label">Reviews</span><span class="kpi-val">4.9★</span><span class="kpi-up">▲ 27</span></div>
+              </div>
+              <div class="app-chart">
+                <div class="chart-head"><span>Pipeline value</span><span class="chart-tag">last 6 mo</span></div>
+                <svg viewBox="0 0 320 120" preserveAspectRatio="none" class="spark">
+                  <defs>
+                    <linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="var(--growth)" stop-opacity="0.35" />
+                      <stop offset="100%" stop-color="var(--growth)" stop-opacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,96 L53,84 L106,88 L160,58 L213,44 L266,26 L320,14 L320,120 L0,120 Z" fill="url(#fill)" />
+                  <path d="M0,96 L53,84 L106,88 L160,58 L213,44 L266,26 L320,14" fill="none" stroke="var(--growth)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </div>
+              <div class="app-rows">
+                <div class="app-row"><span class="rdot done"></span>Website + lead form live<span class="rmeta">done</span></div>
+                <div class="app-row"><span class="rdot done"></span>Google profile optimized<span class="rmeta">done</span></div>
+                <div class="app-row"><span class="rdot active"></span>Client portal build<span class="rmeta">in&nbsp;progress</span></div>
+                <div class="app-row"><span class="rdot"></span>Monthly growth report<span class="rmeta">scheduled</span></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="section intro-section">
-      <div class="container narrow">
-        <p class="eyebrow dark">What I Help Fix</p>
+    <!-- TRUST STRIP -->
+    <section class="ink-2 tight trust">
+      <div class="container wide">
+        <p class="label plain center trust-title">Trusted by owner-led businesses across Alabama</p>
+        <div class="marquee mt-m">
+          <div class="marquee-track">
+            {[...clientLogos, ...clientLogos].map((c) => (
+              <span class="trust-plate"><Image src={c.src} alt={`${c.name} logo`} width={220} class="trust-logo" loading="lazy" /></span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
 
-        <h2>Your business may be good, but your marketing may not show it.</h2>
-
-        <p>
-          A lot of local businesses do quality work but lose leads because their online presence
-          is scattered, outdated, or hard to trust. I help clean that up and turn it into a simple
-          growth system.
+    <!-- POSITIONING -->
+    <section class="paper section">
+      <div class="container narrow center">
+        <p class="label center mx-auto">The shift</p>
+        <h2 class="mt-s reposition">
+          Most agencies sell you tasks.<br />
+          I build what the business <span class="gold serif-em">runs on.</span>
+        </h2>
+        <p class="lead muted mt-m mx-auto" style="max-width: 62ch;">
+          A website or a logo is one piece. Real growth comes from the systems underneath —
+          the software that runs operations, the research that guides decisions, and the reporting
+          that shows what's working. That's the work I've grown into, and it's what a true partner
+          should bring to the table.
         </p>
       </div>
     </section>
 
-    <section class="section proof-section">
-      <div class="container proof-grid">
-        <div class="proof-card dark-card">
-          <p class="eyebrow">The Problem</p>
-          <h2>Good businesses lose leads when trust is unclear.</h2>
-          <p>
-            Customers judge your business before they call. Your website, Google profile,
-            reviews, photos, branding, and follow-up all work together.
-          </p>
+    <!-- CAPABILITY PILLARS -->
+    <section class="ink section">
+      <div class="container wide">
+        <div class="head">
+          <p class="label">What I do</p>
+          <h2>Four capabilities, working as one system.</h2>
+          <p>Each piece supports the next. Software captures and organizes the work, research points to
+            the right moves, reporting proves it out, and marketing brings the demand in.</p>
         </div>
 
-        <div class="proof-card">
-          <span class="proof-number">01</span>
-          <h3>Look professional</h3>
-          <p>Branding, graphics, signs, cards, and a website that match the quality of your work.</p>
-        </div>
-
-        <div class="proof-card">
-          <span class="proof-number">02</span>
-          <h3>Get found</h3>
-          <p>Google Business Profile, service pages, reviews, and ads built around real local searches.</p>
-        </div>
-
-        <div class="proof-card">
-          <span class="proof-number">03</span>
-          <h3>Turn interest into leads</h3>
-          <p>Contact forms, calls, QR codes, review systems, and simple follow-up that keep leads moving.</p>
+        <div class="pillar-grid">
+          {pillars.map((p) => (
+            <article class="card pillar reveal">
+              <span class="index">{p.n}</span>
+              <h3>{p.title}</h3>
+              <p class="muted">{p.body}</p>
+              <div class="tags mt-m">{p.tags.map((t) => <span class="tag">{t}</span>)}</div>
+            </article>
+          ))}
         </div>
       </div>
     </section>
 
-    <section class="section cards-section">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow dark">Services</p>
-          <h2>Built around what local businesses actually need.</h2>
-        </div>
-
-        <div class="card-grid">
-          <div class="service-card">
-            <h3>Websites</h3>
-            <p>Clean, mobile-friendly websites built to explain your services and help customers contact you.</p>
-          </div>
-
-          <div class="service-card">
-            <h3>Branding</h3>
-            <p>Logos, brand kits, business cards, signs, review cards, and materials that make you look established.</p>
-          </div>
-
-          <div class="service-card">
-            <h3>Google Growth</h3>
-            <p>Google Business Profile setup, review systems, service pages, and Google Ads support.</p>
-          </div>
-
-          <div class="service-card">
-            <h3>Marketing Systems</h3>
-            <p>Simple plans for leads, follow-up, content, referrals, seasonal pushes, and customer trust.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section case-preview">
-      <div class="container case-grid">
-        <div>
-          <p class="eyebrow dark">Featured Work</p>
-          <h2>A&amp;O Tree Service</h2>
-          <p>
-            A local service business needed a stronger online presence, cleaner branding,
-            better customer touchpoints, and a system for generating more leads.
+    <!-- SOFTWARE SPOTLIGHT -->
+    <section class="ink-2 section">
+      <div class="container wide software-grid">
+        <div class="software-copy">
+          <p class="label">The differentiator</p>
+          <h2>I don't just market your business.<br />I build the tools it runs on.</h2>
+          <p class="lead muted mt-s">
+            Custom web apps and platforms — a CRM and operations system, client portals, a team
+            registration platform, monthly reporting — built on a modern stack and tailored to each
+            business. This is what moves a relationship from "marketing help" to "growth partner."
           </p>
-          <a href="/ao-case-study.html" class="text-link">View the case study →</a>
-        </div>
-
-        <div class="case-box">
-          <h3>Work Included</h3>
-          <ul>
-            <li>Website launch</li>
-            <li>Google Business Profile support</li>
-            <li>Google Ads launch</li>
-            <li>Review card with QR code</li>
-            <li>Business cards and print materials</li>
+          <ul class="feature-list mt-m">
+            <li><strong>Operations platform</strong> — pipeline, clients, invoicing, and monthly client reports in one place.</li>
+            <li><strong>Registration &amp; portals</strong> — online sign-ups and member systems, like the Beehive Stars platform.</li>
+            <li><strong>Dashboards &amp; reporting</strong> — live numbers and plain-language monthly reports for every client.</li>
           </ul>
+          <a href="/work.html" class="text-link mt-m">Explore the platforms <span class="arrow">→</span></a>
+        </div>
+
+        <div class="software-visual reveal">
+          <div class="stack-card">
+            <div class="stack-head"><span class="rdot active"></span> operations · pipeline</div>
+            <div class="stack-cols">
+              <div class="stack-col">
+                <span class="col-label">New</span>
+                <div class="chip">Rhino Landworks</div>
+                <div class="chip">Estimate req.</div>
+              </div>
+              <div class="stack-col">
+                <span class="col-label">Building</span>
+                <div class="chip gold-chip">A&amp;O portal</div>
+                <div class="chip">Ford Paving</div>
+              </div>
+              <div class="stack-col">
+                <span class="col-label">Live</span>
+                <div class="chip">Beehive app</div>
+                <div class="chip">Miller's site</div>
+              </div>
+            </div>
+          </div>
+          <div class="stack-card offset">
+            <div class="stack-head"><span class="rdot done"></span> reporting · monthly value report</div>
+            <div class="report-rows">
+              <div class="report-row"><span>Leads captured</span><b>148</b></div>
+              <div class="report-row"><span>Est. pipeline value</span><b class="gold">$41,200</b></div>
+              <div class="report-row"><span>New reviews</span><b>27</b></div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="section clients-strip">
-      <div class="container">
-        <p class="eyebrow dark">Recent Work</p>
-        <h2 class="clients-strip-title">Local businesses growing with Taylormade.</h2>
-        <p class="clients-strip-stat"><strong>$300K+</strong> in new business generated for local clients — booked months out, with most leads coming straight from Google.</p>
-        <div class="clients-strip-logos">
-          {clientLogos.map((c) => <Image src={c.src} alt={`${c.name} logo`} width={260} />)}
+    <!-- PROCESS -->
+    <section class="paper section">
+      <div class="container wide">
+        <div class="head center mx-auto">
+          <p class="label center mx-auto">How we work together</p>
+          <h2>A partnership, not a project.</h2>
+          <p class="mx-auto">Most engagements follow the same rhythm — understand, build, measure, repeat.</p>
         </div>
-        <a href="/work.html" class="text-link">See recent projects →</a>
+        <div class="process-grid">
+          <div class="process-step reveal"><span class="index">01</span><h3>Assess</h3><p class="muted">A full look at the business — operations, online presence, and where growth is leaking. You get a clear read on what to fix first.</p></div>
+          <div class="process-step reveal"><span class="index">02</span><h3>Build</h3><p class="muted">Websites, brand, and the custom software and systems that make the business run better and capture more of its demand.</p></div>
+          <div class="process-step reveal"><span class="index">03</span><h3>Report</h3><p class="muted">Research and monthly reporting turn activity into evidence — what worked, what didn't, and what's next.</p></div>
+          <div class="process-step reveal"><span class="index">04</span><h3>Grow</h3><p class="muted">We iterate as a partnership. The system compounds, and the business keeps pulling ahead of its market.</p></div>
+        </div>
       </div>
     </section>
 
-    <section class="section cta-section">
-      <div class="container narrow">
-        <p class="eyebrow">Start Here</p>
-        <h2>Want to know what your business needs first?</h2>
-        <p>
-          Fill out the growth assessment. I'll review where you are, what's missing,
-          and what would make the biggest difference first.
+    <!-- RESULTS -->
+    <section class="ink section">
+      <div class="container wide">
+        <div class="results-grid">
+          <div class="results-lead">
+            <p class="label">The impact</p>
+            <h2>Built to bring in real business.</h2>
+            <p class="muted mt-s">I don't build things that only look good. I build them to generate leads,
+              organize the work, and grow revenue — and for the businesses I partner with, that has added up
+              to hundreds of thousands of dollars in new work.</p>
+            <p class="results-quote">“One client called just to say thank you. Another said their office is
+              tired of answering the phone.” <span class="muted">— the kind of problem worth creating.</span></p>
+          </div>
+          <div class="results-stats">
+            <div class="rstat reveal"><span class="stat-num">$300K+</span><p class="stat-label">in new business landed by local clients after launching their growth systems</p></div>
+            <div class="rstat reveal"><span class="stat-num">Booked out</span><p class="stat-label">demand so strong clients have hired new employees to keep up</p></div>
+            <div class="rstat reveal"><span class="stat-num">Search-led</span><p class="stat-label">for some clients, almost every new customer now comes from their website and Google</p></div>
+          </div>
+        </div>
+        <p class="disclaimer">Results reflect outcomes reported by clients and vary by business. Individual results are not guaranteed.</p>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="ink-2 section cta">
+      <div class="container narrow center">
+        <p class="label center mx-auto">Start here</p>
+        <h2 class="mt-s">Let's find what your business needs first.</h2>
+        <p class="lead muted mt-s mx-auto" style="max-width: 56ch;">
+          The growth assessment is the front door. I'll review where you are, what's missing,
+          and the highest-leverage place to start — software, strategy, research, or all of it.
         </p>
-        <a href="/growth-assessment.html" class="button primary">Take the Assessment</a>
+        <div class="btn-row mt-m" style="justify-content:center;">
+          <a href="/growth-assessment.html" class="btn btn-primary">Take the assessment <span class="arrow">→</span></a>
+          <a href="/contact.html" class="btn btn-ghost">Book a conversation</a>
+        </div>
       </div>
     </section>
   </main>
 
   <style>
-    .clients-strip {
-      text-align: center;
+    /* HERO */
+    .hero { padding: clamp(64px, 9vw, 120px) 0 clamp(72px, 9vw, 110px); overflow: hidden; }
+    .hero-inner { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
+    .hero-copy { max-width: 620px; }
+    .hero h1 { margin: 22px 0 24px; }
+    .hero .lead { max-width: 56ch; }
+    .hero-meta { display: flex; align-items: center; gap: 32px; margin-top: 48px; }
+    .hero-meta-rule { width: 1px; height: 54px; background: var(--line-d); }
+
+    /* App window motif */
+    .app-window { background: linear-gradient(180deg, var(--ink-3), var(--ink-2)); border: 1px solid var(--line-d-2); border-radius: 18px; box-shadow: 0 40px 90px -40px rgba(0,0,0,.8); overflow: hidden; }
+    .app-bar { display: flex; align-items: center; gap: 7px; padding: 13px 16px; border-bottom: 1px solid var(--line-d); }
+    .app-bar .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line-d-2); }
+    .app-title { font-family: var(--font-mono); font-size: 0.72rem; color: var(--d-faint); margin-left: 10px; letter-spacing: 0.04em; }
+    .app-body { padding: 20px; display: grid; gap: 16px; }
+    .app-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .kpi { background: var(--ink); border: 1px solid var(--line-d); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 4px; }
+    .kpi-label { font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--d-faint); }
+    .kpi-val { font-family: var(--font-display); font-size: 1.5rem; color: var(--d-text); line-height: 1; }
+    .kpi-up { font-family: var(--font-mono); font-size: 0.66rem; color: var(--growth); }
+    .app-chart { background: var(--ink); border: 1px solid var(--line-d); border-radius: 12px; padding: 14px 14px 6px; }
+    .chart-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .chart-head span { font-family: var(--font-mono); font-size: 0.68rem; color: var(--d-muted); letter-spacing: 0.04em; }
+    .chart-tag { color: var(--d-faint) !important; }
+    .spark { width: 100%; height: 76px; display: block; }
+    .app-rows { display: grid; gap: 2px; }
+    .app-row { display: flex; align-items: center; gap: 10px; font-size: 0.82rem; color: var(--d-muted); padding: 8px 4px; border-bottom: 1px solid var(--line-d); }
+    .app-row:last-child { border-bottom: 0; }
+    .rmeta { margin-left: auto; font-family: var(--font-mono); font-size: 0.64rem; color: var(--d-faint); letter-spacing: 0.04em; }
+    .rdot { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--line-d-2); flex: none; }
+    .rdot.done { background: var(--growth); border-color: var(--growth); }
+    .rdot.active { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 0 4px rgba(201,162,74,.18); }
+
+    /* TRUST */
+    .trust-title { color: var(--d-faint); justify-content: center; }
+    .trust-plate { display: inline-flex; align-items: center; justify-content: center; height: 66px; padding: 0 26px; background: var(--paper-2); border-radius: 12px; flex: none; opacity: 0.9; transition: opacity .2s var(--ease); }
+    .trust-plate:hover { opacity: 1; }
+    .trust-logo { height: 38px; width: auto; object-fit: contain; }
+
+    /* POSITIONING */
+    .reposition { font-size: clamp(2rem, 4.4vw, 3.4rem); line-height: 1.08; }
+
+    /* PILLARS */
+    .pillar-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .pillar .index { display: block; margin-bottom: 14px; }
+    .pillar h3 { margin-bottom: 12px; }
+
+    /* SOFTWARE */
+    .software-grid { display: grid; grid-template-columns: 1fr 0.9fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
+    .feature-list { list-style: none; display: grid; gap: 14px; }
+    .feature-list li { position: relative; padding-left: 26px; color: var(--d-muted); font-size: 1rem; }
+    .feature-list li::before { content: "→"; position: absolute; left: 0; color: var(--gold); font-family: var(--font-mono); }
+    .feature-list strong { color: var(--d-text); font-weight: 600; }
+    .software-visual { display: grid; gap: 18px; }
+    .stack-card { background: var(--ink); border: 1px solid var(--line-d-2); border-radius: 14px; padding: 18px; box-shadow: 0 30px 70px -50px #000; }
+    .stack-card.offset { margin-left: 40px; }
+    .stack-head { font-family: var(--font-mono); font-size: 0.72rem; color: var(--d-muted); letter-spacing: 0.04em; display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .stack-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .col-label { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--d-faint); display: block; margin-bottom: 8px; }
+    .chip { background: var(--ink-3); border: 1px solid var(--line-d); border-radius: 8px; padding: 8px 10px; font-size: 0.76rem; color: var(--d-muted); margin-bottom: 8px; }
+    .chip.gold-chip { border-color: var(--gold-deep); color: var(--gold-soft); }
+    .report-rows { display: grid; gap: 0; }
+    .report-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line-d); font-size: 0.9rem; color: var(--d-muted); }
+    .report-row:last-child { border-bottom: 0; }
+    .report-row b { font-family: var(--font-display); font-weight: 480; color: var(--d-text); font-size: 1.15rem; }
+
+    /* PROCESS */
+    .process-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .process-step { border-top: 1px solid var(--line-l-2); padding-top: 22px; }
+    .process-step .index { color: var(--gold-deep); }
+    .process-step h3 { margin: 14px 0 10px; }
+
+    /* RESULTS */
+    .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
+    .results-quote { font-family: var(--font-display); font-size: 1.35rem; line-height: 1.4; margin-top: 28px; color: var(--d-text); }
+    .results-quote .muted { display: block; font-family: var(--font-sans); font-size: 0.95rem; margin-top: 10px; }
+    .results-stats { display: grid; gap: 16px; }
+    .rstat { background: var(--ink-2); border: 1px solid var(--line-d); border-radius: 14px; padding: 26px 28px; }
+    .disclaimer { margin-top: 36px; color: var(--d-faint); font-size: 0.8rem; max-width: 70ch; }
+
+    @media (max-width: 980px) {
+      .hero-inner, .software-grid, .results-grid { grid-template-columns: 1fr; }
+      .hero-app { order: 2; max-width: 460px; }
+      .pillar-grid { grid-template-columns: 1fr; }
+      .process-grid { grid-template-columns: 1fr 1fr; }
+      .stack-card.offset { margin-left: 0; }
     }
-    .clients-strip-title {
-      margin-bottom: 14px;
-    }
-    .clients-strip-stat {
-      max-width: 62ch;
-      margin: 0 auto 36px;
-      color: var(--gray);
-      font-size: 1.05rem;
-      line-height: 1.6;
-    }
-    .clients-strip-stat strong {
-      color: var(--navy);
-      font-weight: 700;
-    }
-    .clients-strip-logos {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: center;
-      gap: 40px 56px;
-      margin-bottom: 28px;
-    }
-    .clients-strip-logos :global(img) {
-      height: 64px;
-      width: auto;
-      object-fit: contain;
-      opacity: 0.85;
-      transition: opacity 0.2s ease;
-    }
-    .clients-strip-logos :global(img:hover) {
-      opacity: 1;
-    }
-    @media (max-width: 640px) {
-      .clients-strip-logos { gap: 28px 36px; }
-      .clients-strip-logos :global(img) { height: 48px; }
+    @media (max-width: 560px) {
+      .hero-meta { flex-wrap: wrap; gap: 20px; }
+      .process-grid { grid-template-columns: 1fr; }
+      .app-kpis { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </Base>
