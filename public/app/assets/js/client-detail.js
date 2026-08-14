@@ -1,9 +1,10 @@
 // Client detail sheet — the hub that pulls a client's package, statuses,
 // onboarding, tasks, invoices, activity, and monthly report into one place.
-import { Clients, Invoices, Tasks, Activities, Reviews, clientBundle } from './db.js';
+import { Clients, Invoices, Tasks, Activities, Reviews, Payments, clientBundle, clientFinance } from './db.js';
 import {
   SERVICE_LABEL, STAGES, STAGE_LABEL, WEBSITE_STATUS, GBP_STATUS, ADS_STATUS,
   INVOICE_STATUS, INVOICE_TYPE, TASK_STATUS, REVIEW_STATUS, TEAM, MONTHLY_TEMPLATE, CONTRACT_STATUS,
+  PAYMENT_KIND, PAYMENT_METHODS,
 } from './config.js';
 import {
   el, clear, money, fmtDate, relDue, todayISO, badge, statusBadge, labelOf,
@@ -206,20 +207,58 @@ export async function openClient(id, onChange) {
     pane.append(rows);
   }
 
-  // ---- Money (invoices) ---------------------------------------------------
+  // ---- Money (balance, payments, invoices) --------------------------------
   function paneMoney(pane) {
     const inv = bundle.invoices;
-    const outstanding = inv.filter((i) => i.status !== 'paid' && i.status !== 'draft').reduce((s, i) => s + Number(i.amount || 0), 0);
-    const paid = inv.filter((i) => i.status === 'paid').reduce((s, i) => s + Number(i.amount || 0), 0);
-    pane.append(el('div.grid.grid-2', {}, [
-      el('div.stat', {}, [el('div.stat-value', { text: money(paid) }), el('div.stat-label', { text: 'Collected' })]),
-      el('div.stat' + (outstanding ? '.stat-gold' : ''), {}, [el('div.stat-value', { text: money(outstanding) }), el('div.stat-label', { text: 'Outstanding' })]),
+    const pays = bundle.payments || [];
+    const fin = clientFinance(client, bundle);
+
+    // Summary tiles
+    pane.append(el('div.grid.grid-3', {}, [
+      el('div.stat', {}, [el('div.stat-value', { text: money(fin.collected) }), el('div.stat-label', { text: 'Collected' })]),
+      el('div.stat' + (fin.outstanding ? '.stat-gold' : ''), {}, [el('div.stat-value', { text: money(fin.outstanding) }), el('div.stat-label', { text: 'Outstanding' })]),
+      el('div.stat', {}, [el('div.stat-value', { text: money(client.mrr) }), el('div.stat-label', { text: 'Monthly (MRR)' })]),
     ]));
+
+    // Quick editable money fields (catch-up friendly)
+    const editRow = (labelText, name, value, after) => {
+      const inp = numberInput(name, value ?? '', { placeholder: '0' });
+      inp.addEventListener('change', () => patch({ [name]: inp.value === '' ? 0 : Number(inp.value) }));
+      return el('div.status-cell', {}, [el('div.lbl', { text: labelText }), el('div.val.mt-8', {}, [inp]), after || null]);
+    };
+    const buildToggle = el('label.field-row.mt-8', {}, [
+      el('input.checkbox', { type: 'checkbox', checked: !!client.build_fee_paid, onchange: (e) => patch({ build_fee_paid: e.target.checked }) }),
+      el('span', { text: 'Build fee fully paid' }),
+    ]);
+    pane.append(el('div.section-title', {}, [el('h3', { text: 'Balances' })]));
+    pane.append(el('div.status-grid', {}, [
+      editRow('Monthly (MRR)', 'mrr', client.mrr),
+      editRow('Build fee', 'build_fee', client.build_fee, buildToggle),
+    ]));
+
+    // Payments ledger
+    pane.append(el('div.section-title', {}, [
+      el('h3', { text: 'Payments received' }),
+      el('button.btn.btn-gold.btn-sm', { html: `${iconSvg('plus', 14)} Record payment`, onclick: () => openPaymentForm({ client_id: id }, rerender) }),
+    ]));
+    if (pays.length) {
+      const rows = el('div.rows.card');
+      pays.forEach((p) => rows.append(el('div.row', {}, [
+        el('div.row-main', {}, [
+          el('div.row-title', { text: money(p.amount) + (p.kind ? ' · ' + labelOf(PAYMENT_KIND, p.kind) : '') }),
+          el('div.row-sub', {}, [p.paid_on ? fmtDate(p.paid_on) : '', p.method || '', p.note || '']),
+        ]),
+        el('button.icon-btn', { html: iconSvg('trash', 16), onclick: async () => { if (await confirmDialog('Delete this payment?')) { await Payments.remove(p.id); rerender(); } } }),
+      ])));
+      pane.append(rows);
+    } else pane.append(el('div.muted.mt-8', { text: 'No payments recorded yet.' }));
+
+    // Invoices
     pane.append(el('div.section-title', {}, [
       el('h3', { text: 'Invoices' }),
       el('button.btn.btn-primary.btn-sm', { text: '+ Invoice', onclick: () => openInvoiceForm({ client_id: id }, rerender, client) }),
     ]));
-    if (!inv.length) { pane.append(emptyState('No invoices yet.', 'money')); return; }
+    if (!inv.length) { pane.append(el('div.muted.mt-8', { text: 'No invoices yet.' })); return; }
     const rows = el('div.rows.card');
     inv.forEach((i) => rows.append(invoiceRow(i, rerender)));
     pane.append(rows);
@@ -378,6 +417,33 @@ function openReviewForm(base, onSaved) {
     actions: [
       { label: 'Cancel', tone: 'ghost', onClick: () => close() },
       { label: 'Add', tone: 'primary', onClick: async () => { await Reviews.create({ ...base, ...readForm(node), requested_on: todayISO() }); toast('Added'); close(); onSaved?.(); } },
+    ],
+  });
+}
+
+// Record a payment / deposit against a client. Exported so the Financials tab
+// can reuse it.
+export function openPaymentForm(base, onSaved) {
+  const node = el('div.form', {}, [
+    el('div.form-grid.cols-2', {}, [
+      field('Amount', numberInput('amount', '', { placeholder: '0' })),
+      field('Type', selectInput('kind', PAYMENT_KIND, 'deposit')),
+      field('Date', dateInput('paid_on', todayISO())),
+      field('Method', selectInput('method', PAYMENT_METHODS, 'Relay')),
+    ]),
+    field('Note', textInput('note', '', { placeholder: 'e.g. 50% deposit on build' })),
+  ]);
+  const { close } = openSheet({
+    title: 'Record payment', body: node,
+    actions: [
+      { label: 'Cancel', tone: 'ghost', onClick: () => close() },
+      { label: 'Save', tone: 'gold', onClick: async () => {
+        const v = readForm(node);
+        v.amount = Number(v.amount || 0);
+        if (!v.amount) { toast('Enter an amount', 'err'); return; }
+        try { await Payments.create({ ...base, ...v }); toast('Payment recorded'); close(); onSaved?.(); }
+        catch (e) { toast(e.message, 'err'); }
+      } },
     ],
   });
 }

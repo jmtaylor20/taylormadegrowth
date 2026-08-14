@@ -64,7 +64,7 @@ create table if not exists public.clients (
 
   notes text,
 
-  constraint clients_stage_check    check (stage    in ('lead','prospect','client','past_client','lost')),
+  constraint clients_stage_check    check (stage    in ('lead','prospect','client','past_client','lost','deferred')),
   constraint clients_priority_check check (priority in ('low','normal','high'))
 );
 
@@ -187,6 +187,21 @@ create table if not exists public.activities (
   due_at date,
   done boolean not null default false
 );
+
+-- ---------------------------------------------------------------------------
+-- Payments ledger: deposits / payments received against a client's balance
+-- ---------------------------------------------------------------------------
+create table if not exists public.payments (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  client_id uuid references public.clients(id) on delete cascade,
+  amount numeric(10,2) not null default 0,
+  paid_on date default now(),
+  method text,
+  kind text not null default 'deposit',   -- deposit | build | monthly | other
+  note text
+);
+create index if not exists payments_client_idx on public.payments (client_id);
 
 -- ---------------------------------------------------------------------------
 -- updated_at trigger for clients

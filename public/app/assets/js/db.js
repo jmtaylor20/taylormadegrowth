@@ -49,6 +49,7 @@ export const Assets    = table('assets');
 export const Reviews   = table('reviews');
 export const Proposals = table('proposals');
 export const Activities = table('activities');
+export const Payments  = table('payments');
 
 // ---- Purpose-built loaders -------------------------------------------------
 
@@ -70,7 +71,7 @@ export async function tasksFor(clientId) {
 
 // Child records tied to one client (for the detail sheet).
 export async function clientBundle(clientId) {
-  const [tasks, invoices, activities, content, assets, reviews, proposals] = await Promise.all([
+  const [tasks, invoices, activities, content, assets, reviews, proposals, payments] = await Promise.all([
     Tasks.list({ eq: { client_id: clientId }, order: { col: 'due_date', asc: true } }),
     Invoices.list({ eq: { client_id: clientId }, order: { col: 'issued_on', asc: false } }),
     Activities.list({ eq: { client_id: clientId } }),
@@ -78,6 +79,27 @@ export async function clientBundle(clientId) {
     Assets.list({ eq: { client_id: clientId } }),
     Reviews.list({ eq: { client_id: clientId } }),
     Proposals.list({ eq: { client_id: clientId } }),
+    Payments.list({ eq: { client_id: clientId }, order: { col: 'paid_on', asc: false } }),
   ]);
-  return { tasks, invoices, activities, content, assets, reviews, proposals };
+  return { tasks, invoices, activities, content, assets, reviews, proposals, payments };
+}
+
+// Financial rollup for a client: invoiced, collected (paid invoices + payments),
+// outstanding, and build-fee status.
+export function clientFinance(client, bundle) {
+  const inv = bundle.invoices || [];
+  const pays = bundle.payments || [];
+  const invoicedOpen = inv.filter((i) => i.status === 'sent' || i.status === 'overdue').reduce((s, i) => s + Number(i.amount || 0), 0);
+  const invoicePaid = inv.filter((i) => i.status === 'paid').reduce((s, i) => s + Number(i.amount || 0), 0);
+  const payTotal = pays.reduce((s, p) => s + Number(p.amount || 0), 0);
+  const buildFee = Number(client.build_fee || 0);
+  const buildPaid = pays.filter((p) => p.kind === 'build').reduce((s, p) => s + Number(p.amount || 0), 0);
+  return {
+    collected: invoicePaid + payTotal,
+    outstanding: invoicedOpen,
+    buildFee,
+    buildPaid,
+    buildOutstanding: Math.max(0, buildFee - buildPaid - (client.build_fee_paid ? buildFee : 0)),
+    payTotal,
+  };
 }
