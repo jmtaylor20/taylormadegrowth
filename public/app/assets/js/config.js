@@ -177,6 +177,9 @@ export const DOC_TYPE = [
   { key: 'estimate', label: 'Estimate' },
 ];
 
+// Partnership / agreement length options.
+export const CONTRACT_TERMS = ['No contract', 'Month-to-month', '3-month', '6-month', '12-month', '24-month'];
+
 // Document pipeline state (email send + Google Drive archive), driven by the
 // Google Apps Script in /google-apps-script.
 export const SEND_STATUS = [

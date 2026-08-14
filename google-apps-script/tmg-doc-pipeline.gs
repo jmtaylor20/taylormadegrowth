@@ -177,61 +177,56 @@ function proposalHtml_(p, client) {
   var D = p.details || {};
   var LOGO = 'https://taylormadegrowth.com/app/assets/img/logo-proposal.png';
   var docType = titleCase_(p.doc_type || 'proposal').toUpperCase();
-  var items = p.line_items || [];
-  var services = items.map(function (it) { return it.label; }).filter(Boolean).join(', ');
-  var m = sum_(items, 'monthly'), o = sum_(items, 'oneTime');
-  var feeParts = items.map(function (it) {
-    return it.label + (it.monthly ? ' — ' + money_(it.monthly) + '/mo' : '') + (it.oneTime ? ' — ' + money_(it.oneTime) + ' one-time' : '');
-  });
-  var feeTot = [];
-  if (m) feeTot.push(money_(m) + '/mo');
-  if (o) feeTot.push(money_(o) + ' to start');
-  var fees = items.length ? (feeParts.join('; ') + (feeTot.length ? '.  Total: ' + feeTot.join(' + ') : '')) : '';
   var dateStr = p.sent_on ? p.sent_on : dateNice_();
-  function row(label, value) {
-    return '<div class="row"><span class="lbl">' + esc_(label) + ':</span><span class="val' + (value ? '' : ' blank') + '">' + (value ? esc_(value) : '') + '</span></div>';
-  }
+  var items = p.line_items || [];
+  var m = sum_(items, 'monthly'), o = sum_(items, 'oneTime');
+  var scopeItems = (D.scope_items || []).filter(function (s) { return s.area || s.detail; });
+  var term = D.contract_term || 'No contract';
+  var e = esc_;
+  var scopeRows = scopeItems.length
+    ? scopeItems.map(function (s) { return '<tr><td class="area">' + e(s.area) + '</td><td>' + e(s.detail) + '</td></tr>'; }).join('')
+    : (D.deliverables ? '<tr><td class="area">Deliverables</td><td>' + e(D.deliverables) + '</td></tr>' : '<tr><td colspan="2" class="muted">To be scoped together.</td></tr>');
+  var priceRows = items.length
+    ? items.map(function (it) { return '<tr><td>' + e(it.label) + '</td><td class="r">' + (it.monthly ? money_(it.monthly) + '/mo' : '—') + '</td><td class="r">' + (it.oneTime ? money_(it.oneTime) : '—') + '</td></tr>'; }).join('')
+    : '<tr><td colspan="3" class="muted">To be scoped.</td></tr>';
+  var extras = [['Timeline & milestones', D.timeline], ['Revision allowance', D.revision_allowance], ['Client responsibilities', D.client_responsibilities], ['Not included', D.not_included], ['Approval', D.approval_method]].filter(function (x) { return x[1]; });
+  var extrasHtml = extras.length ? '<div class="sec">Terms</div>' + extras.map(function (x) { return '<div class="trow"><span class="tl">' + e(x[0]) + '</span><span class="tv">' + e(x[1]) + '</span></div>'; }).join('') : '';
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><style>' +
-    'html,body{margin:0}body{font-family:Georgia,"Times New Roman",serif;color:#1c1c1c}' +
-    '.frame{border:2px solid #dcdcdc;padding:20px 30px 22px;margin:12px}' +
-    '.top{display:flex;justify-content:space-between}' +
-    '.logo{width:238px;height:auto}' +
-    '.contact{text-align:right;font-size:12.5px;line-height:1.5;color:#2a2a2a}' +
-    '.title{text-align:center;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:27px;letter-spacing:3px;margin:6px 0 12px;color:#111}' +
-    '.sec{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:12px;letter-spacing:1.2px;color:#111;border-bottom:1.5px solid #111;padding-bottom:3px;margin:13px 0 6px}' +
-    '.grid2{display:flex}.grid2>.row{flex:1}' +
-    '.row{display:flex;font-size:13.5px;line-height:1.45;margin:4px 0}' +
-    '.row .lbl{font-weight:bold;font-family:Arial,Helvetica,sans-serif;font-size:12px;padding-right:8px}' +
-    '.row .val{flex:1}.row .val.blank{border-bottom:1px solid #666}' +
-    '.approve{display:flex;font-size:14.5px;margin:6px 0 3px}.approve span{padding-right:46px}' +
-    '.sign{font-size:13.5px;margin-top:10px;display:flex}.sign .lbl{font-family:Arial;font-weight:bold;padding-right:8px}.sign .u{flex:1;border-bottom:1px solid #666}' +
-    '.foot{margin-top:14px;text-align:center;color:#888;font-size:11px;font-family:Arial}' +
-    '</style></head><body><div class="frame">' +
-    '<div class="top"><img class="logo" src="' + LOGO + '"><div class="contact">1346 Tallapoosa Street<br>Notasulga, AL 36866<br>334.391.6641<br>josh@taylormadegrowth.com</div></div>' +
-    '<div class="title">' + esc_(docType) + '</div>' +
-    '<div class="sec">CLIENT / PROJECT</div>' +
-    '<div class="grid2">' + row('Client', client.business_name) + row('Project', p.title) + '</div>' +
-    '<div class="grid2">' + row('Prepared by', D.prepared_by || 'Josh') + row('Date', dateStr) + '</div>' +
-    '<div class="sec">' + docType + ' &amp; SCOPE</div>' +
-    row('Desired outcome', D.desired_outcome || p.summary) +
-    row('Services included', services) +
-    row('Deliverables', D.deliverables) +
-    row('Timeline and milestones', D.timeline) +
-    row('Revision allowance', D.revision_allowance) +
-    row('Client responsibilities', D.client_responsibilities) +
-    row('Fees / Payment schedule', fees) +
-    row('Third-party costs', D.third_party_costs) +
-    row('Not included', D.not_included) +
-    row('Approval method / Deadline', D.approval_method) +
-    '<div class="sec">CHANGES</div>' +
-    row('Scope Change Notes', D.scope_change_notes) +
-    row('Price Difference & Reasoning', D.price_difference) +
-    '<div class="sec">APPROVE / DENIAL</div>' +
-    '<div class="approve"><span>&#9744; Approve / Proceed</span><span>&#9744; Denial / Reason: __________</span></div>' +
+    'html,body{margin:0}body{font-family:Georgia,"Times New Roman",serif;color:#1b1b1b}' +
+    '.page{padding:26px 34px 34px}' +
+    '.top{display:flex;justify-content:space-between;border-bottom:3px solid #13294b;padding-bottom:14px}' +
+    '.logo{width:220px;height:auto}.contact{text-align:right;font-size:12.5px;line-height:1.5;color:#333}' +
+    '.eyebrow{font-family:Arial,Helvetica,sans-serif;font-weight:800;letter-spacing:3px;font-size:12px;color:#b98d1a;margin-top:20px}' +
+    'h1{font-family:Arial,Helvetica,sans-serif;font-size:28px;color:#0d1b30;margin:3px 0 6px}.subline{font-size:14px;color:#444}' +
+    '.sec{font-family:Arial,Helvetica,sans-serif;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;font-size:12.5px;color:#0d1b30;border-bottom:1.5px solid #0d1b30;padding-bottom:4px;margin:20px 0 10px}' +
+    '.body{font-size:14.5px;line-height:1.55;margin:0 0 9px}table{width:100%;border-collapse:collapse}' +
+    '.scope td,.price td{padding:8px 6px;border-bottom:1px solid #e4e4e4;font-size:14px;vertical-align:top}' +
+    '.scope .area{font-family:Arial,Helvetica,sans-serif;font-weight:700;width:33%;color:#0d1b30}' +
+    '.price th{font-family:Arial,Helvetica,sans-serif;text-transform:uppercase;font-size:11px;color:#666;text-align:left;padding:5px 6px;border-bottom:1.5px solid #0d1b30}' +
+    '.price td.r,.price th.r{text-align:right}.price tfoot td{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:14.5px;border-top:2px solid #0d1b30;border-bottom:0;color:#0d1b30}' +
+    '.muted{color:#888}' +
+    '.chips{margin-top:10px}.chip{display:inline-block;border:2px solid #13294b;border-radius:10px;padding:8px 16px;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:15px;color:#0d1b30;margin-right:10px}.chip small{display:block;color:#b98d1a;font-weight:700;font-size:10px;letter-spacing:.06em;text-transform:uppercase}' +
+    '.term{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:15px;color:#0d1b30;border:1.5px solid #b98d1a;border-radius:9px;padding:8px 14px;display:inline-block;margin-bottom:8px}' +
+    '.trow{display:flex;font-size:13.5px;line-height:1.5;margin:5px 0}.tl{font-family:Arial,Helvetica,sans-serif;font-weight:700;min-width:165px;color:#0d1b30;padding-right:10px}.tv{flex:1}' +
+    '.approve{font-size:15px;margin:8px 0}.box{font-size:16px;margin-right:8px}' +
+    '.sign{font-size:14px;margin-top:12px;display:flex}.sign .lbl{font-family:Arial,Helvetica,sans-serif;font-weight:bold;padding-right:8px}.sign .u{flex:1;border-bottom:1px solid #666}' +
+    '.foot{margin-top:22px;border-top:1px solid #e4e4e4;padding-top:10px;text-align:center;color:#888;font-size:11px;font-family:Arial,Helvetica,sans-serif}' +
+    '</style></head><body><div class="page">' +
+    '<div class="top"><img class="logo" src="' + LOGO + '"><div class="contact">TaylorMade Brands<br>1346 Tallapoosa Street<br>Notasulga, AL 36866<br>334.391.6641<br>josh@taylormadegrowth.com</div></div>' +
+    '<div class="eyebrow">' + e(docType) + '</div><h1>' + e(p.title || 'Growth Partnership Proposal') + '</h1>' +
+    '<div class="subline">Prepared for <b>' + e(client.business_name || 'your business') + '</b> · ' + e(dateStr) + (D.prepared_by ? ' · by ' + e(D.prepared_by) : '') + '</div>' +
+    (p.summary ? '<div class="sec">Proposal Summary</div><p class="body">' + e(p.summary) + '</p>' : '') +
+    '<div class="sec">Scope of Work</div><table class="scope"><tbody>' + scopeRows + '</tbody></table>' +
+    '<div class="sec">Investment</div><table class="price"><thead><tr><th>Item</th><th class="r">Monthly</th><th class="r">One-time</th></tr></thead><tbody>' + priceRows + '</tbody><tfoot><tr><td>Total</td><td class="r">' + money_(m) + '/mo</td><td class="r">' + money_(o) + '</td></tr></tfoot></table>' +
+    '<div class="chips"><span class="chip"><small>Initial build</small>' + money_(o) + '</span><span class="chip"><small>Monthly</small>' + money_(m) + '</span></div>' +
+    (D.third_party_costs ? '<p class="body"><b>Third-party costs:</b> ' + e(D.third_party_costs) + '</p>' : '') +
+    '<div class="sec">Partnership</div><div class="term">Agreement: ' + e(term) + '</div>' + (D.partnership_terms ? '<p class="body">' + e(D.partnership_terms) + '</p>' : '') +
+    extrasHtml +
+    '<div class="sec">Approve / Decline</div><div class="approve"><span class="box">&#9744;</span>Approve / Proceed &nbsp;&nbsp;&nbsp;&nbsp;<span class="box">&#9744;</span>Decline</div>' +
     '<div class="sign"><span class="lbl">Name:</span><span class="u"></span></div>' +
     '<div class="sign"><span class="lbl">Signature:</span><span class="u"></span></div>' +
     '<div class="sign"><span class="lbl">Date:</span><span class="u"></span></div>' +
-    '<div class="foot">TaylorMade Brands · taylormadegrowth.com</div>' +
+    '<div class="foot">TaylorMade Brands · taylormadegrowth.com · Let’s grow something great together.</div>' +
     '</div></body></html>';
 }
 
