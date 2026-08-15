@@ -262,6 +262,7 @@ const P = {
   play: '<path d="M7 4.5l12 7.5-12 7.5V4.5z" fill="currentColor" stroke="none"/>',
   stop: '<rect x="6" y="6" width="12" height="12" rx="2.5" fill="currentColor" stroke="none"/>',
   timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/>',
+  logentry: '<path d="M4 6h11M4 12h7M4 18h7"/><path d="M17.5 14v6M14.5 17h6"/>',
 };
 export function iconSvg(name, size = 24) {
   const body = P[name] || P.dashboard;

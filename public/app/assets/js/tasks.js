@@ -10,6 +10,7 @@ import {
   openSheet, toast, confirmDialog, labelOf,
 } from './ui.js';
 import { timerButton } from './timer.js';
+import { quickLogSheet } from './quicklog.js';
 
 let clientCache = null;
 async function clients() { if (!clientCache) clientCache = await Clients.list({ order: { col: 'business_name', asc: true } }); return clientCache; }
@@ -125,6 +126,7 @@ export async function renderTasks(root) {
         ]),
       ]),
       done ? null : timerButton({ client_id: t.client_id, task_id: t.id, kind: t.category === 'build' ? 'build' : 'task' }, running, refreshAfter),
+      el('button.icon-btn', { title: 'Log time / mileage / expense', html: iconSvg('logentry', 16), onclick: () => quickLogSheet(t, list, refreshAfter) }),
       el('button.icon-btn', { html: iconSvg('trash', 16), onclick: async () => { if (await confirmDialog('Delete this task?')) { await Tasks.remove(t.id); refreshAfter(); } } }),
     ]);
   }
