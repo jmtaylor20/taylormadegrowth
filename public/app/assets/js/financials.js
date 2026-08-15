@@ -2,7 +2,7 @@
 // MRR; one-click new invoice to any client/lead/prospect; record payments;
 // editable statuses and amounts.
 import { Clients, Invoices, Payments, Expenses, Trips, getSetting, setSetting } from './db.js';
-import { INVOICE_STATUS, INVOICE_TYPE, PAYMENT_KIND, INVOICE_NET_DAYS, mileageRateFor } from './config.js';
+import { INVOICE_STATUS, INVOICE_TYPE, PAYMENT_KIND, INVOICE_NET_DAYS, ALLOCATION, mileageRateFor } from './config.js';
 import {
   el, clear, money, iconSvg, pageHeader, badge, statusBadge, labelOf, fmtDate,
   relDue, todayISO, emptyState, primaryBtn, selectInput, numberInput, toast, confirmDialog,
@@ -21,6 +21,7 @@ export async function renderFinancials(root) {
     primaryBtn('New invoice', async () => openInvoiceForm({}, refreshAfter, null, await clients()), 'plus'),
     el('button.btn.btn-gold', { html: `${iconSvg('plus', 16)} Record payment`, onclick: async () => openPickClientThenPayment(await clients(), refreshAfter) }),
     el('button.btn.btn-ghost', { html: `${iconSvg('renew', 16)} Generate monthly`, title: 'Create this month’s retainer invoices', onclick: generateMonthly }),
+    el('button.btn.btn-ghost', { html: `${iconSvg('wallet', 16)} Split deposit`, title: 'Allocate an incoming payment across your buckets', onclick: openSplitDeposit }),
   ]);
   root.append(actions);
 
@@ -292,6 +293,51 @@ function openPickClientThenPayment(list, onSaved) {
       } },
     ],
   });
+}
+
+// "Split a deposit" — Josh's Relay allocation waterfall, done in the order Relay
+// won't allow: 30% tax off the FULL deposit first, then top checking back to the
+// floor, then Cole + Owner's Draw, remainder to debt. Cole varies per job, so
+// his % is editable. Pure calculator — no writes.
+function openSplitDeposit() {
+  const amt = numberInput('amt', '', { placeholder: '0', step: '0.01' });
+  const chk = numberInput('chk', ALLOCATION.floor, { step: '0.01' });
+  const colePct = numberInput('cole', ALLOCATION.cole * 100, { step: '1' });
+  [amt, chk, colePct].forEach((i) => { i.style.maxWidth = '150px'; });
+  const out = el('div.mt-8');
+
+  function render() {
+    const D = n(amt.value);
+    clear(out);
+    if (!D) { out.append(el('div.field-hint', { text: 'Enter a deposit amount to see the split.' })); return; }
+    const tax = D * ALLOCATION.tax;
+    const topUp = Math.max(0, ALLOCATION.floor - n(chk.value));
+    const cole = D * (n(colePct.value) / 100);
+    const draw = D * ALLOCATION.draw;
+    const debt = D - tax - topUp - cole - draw;
+    const row = (label, val, sub) => el('div.row', {}, [
+      el('div.row-main', {}, [el('div.row-title', { text: label }), sub ? el('div.row-sub', {}, [el('span.muted', { text: sub })]) : null]),
+      el('span.row-amount', { text: money(Math.max(0, val)) }),
+    ]);
+    out.append(el('div.rows.card', {}, [
+      row('→ Tax Bucket', tax, Math.round(ALLOCATION.tax * 100) + '% off the top'),
+      topUp ? row('→ Keep in Checking', topUp, 'top up to $' + ALLOCATION.floor) : null,
+      row('→ Cole', cole, n(colePct.value) + '%'),
+      row('→ Owner’s Draw', draw, Math.round(ALLOCATION.draw * 100) + '%'),
+      row('→ Personal Debt', debt, 'remainder'),
+    ]));
+    if (debt < 0) out.append(el('div.field-hint.mt-8', { text: 'Heads up: this deposit is too small to cover the fixed pieces — nothing left for debt.' }));
+  }
+  [amt, chk, colePct].forEach((i) => i.addEventListener('input', render));
+  render();
+
+  const body = el('div.form', {}, [
+    el('div.form-grid.cols-2', {}, [field('Deposit amount', amt), field('Cole %', colePct)]),
+    field('Current checking balance', chk),
+    el('div.field-hint', { text: `Tax comes off the full deposit first, then checking tops back to $${ALLOCATION.floor}, then Cole + draw, and the rest goes to debt.` }),
+    out,
+  ]);
+  const { close } = openSheet({ title: 'Split a deposit', body, actions: [{ label: 'Done', tone: 'ghost', onClick: () => close() }] });
 }
 
 const n = (x) => Number(x || 0);

@@ -308,6 +308,13 @@ export const EXPENSE_CATEGORIES = ['Software / SaaS', 'Advertising', 'Subcontrac
 // Net terms (days until due) for auto-generated monthly retainer invoices.
 export const INVOICE_NET_DAYS = 15;
 
+// Deposit allocation waterfall (Josh's Relay bucket split). Tax comes off the
+// FULL deposit first (before the checking floor is topped back up — the order
+// Relay won't allow), then Cole + Owner's Draw, with the remainder to debt.
+// Percentages are of the gross deposit; Cole varies per job so his % is a
+// default you can override per deposit.
+export const ALLOCATION = { floor: 500, tax: 0.30, cole: 0.12, draw: 0.12 };
+
 // Retainer billing timing. 'advance' = bill (in the last week) for next month;
 // 'arrears' = bill at the end of the current service month.
 export const BILLING_MODES = [
