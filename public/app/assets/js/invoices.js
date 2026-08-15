@@ -1,7 +1,7 @@
 // Invoices — build fees, monthly retainers, one-offs, and payment status.
 // Money summary up top. Exports openInvoiceForm for the client detail sheet.
 import { Invoices, Clients } from './db.js';
-import { INVOICE_STATUS, INVOICE_TYPE } from './config.js';
+import { INVOICE_STATUS, INVOICE_TYPE, BUSINESS } from './config.js';
 import {
   el, clear, money, iconSvg, pageHeader, badge, statusBadge, relDue, fmtDate,
   todayISO, emptyState, primaryBtn, field, textInput, numberInput, textArea,
@@ -80,39 +80,120 @@ export async function renderInvoices(root) {
   refresh();
 }
 
-// Shared invoice create/edit sheet.
+// Shared invoice create/edit sheet — with line items (base retainer + add-ons).
 export async function openInvoiceForm(existing = {}, onSaved, client, clientList) {
   const list = clientList || await clients();
   const isNew = !existing.id;
   const clientOptions = [{ key: '', label: '— No client —' }, ...list.map((c) => ({ key: c.id, label: c.business_name }))];
+
+  // ---- Line items editor ----
+  const startItems = (existing.items && existing.items.length)
+    ? existing.items
+    : [{ label: existing.description || '', amount: existing.amount ?? '' }];
+  const itemsWrap = el('div.inv-items');
+  const totalEl = el('span.row-amount');
+  function recalc() { totalEl.textContent = money(currentItems().reduce((s, i) => s + i.amount, 0)); }
+  function currentItems() { return [...itemsWrap.children].map((r) => r._get()).filter((i) => i.label || i.amount); }
+  function itemRow(it) {
+    const label = el('input.input', { value: it.label || '', placeholder: 'e.g. Monthly management, extra blog post' });
+    const amt = el('input.input', { type: 'number', step: '0.01', value: it.amount ?? '', placeholder: '0', style: 'max-width:104px', oninput: recalc });
+    const row = el('div.field-row', { style: 'gap:8px;align-items:center' }, [
+      label, amt,
+      el('button.icon-btn', { type: 'button', title: 'Remove', html: iconSvg('trash', 15), onclick: () => { row.remove(); recalc(); } }),
+    ]);
+    row._get = () => ({ label: label.value.trim(), amount: Number(amt.value || 0) });
+    return row;
+  }
+  startItems.forEach((it) => itemsWrap.append(itemRow(it)));
+
   const node = el('div.form', {}, [
     el('div.form-grid.cols-2', {}, [
       field('Client', selectInput('client_id', clientOptions, existing.client_id || (client && client.id) || '')),
       field('Invoice #', textInput('number', existing.number, { placeholder: 'INV-001' })),
       field('Type', selectInput('type', INVOICE_TYPE, existing.type || 'monthly')),
-      field('Amount', numberInput('amount', existing.amount ?? '', { placeholder: '0' })),
       field('Status', selectInput('status', INVOICE_STATUS, existing.status || 'draft')),
       field('Method', textInput('method', existing.method, { placeholder: 'Relay / QuickBooks / card' })),
       field('Issued', dateInput('issued_on', existing.issued_on || todayISO())),
       field('Due', dateInput('due_on', existing.due_on)),
     ]),
-    field('Description', textInput('description', existing.description, { placeholder: 'What is this for?' })),
+    field('Line items', el('div', {}, [
+      itemsWrap,
+      el('div.field-row', { style: 'justify-content:space-between;align-items:center;margin-top:8px' }, [
+        el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('plus', 14) + ' Add item', onclick: () => itemsWrap.append(itemRow({})) }),
+        el('div', {}, [el('span.field-hint', { text: 'Total ' }), totalEl]),
+      ]),
+    ])),
   ]);
+  recalc();
+
+  function collect() {
+    const v = readForm(node);
+    const items = currentItems();
+    v.items = items.length ? items : null;
+    v.amount = items.reduce((s, i) => s + i.amount, 0);
+    v.description = items.map((i) => i.label).filter(Boolean).join(', ') || null;
+    if (!v.client_id) v.client_id = null;
+    if (v.status === 'paid' && !v.paid_on) v.paid_on = todayISO();
+    return v;
+  }
+
   const { close } = openSheet({
     title: isNew ? 'New invoice' : 'Edit invoice', body: node,
     actions: [
       { label: 'Cancel', tone: 'ghost', onClick: () => close() },
+      { label: 'Preview', tone: 'ghost', onClick: () => { const v = collect(); previewInvoice({ ...existing, ...v }, list.find((c) => c.id === v.client_id) || {}); } },
       { label: isNew ? 'Add' : 'Save', tone: 'primary', onClick: async () => {
-        const v = readForm(node);
-        v.amount = Number(v.amount || 0);
-        if (!v.client_id) v.client_id = null;
-        if (v.status === 'paid' && !v.paid_on) v.paid_on = todayISO();
+        const v = collect();
+        if (!v.amount) { toast('Add at least one line item', 'err'); return; }
         try { isNew ? await Invoices.create(v) : await Invoices.update(existing.id, v); toast('Saved'); close(); clientCache = null; onSaved?.(); }
         catch (e) { toast(e.message, 'err'); }
       } },
       ...(isNew ? [] : [{ label: 'Delete', tone: 'danger', onClick: async () => { if (await confirmDialog('Delete this invoice?')) { await Invoices.remove(existing.id); toast('Deleted'); close(); onSaved?.(); } } }]),
     ],
   });
+}
+
+// Branded invoice HTML (mirrors the Apps Script PDF) for in-app preview.
+export function invoiceDocHtml(inv, client = {}) {
+  const logo = 'https://taylormadegrowth.com/app/assets/img/logo-proposal.png';
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const items = (inv.items && inv.items.length) ? inv.items : [{ label: inv.description || labelOf(INVOICE_TYPE, inv.type), amount: inv.amount }];
+  const total = items.reduce((s, it) => s + Number(it.amount || 0), 0) || Number(inv.amount || 0);
+  const cityState = [client.city, client.state].filter(Boolean).join(', ');
+  const rows = items.map((it) => `<tr><td>${esc(it.label || '')}</td><td class="r">${money(Number(it.amount || 0))}</td></tr>`).join('');
+  const detail = (l, v) => `<div class="drow"><span class="dl">${esc(l)}</span> <span>${esc(v || '—')}</span></div>`;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+    html,body{margin:0}body{font-family:Georgia,'Times New Roman',serif;color:#1c1c1c}
+    .frame{border:2px solid #dcdcdc;padding:20px 30px 22px;margin:12px;max-width:720px}
+    .top{display:flex;justify-content:space-between}.logo{width:238px;height:auto}
+    .contact{text-align:right;font-size:12.5px;line-height:1.5;color:#2a2a2a}
+    .title{text-align:center;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:27px;letter-spacing:3px;margin:6px 0 14px;color:#111}
+    .sec{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:12px;letter-spacing:1.2px;color:#111;border-bottom:1.5px solid #111;padding-bottom:3px;margin:14px 0 8px}
+    .cols{display:flex;justify-content:space-between}.col{font-size:13.5px;line-height:1.6}.col.right{text-align:right}
+    .billname{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:15px}
+    .drow{margin:1px 0}.dl{font-family:Arial,Helvetica,sans-serif;font-weight:bold;font-size:12px}
+    table{width:100%;border-collapse:collapse;margin:16px 0}th,td{padding:9px 4px;border-bottom:1px solid #e0e0e0;font-size:13.5px}
+    th{text-align:left;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:.04em;color:#555}
+    th.r,td.r{text-align:right}tfoot td{font-weight:800;font-family:Arial,Helvetica,sans-serif;border-top:2px solid #111;border-bottom:0;font-size:15px}
+    .pay{font-size:13px;color:#444}.foot{margin-top:20px;text-align:center;color:#888;font-size:11px;font-family:Arial}
+  </style></head><body><div class="frame">
+    <div class="top"><img class="logo" src="${logo}"><div class="contact">${esc(BUSINESS.address1)}<br>${esc(BUSINESS.address2)}<br>${esc(BUSINESS.phone)}<br>${esc(BUSINESS.email)}</div></div>
+    <div class="title">INVOICE</div>
+    <div class="cols">
+      <div class="col"><div class="sec" style="margin-top:0">BILL TO</div><div class="billname">${esc(client.business_name || '')}</div>${client.contact_name ? esc(client.contact_name) + '<br>' : ''}${esc(cityState)}</div>
+      <div class="col right"><div class="sec" style="margin-top:0">DETAILS</div>${detail('Invoice #', inv.number)}${detail('Issued', inv.issued_on)}${detail('Due', inv.due_on)}</div>
+    </div>
+    <table><thead><tr><th>Description</th><th class="r">Amount</th></tr></thead><tbody>${rows}</tbody>
+    <tfoot><tr><td>Total due</td><td class="r">${money(total)}</td></tr></tfoot></table>
+    ${inv.method ? `<div class="pay">Payment method: ${esc(inv.method)}</div>` : ''}
+    <div class="foot">Thank you for your business.  ${esc(BUSINESS.name)} · ${esc(BUSINESS.website)}</div>
+  </div></body></html>`;
+}
+
+function previewInvoice(inv, client) {
+  const w = window.open('', '_blank', 'width=880,height=1040');
+  if (!w) { toast('Allow pop-ups to preview', 'err'); return; }
+  w.document.write(invoiceDocHtml(inv, client)); w.document.close();
 }
 
 const n = (x) => Number(x || 0);

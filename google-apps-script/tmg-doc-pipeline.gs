@@ -30,9 +30,9 @@ var CONFIG = {
   BUSINESS_NAME: 'TaylorMade Brands',
   WEBSITE: 'taylormadegrowth.com',
   REPLY_TO: 'josh@taylormadegrowth.com',
-  // ---- Auto monthly invoicing ----
-  AUTO_MONTHLY_INVOICES: true,   // generate each active client's monthly retainer invoice
-  BILLING_DAY: 1,                // day of month to generate on (and after)
+  // ---- Auto monthly invoicing (off by default — flip on when you want it) ----
+  AUTO_MONTHLY_INVOICES: false,  // generate each active client's monthly retainer invoice
+  BILLING_DAY: 1,                // day of month to generate on
   INVOICE_NET_DAYS: 15,          // due this many days after issue
   AUTO_SEND_MONTHLY: false,      // false = save as drafts to review; true = also email them
 };
@@ -49,14 +49,17 @@ function processQueue() {
 }
 
 // ==== AUTO MONTHLY INVOICES ================================================
-// On/after BILLING_DAY, create this month's monthly retainer invoice for each
-// active client with an MRR that hasn't been billed yet this month. Dedupe by
-// (client, month) so repeated runs never double-bill.
+// Only fires in a small window at the start of the billing cycle (BILLING_DAY
+// through BILLING_DAY+2, so a missed run still catches up) — so turning this on
+// mid-month never back-generates the current month. Creates this month's
+// retainer invoice for each active client with an MRR, deduped by (client,
+// month) so repeated runs never double-bill.
 function generateMonthlyInvoices_() {
   if (!CONFIG.AUTO_MONTHLY_INVOICES) return;
   var now = new Date();
   var tz = Session.getScriptTimeZone();
-  if (Number(Utilities.formatDate(now, tz, 'd')) < CONFIG.BILLING_DAY) return;
+  var dom = Number(Utilities.formatDate(now, tz, 'd'));
+  if (dom < CONFIG.BILLING_DAY || dom > CONFIG.BILLING_DAY + 2) return;
   var monthStart = Utilities.formatDate(now, tz, 'yyyy-MM') + '-01';
   var clients = sbGet_('clients?stage=eq.client&mrr=gt.0&select=id,business_name,email,mrr');
   if (!clients.length) return;
@@ -306,6 +309,9 @@ function proposalHtml_(p, client) {
 function invoiceHtml_(inv, client) {
   var LOGO = 'https://taylormadegrowth.com/app/assets/img/logo-proposal.png';
   var cityState = [client.city, client.state].filter(Boolean).join(', ');
+  var items = (inv.items && inv.items.length) ? inv.items : [{ label: inv.description || titleCase_(inv.type || 'Service'), amount: inv.amount }];
+  var total = items.reduce(function (s, it) { return s + Number(it.amount || 0); }, 0) || Number(inv.amount || 0);
+  var itemRows = items.map(function (it) { return '<tr><td>' + esc_(it.label || '') + '</td><td class="r">' + money_(Number(it.amount || 0)) + '</td></tr>'; }).join('');
   function detail(label, value) {
     return '<div class="drow"><span class="dl">' + esc_(label) + '</span><span class="dv">' + esc_(value || '—') + '</span></div>';
   }
@@ -338,8 +344,8 @@ function invoiceHtml_(inv, client) {
         detail('Invoice #', inv.number) + detail('Issued', inv.issued_on) + detail('Due', inv.due_on) + '</div>' +
     '</div>' +
     '<table><thead><tr><th>Description</th><th class="r">Amount</th></tr></thead>' +
-    '<tbody><tr><td>' + esc_(inv.description || titleCase_(inv.type || 'Service')) + '</td><td class="r">' + money_(inv.amount) + '</td></tr></tbody>' +
-    '<tfoot><tr><td>Total due</td><td class="r">' + money_(inv.amount) + '</td></tr></tfoot></table>' +
+    '<tbody>' + itemRows + '</tbody>' +
+    '<tfoot><tr><td>Total due</td><td class="r">' + money_(total) + '</td></tr></tfoot></table>' +
     (inv.method ? '<div class="pay">Payment method: ' + esc_(inv.method) + '</div>' : '') +
     '<div class="foot">Thank you for your business.  TaylorMade Brands · taylormadegrowth.com</div>' +
     '</div></body></html>';
