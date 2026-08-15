@@ -37,6 +37,10 @@ export function clientForm(c = {}) {
       field('Next follow-up', dateInput('next_follow_up', c.next_follow_up)),
       field('Follow-up note', textInput('follow_up_note', c.follow_up_note, { placeholder: 'Call back re: proposal' })),
     ]),
+    el('div.form-grid.cols-2', {}, [
+      field('Logo image URL', textInput('logo_url', c.logo_url, { placeholder: '/app/assets/img/clients/…' })),
+      field('Brand color', textInput('brand_color', c.brand_color, { placeholder: '#1E4C6A' })),
+    ]),
     field('Notes', textArea('notes', c.notes, { rows: 3, placeholder: 'Anything worth remembering…' })),
   ]);
 

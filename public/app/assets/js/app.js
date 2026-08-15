@@ -15,13 +15,18 @@ const root = document.getElementById('root');
 // Six-tab operating pipeline. First four show in the mobile tab bar; the rest
 // live in "More".
 export const NAV = [
-  { id: 'clients',    label: 'Clients',   icon: 'users',    render: renderClients,    primary: true },
-  { id: 'leads',      label: 'Leads',     icon: 'pipeline', render: renderLeads,      primary: true },
+  { id: 'clients',    label: 'Clients',   icon: 'users',    img: '/app/assets/img/tab-brand.png', render: renderClients, primary: true },
+  { id: 'leads',      label: 'Leads',     icon: 'funnel',   render: renderLeads,      primary: true },
   { id: 'tasks',      label: 'Tasks',     icon: 'tasks',    render: renderTasks,      primary: true },
-  { id: 'financials', label: 'Money',     icon: 'money',    render: renderFinancials, primary: true },
+  { id: 'financials', label: 'Money',     icon: 'wallet',   render: renderFinancials, primary: true },
   { id: 'proposals',  label: 'Proposals', icon: 'proposal', render: renderProposals },
   { id: 'reports',    label: 'Reports',   icon: 'report',   render: renderReports },
 ];
+
+// A NAV item's glyph: its brand logo image when set, else a line icon.
+function navGlyph(n, size) {
+  return n.img ? `<img class="glyph-img" src="${n.img}" alt="" width="${size}" height="${size}">` : iconSvg(n.icon, size);
+}
 
 let mainEl;
 
@@ -94,20 +99,20 @@ function buildShell() {
 function navLink(n, cls) {
   return el('a.' + cls, {
     href: '#/' + n.id, dataset: { nav: n.id },
-    html: `<span class="ic">${iconSvg(n.icon, 20)}</span> ${n.label}`,
+    html: `<span class="ic">${navGlyph(n, 20)}</span> ${n.label}`,
   });
 }
 function tabLink(n) {
   return el('a.tab', {
     href: '#/' + n.id, dataset: { nav: n.id },
-    html: `<span class="tab-ic">${iconSvg(n.icon, 22)}</span><span>${n.label}</span>`,
+    html: `<span class="tab-ic">${navGlyph(n, 24)}</span><span>${n.label}</span>`,
   });
 }
 function moreTab() {
   const overflow = NAV.filter((n) => !n.primary);
   const tab = el('a.tab.tab-more', {
     href: 'javascript:void 0', dataset: { nav: '__more' },
-    html: `<span class="tab-ic">${iconSvg('chevron', 22)}</span><span>More</span>`,
+    html: `<span class="tab-ic">${iconSvg('dots', 22)}</span><span>More</span>`,
     onclick: (e) => { e.preventDefault(); toggleMore(overflow); },
   });
   return tab;

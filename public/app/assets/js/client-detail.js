@@ -10,6 +10,7 @@ import {
   el, clear, money, fmtDate, relDue, todayISO, badge, statusBadge, labelOf,
   openSheet, closeSheet, confirmDialog, toast, iconSvg, field, textInput,
   numberInput, dateInput, textArea, selectInput, readForm, emptyState, primaryBtn,
+  clientAvatar,
 } from './ui.js';
 import { openClientForm } from './forms.js';
 import { openReport } from './report.js';
@@ -51,8 +52,8 @@ export async function openClient(id, onChange) {
   function paint() {
     clear(body);
     // Hero
-    body.append(el('div.detail-hero', {}, [
-      el('div.avatar', { text: initials(client.business_name) }),
+    body.append(el('div.detail-hero', { style: client.brand_color ? `border-bottom:3px solid ${client.brand_color}` : '' }, [
+      clientAvatar(client),
       el('div', {}, [
         el('div.detail-name', { text: client.business_name }),
         el('div.detail-meta', {}, [
