@@ -165,6 +165,15 @@ body.locked { background: radial-gradient(120% 120% at 50% 0%, #16305a 0%, var(-
 .grid-3 { grid-template-columns: 1fr; }
 .grid-4 { grid-template-columns: repeat(2, 1fr); }
 @media (min-width: 640px) { .grid-2 { grid-template-columns: repeat(2,1fr); } .grid-3 { grid-template-columns: repeat(3,1fr); } .grid-4 { grid-template-columns: repeat(4,1fr); } }
+
+/* Compact stat strip — stays 3-across on mobile instead of stacking into
+   three oversized full-width cards. */
+.statstrip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.statstrip .stat { padding: 11px 12px; min-width: 0; }
+.statstrip .stat-value { white-space: nowrap; }
+.statstrip .stat-value { font-size: 1.15rem; }
+.statstrip .stat-label { font-size: .66rem; letter-spacing: .02em; }
+@media (min-width: 640px) { .statstrip { gap: 14px; } .statstrip .stat { padding: 15px 16px; } .statstrip .stat-value { font-size: 1.55rem; } .statstrip .stat-label { font-size: .78rem; } }
 @media (min-width: 900px) { .grid-2 { grid-template-columns: repeat(2,1fr); } }
 
 /* ---- Stat tiles ---------------------------------------------------------- */
