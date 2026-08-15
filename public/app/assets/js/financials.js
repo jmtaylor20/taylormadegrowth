@@ -21,7 +21,7 @@ export async function renderFinancials(root) {
     primaryBtn('New invoice', async () => openInvoiceForm({}, refreshAfter, null, await clients()), 'plus'),
     el('button.btn.btn-gold', { html: `${iconSvg('plus', 16)} Record payment`, onclick: async () => openPickClientThenPayment(await clients(), refreshAfter) }),
     el('button.btn.btn-ghost', { html: `${iconSvg('renew', 16)} Generate monthly`, title: 'Create this month’s retainer invoices', onclick: generateMonthly }),
-    el('button.btn.btn-ghost', { html: `${iconSvg('wallet', 16)} Split deposit`, title: 'Allocate an incoming payment across your buckets', onclick: openSplitDeposit }),
+    el('button.btn.btn-ghost', { html: `${iconSvg('wallet', 16)} Split deposit`, title: 'Allocate an incoming payment across your buckets', onclick: async () => openSplitDeposit(await clients()) }),
   ]);
   root.append(actions);
 
@@ -297,13 +297,21 @@ function openPickClientThenPayment(list, onSaved) {
 
 // "Split a deposit" — Josh's Relay allocation waterfall, done in the order Relay
 // won't allow: 30% tax off the FULL deposit first, then top checking back to the
-// floor, then Cole + Owner's Draw, remainder to debt. Cole varies per job, so
-// his % is editable. Pure calculator — no writes.
-function openSplitDeposit() {
+// floor, then Cole + Owner's Draw, remainder to debt. Cole's commission is
+// per-client (15% for accounts he brought, 5% for A&O, 0 otherwise) — picking
+// the client auto-fills his %, still editable. Pure calculator — no writes.
+function openSplitDeposit(list = []) {
+  const clientOpts = [{ key: '', label: '— No specific client —' }, ...list.map((c) => ({ key: c.id, label: c.business_name }))];
+  const clientSel = selectInput('splitclient', clientOpts, '');
   const amt = numberInput('amt', '', { placeholder: '0', step: '0.01' });
   const chk = numberInput('chk', ALLOCATION.floor, { step: '0.01' });
-  const colePct = numberInput('cole', ALLOCATION.cole * 100, { step: '1' });
+  const colePct = numberInput('cole', 0, { step: '1' });
   [amt, chk, colePct].forEach((i) => { i.style.maxWidth = '150px'; });
+  clientSel.addEventListener('change', () => {
+    const c = list.find((x) => x.id === clientSel.value);
+    colePct.value = c ? Math.round((Number(c.cole_pct) || 0) * 100) : 0;
+    render();
+  });
   const out = el('div.mt-8');
 
   function render() {
@@ -332,9 +340,10 @@ function openSplitDeposit() {
   render();
 
   const body = el('div.form', {}, [
-    el('div.form-grid.cols-2', {}, [field('Deposit amount', amt), field('Cole %', colePct)]),
+    field('Client (sets Cole’s %)', clientSel),
+    el('div.form-grid.cols-2', {}, [field('Deposit amount', amt), field('Cole % (auto)', colePct)]),
     field('Current checking balance', chk),
-    el('div.field-hint', { text: `Tax comes off the full deposit first, then checking tops back to $${ALLOCATION.floor}, then Cole + draw, and the rest goes to debt.` }),
+    el('div.field-hint', { text: `Tax comes off the full deposit first, then checking tops back to $${ALLOCATION.floor}, then Cole + draw, and the rest goes to debt. Cole is 15% for clients he brought (5% for A&O), 0 otherwise — pick the client to auto-fill.` }),
     out,
   ]);
   const { close } = openSheet({ title: 'Split a deposit', body, actions: [{ label: 'Done', tone: 'ghost', onClick: () => close() }] });
