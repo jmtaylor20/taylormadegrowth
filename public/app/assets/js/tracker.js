@@ -1,9 +1,9 @@
 // Tracker — mileage log (with IRS-rate deduction) + meeting log. One tab, two
 // views. Both can be tied to a client and filed newest-first.
-import { Trips, Meetings, Clients, Expenses } from './db.js';
+import { Trips, Meetings, Clients, Expenses, TimeEntries } from './db.js';
 import { MILEAGE_RATE, mileageRateFor, TRIP_PURPOSES, MEETING_TYPES, EXPENSE_CATEGORIES } from './config.js';
 import {
-  el, clear, iconSvg, pageHeader, badge, fmtDate, relDue, daysUntil, money, todayISO, emptyState, primaryBtn,
+  el, clear, iconSvg, pageHeader, badge, fmtDate, fmtHours, relDue, daysUntil, money, todayISO, emptyState, primaryBtn,
   field, textInput, numberInput, textArea, selectInput, dateInput, readForm,
   openSheet, toast, confirmDialog,
 } from './ui.js';
@@ -17,40 +17,72 @@ const tripDeduction = (t) => n(t.miles) * (t.rate == null ? mileageRateFor(t.tri
 const nameFor = (list, id) => (list.find((c) => c.id === id) || {}).business_name || '';
 
 export async function renderTracker(root) {
-  const state = { view: 'mileage' };
+  const state = { view: 'hours' };
   function logCurrent() {
-    if (state.view === 'mileage') openTripForm({}, refreshAfter, clients);
+    if (state.view === 'hours') openTimeForm({}, refreshAfter, clients);
+    else if (state.view === 'mileage') openTripForm({}, refreshAfter, clients);
     else if (state.view === 'meetings') openMeetingForm({}, refreshAfter, clients);
     else if (state.view === 'expenses') openExpenseForm({}, refreshAfter, clients);
     else toast('Renewals come from each client’s saved dates — open a client to edit them.');
   }
-  root.append(pageHeader('Tracker', 'Mileage · meetings · expenses · renewals', primaryBtn('Log', logCurrent, 'plus')));
+  root.append(pageHeader('Tracker', 'Hours · mileage · expenses · meetings · renewals', primaryBtn('Log', logCurrent, 'plus')));
 
   const seg = el('div.segmented');
-  [['mileage', 'Mileage'], ['meetings', 'Meetings'], ['expenses', 'Expenses'], ['renewals', 'Renewals']].forEach(([k, l]) =>
+  [['hours', 'Hours'], ['mileage', 'Mileage'], ['expenses', 'Expenses'], ['meetings', 'Meetings'], ['renewals', 'Renewals']].forEach(([k, l]) =>
     seg.append(el('button.seg' + (state.view === k ? '.on' : ''), { text: l, dataset: { v: k }, onclick: () => { state.view = k; seg.querySelectorAll('.seg').forEach((s) => s.classList.toggle('on', s.dataset.v === k)); refresh(); } })));
   root.append(el('div.toolbar', {}, [seg]));
 
   const wrap = el('div');
   root.append(wrap);
 
-  let clients = [], trips = [], meetings = [], expenses = [];
+  let clients = [], trips = [], meetings = [], expenses = [], time = [];
   async function load() {
-    [clients, trips, meetings, expenses] = await Promise.all([
+    [clients, trips, meetings, expenses, time] = await Promise.all([
       Clients.list({ order: { col: 'business_name', asc: true } }),
       Trips.list({ order: { col: 'trip_date', asc: false } }),
       Meetings.list({ order: { col: 'meeting_date', asc: false } }),
       Expenses.list({ order: { col: 'expense_date', asc: false } }),
+      TimeEntries.list({ order: { col: 'created_at', asc: false } }),
       loadMapbox(),
     ]);
   }
 
   function refresh() {
     clear(wrap);
-    if (state.view === 'mileage') renderMileage();
+    if (state.view === 'hours') renderHours();
+    else if (state.view === 'mileage') renderMileage();
     else if (state.view === 'meetings') renderMeetings();
     else if (state.view === 'expenses') renderExpenses();
     else renderRenewals();
+  }
+
+  function renderHours() {
+    const now = new Date();
+    const ym = now.toISOString().slice(0, 7);
+    const yr = String(now.getFullYear());
+    const logged = time.filter((e) => e.minutes != null);
+    const inMonth = logged.filter((e) => (e.entry_date || e.created_at || '').slice(0, 7) === ym);
+    const inYear = logged.filter((e) => (e.entry_date || e.created_at || '').slice(0, 4) === yr);
+    const sumMin = (a) => a.reduce((s, e) => s + n(e.minutes), 0);
+    wrap.append(el('div.statstrip.mt-8', {}, [
+      stat(fmtHours(sumMin(inMonth)), 'This month'),
+      stat(fmtHours(sumMin(inYear)), 'This year'),
+      stat(String(logged.length), 'Entries'),
+    ]));
+    if (!logged.length) { wrap.append(emptyState('No hours logged yet. Tap Log, or use the log button on any task.', 'timer')); return; }
+    const rows = el('div.rows.card.mt-16');
+    logged.forEach((e) => rows.append(el('div.row', {}, [
+      el('div.row-main', { style: 'cursor:pointer', onclick: () => openTimeForm(e, refreshAfter, clients) }, [
+        el('div.row-title', { text: fmtHours(e.minutes) + (e.notes ? ' · ' + e.notes : '') }),
+        el('div.row-sub', {}, [
+          e.entry_date ? fmtDate(e.entry_date) : '',
+          e.kind ? badge(e.kind, 'gray') : null,
+          nameFor(clients, e.client_id) ? el('span', { text: nameFor(clients, e.client_id) }) : null,
+        ]),
+      ]),
+      el('button.icon-btn', { html: iconSvg('trash', 16), onclick: async () => { if (await confirmDialog('Delete this time entry?')) { await TimeEntries.remove(e.id); refreshAfter(); } } }),
+    ])));
+    wrap.append(rows);
   }
 
   function renderMileage() {
@@ -317,6 +349,38 @@ export function openExpenseForm(existing = {}, onSaved, list) {
         catch (e) { toast(e.message, 'err'); }
       } },
       ...(isNew ? [] : [{ label: 'Delete', tone: 'danger', onClick: async () => { if (await confirmDialog('Delete this expense?')) { await Expenses.remove(existing.id); toast('Deleted'); close(); onSaved?.(); } } }]),
+    ],
+  });
+}
+
+// Log / edit a chunk of time. With `list` a client picker is shown (global
+// logging); without it the client comes from base (task/client context).
+export function openTimeForm(existing = {}, onSaved, list) {
+  const isEdit = !!existing.id;
+  const hrs0 = existing.minutes != null ? Math.round(existing.minutes / 60 * 100) / 100 : (existing.hours ?? '');
+  const node = el('div.form', {}, [
+    el('div.form-grid.cols-2', {}, [
+      field('Hours', numberInput('hours', hrs0, { step: '0.25', placeholder: '1.5' })),
+      field('Date', dateInput('entry_date', existing.entry_date || todayISO())),
+      field('Kind', selectInput('kind', [{ key: 'task', label: 'Task work' }, { key: 'build', label: 'Build' }, { key: 'meeting', label: 'Meeting' }, { key: 'general', label: 'General' }], existing.kind || 'general')),
+      ...(list ? [field('Client', selectInput('client_id', clientOptions(list), existing.client_id || ''))] : []),
+    ]),
+    field('Note', textInput('notes', existing.notes || '', { placeholder: 'What did you work on?' })),
+  ]);
+  const { close } = openSheet({
+    title: isEdit ? 'Edit time' : 'Log time', body: node,
+    actions: [
+      { label: 'Cancel', tone: 'ghost', onClick: () => close() },
+      { label: 'Save', tone: 'primary', onClick: async () => {
+        const v = readForm(node);
+        const hrs = Number(v.hours || 0);
+        if (!hrs) { toast('Enter hours', 'err'); return; }
+        const row = { kind: v.kind, minutes: Math.round(hrs * 60), entry_date: v.entry_date || todayISO(), notes: v.notes, task_id: existing.task_id || null };
+        row.client_id = list ? (v.client_id || null) : (existing.client_id || null);
+        try { isEdit ? await TimeEntries.update(existing.id, row) : await TimeEntries.create(row); toast('Saved'); close(); onSaved?.(); }
+        catch (e) { toast(e.message, 'err'); }
+      } },
+      ...(isEdit ? [{ label: 'Delete', tone: 'danger', onClick: async () => { if (await confirmDialog('Delete this time entry?')) { await TimeEntries.remove(existing.id); toast('Deleted'); close(); onSaved?.(); } } }] : []),
     ],
   });
 }
