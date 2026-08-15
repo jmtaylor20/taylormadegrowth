@@ -255,8 +255,30 @@ const P = {
   logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>',
   cloud: '<path d="M18 10h-1.3A7 7 0 1 0 4 15.7"/><path d="M12 12v9M8 17l4 4 4-4"/>',
   send: '<path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>',
+  funnel: '<path d="M3 5h18l-7 8.2V19l-4 2v-7.8L3 5z"/>',
+  wallet: '<path d="M4 7a2 2 0 0 1 2-2h13v4"/><path d="M3 7v10a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-3M21 11h-5a2 2 0 0 0 0 4h5v-4z"/>',
+  dots: '<circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/>',
 };
 export function iconSvg(name, size = 24) {
   const body = P[name] || P.dashboard;
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+}
+
+// ---- Client avatar --------------------------------------------------------
+// Two initials from a business name, e.g. "A&O Tree Service" -> "AT".
+export function clientInitials(name) {
+  return (name || '?').split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+}
+// The client's logo tile when one is on file, otherwise initials on a
+// brand-colored (or default navy) square. Sized by context CSS.
+export function clientAvatar(client) {
+  if (client.logo_url) {
+    return el('div.avatar.avatar-logo', { style: client.brand_color ? `background:${client.brand_color}` : '' }, [
+      el('img', { src: client.logo_url, alt: client.business_name || '', loading: 'lazy' }),
+    ]);
+  }
+  return el('div.avatar', {
+    text: clientInitials(client.business_name),
+    style: client.brand_color ? `background:${client.brand_color};color:#fff` : '',
+  });
 }

@@ -2,11 +2,9 @@
 // stage. Search by name. Rows open the detail sheet.
 import { Clients } from './db.js';
 import { STAGES, STAGE_LABEL, SERVICE_LABEL } from './config.js';
-import { el, clear, money, iconSvg, pageHeader, badge, statusBadge, emptyState, primaryBtn } from './ui.js';
+import { el, clear, money, iconSvg, pageHeader, badge, statusBadge, emptyState, primaryBtn, clientAvatar } from './ui.js';
 import { openClient } from './client-detail.js';
 import { openClientForm } from './forms.js';
-
-const initials = (n) => (n || '?').split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
 export async function renderClients(root) {
   const state = { stage: 'client', q: '' };
@@ -47,8 +45,8 @@ export async function renderClients(root) {
 
     if (!items.length) { listWrap.append(emptyState('No clients match.', 'users')); return; }
     const rows = el('div.rows.card');
-    items.forEach((c) => rows.append(el('div.row.clickable', { onclick: () => openClient(c.id, refreshAfter) }, [
-      el('div.avatar', { text: initials(c.business_name) }),
+    items.forEach((c) => rows.append(el('div.row.clickable', { onclick: () => openClient(c.id, refreshAfter), style: c.brand_color ? `border-left:4px solid ${c.brand_color}` : '' }, [
+      clientAvatar(c),
       el('div.row-main', {}, [
         el('div.row-title', { text: c.business_name }),
         el('div.row-sub', {}, [
