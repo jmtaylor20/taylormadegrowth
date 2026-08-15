@@ -10,7 +10,7 @@ import {
   openSheet, toast, confirmDialog, labelOf,
 } from './ui.js';
 import { timerButton } from './timer.js';
-import { quickLogSheet } from './quicklog.js';
+import { quickLogSheet, openTimeForm, openTripForm, openExpenseForm } from './quicklog.js';
 
 let clientCache = null;
 async function clients() { if (!clientCache) clientCache = await Clients.list({ order: { col: 'business_name', asc: true } }); return clientCache; }
@@ -159,6 +159,12 @@ export async function openTaskForm(existing = {}, onSaved, client, clientList) {
     ]),
     field('Details', textArea('detail', existing.detail, { rows: 2 })),
     isNew ? null : el('label.field-row', {}, [checkbox('__done', existing.status === 'done'), el('span', { text: 'Completed' })]),
+    isNew ? null : el('div.section-title', {}, [el('h3', { text: 'Log for this task' })]),
+    isNew ? null : el('div.pill-row', {}, [
+      el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('timer', 15) + ' Time', onclick: () => { close(); openTimeForm({ client_id: existing.client_id, task_id: existing.id, kind: existing.category === 'build' ? 'build' : 'task' }, onSaved); } }),
+      el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('car', 15) + ' Mileage', onclick: () => { close(); openTripForm({ client_id: existing.client_id }, onSaved, list); } }),
+      el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('money', 15) + ' Expense', onclick: () => { close(); openExpenseForm({ client_id: existing.client_id }, onSaved, list); } }),
+    ]),
   ]);
   const { close } = openSheet({
     title: isNew ? 'New task' : 'Edit task', body: node,
