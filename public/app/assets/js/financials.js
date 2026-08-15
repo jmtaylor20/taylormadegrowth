@@ -55,13 +55,15 @@ export async function renderFinancials(root) {
     const isBuildInv = (i) => i.type === 'build_fee' || i.type === 'one_time';
 
     // --- Bucket 1: Initial builds (one-time) ---
+    // Only signed clients count toward build-fee totals — leads/prospects have
+    // quoted build fees but haven't accepted, so they must not inflate the money.
+    const billableIds = new Set(active.map((c) => c.id));
     const buildCollectedBy = {};
-    payments.filter((p) => p.kind === 'build' || p.kind === 'deposit').forEach((p) => { buildCollectedBy[p.client_id] = (buildCollectedBy[p.client_id] || 0) + n(p.amount); });
-    invoices.filter((i) => isBuildInv(i) && i.status === 'paid').forEach((i) => { buildCollectedBy[i.client_id] = (buildCollectedBy[i.client_id] || 0) + n(i.amount); });
-    const buildFeesTotal = list.reduce((s, c) => s + n(c.build_fee), 0);
-    const buildCollected = Object.values(buildCollectedBy).reduce((a, b) => a + b, 0)
-      + payments.filter((p) => (p.kind === 'build' || p.kind === 'deposit') && !p.client_id).reduce((s, p) => s + n(p.amount), 0);
-    const buildOutstanding = list.reduce((s, c) => s + (c.build_fee_paid ? 0 : Math.max(0, n(c.build_fee) - (buildCollectedBy[c.id] || 0))), 0);
+    payments.filter((p) => (p.kind === 'build' || p.kind === 'deposit') && billableIds.has(p.client_id)).forEach((p) => { buildCollectedBy[p.client_id] = (buildCollectedBy[p.client_id] || 0) + n(p.amount); });
+    invoices.filter((i) => isBuildInv(i) && i.status === 'paid' && billableIds.has(i.client_id)).forEach((i) => { buildCollectedBy[i.client_id] = (buildCollectedBy[i.client_id] || 0) + n(i.amount); });
+    const buildFeesTotal = active.reduce((s, c) => s + n(c.build_fee), 0);
+    const buildCollected = Object.values(buildCollectedBy).reduce((a, b) => a + b, 0);
+    const buildOutstanding = active.reduce((s, c) => s + (c.build_fee_paid ? 0 : Math.max(0, n(c.build_fee) - (buildCollectedBy[c.id] || 0))), 0);
 
     // --- Bucket 2: Monthly recurring ---
     const mrr = active.reduce((s, c) => s + n(c.mrr), 0);
