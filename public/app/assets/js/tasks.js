@@ -2,15 +2,16 @@
 // (weekly → every-3-years), renewals included. Completing a recurring task rolls
 // it forward to the next cycle instead of closing it. Exports openTaskForm +
 // markTaskDone, reused by the client detail sheet.
-import { Tasks, Clients, tasksFor, runningTimer } from './db.js';
-import { TEAM, TASK_CATEGORY, TASK_STATUS, RECUR_INTERVAL } from './config.js';
+import { Tasks, Clients, TimeEntries, tasksFor } from './db.js';
+import { TEAM, TASK_CATEGORY, TASK_PRESETS, RECUR_INTERVAL } from './config.js';
 import {
   el, clear, iconSvg, pageHeader, badge, relDue, fmtDate, fmtTime, daysUntil, emptyState, primaryBtn,
-  field, textInput, textArea, selectInput, dateInput, checkbox, readForm,
+  field, textInput, textArea, selectInput, numberInput, dateInput, checkbox, readForm,
   openSheet, toast, confirmDialog, labelOf,
 } from './ui.js';
-import { timerButton } from './timer.js';
-import { quickLogSheet, openTimeForm, openTripForm, openExpenseForm } from './quicklog.js';
+import { quickLogSheet, openTripForm, openExpenseForm } from './quicklog.js';
+
+const todayStr = () => new Date().toISOString().slice(0, 10);
 
 let clientCache = null;
 async function clients() { if (!clientCache) clientCache = await Clients.list({ order: { col: 'business_name', asc: true } }); return clientCache; }
@@ -65,8 +66,8 @@ export async function renderTasks(root) {
   const wrap = el('div');
   root.append(wrap);
 
-  let all = [], list = [], running = null;
-  async function load() { [all, list, running] = await Promise.all([tasksFor(null), clients(), runningTimer()]); }
+  let all = [], list = [];
+  async function load() { [all, list] = await Promise.all([tasksFor(null), clients()]); }
 
   function refresh() {
     clear(wrap);
@@ -125,8 +126,7 @@ export async function renderTasks(root) {
           recur ? badge(intervalLabel(t.recur_interval), 'blue') : null,
         ]),
       ]),
-      done ? null : timerButton({ client_id: t.client_id, task_id: t.id, kind: t.category === 'build' ? 'build' : 'task' }, running, refreshAfter),
-      el('button.icon-btn', { title: 'Log time / mileage / expense', html: iconSvg('logentry', 16), onclick: () => quickLogSheet(t, list, refreshAfter) }),
+      el('button.icon-btn', { title: 'Log mileage / expense', html: iconSvg('logentry', 16), onclick: () => quickLogSheet(t, list, refreshAfter) }),
       el('button.icon-btn', { html: iconSvg('trash', 16), onclick: async () => { if (await confirmDialog('Delete this task?')) { await Tasks.remove(t.id); refreshAfter(); } } }),
     ]);
   }
@@ -142,44 +142,109 @@ function due(date, done) {
   return n < 0 ? 'text-red' : n <= 3 ? 'text-amber' : 'muted';
 }
 
-// Shared task create/edit sheet. clientList optional (loaded if omitted).
+// Shared task create/edit sheet — one screen does it all: pick the task (or
+// type a custom one), set client + date, optionally punch in hours, and check
+// "complete". A single Save creates/updates the task, logs the hours as a time
+// entry, and marks it done (rolling recurring tasks forward). clientList
+// optional (loaded if omitted).
 export async function openTaskForm(existing = {}, onSaved, client, clientList) {
   const list = clientList || await clients();
   const isNew = !existing.id;
   const clientOptions = [{ key: '', label: 'Internal (no client)' }, ...list.map((c) => ({ key: c.id, label: c.business_name }))];
+
+  // Task picker: presets + "Other" (reveals a free-text box).
+  const isPreset = existing.title && TASK_PRESETS.some((p) => p.label === existing.title);
+  const presetOptions = [
+    { key: '', label: '— Pick a task —' },
+    ...TASK_PRESETS.map((p) => ({ key: p.label, label: p.label })),
+    { key: '__other__', label: 'Other / custom…' },
+  ];
+  const presetSel = selectInput('preset', presetOptions, isNew ? '' : (isPreset ? existing.title : '__other__'));
+  const otherInput = textInput('title_other', isPreset ? '' : existing.title, { placeholder: 'Describe the task' });
+  const otherField = field('Custom task', otherInput);
+  const catSel = selectInput('category', TASK_CATEGORY, existing.category || 'general');
+  const syncOther = () => { otherField.style.display = presetSel.value === '__other__' ? '' : 'none'; };
+  presetSel.addEventListener('change', () => {
+    syncOther();
+    const p = TASK_PRESETS.find((x) => x.label === presetSel.value);
+    if (p) catSel.value = p.cat;
+    if (presetSel.value === '__other__') otherInput.focus();
+  });
+
   const node = el('div.form', {}, [
-    field('Task', textInput('title', existing.title, { placeholder: 'e.g. Publish monthly GBP post, or Renew domain' })),
+    field('Task', presetSel),
+    otherField,
     el('div.form-grid.cols-2', {}, [
       field('Client', selectInput('client_id', clientOptions, existing.client_id || (client && client.id) || '')),
       field('Assignee', selectInput('assignee', TEAM, existing.assignee || 'Josh')),
-      field('Category', selectInput('category', TASK_CATEGORY, existing.category || 'general')),
+      field('Category', catSel),
       field('Repeat', selectInput('recur_interval', RECUR_INTERVAL, existing.recur_interval || 'none')),
-      field('Due date', dateInput('due_date', existing.due_date)),
-      field('Time', el('input.input', { type: 'time', name: 'due_time', value: existing.due_time || '' })),
+      field('Date', dateInput('due_date', existing.due_date || todayStr())),
+      field('Time (optional)', el('input.input', { type: 'time', name: 'due_time', value: existing.due_time || '' })),
     ]),
-    field('Details', textArea('detail', existing.detail, { rows: 2 })),
-    isNew ? null : el('label.field-row', {}, [checkbox('__done', existing.status === 'done'), el('span', { text: 'Completed' })]),
-    isNew ? null : el('div.section-title', {}, [el('h3', { text: 'Log for this task' })]),
+    field('Details (optional)', textArea('detail', existing.detail, { rows: 2 })),
+    el('div.form-grid.cols-2', {}, [
+      field('Hours worked (optional)', numberInput('hours', '', { step: '0.25', min: '0', placeholder: 'e.g. 1.5' })),
+      el('label.field-row', { style: 'align-items:center;gap:8px;margin-top:24px' }, [checkbox('__done', existing.status === 'done'), el('span', { text: 'Mark complete' })]),
+    ]),
+    // Mileage / expense stay one tap away (they need addresses / amounts).
     isNew ? null : el('div.pill-row', {}, [
-      el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('timer', 15) + ' Time', onclick: () => { close(); openTimeForm({ client_id: existing.client_id, task_id: existing.id, kind: existing.category === 'build' ? 'build' : 'task' }, onSaved); } }),
-      el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('car', 15) + ' Mileage', onclick: () => { close(); openTripForm({ client_id: existing.client_id }, onSaved, list); } }),
-      el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('money', 15) + ' Expense', onclick: () => { close(); openExpenseForm({ client_id: existing.client_id }, onSaved, list); } }),
+      el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('car', 15) + ' Add mileage', onclick: () => { close(); openTripForm({ client_id: existing.client_id }, onSaved, list); } }),
+      el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('money', 15) + ' Add expense', onclick: () => { close(); openExpenseForm({ client_id: existing.client_id }, onSaved, list); } }),
     ]),
   ]);
+  syncOther();
+
   const { close } = openSheet({
     title: isNew ? 'New task' : 'Edit task', body: node,
     actions: [
       { label: 'Cancel', tone: 'ghost', onClick: () => close() },
-      { label: isNew ? 'Add' : 'Save', tone: 'primary', onClick: async () => {
+      ...(isNew ? [] : [{ label: 'Delete', tone: 'danger', onClick: async () => { if (await confirmDialog('Delete this task?')) { await Tasks.remove(existing.id); toast('Deleted'); close(); clientCache = null; onSaved?.(); } } }]),
+      { label: 'Save', tone: 'primary', onClick: async () => {
         const v = readForm(node);
-        if (!v.title) { toast('Task name required', 'err'); return; }
-        const done = v.__done; delete v.__done;
-        v.recurring = v.recur_interval && v.recur_interval !== 'none';
-        v.status = done ? 'done' : (existing.status && existing.status !== 'done' ? existing.status : 'todo');
-        v.completed_at = done ? (existing.completed_at || new Date().toISOString()) : null;
-        if (!v.client_id) v.client_id = null;
-        try { isNew ? await Tasks.create(v) : await Tasks.update(existing.id, v); toast('Saved'); close(); clientCache = null; onSaved?.(); }
-        catch (e) { toast(e.message, 'err'); }
+        const title = (v.preset === '__other__' ? (v.title_other || '') : (v.preset || '') || existing.title || '').trim();
+        if (!title) { toast('Pick or name a task', 'err'); return; }
+        const done = !!v.__done;
+        const hours = Number(v.hours || 0);
+        const cid = v.client_id || null;
+        const patch = {
+          title,
+          client_id: cid,
+          assignee: v.assignee || 'Josh',
+          category: v.category || 'general',
+          recur_interval: v.recur_interval || 'none',
+          recurring: !!(v.recur_interval && v.recur_interval !== 'none'),
+          due_date: v.due_date || null,
+          due_time: v.due_time || null,
+          detail: v.detail || null,
+        };
+        try {
+          let taskId = existing.id;
+          if (isNew) {
+            patch.status = done ? 'done' : 'todo';
+            patch.completed_at = done ? new Date().toISOString() : null;
+            taskId = (await Tasks.create(patch)).id;
+          } else {
+            await Tasks.update(existing.id, patch);
+            if (done && existing.status !== 'done') {
+              const r = await markTaskDone({ ...existing, ...patch }, true);
+              if (r.recurred) toast('Recurring — next due ' + fmtDate(r.next));
+            } else if (!done && existing.status === 'done') {
+              await Tasks.update(existing.id, { status: 'todo', completed_at: null });
+            }
+          }
+          if (hours > 0) {
+            await TimeEntries.create({
+              client_id: cid, task_id: taskId,
+              kind: patch.category === 'build' ? 'build' : 'task',
+              minutes: Math.round(hours * 60),
+              entry_date: patch.due_date || todayStr(),
+              notes: title,
+            });
+          }
+          toast(hours > 0 ? `Saved · ${hours}h logged` : 'Saved');
+          close(); clientCache = null; onSaved?.();
+        } catch (e) { toast(e.message, 'err'); }
       } },
     ],
   });
