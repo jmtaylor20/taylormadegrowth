@@ -426,39 +426,63 @@ var REPORT_METRICS_ = [
   { key: 'ad_spend', label: 'Ad spend', prefix: '$' }, { key: 'cost_per_lead', label: 'Cost per lead', prefix: '$' },
   { key: 'hours', label: 'Hours worked', suffix: 'h' }, { key: 'miles', label: 'Miles driven', suffix: ' mi' },
 ];
+var REPORT_HEAD_ = ['conversions', 'clicks', 'impressions', 'ctr', 'calls', 'forms', 'reach', 'sessions'];
+function reportFmt_(v, m) {
+  return (m.prefix || '') + Number(v).toLocaleString('en-US', { maximumFractionDigits: (m.key === 'ctr' || m.key === 'hours') ? 1 : 0 }) + (m.suffix || '');
+}
 function reportHtml_(r, client) {
   var LOGO = 'https://taylormadegrowth.com/app/assets/img/logo-proposal.png';
   var metrics = r.metrics || {};
+  var byKey = {};
+  for (var j = 0; j < REPORT_METRICS_.length; j++) byKey[REPORT_METRICS_[j].key] = REPORT_METRICS_[j];
+  var has = function (k) { return metrics[k] != null && metrics[k] !== ''; };
+  // Headline KPIs (up to 4).
+  var head = '', count = 0;
+  for (var h = 0; h < REPORT_HEAD_.length && count < 4; h++) {
+    var hk = REPORT_HEAD_[h]; if (!has(hk)) continue; count++;
+    head += '<div class="kpi"><div class="kv">' + reportFmt_(metrics[hk], byKey[hk]) + '</div><div class="kl">' + esc_(byKey[hk].label) + '</div></div>';
+  }
+  if (!head) head = '<div class="muted">Add this month’s metrics to populate the report.</div>';
+  // Full grid (skip internal-only metrics).
   var tiles = '';
   for (var i = 0; i < REPORT_METRICS_.length; i++) {
-    var m = REPORT_METRICS_[i], v = metrics[m.key];
-    if (v == null || v === '') continue;
-    var num = Number(v).toLocaleString('en-US', { maximumFractionDigits: (m.key === 'ctr' || m.key === 'hours') ? 1 : 0 });
-    tiles += '<div class="tile"><div class="tv">' + (m.prefix || '') + num + (m.suffix || '') + '</div><div class="tl">' + esc_(m.label) + '</div></div>';
+    var m = REPORT_METRICS_[i]; if (m.key === 'hours' || m.key === 'miles' || !has(m.key)) continue;
+    tiles += '<div class="tile"><div class="tv">' + reportFmt_(metrics[m.key], m) + '</div><div class="tl">' + esc_(m.label) + '</div></div>';
   }
-  if (!tiles) tiles = '<div class="muted">No metrics entered.</div>';
+  if (!tiles) tiles = '<div class="muted">No metrics entered yet.</div>';
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><style>' +
     'html,body{margin:0}body{font-family:Georgia,"Times New Roman",serif;color:#1b1b1b}' +
-    '.page{padding:26px 34px 34px}' +
+    '.page{padding:26px 34px 34px}.p2{page-break-before:always}' +
     '.top{display:flex;justify-content:space-between;border-bottom:3px solid #13294b;padding-bottom:14px}' +
     '.logo{width:220px;height:auto}.contact{text-align:right;font-size:12.5px;line-height:1.5;color:#333}' +
     '.eyebrow{font-family:Arial,Helvetica,sans-serif;font-weight:800;letter-spacing:3px;font-size:12px;color:#b98d1a;margin-top:20px}' +
-    'h1{font-family:Arial,Helvetica,sans-serif;font-size:28px;color:#0d1b30;margin:3px 0 6px}.subline{font-size:14px;color:#444}' +
-    '.sec{font-family:Arial,Helvetica,sans-serif;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;font-size:12.5px;color:#0d1b30;border-bottom:1.5px solid #0d1b30;padding-bottom:4px;margin:20px 0 10px;page-break-after:avoid}' +
-    '.body{font-size:14.5px;line-height:1.55;margin:0 0 9px}' +
+    'h1{font-family:Arial,Helvetica,sans-serif;font-size:30px;color:#0d1b30;margin:3px 0 6px}.subline{font-size:14px;color:#444}' +
+    '.sec{font-family:Arial,Helvetica,sans-serif;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;font-size:12.5px;color:#0d1b30;border-bottom:1.5px solid #0d1b30;padding-bottom:4px;margin:22px 0 12px;page-break-after:avoid}' +
+    '.body{font-size:14.5px;line-height:1.6;margin:0 0 9px}' +
+    '.kpis{display:flex;gap:14px;margin-top:6px}' +
+    '.kpi{flex:1;border:2px solid #13294b;border-radius:14px;padding:18px 12px;text-align:center;page-break-inside:avoid}' +
+    '.kpi .kv{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:28px;color:#0d1b30;line-height:1}' +
+    '.kpi .kl{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#b98d1a;font-family:Arial,Helvetica,sans-serif;font-weight:700;margin-top:8px}' +
     '.grid{display:flex;flex-wrap:wrap;gap:12px}' +
     '.tile{border:1.5px solid #d8dbe2;border-radius:12px;padding:12px 15px;min-width:150px;page-break-inside:avoid}' +
     '.tile .tv{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:23px;color:#0d1b30}' +
     '.tile .tl{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#666;font-family:Arial,Helvetica,sans-serif;margin-top:3px}' +
-    '.muted{color:#888}.foot{margin-top:22px;border-top:1px solid #e4e4e4;padding-top:10px;text-align:center;color:#888;font-size:11px;font-family:Arial,Helvetica,sans-serif}' +
-    '</style></head><body><div class="page">' +
+    '.muted{color:#888}' +
+    '.cta{border:2px solid #b98d1a;border-radius:14px;padding:16px 18px;margin-top:22px;page-break-inside:avoid}.cta .h{font-family:Arial,Helvetica,sans-serif;font-weight:800;color:#0d1b30;font-size:14px;margin-bottom:4px}' +
+    '.foot{margin-top:24px;border-top:1px solid #e4e4e4;padding-top:10px;text-align:center;color:#888;font-size:11px;font-family:Arial,Helvetica,sans-serif}' +
+    '</style></head><body>' +
+    '<div class="page">' +
     '<div class="top"><img class="logo" src="' + LOGO + '"><div class="contact">TaylorMade Brands<br>334.391.6641<br>josh@taylormadegrowth.com</div></div>' +
     '<div class="eyebrow">MONTHLY GROWTH REPORT</div><h1>' + esc_(client.business_name || 'Your business') + '</h1>' +
     '<div class="subline">' + esc_(r.period || '') + '</div>' +
-    (r.highlights ? '<div class="sec">Highlights</div><p class="body">' + esc_(r.highlights) + '</p>' : '') +
+    '<div class="sec">Executive Summary</div><p class="body">' + esc_(r.highlights || 'Here’s a snapshot of your marketing performance this month, the results it drove, and where we’re focused next.') + '</p>' +
+    '<div class="sec">Performance at a Glance</div><div class="kpis">' + head + '</div>' +
+    '</div>' +
+    '<div class="page p2">' +
     '<div class="sec">The Numbers</div><div class="grid">' + tiles + '</div>' +
-    (r.notes ? '<div class="sec">Notes</div><p class="body">' + esc_(r.notes) + '</p>' : '') +
+    (r.notes ? '<div class="sec">What We Focused On</div><p class="body">' + esc_(r.notes) + '</p>' : '') +
     (r.next_steps ? '<div class="sec">What’s Next</div><p class="body">' + esc_(r.next_steps) + '</p>' : '') +
+    '<div class="cta"><div class="h">Let’s keep the momentum going.</div><div class="body" style="margin:0">Questions about anything in this report, or want to talk about scaling what’s working? Just reply to this email or give us a call.</div></div>' +
     '<div class="foot">TaylorMade Brands · taylormadegrowth.com · Growing your business, together.</div>' +
     '</div></body></html>';
 }
