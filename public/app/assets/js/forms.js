@@ -32,6 +32,7 @@ export function clientForm(c = {}) {
       field('Phone', textInput('phone', c.phone, { type: 'tel', placeholder: '(555) 123-4567' })),
       field('Email', textInput('email', c.email, { type: 'email', placeholder: 'name@business.com' })),
       field('Website', textInput('website', c.website, { placeholder: 'business.com' })),
+      field('Google Ads ID', textInput('google_ads_id', c.google_ads_id, { placeholder: '123-456-7890' })),
       field('Category', selectInput('category', ['', ...CATEGORIES], c.category || '')),
       field('City', textInput('city', c.city)),
       field('State', textInput('state', c.state, { placeholder: 'AL' })),
