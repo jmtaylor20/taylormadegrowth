@@ -63,7 +63,7 @@ function generateMonthlyInvoices_() {
   var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   if ((lastDay - dom) > CONFIG.BILLING_DAYS_FROM_END) return;   // only the last week of the month
   var monthStart = Utilities.formatDate(now, tz, 'yyyy-MM') + '-01';
-  var clients = sbGet_('clients?stage=eq.client&mrr=gt.0&select=id,business_name,email,mrr');
+  var clients = sbGet_('clients?stage=eq.client&mrr=gt.0&select=id,business_name,email,mrr,billing_mode');
   if (!clients.length) return;
   var billed = {};
   sbGet_('invoices?type=eq.monthly&issued_on=gte.' + monthStart + '&select=client_id').forEach(function (i) { billed[i.client_id] = true; });
@@ -71,6 +71,7 @@ function generateMonthlyInvoices_() {
   var maxNum = 0;
   nums.forEach(function (i) { var m = /(\d+)/.exec(i.number || ''); if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10)); });
   var monthName = Utilities.formatDate(now, tz, 'MMMM yyyy');
+  var nextMonthName = Utilities.formatDate(new Date(now.getFullYear(), now.getMonth() + 1, 1), tz, 'MMMM yyyy');
   var issued = Utilities.formatDate(now, tz, 'yyyy-MM-dd');
   var dueDate = new Date(now.getTime()); dueDate.setDate(dueDate.getDate() + CONFIG.INVOICE_NET_DAYS);
   var due = Utilities.formatDate(dueDate, tz, 'yyyy-MM-dd');
@@ -79,7 +80,9 @@ function generateMonthlyInvoices_() {
     var c = clients[i];
     if (billed[c.id]) continue;
     maxNum++;
-    var label = monthName + ' — Monthly management';
+    // Advance clients (default) are billed for next month; arrears for the current month.
+    var periodName = (c.billing_mode === 'arrears') ? monthName : nextMonthName;
+    var label = periodName + ' — Monthly management';
     var num = 'INV-' + ('000' + maxNum).slice(-4);
     var row = {
       client_id: c.id, number: num, type: 'monthly',

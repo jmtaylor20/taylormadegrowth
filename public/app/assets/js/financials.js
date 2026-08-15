@@ -147,17 +147,19 @@ export async function renderFinancials(root) {
     const now = new Date();
     const monthKey = now.toISOString().slice(0, 7);
     const monthName = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+    const nextMonthName = new Date(now.getFullYear(), now.getMonth() + 1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
     const billed = new Set(invoices.filter((i) => i.type === 'monthly' && (i.issued_on || '').slice(0, 7) === monthKey).map((i) => i.client_id));
     const targets = list.filter((c) => c.stage === 'client' && n(c.mrr) > 0 && !billed.has(c.id));
     if (!targets.length) { toast(`All active clients already invoiced for ${monthName}`); return; }
-    if (!await confirmDialog(`Create ${targets.length} monthly invoice${targets.length > 1 ? 's' : ''} for ${monthName}? They’ll be saved as drafts for you to review and send.`, { confirmLabel: 'Create drafts' })) return;
+    if (!await confirmDialog(`Create ${targets.length} monthly invoice${targets.length > 1 ? 's' : ''}? Each client is billed per their setting (advance clients for ${nextMonthName}, arrears for ${monthName}). Saved as drafts to review and send.`, { confirmLabel: 'Create drafts' })) return;
     let maxNum = invoices.reduce((m, i) => { const mm = /(\d+)/.exec(i.number || ''); return mm ? Math.max(m, parseInt(mm[1], 10)) : m; }, 0);
     const due = new Date(now); due.setDate(due.getDate() + INVOICE_NET_DAYS);
     const dueStr = due.toISOString().slice(0, 10);
     try {
       for (const c of targets) {
         maxNum += 1;
-        const label = `${monthName} — Monthly management`;
+        const periodName = c.billing_mode === 'arrears' ? monthName : nextMonthName;
+        const label = `${periodName} — Monthly management`;
         await Invoices.create({ client_id: c.id, number: 'INV-' + String(maxNum).padStart(4, '0'), type: 'monthly', amount: n(c.mrr), status: 'draft', method: 'Relay', issued_on: todayISO(), due_on: dueStr, description: label, items: [{ label, amount: n(c.mrr) }] });
       }
       toast(`Created ${targets.length} draft invoice${targets.length > 1 ? 's' : ''}`);

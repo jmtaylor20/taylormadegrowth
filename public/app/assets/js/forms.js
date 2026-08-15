@@ -1,7 +1,7 @@
 // Shared client create/edit form (used by Pipeline, Clients, and detail view).
 import { Clients } from './db.js';
 import {
-  CATEGORIES, SOURCES, SERVICES, STAGES, ONBOARDING_TEMPLATE,
+  CATEGORIES, SOURCES, SERVICES, STAGES, ONBOARDING_TEMPLATE, BILLING_MODES,
 } from './config.js';
 import {
   el, field, textInput, textArea, selectInput, numberInput, dateInput,
@@ -33,6 +33,7 @@ export function clientForm(c = {}) {
     el('div.form-grid.cols-2', {}, [
       field('Package name', textInput('package_name', c.package_name, { placeholder: 'Growth Plan' })),
       field('Monthly (MRR)', numberInput('mrr', c.mrr ?? '', { placeholder: '0' })),
+      field('Billing', selectInput('billing_mode', BILLING_MODES, c.billing_mode || 'advance')),
       field('Build fee', numberInput('build_fee', c.build_fee ?? '', { placeholder: '0' })),
       field('Start date', dateInput('start_date', c.start_date)),
       field('Next follow-up', dateInput('next_follow_up', c.next_follow_up)),
