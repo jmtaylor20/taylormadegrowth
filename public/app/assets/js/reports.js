@@ -1,7 +1,7 @@
 // Reports — monthly client growth reports. Enter the month's metrics (most
 // language prefilled), then Send to email the client a branded report and file
 // it to Drive. Same pipeline as proposals/invoices.
-import { Reports, Clients, Trips, TimeEntries } from './db.js';
+import { Reports, Clients, Trips, TimeEntries, AdMetrics } from './db.js';
 import {
   REPORT_METRICS, REPORT_HIGHLIGHTS_TEMPLATE, REPORT_NEXTSTEPS_TEMPLATE, BUSINESS,
 } from './config.js';
@@ -94,9 +94,14 @@ function openReportForm(existing = {}, onSaved, list) {
     field('What’s next', textArea('next_steps', existing.next_steps ?? REPORT_NEXTSTEPS_TEMPLATE, { rows: 2 })),
   ]);
 
-  // Auto-fill the internal metrics (hours worked, miles driven) from tracked
-  // data for the chosen client + month. Only fills blanks, so saved/edited
-  // values are preserved.
+  // Auto-fill from tracked data for the chosen client + month. Two sources:
+  //  • internal metrics (hours worked, miles driven) from trips + time entries;
+  //  • Google Ads metrics (impressions, clicks, CTR, conversions, spend) synced
+  //    into `ad_metrics` by the manager-account Ads Script, matched on the
+  //    client's Google Ads ID. Only blank fields are filled, so anything you've
+  //    saved or hand-edited is preserved.
+  const onlyDigits = (s) => String(s || '').replace(/\D/g, '');
+  const fill = (name, val) => { const e = node.querySelector('[name=' + name + ']'); if (e && !e.value && val) e.value = val; };
   async function autofill() {
     const cid = node.querySelector('[name=client_id]').value;
     const ym = periodToYM(node.querySelector('[name=period]').value);
@@ -105,10 +110,24 @@ function openReportForm(existing = {}, onSaved, list) {
       const [trips, time] = await Promise.all([Trips.list({ eq: { client_id: cid } }), TimeEntries.list({ eq: { client_id: cid } })]);
       const miles = trips.filter((t) => (t.trip_date || '').slice(0, 7) === ym).reduce((s, t) => s + Number(t.miles || 0), 0);
       const mins = time.filter((e) => (e.entry_date || e.created_at || '').slice(0, 7) === ym).reduce((s, e) => s + Number(e.minutes || 0), 0);
-      const mEl = node.querySelector('[name=mx_miles]'); const hEl = node.querySelector('[name=mx_hours]');
-      if (mEl && !mEl.value && miles) mEl.value = Math.round(miles);
-      if (hEl && !hEl.value && mins) hEl.value = Math.round((mins / 60) * 10) / 10;
+      if (miles) fill('mx_miles', Math.round(miles));
+      if (mins) fill('mx_hours', Math.round((mins / 60) * 10) / 10);
     } catch (e) { /* non-fatal */ }
+
+    // Google Ads pull — needs the client's saved Google Ads ID.
+    const gid = onlyDigits((list.find((c) => c.id === cid) || {}).google_ads_id);
+    if (!gid) return;
+    try {
+      const rows = await AdMetrics.list({ eq: { period_month: ym + '-01' } });
+      const row = rows.find((r) => onlyDigits(r.customer_id) === gid);
+      if (!row) return;
+      if (row.impressions != null) fill('mx_impressions', Math.round(row.impressions));
+      if (row.clicks != null) fill('mx_clicks', Math.round(row.clicks));
+      if (row.ctr != null) fill('mx_ctr', Math.round(Number(row.ctr) * 10) / 10);
+      if (row.conversions != null) fill('mx_conversions', Math.round(Number(row.conversions)));
+      if (row.cost != null) fill('mx_ad_spend', Math.round(Number(row.cost)));
+      if (Number(row.conversions) > 0 && row.cost != null) fill('mx_cost_per_lead', Math.round(Number(row.cost) / Number(row.conversions)));
+    } catch (e) { /* non-fatal — table may not be synced yet */ }
   }
   node.querySelector('[name=client_id]').addEventListener('change', autofill);
   node.querySelector('[name=period]').addEventListener('change', autofill);
