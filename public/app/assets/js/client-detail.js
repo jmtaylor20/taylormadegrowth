@@ -13,6 +13,7 @@ import {
   clientAvatar, fmtHours, fmtTime,
 } from './ui.js';
 import { timerButton } from './timer.js';
+import { openTimeForm, quickLogSheet } from './quicklog.js';
 import { openClientForm } from './forms.js';
 import { openReport } from './report.js';
 import { openInvoiceForm } from './invoices.js';
@@ -270,7 +271,7 @@ export async function openClient(id, onChange) {
     const tasks = bundle.tasks;
     if (!tasks.length) { pane.append(emptyState('No tasks yet.', 'tasks')); return; }
     const rows = el('div.rows.card');
-    tasks.forEach((t) => rows.append(taskRow(t, rerender, running)));
+    tasks.forEach((t) => rows.append(taskRow(t, rerender, running, [client])));
     pane.append(rows);
   }
 
@@ -412,7 +413,7 @@ export async function openClient(id, onChange) {
 }
 
 // ---- shared row renderers (exported for reuse) ----------------------------
-export function taskRow(t, refresh, running) {
+export function taskRow(t, refresh, running, clientList) {
   const done = t.status === 'done';
   const recur = t.recur_interval && t.recur_interval !== 'none';
   const recurLabel = (RECUR_INTERVAL.find((r) => r.key === t.recur_interval) || {}).label;
@@ -432,36 +433,13 @@ export function taskRow(t, refresh, running) {
       ]),
     ]),
     done ? null : timerButton({ client_id: t.client_id, task_id: t.id, kind: t.category === 'build' ? 'build' : 'task' }, running, refresh),
+    el('button.icon-btn', { title: 'Log time / mileage / expense', html: iconSvg('logentry', 16), onclick: () => quickLogSheet(t, clientList || [], refresh) }),
     el('button.icon-btn', { html: iconSvg('trash', 16), onclick: async () => { if (await confirmDialog('Delete this task?')) { await Tasks.remove(t.id); refresh?.(); } } }),
   ]);
 }
 
 // Manually log a chunk of time against a client (hours + optional note).
-function openTimeForm(base, onSaved) {
-  const node = el('div.form', {}, [
-    el('div.form-grid.cols-2', {}, [
-      field('Hours', numberInput('hours', '', { step: '0.25', placeholder: '1.5' })),
-      field('Date', dateInput('entry_date', todayISO())),
-      field('Kind', selectInput('kind', [{ key: 'task', label: 'Task work' }, { key: 'build', label: 'Build' }, { key: 'meeting', label: 'Meeting' }, { key: 'general', label: 'General' }], base.kind || 'general')),
-    ]),
-    field('Note', textInput('notes', '', { placeholder: 'What did you work on?' })),
-  ]);
-  const { close } = openSheet({
-    title: 'Log time', body: node,
-    actions: [
-      { label: 'Cancel', tone: 'ghost', onClick: () => close() },
-      { label: 'Save', tone: 'primary', onClick: async () => {
-        const v = readForm(node);
-        const hrs = Number(v.hours || 0);
-        if (!hrs) { toast('Enter hours', 'err'); return; }
-        try {
-          await TimeEntries.create({ client_id: base.client_id, kind: v.kind, minutes: Math.round(hrs * 60), entry_date: v.entry_date || todayISO(), notes: v.notes });
-          toast('Logged'); close(); onSaved?.();
-        } catch (e) { toast(e.message, 'err'); }
-      } },
-    ],
-  });
-}
+// openTimeForm now lives in quicklog.js (shared).
 
 export function invoiceRow(i, refresh) {
   return el('div.row', {}, [

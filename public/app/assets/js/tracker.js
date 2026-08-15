@@ -174,7 +174,7 @@ function clientOptions(list) {
   return [{ key: '', label: '— No client —' }, ...list.map((c) => ({ key: c.id, label: c.business_name }))];
 }
 
-function openTripForm(existing = {}, onSaved, list) {
+export function openTripForm(existing = {}, onSaved, list) {
   const isNew = !existing.id;
   const milesInput = numberInput('miles', existing.miles ?? '', { step: '0.1', placeholder: '0' });
   const fromInput = textInput('from_address', existing.from_address, { placeholder: 'Start address' });
@@ -280,7 +280,7 @@ function openMeetingForm(existing = {}, onSaved, list) {
   });
 }
 
-function openExpenseForm(existing = {}, onSaved, list) {
+export function openExpenseForm(existing = {}, onSaved, list) {
   const isNew = !existing.id;
   const receipt = el('input', { type: 'hidden', name: 'receipt_url', value: existing.receipt_url || '' });
   const status = el('span.field-hint', { text: existing.receipt_url ? 'Receipt attached ✓' : 'No receipt' });
