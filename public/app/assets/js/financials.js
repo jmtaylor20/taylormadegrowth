@@ -157,7 +157,8 @@ export async function renderFinancials(root) {
     try {
       for (const c of targets) {
         maxNum += 1;
-        await Invoices.create({ client_id: c.id, number: 'INV-' + String(maxNum).padStart(4, '0'), type: 'monthly', amount: n(c.mrr), status: 'draft', method: 'Relay', issued_on: todayISO(), due_on: dueStr, description: `${monthName} — Monthly management` });
+        const label = `${monthName} — Monthly management`;
+        await Invoices.create({ client_id: c.id, number: 'INV-' + String(maxNum).padStart(4, '0'), type: 'monthly', amount: n(c.mrr), status: 'draft', method: 'Relay', issued_on: todayISO(), due_on: dueStr, description: label, items: [{ label, amount: n(c.mrr) }] });
       }
       toast(`Created ${targets.length} draft invoice${targets.length > 1 ? 's' : ''}`);
       refreshAfter();
