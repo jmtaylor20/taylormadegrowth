@@ -1,16 +1,23 @@
 // Mapbox mileage helper — turn two addresses into driving miles.
-// Uses the public token in config (browser-safe). No token = feature is off.
-import { MAPBOX_TOKEN } from './config.js';
+// The public token is stored in the database (app_settings id='mapbox') and
+// loaded once at startup, so it's never committed to the repo.
+import { getSetting } from './db.js';
 
 const MILES_PER_METER = 1 / 1609.344;
+let TOKEN = '';
 
+// Load the token from settings. Call once at boot (safe to call again).
+export async function loadMapbox() {
+  try { TOKEN = (await getSetting('mapbox', {})).token || ''; } catch (e) { TOKEN = ''; }
+  return TOKEN;
+}
 export function mapboxReady() {
-  return typeof MAPBOX_TOKEN === 'string' && MAPBOX_TOKEN.startsWith('pk.');
+  return typeof TOKEN === 'string' && TOKEN.startsWith('pk.');
 }
 
 async function geocode(query) {
   const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json`
-    + `?limit=1&country=US&types=address,place,postcode,poi&access_token=${MAPBOX_TOKEN}`;
+    + `?limit=1&country=US&types=address,place,postcode,poi&access_token=${TOKEN}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error('Address lookup failed');
   const data = await res.json();
@@ -22,7 +29,7 @@ async function geocode(query) {
 export async function drivingMiles(fromAddr, toAddr) {
   const [a, b] = await Promise.all([geocode(fromAddr), geocode(toAddr)]);
   const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${a[0]},${a[1]};${b[0]},${b[1]}`
-    + `?overview=false&access_token=${MAPBOX_TOKEN}`;
+    + `?overview=false&access_token=${TOKEN}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error('Route lookup failed');
   const data = await res.json();

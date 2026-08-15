@@ -290,7 +290,6 @@ export const BILLING_MODES = [
   { key: 'arrears', label: 'Arrears (bill for current month)' },
 ];
 
-// Mapbox public token (pk.*) for the trip mileage calculator. Browser-safe.
-// Get one free at account.mapbox.com → Tokens. Leave as-is to disable the
-// address calculator (miles can still be entered by hand).
-export const MAPBOX_TOKEN = '__MAPBOX_TOKEN__';
+// The Mapbox public token for the trip mileage calculator is stored in the
+// database (app_settings id='mapbox'), not here — GitHub push-protection flags
+// pk.* tokens, and keeping it in the DB lets it be rotated without a redeploy.

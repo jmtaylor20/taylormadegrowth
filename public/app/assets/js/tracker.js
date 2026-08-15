@@ -8,7 +8,7 @@ import {
   openSheet, toast, confirmDialog,
 } from './ui.js';
 import { photoToDataUrl } from './logofield.js';
-import { mapboxReady, drivingMiles } from './mapbox.js';
+import { mapboxReady, drivingMiles, loadMapbox } from './mapbox.js';
 
 const n = (x) => Number(x || 0);
 const usd = (x) => '$' + n(x).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -41,6 +41,7 @@ export async function renderTracker(root) {
       Trips.list({ order: { col: 'trip_date', asc: false } }),
       Meetings.list({ order: { col: 'meeting_date', asc: false } }),
       Expenses.list({ order: { col: 'expense_date', asc: false } }),
+      loadMapbox(),
     ]);
   }
 
