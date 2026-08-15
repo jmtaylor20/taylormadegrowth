@@ -255,3 +255,9 @@ export const MONTHLY_TEMPLATE = [
   'Website updates / tweaks',
   'Send monthly report',
 ];
+
+// ---- Mileage & meetings ----------------------------------------------------
+// IRS standard business mileage rate ($/mile). Update yearly.
+export const MILEAGE_RATE = 0.70;
+export const TRIP_PURPOSES = ['Client meeting', 'Site visit', 'Sales call', 'Delivery / drop-off', 'Networking', 'Errand', 'Other'];
+export const MEETING_TYPES = ['In person', 'Phone', 'Video', 'On site'];

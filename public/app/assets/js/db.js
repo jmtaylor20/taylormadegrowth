@@ -51,6 +51,8 @@ export const Proposals = table('proposals');
 export const Activities = table('activities');
 export const Payments  = table('payments');
 export const Reports   = table('reports');
+export const Trips     = table('trips');
+export const Meetings  = table('meetings');
 
 // ---- Purpose-built loaders -------------------------------------------------
 
