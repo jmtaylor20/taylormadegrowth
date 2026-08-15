@@ -102,8 +102,17 @@ export async function renderFinancials(root) {
     const deductions = expTotal + mileageDed;
     const net = Math.max(0, income - deductions);
     const estTax = net * taxRate;
-    const monthsElapsed = new Date().getMonth() + 1;
-    const projTax = (net / monthsElapsed) * 12 * taxRate;
+    // Annualize from the first month with activity this year (so a mid-year
+    // start doesn't understate the projection).
+    const curMonth = new Date().getMonth() + 1;
+    const months = [];
+    const pushM = (d) => { if (inYr(d)) months.push(Number((d || '').slice(5, 7))); };
+    invoices.forEach((i) => { if (i.status === 'paid') pushM(i.paid_on || i.issued_on); });
+    payments.forEach((p) => pushM(p.paid_on));
+    expenses.forEach((e) => pushM(e.expense_date));
+    trips.forEach((t) => pushM(t.trip_date));
+    const monthsActive = Math.max(1, curMonth - (months.length ? Math.min.apply(null, months) : curMonth) + 1);
+    const projTax = (net / monthsActive) * 12 * taxRate;
 
     wrap.append(el('div.section-title', {}, [el('h3', { text: `${yr} so far` })]));
     wrap.append(el('div.statstrip', {}, [
