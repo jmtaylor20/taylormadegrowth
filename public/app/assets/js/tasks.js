@@ -5,7 +5,7 @@
 import { Tasks, Clients, tasksFor, runningTimer } from './db.js';
 import { TEAM, TASK_CATEGORY, TASK_STATUS, RECUR_INTERVAL } from './config.js';
 import {
-  el, clear, iconSvg, pageHeader, badge, relDue, fmtDate, daysUntil, emptyState, primaryBtn,
+  el, clear, iconSvg, pageHeader, badge, relDue, fmtDate, fmtTime, daysUntil, emptyState, primaryBtn,
   field, textInput, textArea, selectInput, dateInput, checkbox, readForm,
   openSheet, toast, confirmDialog, labelOf,
 } from './ui.js';
@@ -120,7 +120,7 @@ export async function renderTasks(root) {
         el('div.row-sub', {}, [
           badge(t.assignee, 'gold'),
           badge(labelOf(TASK_CATEGORY, t.category), t.category === 'renewal' ? 'violet' : 'gray'),
-          t.due_date ? el('span', { class: due(t.due_date, done), text: relDue(t.due_date) }) : null,
+          t.due_date ? el('span', { class: due(t.due_date, done), text: relDue(t.due_date) + (t.due_time ? ' · ' + fmtTime(t.due_time) : '') }) : null,
           recur ? badge(intervalLabel(t.recur_interval), 'blue') : null,
         ]),
       ]),
@@ -153,6 +153,7 @@ export async function openTaskForm(existing = {}, onSaved, client, clientList) {
       field('Category', selectInput('category', TASK_CATEGORY, existing.category || 'general')),
       field('Repeat', selectInput('recur_interval', RECUR_INTERVAL, existing.recur_interval || 'none')),
       field('Due date', dateInput('due_date', existing.due_date)),
+      field('Time', el('input.input', { type: 'time', name: 'due_time', value: existing.due_time || '' })),
     ]),
     field('Details', textArea('detail', existing.detail, { rows: 2 })),
     isNew ? null : el('label.field-row', {}, [checkbox('__done', existing.status === 'done'), el('span', { text: 'Completed' })]),

@@ -10,7 +10,7 @@ import {
   el, clear, money, fmtDate, relDue, todayISO, badge, statusBadge, labelOf,
   openSheet, closeSheet, confirmDialog, toast, iconSvg, field, textInput,
   numberInput, dateInput, textArea, selectInput, readForm, emptyState, primaryBtn,
-  clientAvatar, fmtHours,
+  clientAvatar, fmtHours, fmtTime,
 } from './ui.js';
 import { timerButton } from './timer.js';
 import { openClientForm } from './forms.js';
@@ -427,7 +427,7 @@ export function taskRow(t, refresh, running) {
       el('div.row-sub', {}, [
         badge(t.assignee, 'gold'),
         badge(labelOf([{ key: 'monthly', label: 'Monthly' }, { key: 'onboarding', label: 'Onboarding' }, { key: 'build', label: 'Build' }, { key: 'content', label: 'Content' }, { key: 'renewal', label: 'Renewal' }, { key: 'general', label: 'General' }], t.category), t.category === 'renewal' ? 'violet' : 'gray'),
-        t.due_date ? el('span', { class: dueClass(t.due_date, done), text: relDue(t.due_date) }) : null,
+        t.due_date ? el('span', { class: dueClass(t.due_date, done), text: relDue(t.due_date) + (t.due_time ? ' · ' + fmtTime(t.due_time) : '') }) : null,
         recur ? badge(recurLabel, 'blue') : null,
       ]),
     ]),

@@ -281,6 +281,15 @@ export function fmtHours(mins) {
   if (n < 60) return Math.round(n) + 'm';
   return (Math.round((n / 60) * 10) / 10) + 'h';
 }
+// "13:00" -> "1:00 PM".
+export function fmtTime(t) {
+  if (!t) return '';
+  const [h, m] = String(t).split(':').map(Number);
+  if (isNaN(h)) return '';
+  const ap = h < 12 ? 'AM' : 'PM';
+  const h12 = ((h + 11) % 12) + 1;
+  return h12 + ':' + String(m || 0).padStart(2, '0') + ' ' + ap;
+}
 
 // ---- Client avatar --------------------------------------------------------
 // Two initials from a business name, e.g. "A&O Tree Service" -> "AT".
