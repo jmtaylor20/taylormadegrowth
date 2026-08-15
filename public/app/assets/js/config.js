@@ -288,3 +288,8 @@ export const BILLING_MODES = [
   { key: 'advance', label: 'Advance (bill for next month)' },
   { key: 'arrears', label: 'Arrears (bill for current month)' },
 ];
+
+// Mapbox public token (pk.*) for the trip mileage calculator. Browser-safe.
+// Get one free at account.mapbox.com → Tokens. Leave as-is to disable the
+// address calculator (miles can still be entered by hand).
+export const MAPBOX_TOKEN = '__MAPBOX_TOKEN__';
