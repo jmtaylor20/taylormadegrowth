@@ -7,6 +7,7 @@ import {
   openSheet, toast, todayISO, iconSvg,
 } from './ui.js';
 import { openTripForm, openExpenseForm } from './tracker.js';
+export { openTripForm, openExpenseForm } from './tracker.js';
 
 // Log a chunk of time (optionally against a task). Flows to time_entries.
 export function openTimeForm(base = {}, onSaved) {
