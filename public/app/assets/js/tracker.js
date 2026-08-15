@@ -8,6 +8,7 @@ import {
   openSheet, toast, confirmDialog,
 } from './ui.js';
 import { photoToDataUrl } from './logofield.js';
+import { mapboxReady, drivingMiles } from './mapbox.js';
 
 const n = (x) => Number(x || 0);
 const usd = (x) => '$' + n(x).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -174,15 +175,51 @@ function clientOptions(list) {
 
 function openTripForm(existing = {}, onSaved, list) {
   const isNew = !existing.id;
+  const milesInput = numberInput('miles', existing.miles ?? '', { step: '0.1', placeholder: '0' });
+  const fromInput = textInput('from_address', existing.from_address, { placeholder: 'Start address' });
+  const toInput = textInput('to_address', existing.to_address, { placeholder: 'Destination address' });
+  const roundChk = el('input.checkbox', { type: 'checkbox', name: 'round_trip', checked: !!existing.round_trip });
+  const status = el('span.field-hint');
+
+  async function calc() {
+    const from = fromInput.value.trim(), to = toInput.value.trim();
+    if (!from || !to) { status.textContent = 'Enter both addresses first'; return; }
+    status.textContent = 'Calculating…';
+    try {
+      let mi = await drivingMiles(from, to);
+      const label = mi + ' mi each way';
+      if (roundChk.checked) mi = Math.round(mi * 2 * 10) / 10;
+      milesInput.value = mi;
+      status.textContent = roundChk.checked ? `${label} → ${mi} mi round trip` : `${mi} mi`;
+    } catch (e) { status.textContent = e.message || 'Could not calculate'; }
+  }
+
+  const calcBlock = mapboxReady()
+    ? el('div', {}, [
+        field('From', fromInput),
+        field('To', toInput),
+        el('div.field-row.mt-8', { style: 'align-items:center;gap:12px' }, [
+          el('label.field-row', { style: 'gap:6px' }, [roundChk, el('span', { text: 'Round trip' })]),
+          el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('location', 15) + ' Calculate miles', onclick: calc }),
+        ]),
+        el('div.mt-8', {}, [status]),
+      ])
+    : el('div', {}, [
+        field('From', fromInput),
+        field('To', toInput),
+        el('div.field-hint.mt-8', { text: 'Add a Mapbox token in config to auto-calculate miles from these addresses.' }),
+      ]);
+
   const node = el('div.form', {}, [
     el('div.form-grid.cols-2', {}, [
       field('Date', dateInput('trip_date', existing.trip_date || todayISO())),
-      field('Miles', numberInput('miles', existing.miles ?? '', { step: '0.1', placeholder: '0' })),
       field('Client', selectInput('client_id', clientOptions(list), existing.client_id || '')),
       field('Purpose', selectInput('purpose', TRIP_PURPOSES, existing.purpose || TRIP_PURPOSES[0])),
       field('Rate ($/mi)', numberInput('rate', existing.rate ?? mileageRateFor(existing.trip_date), { step: '0.005' })),
     ]),
-    field('Notes', textInput('notes', existing.notes, { placeholder: 'Where to / from, or anything worth noting' })),
+    calcBlock,
+    field('Miles', milesInput),
+    field('Notes', textInput('notes', existing.notes, { placeholder: 'Anything worth noting' })),
   ]);
   const collect = () => {
     const v = readForm(node);
