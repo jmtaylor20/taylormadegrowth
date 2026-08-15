@@ -35,7 +35,7 @@ export async function renderFinancials(root) {
   const wrap = el('div');
   root.append(wrap);
 
-  let list = [], invoices = [], payments = [], expenses = [], trips = [], taxRate = 0.25;
+  let list = [], invoices = [], payments = [], expenses = [], trips = [], taxRate = 0.25, taxReserve = 0, taxApr = 0;
   let clientCache = null;
   async function clients() { if (!clientCache) clientCache = await Clients.list({ order: { col: 'business_name', asc: true } }); return clientCache; }
   async function load() {
@@ -46,6 +46,8 @@ export async function renderFinancials(root) {
       Expenses.list(), Trips.list(), getSetting('tax', { effective_rate: 0.25 }),
     ]);
     taxRate = Number(tax.effective_rate) || 0.25;
+    taxReserve = Number(tax.reserve_balance) || 0;
+    taxApr = Number(tax.reserve_apr) || 0;
     markOverdue(invoices);
   }
 
@@ -124,9 +126,28 @@ export async function renderFinancials(root) {
     ]));
     wrap.append(el('div.section-title', {}, [el('h3', { text: 'Estimated tax to set aside' })]));
     wrap.append(el('div.grid.grid-3', {}, [
-      st(money(estTax), 'Set aside so far', Math.round(taxRate * 100) + '% effective', 'gold'),
+      st(money(estTax), 'Owed so far (YTD)', Math.round(taxRate * 100) + '% effective', 'gold'),
       st(money(projTax), 'Projected full year'),
       st(money(mileageDed), 'Mileage deduction'),
+    ]));
+
+    // Actual reserve vs. what you should have set aside so far.
+    const cushion = taxReserve - estTax;
+    const interestYr = taxReserve * taxApr;
+    wrap.append(el('div.section-title', {}, [el('h3', { text: 'Your tax reserve' })]));
+    wrap.append(el('div.grid.grid-3', {}, [
+      st(money(taxReserve), 'In tax account', taxApr ? (Math.round(taxApr * 1000) / 10) + '% APY' : null, 'gold'),
+      st(money(estTax), 'Target (YTD)'),
+      st((cushion >= 0 ? '+' : '−') + money(Math.abs(cushion)), cushion >= 0 ? 'Cushion (ahead)' : 'Short — set aside', null, cushion >= 0 ? null : 'gold'),
+    ]));
+    const balIn = numberInput('bal', taxReserve || '', { step: '0.01' }); balIn.style.maxWidth = '140px';
+    const aprIn = numberInput('apr', taxApr ? Math.round(taxApr * 1000) / 10 : '', { step: '0.01' }); aprIn.style.maxWidth = '90px';
+    wrap.append(el('div.card.card-pad.mt-8', {}, [
+      el('div.field-row', { style: 'align-items:center;gap:10px;flex-wrap:wrap' }, [
+        el('span', { text: 'Reserve $' }), balIn, el('span', { text: 'APY' }), aprIn, el('span', { text: '%' }),
+        el('button.btn.btn-primary.btn-sm', { text: 'Save', onclick: async () => { taxReserve = Number(balIn.value || 0); taxApr = Number(aprIn.value || 0) / 100; await setSetting('tax', { effective_rate: taxRate, reserve_balance: taxReserve, reserve_apr: taxApr }); toast('Saved'); refreshAfter(); } }),
+      ]),
+      el('div.field-hint.mt-8', { text: taxApr ? `Earning about ${money(interestYr)}/yr at ${Math.round(taxApr * 1000) / 10}% — note that interest is taxable income.` : 'Update this as your reserve grows.' }),
     ]));
 
     const rateInput = numberInput('rate', Math.round(taxRate * 1000) / 10, { step: '0.1' });
@@ -134,7 +155,7 @@ export async function renderFinancials(root) {
     wrap.append(el('div.card.card-pad.mt-16', {}, [
       el('div.field-row', { style: 'align-items:center;gap:10px;flex-wrap:wrap' }, [
         el('span', { text: 'Effective tax rate' }), rateInput, el('span', { text: '%' }),
-        el('button.btn.btn-primary.btn-sm', { text: 'Save', onclick: async () => { taxRate = Number(rateInput.value || 0) / 100; await setSetting('tax', { effective_rate: taxRate }); toast('Saved'); refreshAfter(); } }),
+        el('button.btn.btn-primary.btn-sm', { text: 'Save', onclick: async () => { taxRate = Number(rateInput.value || 0) / 100; await setSetting('tax', { effective_rate: taxRate, reserve_balance: taxReserve, reserve_apr: taxApr }); toast('Saved'); refreshAfter(); } }),
         el('button.btn.btn-ghost.btn-sm', { text: 'Calibrate from last year', onclick: openCalibrate }),
       ]),
       el('div.field-hint.mt-8', { html: 'Rough estimate: <b>net profit × your effective rate</b> (income tax + ~15.3% self-employment tax + state). As income and expenses change through the year, this updates so you can adjust what you set aside.' }),
@@ -157,7 +178,7 @@ export async function renderFinancials(root) {
           const t = Number(taxIn.value || 0), i = Number(incIn.value || 0);
           if (!i) { toast('Enter last year’s net income', 'err'); return; }
           taxRate = Math.round((t / i) * 1000) / 1000;
-          await setSetting('tax', { effective_rate: taxRate });
+          await setSetting('tax', { effective_rate: taxRate, reserve_balance: taxReserve, reserve_apr: taxApr });
           toast('Effective rate set to ' + Math.round(taxRate * 100) + '%'); close(); refreshAfter();
         } },
       ],
