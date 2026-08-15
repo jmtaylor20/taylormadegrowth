@@ -92,6 +92,7 @@ export async function openClient(id, onChange) {
 
   // ---- Overview -----------------------------------------------------------
   function paneOverview(pane) {
+    const fin = clientFinance(client, bundle);
     // Quick stage changer
     pane.append(el('div.section-title', {}, [el('h3', { text: 'Pipeline stage' })]));
     const stageRow = el('div.pill-row');
@@ -122,10 +123,23 @@ export async function openClient(id, onChange) {
     pkg.append(el('dl.kv.mt-16', {}, [
       el('dt', { text: 'Package' }), el('dd', { text: client.package_name || '—' }),
       el('dt', { text: 'Monthly' }), el('dd', { text: money(client.mrr) }),
-      el('dt', { text: 'Build fee' }), el('dd', { html: money(client.build_fee) + (client.build_fee ? (client.build_fee_paid ? ' · <span class="text-green">paid</span>' : ' · <span class="text-amber">unpaid</span>') : '') }),
+      el('dt', { text: 'Build fee' }), el('dd', { html: money(client.build_fee) + (client.build_fee ? ((client.build_fee_paid || fin.buildOutstanding === 0) ? ' · <span class="text-green">paid</span>' : ' · <span class="text-amber">' + money(fin.buildOutstanding) + ' left</span>') : '') }),
       el('dt', { text: 'Start date' }), el('dd', { text: client.start_date ? fmtDate(client.start_date) : '—' }),
     ]));
     pane.append(pkg);
+
+    // Balance — reflects recorded payments (full detail lives in the Money tab)
+    pane.append(el('div.section-title', {}, [
+      el('h3', { text: 'Balance' }),
+      el('button.btn.btn-ghost.btn-sm', { text: 'Money →', onclick: () => { activeTab = 'money'; paint(); } }),
+    ]));
+    pane.append(el('div.statstrip', {}, [
+      el('div.stat', {}, [el('div.stat-value', { text: money(fin.collected) }), el('div.stat-label', { text: 'Collected' })]),
+      el('div.stat' + (fin.outstanding ? '.stat-gold' : ''), {}, [el('div.stat-value', { text: money(fin.outstanding) }), el('div.stat-label', { text: 'Outstanding' })]),
+      el('div.stat', {}, [el('div.stat-value', { text: money(fin.mrr) }), el('div.stat-label', { text: 'MRR' })]),
+    ]));
+    const lastPay = (bundle.payments || [])[0];
+    pane.append(el('div.muted.mt-8', { text: lastPay ? `Last payment: ${money(lastPay.amount)}${lastPay.kind ? ' (' + labelOf(PAYMENT_KIND, lastPay.kind) + ')' : ''}${lastPay.paid_on ? ' · ' + fmtDate(lastPay.paid_on) : ''}` : 'No payments recorded yet.' }));
 
     if (client.notes) {
       pane.append(el('div.section-title', {}, [el('h3', { text: 'Notes' })]));

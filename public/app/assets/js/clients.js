@@ -24,7 +24,7 @@ export async function renderClients(root) {
   toolbar.append(seg);
   root.append(toolbar);
 
-  const summary = el('div.grid.grid-3.mt-8');
+  const summary = el('div.statstrip.mt-8');
   root.append(summary);
   const listWrap = el('div.mt-16');
   root.append(listWrap);
@@ -53,11 +53,12 @@ export async function renderClients(root) {
         el('div.row-title', { text: c.business_name }),
         el('div.row-sub', {}, [
           c.category ? badge(c.category, 'gold') : null,
-          ...(c.services || []).slice(0, 3).map((s) => badge(SERVICE_LABEL[s] || s, 'gray')),
+          c.mrr ? badge(money(c.mrr) + '/mo', 'green') : null,
+          ...(c.services || []).slice(0, 2).map((s) => badge(SERVICE_LABEL[s] || s, 'gray')),
+          (c.services || []).length > 2 ? badge('+' + ((c.services || []).length - 2), 'gray') : null,
         ]),
       ]),
       el('div.row-right', {}, [
-        c.mrr ? el('span.row-amount', { text: money(c.mrr) + '/mo' }) : null,
         state.stage === 'all' ? statusBadge(STAGES, c.stage) : null,
         el('span.icon-btn', { html: iconSvg('chevron', 18) }),
       ]),
