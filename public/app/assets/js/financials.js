@@ -2,7 +2,7 @@
 // MRR; one-click new invoice to any client/lead/prospect; record payments;
 // editable statuses and amounts.
 import { Clients, Invoices, Payments } from './db.js';
-import { INVOICE_STATUS, INVOICE_TYPE, PAYMENT_KIND } from './config.js';
+import { INVOICE_STATUS, INVOICE_TYPE, PAYMENT_KIND, INVOICE_NET_DAYS } from './config.js';
 import {
   el, clear, money, iconSvg, pageHeader, badge, statusBadge, labelOf, fmtDate,
   relDue, todayISO, emptyState, primaryBtn, selectInput, toast, confirmDialog,
@@ -20,6 +20,7 @@ export async function renderFinancials(root) {
   const actions = el('div.toolbar', {}, [
     primaryBtn('New invoice', async () => openInvoiceForm({}, refreshAfter, null, await clients()), 'plus'),
     el('button.btn.btn-gold', { html: `${iconSvg('plus', 16)} Record payment`, onclick: async () => openPickClientThenPayment(await clients(), refreshAfter) }),
+    el('button.btn.btn-ghost', { html: `${iconSvg('renew', 16)} Generate monthly`, title: 'Create this month’s retainer invoices', onclick: generateMonthly }),
   ]);
   root.append(actions);
 
@@ -137,6 +138,30 @@ export async function renderFinancials(root) {
       ]));
     });
     wrap.append(rows);
+  }
+
+  // One-tap: create this month's monthly retainer invoice for every active
+  // client with an MRR that hasn't already been billed this month. Saved as
+  // drafts so you review before sending.
+  async function generateMonthly() {
+    const now = new Date();
+    const monthKey = now.toISOString().slice(0, 7);
+    const monthName = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+    const billed = new Set(invoices.filter((i) => i.type === 'monthly' && (i.issued_on || '').slice(0, 7) === monthKey).map((i) => i.client_id));
+    const targets = list.filter((c) => c.stage === 'client' && n(c.mrr) > 0 && !billed.has(c.id));
+    if (!targets.length) { toast(`All active clients already invoiced for ${monthName}`); return; }
+    if (!await confirmDialog(`Create ${targets.length} monthly invoice${targets.length > 1 ? 's' : ''} for ${monthName}? They’ll be saved as drafts for you to review and send.`, { confirmLabel: 'Create drafts' })) return;
+    let maxNum = invoices.reduce((m, i) => { const mm = /(\d+)/.exec(i.number || ''); return mm ? Math.max(m, parseInt(mm[1], 10)) : m; }, 0);
+    const due = new Date(now); due.setDate(due.getDate() + INVOICE_NET_DAYS);
+    const dueStr = due.toISOString().slice(0, 10);
+    try {
+      for (const c of targets) {
+        maxNum += 1;
+        await Invoices.create({ client_id: c.id, number: 'INV-' + String(maxNum).padStart(4, '0'), type: 'monthly', amount: n(c.mrr), status: 'draft', method: 'Relay', issued_on: todayISO(), due_on: dueStr, description: `${monthName} — Monthly management` });
+      }
+      toast(`Created ${targets.length} draft invoice${targets.length > 1 ? 's' : ''}`);
+      refreshAfter();
+    } catch (e) { toast(e.message, 'err'); }
   }
 
   async function refreshAfter() { await load(); refresh(); }

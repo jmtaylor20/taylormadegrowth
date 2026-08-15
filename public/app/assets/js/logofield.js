@@ -61,6 +61,24 @@ export function composeTile(img, bg) {
   return cv.toDataURL('image/png');
 }
 
+// Downscale a picked image file to a JPEG data URL (for receipts etc.).
+export function photoToDataUrl(file, maxDim = 1100) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const im = new Image();
+    im.onload = () => {
+      const sc = Math.min(1, maxDim / Math.max(im.width, im.height));
+      const w = Math.round(im.width * sc), h = Math.round(im.height * sc);
+      const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(im, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      try { resolve(cv.toDataURL('image/jpeg', 0.82)); } catch (e) { reject(e); }
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read image')); };
+    im.src = url;
+  });
+}
+
 function lumOf(hex) {
   const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex || '');
   if (!m) return 0.5;

@@ -54,6 +54,7 @@ export const Reports   = table('reports');
 export const Trips     = table('trips');
 export const Meetings  = table('meetings');
 export const TimeEntries = table('time_entries');
+export const Expenses   = table('expenses');
 
 // ---- Time tracking ---------------------------------------------------------
 // The single currently-running timer (a time entry with no minutes yet), if any.

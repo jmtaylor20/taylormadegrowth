@@ -1,12 +1,13 @@
 // Tracker — mileage log (with IRS-rate deduction) + meeting log. One tab, two
 // views. Both can be tied to a client and filed newest-first.
-import { Trips, Meetings, Clients } from './db.js';
-import { MILEAGE_RATE, mileageRateFor, TRIP_PURPOSES, MEETING_TYPES } from './config.js';
+import { Trips, Meetings, Clients, Expenses } from './db.js';
+import { MILEAGE_RATE, mileageRateFor, TRIP_PURPOSES, MEETING_TYPES, EXPENSE_CATEGORIES } from './config.js';
 import {
-  el, clear, iconSvg, pageHeader, badge, fmtDate, todayISO, emptyState, primaryBtn,
+  el, clear, iconSvg, pageHeader, badge, fmtDate, relDue, daysUntil, money, todayISO, emptyState, primaryBtn,
   field, textInput, numberInput, textArea, selectInput, dateInput, readForm,
   openSheet, toast, confirmDialog,
 } from './ui.js';
+import { photoToDataUrl } from './logofield.js';
 
 const n = (x) => Number(x || 0);
 const usd = (x) => '$' + n(x).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -16,28 +17,38 @@ const nameFor = (list, id) => (list.find((c) => c.id === id) || {}).business_nam
 
 export async function renderTracker(root) {
   const state = { view: 'mileage' };
-  root.append(pageHeader('Tracker', 'Mileage & meetings', primaryBtn('Log', () => (state.view === 'mileage' ? openTripForm({}, refreshAfter, clients) : openMeetingForm({}, refreshAfter, clients)), 'plus')));
+  function logCurrent() {
+    if (state.view === 'mileage') openTripForm({}, refreshAfter, clients);
+    else if (state.view === 'meetings') openMeetingForm({}, refreshAfter, clients);
+    else if (state.view === 'expenses') openExpenseForm({}, refreshAfter, clients);
+    else toast('Renewals come from each client’s saved dates — open a client to edit them.');
+  }
+  root.append(pageHeader('Tracker', 'Mileage · meetings · expenses · renewals', primaryBtn('Log', logCurrent, 'plus')));
 
   const seg = el('div.segmented');
-  [['mileage', 'Mileage'], ['meetings', 'Meetings']].forEach(([k, l]) =>
+  [['mileage', 'Mileage'], ['meetings', 'Meetings'], ['expenses', 'Expenses'], ['renewals', 'Renewals']].forEach(([k, l]) =>
     seg.append(el('button.seg' + (state.view === k ? '.on' : ''), { text: l, dataset: { v: k }, onclick: () => { state.view = k; seg.querySelectorAll('.seg').forEach((s) => s.classList.toggle('on', s.dataset.v === k)); refresh(); } })));
   root.append(el('div.toolbar', {}, [seg]));
 
   const wrap = el('div');
   root.append(wrap);
 
-  let clients = [], trips = [], meetings = [];
+  let clients = [], trips = [], meetings = [], expenses = [];
   async function load() {
-    [clients, trips, meetings] = await Promise.all([
+    [clients, trips, meetings, expenses] = await Promise.all([
       Clients.list({ order: { col: 'business_name', asc: true } }),
       Trips.list({ order: { col: 'trip_date', asc: false } }),
       Meetings.list({ order: { col: 'meeting_date', asc: false } }),
+      Expenses.list({ order: { col: 'expense_date', asc: false } }),
     ]);
   }
 
   function refresh() {
     clear(wrap);
-    state.view === 'mileage' ? renderMileage() : renderMeetings();
+    if (state.view === 'mileage') renderMileage();
+    else if (state.view === 'meetings') renderMeetings();
+    else if (state.view === 'expenses') renderExpenses();
+    else renderRenewals();
   }
 
   function renderMileage() {
@@ -88,6 +99,64 @@ export async function renderTracker(root) {
       ]),
       el('button.icon-btn', { html: iconSvg('trash', 16), onclick: async () => { if (await confirmDialog('Delete this meeting?')) { await Meetings.remove(m.id); refreshAfter(); } } }),
     ])));
+    wrap.append(rows);
+  }
+
+  function renderExpenses() {
+    const now = new Date();
+    const ym = now.toISOString().slice(0, 7);
+    const yr = String(now.getFullYear());
+    const sum = (a) => a.reduce((s, e) => s + n(e.amount), 0);
+    wrap.append(el('div.statstrip.mt-8', {}, [
+      stat(money(sum(expenses.filter((e) => (e.expense_date || '').slice(0, 7) === ym))), 'This month'),
+      stat(money(sum(expenses.filter((e) => (e.expense_date || '').slice(0, 4) === yr))), 'This year'),
+      stat(String(expenses.length), 'Entries'),
+    ]));
+    if (!expenses.length) { wrap.append(emptyState('No expenses logged yet. Tap Log to add one (snap a receipt).', 'money')); return; }
+    const rows = el('div.rows.card.mt-16');
+    expenses.forEach((e) => rows.append(el('div.row', {}, [
+      el('div.row-main', { style: 'cursor:pointer', onclick: () => openExpenseForm(e, refreshAfter, clients) }, [
+        el('div.row-title', { text: money(e.amount) + (e.vendor ? ' · ' + e.vendor : '') }),
+        el('div.row-sub', {}, [
+          e.expense_date ? fmtDate(e.expense_date) : '',
+          e.category ? badge(e.category, 'gray') : null,
+          nameFor(clients, e.client_id) ? el('span', { text: nameFor(clients, e.client_id) }) : null,
+          e.receipt_url ? badge('receipt', 'blue') : null,
+        ]),
+      ]),
+      e.receipt_url ? el('a.icon-btn', { href: e.receipt_url, target: '_blank', title: 'View receipt', html: iconSvg('external', 16) }) : null,
+      el('button.icon-btn', { html: iconSvg('trash', 16), onclick: async () => { if (await confirmDialog('Delete this expense?')) { await Expenses.remove(e.id); refreshAfter(); } } }),
+    ])));
+    wrap.append(rows);
+  }
+
+  function renderRenewals() {
+    // Pull domain / hosting / email renewal dates off every client into one radar.
+    const items = [];
+    clients.forEach((c) => {
+      [['Domain', c.domain_name, c.domain_renews_on], ['Hosting', c.hosting_provider, c.hosting_renews_on], ['Email', c.email_provider, c.email_renews_on]]
+        .forEach(([kind, provider, date]) => { if (date) items.push({ c, kind, provider, date }); });
+    });
+    items.sort((a, b) => (a.date > b.date ? 1 : -1));
+    const soon = items.filter((i) => daysUntil(i.date) <= 30).length;
+    wrap.append(el('div.statstrip.mt-8', {}, [
+      stat(String(items.length), 'Tracked'),
+      stat(String(soon), 'Due ≤30 days'),
+      stat(String(items.filter((i) => daysUntil(i.date) < 0).length), 'Overdue'),
+    ]));
+    if (!items.length) { wrap.append(el('div.banner.mt-8', { html: 'No renewal dates yet. Add domain / hosting / email renewal dates on a client (Services &amp; status tab) and they’ll appear here.' })); return; }
+    const rows = el('div.rows.card.mt-16');
+    items.forEach((i) => {
+      const d = daysUntil(i.date);
+      const tone = d < 0 ? 'red' : d <= 30 ? 'amber' : 'green';
+      rows.append(el('div.row.clickable', { onclick: () => { location.hash = '#/client/' + i.c.id; } }, [
+        el('div.row-main', {}, [
+          el('div.row-title', { text: i.c.business_name + ' — ' + i.kind + ' renewal' }),
+          el('div.row-sub', {}, [i.provider ? el('span', { text: i.provider }) : null, el('span', { text: fmtDate(i.date) })]),
+        ]),
+        el('div.row-right', {}, [badge((d < 0 ? Math.abs(d) + 'd overdue' : 'in ' + d + 'd'), tone)]),
+      ]));
+    });
     wrap.append(rows);
   }
 
@@ -169,6 +238,47 @@ function openMeetingForm(existing = {}, onSaved, list) {
         catch (e) { toast(e.message, 'err'); }
       } },
       ...(isNew ? [] : [{ label: 'Delete', tone: 'danger', onClick: async () => { if (await confirmDialog('Delete this meeting?')) { await Meetings.remove(existing.id); toast('Deleted'); close(); onSaved?.(); } } }]),
+    ],
+  });
+}
+
+function openExpenseForm(existing = {}, onSaved, list) {
+  const isNew = !existing.id;
+  const receipt = el('input', { type: 'hidden', name: 'receipt_url', value: existing.receipt_url || '' });
+  const status = el('span.field-hint', { text: existing.receipt_url ? 'Receipt attached ✓' : 'No receipt' });
+  const fileInput = el('input', { type: 'file', accept: 'image/*', style: 'display:none', onchange: async (e) => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    status.textContent = 'Processing…';
+    try { receipt.value = await photoToDataUrl(f); status.textContent = 'Receipt attached ✓'; }
+    catch (err) { status.textContent = 'Could not read image'; }
+  } });
+  const node = el('div.form', {}, [
+    el('div.form-grid.cols-2', {}, [
+      field('Amount', numberInput('amount', existing.amount ?? '', { step: '0.01', placeholder: '0.00' })),
+      field('Date', dateInput('expense_date', existing.expense_date || todayISO())),
+      field('Category', selectInput('category', EXPENSE_CATEGORIES, existing.category || EXPENSE_CATEGORIES[0])),
+      field('Vendor', textInput('vendor', existing.vendor, { placeholder: 'e.g. Canva, Google Ads' })),
+      field('Client (optional)', selectInput('client_id', clientOptions(list), existing.client_id || '')),
+    ]),
+    field('Notes', textInput('notes', existing.notes, { placeholder: 'What was it for?' })),
+    el('div.field-row.mt-8', { style: 'align-items:center;gap:10px' }, [
+      el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('camera', 15) + ' Receipt photo', onclick: () => fileInput.click() }),
+      status,
+    ]),
+    fileInput, receipt,
+  ]);
+  const collect = () => { const v = readForm(node); v.amount = Number(v.amount || 0); if (!v.client_id) v.client_id = null; return v; };
+  const { close } = openSheet({
+    title: isNew ? 'Log expense' : 'Edit expense', body: node,
+    actions: [
+      { label: 'Cancel', tone: 'ghost', onClick: () => close() },
+      { label: 'Save', tone: 'primary', onClick: async () => {
+        const v = collect();
+        if (!v.amount) { toast('Enter an amount', 'err'); return; }
+        try { isNew ? await Expenses.create(v) : await Expenses.update(existing.id, v); toast('Saved'); close(); onSaved?.(); }
+        catch (e) { toast(e.message, 'err'); }
+      } },
+      ...(isNew ? [] : [{ label: 'Delete', tone: 'danger', onClick: async () => { if (await confirmDialog('Delete this expense?')) { await Expenses.remove(existing.id); toast('Deleted'); close(); onSaved?.(); } } }]),
     ],
   });
 }
