@@ -1,9 +1,9 @@
 // Leads & Prospects — the sales side of the pipeline. Leads and prospects
 // (and deferred), grouped by stage, each with quick Won / Lost / Deferred
 // actions. Won → becomes a client; Lost/Deferred move it out of the active list.
-import { Clients, setStage } from './db.js';
+import { Clients, TimeEntries, setStage } from './db.js';
 import { STAGES, STAGE_LABEL, STAGE_TONE, CATEGORIES, SERVICE_LABEL } from './config.js';
-import { el, clear, money, iconSvg, pageHeader, badge, statusBadge, fmtDate, relDue, daysUntil, emptyState, primaryBtn, toast, confirmDialog } from './ui.js';
+import { el, clear, money, iconSvg, pageHeader, badge, statusBadge, fmtDate, fmtHours, relDue, daysUntil, emptyState, primaryBtn, toast, confirmDialog } from './ui.js';
 import { openClient } from './client-detail.js';
 import { openClientForm } from './forms.js';
 
@@ -28,7 +28,16 @@ export async function renderLeads(root) {
   root.append(wrap);
 
   let all = [];
-  async function load() { all = await Clients.list({ order: { col: 'updated_at', asc: false } }); }
+  let minsById = {}; // client_id -> total minutes logged (sales effort)
+  async function load() {
+    const [clients, time] = await Promise.all([
+      Clients.list({ order: { col: 'updated_at', asc: false } }),
+      TimeEntries.list(),
+    ]);
+    all = clients;
+    minsById = {};
+    time.forEach((e) => { if (e.client_id && e.minutes) minsById[e.client_id] = (minsById[e.client_id] || 0) + Number(e.minutes); });
+  }
 
   function refresh() {
     clear(wrap);
@@ -73,6 +82,7 @@ export async function renderLeads(root) {
           badge(STAGE_LABEL[c.stage], STAGE_TONE[c.stage] || 'gray'),
           c.category ? el('span', { text: c.category }) : null,
           c.mrr ? badge(money(c.mrr) + '/mo', 'green') : null,
+          minsById[c.id] ? badge(fmtHours(minsById[c.id]) + ' logged', 'violet') : null,
           follow,
           c.follow_up_note ? el('span.muted', { text: '· ' + c.follow_up_note }) : null,
         ]),
