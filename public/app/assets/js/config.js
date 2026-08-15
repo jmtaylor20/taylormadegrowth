@@ -281,3 +281,10 @@ export const MEETING_TYPES = ['In person', 'Phone', 'Video', 'On site'];
 export const EXPENSE_CATEGORIES = ['Software / SaaS', 'Advertising', 'Subcontractor', 'Equipment', 'Office', 'Travel', 'Meals', 'Domains / Hosting', 'Fees', 'Other'];
 // Net terms (days until due) for auto-generated monthly retainer invoices.
 export const INVOICE_NET_DAYS = 15;
+
+// Retainer billing timing. 'advance' = bill (in the last week) for next month;
+// 'arrears' = bill at the end of the current service month.
+export const BILLING_MODES = [
+  { key: 'advance', label: 'Advance (bill for next month)' },
+  { key: 'arrears', label: 'Arrears (bill for current month)' },
+];
