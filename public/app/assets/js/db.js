@@ -61,8 +61,11 @@ export const Settings   = table('app_settings');
 // App-wide settings (single-row key/value). getSetting returns the stored
 // `data` object (or a default); setSetting upserts it.
 export async function getSetting(id, dflt = {}) {
-  const rows = await Settings.list({ eq: { id } });
-  return (rows[0] && rows[0].data) || dflt;
+  // Direct query (no generic list ordering) — app_settings has no created_at,
+  // which the default table sort assumes, so read it explicitly.
+  const { data, error } = await sb.from('app_settings').select('data').eq('id', id).limit(1);
+  if (error) throw error;
+  return (data && data[0] && data[0].data) || dflt;
 }
 export async function setSetting(id, data) {
   const rows = await Settings.list({ eq: { id } });
