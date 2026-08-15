@@ -276,3 +276,8 @@ export function mileageRateFor(dateStr) {
 export const MILEAGE_RATE = mileageRateFor();
 export const TRIP_PURPOSES = ['Client meeting', 'Site visit', 'Sales call', 'Delivery / drop-off', 'Networking', 'Errand', 'Other'];
 export const MEETING_TYPES = ['In person', 'Phone', 'Video', 'On site'];
+
+// ---- Expenses & invoicing --------------------------------------------------
+export const EXPENSE_CATEGORIES = ['Software / SaaS', 'Advertising', 'Subcontractor', 'Equipment', 'Office', 'Travel', 'Meals', 'Domains / Hosting', 'Fees', 'Other'];
+// Net terms (days until due) for auto-generated monthly retainer invoices.
+export const INVOICE_NET_DAYS = 15;

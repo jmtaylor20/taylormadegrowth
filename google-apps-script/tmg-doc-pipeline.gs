@@ -30,16 +30,58 @@ var CONFIG = {
   BUSINESS_NAME: 'TaylorMade Brands',
   WEBSITE: 'taylormadegrowth.com',
   REPLY_TO: 'josh@taylormadegrowth.com',
+  // ---- Auto monthly invoicing ----
+  AUTO_MONTHLY_INVOICES: true,   // generate each active client's monthly retainer invoice
+  BILLING_DAY: 1,                // day of month to generate on (and after)
+  INVOICE_NET_DAYS: 15,          // due this many days after issue
+  AUTO_SEND_MONTHLY: false,      // false = save as drafts to review; true = also email them
 };
 
 // ==== ENTRY POINTS =========================================================
 
 /** Main worker — runs on the trigger. Safe to run manually anytime. */
 function processQueue() {
+  generateMonthlyInvoices_();
   processTable_('proposals');
   processTable_('invoices');
   processTable_('reports');
   processWelcome_();
+}
+
+// ==== AUTO MONTHLY INVOICES ================================================
+// On/after BILLING_DAY, create this month's monthly retainer invoice for each
+// active client with an MRR that hasn't been billed yet this month. Dedupe by
+// (client, month) so repeated runs never double-bill.
+function generateMonthlyInvoices_() {
+  if (!CONFIG.AUTO_MONTHLY_INVOICES) return;
+  var now = new Date();
+  var tz = Session.getScriptTimeZone();
+  if (Number(Utilities.formatDate(now, tz, 'd')) < CONFIG.BILLING_DAY) return;
+  var monthStart = Utilities.formatDate(now, tz, 'yyyy-MM') + '-01';
+  var clients = sbGet_('clients?stage=eq.client&mrr=gt.0&select=id,business_name,email,mrr');
+  if (!clients.length) return;
+  var billed = {};
+  sbGet_('invoices?type=eq.monthly&issued_on=gte.' + monthStart + '&select=client_id').forEach(function (i) { billed[i.client_id] = true; });
+  var nums = sbGet_('invoices?select=number');
+  var maxNum = 0;
+  nums.forEach(function (i) { var m = /(\d+)/.exec(i.number || ''); if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10)); });
+  var monthName = Utilities.formatDate(now, tz, 'MMMM yyyy');
+  var issued = Utilities.formatDate(now, tz, 'yyyy-MM-dd');
+  var dueDate = new Date(now.getTime()); dueDate.setDate(dueDate.getDate() + CONFIG.INVOICE_NET_DAYS);
+  var due = Utilities.formatDate(dueDate, tz, 'yyyy-MM-dd');
+  for (var i = 0; i < clients.length; i++) {
+    var c = clients[i];
+    if (billed[c.id]) continue;
+    maxNum++;
+    var row = {
+      client_id: c.id, number: 'INV-' + ('000' + maxNum).slice(-4), type: 'monthly',
+      amount: Number(c.mrr), status: CONFIG.AUTO_SEND_MONTHLY ? 'sent' : 'draft', method: 'Relay',
+      issued_on: issued, due_on: due, description: monthName + ' — Monthly management',
+    };
+    if (CONFIG.AUTO_SEND_MONTHLY && c.email) { row.send_status = 'queued'; row.sent_to = c.email; row.drive_status = 'queued'; }
+    try { sbInsert_('invoices', row); Logger.log('Monthly invoice created for ' + c.business_name); }
+    catch (err) { Logger.log('Invoice create failed for ' + c.business_name + ': ' + err); }
+  }
 }
 
 /** Run once to grant Drive + Gmail + external-request permissions. */
@@ -170,6 +212,14 @@ function sbGet_(path) {
   var body = res.getContentText();
   if (res.getResponseCode() >= 300) throw new Error('GET ' + path + ' -> ' + res.getResponseCode() + ' ' + body);
   return JSON.parse(body || '[]');
+}
+function sbInsert_(table, row) {
+  var res = UrlFetchApp.fetch(CONFIG.SUPABASE_URL + '/rest/v1/' + table, {
+    method: 'post',
+    headers: Object.assign(authHeaders_(), { 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
+    payload: JSON.stringify(row), muteHttpExceptions: true,
+  });
+  if (res.getResponseCode() >= 300) throw new Error('POST ' + table + ' -> ' + res.getResponseCode() + ' ' + res.getContentText());
 }
 function sbPatch_(table, id, patch) {
   var res = UrlFetchApp.fetch(CONFIG.SUPABASE_URL + '/rest/v1/' + table + '?id=eq.' + id, {
