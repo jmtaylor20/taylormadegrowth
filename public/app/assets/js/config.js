@@ -138,6 +138,31 @@ export const TASK_STATUS = [
   { key: 'done',  label: 'Done',        tone: 'green' },
 ];
 
+// Common tasks Josh logs — power the one-tap task picker on the task form.
+// `cat` maps to a TASK_CATEGORY key so choosing a task auto-sets its category.
+// Choose "Other" in the picker to type a custom title.
+export const TASK_PRESETS = [
+  { label: 'Website updates',                              cat: 'build' },
+  { label: 'Web build',                                    cat: 'build' },
+  { label: 'Website integration (forms / analytics)',      cat: 'build' },
+  { label: 'App updates',                                  cat: 'general' },
+  { label: 'Google Ads optimization & changes',            cat: 'monthly' },
+  { label: 'Google Ads analysis',                          cat: 'monthly' },
+  { label: 'Google Ads campaign setup',                    cat: 'onboarding' },
+  { label: 'Monthly report',                               cat: 'monthly' },
+  { label: 'Social media content creation & posting',      cat: 'content' },
+  { label: 'Facebook ad — post creation & promotion',      cat: 'content' },
+  { label: 'Facebook ads management & review',             cat: 'monthly' },
+  { label: 'Google Business Profile updates',              cat: 'monthly' },
+  { label: 'Google Business Profile post',                 cat: 'content' },
+  { label: 'Google Business Profile reputation management', cat: 'monthly' },
+  { label: 'Consultation / client meeting',                cat: 'general' },
+  { label: 'Needs assessment',                             cat: 'onboarding' },
+  { label: 'Branding / logo design',                       cat: 'general' },
+  { label: 'Print / marketing design',                     cat: 'content' },
+  { label: 'Apparel design & order',                       cat: 'general' },
+];
+
 // Recurrence intervals (renewals use the longer ones).
 export const RECUR_INTERVAL = [
   { key: 'none',       label: 'One-time',   months: 0 },
