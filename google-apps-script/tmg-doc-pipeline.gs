@@ -31,10 +31,11 @@ var CONFIG = {
   WEBSITE: 'taylormadegrowth.com',
   REPLY_TO: 'josh@taylormadegrowth.com',
   // ---- Auto monthly invoicing (off by default — flip on when you want it) ----
-  AUTO_MONTHLY_INVOICES: false,  // generate each active client's monthly retainer invoice
-  BILLING_DAY: 1,                // day of month to generate on
+  AUTO_MONTHLY_INVOICES: false,  // set true to auto-generate monthly retainer invoices
+  BILLING_DAYS_FROM_END: 6,      // generate in the last week: fires when <= this many days remain in the month
   INVOICE_NET_DAYS: 15,          // due this many days after issue
-  AUTO_SEND_MONTHLY: false,      // false = save as drafts to review; true = also email them
+  AUTO_SEND_MONTHLY: false,      // false = save as DRAFTS and email you a review prompt; true = also email clients
+  NOTIFY_EMAIL: 'josh@taylormadegrowth.com',  // where the "drafts ready to review" prompt is sent
 };
 
 // ==== ENTRY POINTS =========================================================
@@ -49,17 +50,18 @@ function processQueue() {
 }
 
 // ==== AUTO MONTHLY INVOICES ================================================
-// Only fires in a small window at the start of the billing cycle (BILLING_DAY
-// through BILLING_DAY+2, so a missed run still catches up) — so turning this on
-// mid-month never back-generates the current month. Creates this month's
-// retainer invoice for each active client with an MRR, deduped by (client,
-// month) so repeated runs never double-bill.
+// Fires only in the last week of the month (when <= BILLING_DAYS_FROM_END days
+// remain), creating this month's retainer invoice for each active client with
+// an MRR. Deduped by (client, month) so repeated runs never double-bill. With
+// AUTO_SEND_MONTHLY off (the default) it saves DRAFTS and emails you a review
+// prompt — nothing goes to a client until you send it from the app.
 function generateMonthlyInvoices_() {
   if (!CONFIG.AUTO_MONTHLY_INVOICES) return;
   var now = new Date();
   var tz = Session.getScriptTimeZone();
   var dom = Number(Utilities.formatDate(now, tz, 'd'));
-  if (dom < CONFIG.BILLING_DAY || dom > CONFIG.BILLING_DAY + 2) return;
+  var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  if ((lastDay - dom) > CONFIG.BILLING_DAYS_FROM_END) return;   // only the last week of the month
   var monthStart = Utilities.formatDate(now, tz, 'yyyy-MM') + '-01';
   var clients = sbGet_('clients?stage=eq.client&mrr=gt.0&select=id,business_name,email,mrr');
   if (!clients.length) return;
@@ -72,19 +74,36 @@ function generateMonthlyInvoices_() {
   var issued = Utilities.formatDate(now, tz, 'yyyy-MM-dd');
   var dueDate = new Date(now.getTime()); dueDate.setDate(dueDate.getDate() + CONFIG.INVOICE_NET_DAYS);
   var due = Utilities.formatDate(dueDate, tz, 'yyyy-MM-dd');
+  var created = [];
   for (var i = 0; i < clients.length; i++) {
     var c = clients[i];
     if (billed[c.id]) continue;
     maxNum++;
+    var label = monthName + ' — Monthly management';
+    var num = 'INV-' + ('000' + maxNum).slice(-4);
     var row = {
-      client_id: c.id, number: 'INV-' + ('000' + maxNum).slice(-4), type: 'monthly',
+      client_id: c.id, number: num, type: 'monthly',
       amount: Number(c.mrr), status: CONFIG.AUTO_SEND_MONTHLY ? 'sent' : 'draft', method: 'Relay',
-      issued_on: issued, due_on: due, description: monthName + ' — Monthly management',
+      issued_on: issued, due_on: due, description: label, items: [{ label: label, amount: Number(c.mrr) }],
     };
     if (CONFIG.AUTO_SEND_MONTHLY && c.email) { row.send_status = 'queued'; row.sent_to = c.email; row.drive_status = 'queued'; }
-    try { sbInsert_('invoices', row); Logger.log('Monthly invoice created for ' + c.business_name); }
+    try { sbInsert_('invoices', row); created.push({ name: c.business_name, num: num, amount: Number(c.mrr) }); }
     catch (err) { Logger.log('Invoice create failed for ' + c.business_name + ': ' + err); }
   }
+  if (created.length && !CONFIG.AUTO_SEND_MONTHLY && CONFIG.NOTIFY_EMAIL) notifyDraftInvoices_(created, monthName, due);
+}
+
+// Email Josh a summary of the drafts that were just generated, so he's
+// prompted to review + send them from the app.
+function notifyDraftInvoices_(created, monthName, due) {
+  var total = 0;
+  var lines = created.map(function (x) { total += x.amount; return x.num + '   ' + x.name + '   ' + money_(x.amount); });
+  var body = 'You have ' + created.length + ' draft invoice(s) ready to review for ' + monthName + ' (due ' + due + ').\n\n' +
+    lines.join('\n') + '\n\nTotal: ' + money_(total) + '\n\n' +
+    'Open the app → Financials to review, add any extras a client asked for, then send them. Nothing has been emailed to clients yet.';
+  try {
+    GmailApp.sendEmail(CONFIG.NOTIFY_EMAIL, created.length + ' draft invoice(s) to review — ' + monthName, body, { name: CONFIG.FROM_NAME });
+  } catch (err) { Logger.log('Notify failed: ' + err); }
 }
 
 /** Run once to grant Drive + Gmail + external-request permissions. */
