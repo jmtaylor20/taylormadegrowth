@@ -52,7 +52,7 @@ export async function openClient(id, onChange) {
   function paint() {
     clear(body);
     // Hero
-    body.append(el('div.detail-hero', { style: client.brand_color ? `border-bottom:3px solid ${client.brand_color}` : '' }, [
+    body.append(el('div.detail-hero' + (client.brand_color ? '.hero-branded' : ''), { style: client.brand_color ? `--brand:${client.brand_color}` : '' }, [
       clientAvatar(client),
       el('div', {}, [
         el('div.detail-name', { text: client.business_name }),

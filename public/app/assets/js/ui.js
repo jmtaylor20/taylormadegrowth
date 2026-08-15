@@ -258,6 +258,7 @@ const P = {
   funnel: '<path d="M3 5h18l-7 8.2V19l-4 2v-7.8L3 5z"/>',
   wallet: '<path d="M4 7a2 2 0 0 1 2-2h13v4"/><path d="M3 7v10a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-3M21 11h-5a2 2 0 0 0 0 4h5v-4z"/>',
   dots: '<circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/>',
+  car: '<path d="M5 11l1.6-4.3A2 2 0 0 1 8.5 5.4h7a2 2 0 0 1 1.9 1.3L19 11M4 11h16a1 1 0 0 1 1 1v4H3v-4a1 1 0 0 1 1-1zM6 16v1.5a1 1 0 0 1-1 1H4.5a1 1 0 0 1-1-1V16M20.5 16v1.5a1 1 0 0 1-1 1H19a1 1 0 0 1-1-1V16"/><circle cx="7" cy="13.5" r="1" fill="currentColor" stroke="none"/><circle cx="17" cy="13.5" r="1" fill="currentColor" stroke="none"/>',
 };
 export function iconSvg(name, size = 24) {
   const body = P[name] || P.dashboard;

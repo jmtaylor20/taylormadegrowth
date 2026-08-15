@@ -222,6 +222,11 @@ body.locked { background: radial-gradient(120% 120% at 50% 0%, #16305a 0%, var(-
    background is baked into the image, so square-fills-square with no gaps). */
 .avatar-logo { overflow: hidden; padding: 0; box-shadow: inset 0 0 0 1px rgba(16,24,39,.06); }
 .avatar-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Brand-colored client rows: bold left stripe + a soft wash of the brand
+   color so the whole card reads in the company's palette. */
+.row-branded { border-left: 6px solid var(--brand); background: color-mix(in srgb, var(--brand) 9%, #fff); }
+.row-branded.clickable:hover { background: color-mix(in srgb, var(--brand) 15%, #fff); }
+.row-branded .avatar-logo { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 45%, transparent); }
 
 /* ---- Toolbar / filters --------------------------------------------------- */
 .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
@@ -283,6 +288,7 @@ body.locked { background: radial-gradient(120% 120% at 50% 0%, #16305a 0%, var(-
 
 /* ---- Client detail ------------------------------------------------------- */
 .detail-hero { display: flex; gap: 14px; align-items: center; margin-bottom: 6px; }
+.hero-branded { border-left: 6px solid var(--brand); background: color-mix(in srgb, var(--brand) 10%, #fff); border-radius: 14px; padding: 12px 14px; }
 .detail-hero .avatar { width: 52px; height: 52px; font-size: 1.2rem; border-radius: 13px; }
 .detail-name { font-family: var(--head); font-size: 1.25rem; font-weight: 800; color: var(--navy-dark); }
 .detail-meta { color: var(--muted); font-size: .85rem; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 3px; }

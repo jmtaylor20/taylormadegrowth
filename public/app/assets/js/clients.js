@@ -45,7 +45,7 @@ export async function renderClients(root) {
 
     if (!items.length) { listWrap.append(emptyState('No clients match.', 'users')); return; }
     const rows = el('div.rows.card');
-    items.forEach((c) => rows.append(el('div.row.clickable', { onclick: () => openClient(c.id, refreshAfter), style: c.brand_color ? `border-left:4px solid ${c.brand_color}` : '' }, [
+    items.forEach((c) => rows.append(el('div.row.clickable' + (c.brand_color ? '.row-branded' : ''), { onclick: () => openClient(c.id, refreshAfter), style: c.brand_color ? `--brand:${c.brand_color}` : '' }, [
       clientAvatar(c),
       el('div.row-main', {}, [
         el('div.row-title', { text: c.business_name }),

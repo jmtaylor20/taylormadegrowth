@@ -8,6 +8,7 @@ import { renderTasks } from './tasks.js';
 import { renderFinancials } from './financials.js';
 import { renderProposals } from './proposals.js';
 import { renderReports } from './reports.js';
+import { renderTracker } from './tracker.js';
 import { openClient } from './client-detail.js';
 
 const root = document.getElementById('root');
@@ -21,6 +22,7 @@ export const NAV = [
   { id: 'financials', label: 'Money',     icon: 'wallet',   render: renderFinancials, primary: true },
   { id: 'proposals',  label: 'Proposals', icon: 'proposal', render: renderProposals },
   { id: 'reports',    label: 'Reports',   icon: 'report',   render: renderReports },
+  { id: 'tracker',    label: 'Tracker',   icon: 'car',      render: renderTracker },
 ];
 
 // A NAV item's glyph: its brand logo image when set, else a line icon.
