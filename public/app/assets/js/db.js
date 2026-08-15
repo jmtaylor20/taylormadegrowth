@@ -55,6 +55,19 @@ export const Trips     = table('trips');
 export const Meetings  = table('meetings');
 export const TimeEntries = table('time_entries');
 export const Expenses   = table('expenses');
+export const Settings   = table('app_settings');
+
+// App-wide settings (single-row key/value). getSetting returns the stored
+// `data` object (or a default); setSetting upserts it.
+export async function getSetting(id, dflt = {}) {
+  const rows = await Settings.list({ eq: { id } });
+  return (rows[0] && rows[0].data) || dflt;
+}
+export async function setSetting(id, data) {
+  const rows = await Settings.list({ eq: { id } });
+  if (rows[0]) return Settings.update(id, { data, updated_at: new Date().toISOString() });
+  return Settings.create({ id, data });
+}
 
 // ---- Time tracking ---------------------------------------------------------
 // The single currently-running timer (a time entry with no minutes yet), if any.
