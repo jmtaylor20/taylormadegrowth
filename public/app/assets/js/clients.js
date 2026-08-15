@@ -1,6 +1,6 @@
 // Clients — the CRM directory. Defaults to active clients; filterable to any
 // stage. Search by name. Rows open the detail sheet.
-import { Clients } from './db.js';
+import { Clients, Trips } from './db.js';
 import { STAGES, STAGE_LABEL, SERVICE_LABEL } from './config.js';
 import { el, clear, money, iconSvg, pageHeader, badge, statusBadge, emptyState, primaryBtn, clientAvatar } from './ui.js';
 import { openClient } from './client-detail.js';
@@ -28,7 +28,19 @@ export async function renderClients(root) {
   root.append(listWrap);
 
   let all = [];
-  async function load() { all = await Clients.list({ order: { col: 'business_name', asc: true } }); }
+  let milesYtd = {}; // client_id -> miles logged this year
+  async function load() {
+    const yr = new Date().getFullYear().toString();
+    const [clients, trips] = await Promise.all([
+      Clients.list({ order: { col: 'business_name', asc: true } }),
+      Trips.list(),
+    ]);
+    all = clients;
+    milesYtd = {};
+    trips.forEach((t) => {
+      if (t.client_id && (t.trip_date || '').slice(0, 4) === yr) milesYtd[t.client_id] = (milesYtd[t.client_id] || 0) + Number(t.miles || 0);
+    });
+  }
 
   function refresh() {
     clear(summary); clear(listWrap);
@@ -54,6 +66,7 @@ export async function renderClients(root) {
           c.mrr ? badge(money(c.mrr) + '/mo', 'green') : null,
           ...(c.services || []).slice(0, 2).map((s) => badge(SERVICE_LABEL[s] || s, 'gray')),
           (c.services || []).length > 2 ? badge('+' + ((c.services || []).length - 2), 'gray') : null,
+          milesYtd[c.id] ? badge(Math.round(milesYtd[c.id]).toLocaleString('en-US') + ' mi', 'blue') : null,
         ]),
       ]),
       el('div.row-right', {}, [

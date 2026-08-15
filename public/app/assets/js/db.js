@@ -53,6 +53,26 @@ export const Payments  = table('payments');
 export const Reports   = table('reports');
 export const Trips     = table('trips');
 export const Meetings  = table('meetings');
+export const TimeEntries = table('time_entries');
+
+// ---- Time tracking ---------------------------------------------------------
+// The single currently-running timer (a time entry with no minutes yet), if any.
+export async function runningTimer() {
+  const { data, error } = await sb.from('time_entries').select('*').is('minutes', null).not('started_at', 'is', null).order('started_at', { ascending: false }).limit(1);
+  if (error) throw error;
+  return (data || [])[0] || null;
+}
+// Start a timer for a client (optionally tied to a task). Stops any other one.
+export async function startTimer({ client_id = null, task_id = null, kind = 'task', notes = null }) {
+  const open = await runningTimer();
+  if (open) await stopTimer(open);
+  return TimeEntries.create({ client_id, task_id, kind, notes, started_at: new Date().toISOString() });
+}
+// Stop a running timer, writing the elapsed minutes.
+export async function stopTimer(entry) {
+  const mins = Math.max(1, Math.round((Date.now() - Date.parse(entry.started_at)) / 60000));
+  return TimeEntries.update(entry.id, { minutes: mins, entry_date: new Date().toISOString().slice(0, 10) });
+}
 
 // ---- Purpose-built loaders -------------------------------------------------
 
@@ -74,7 +94,7 @@ export async function tasksFor(clientId) {
 
 // Child records tied to one client (for the detail sheet).
 export async function clientBundle(clientId) {
-  const [tasks, invoices, activities, content, assets, reviews, proposals, payments] = await Promise.all([
+  const [tasks, invoices, activities, content, assets, reviews, proposals, payments, time] = await Promise.all([
     Tasks.list({ eq: { client_id: clientId }, order: { col: 'due_date', asc: true } }),
     Invoices.list({ eq: { client_id: clientId }, order: { col: 'issued_on', asc: false } }),
     Activities.list({ eq: { client_id: clientId } }),
@@ -83,8 +103,9 @@ export async function clientBundle(clientId) {
     Reviews.list({ eq: { client_id: clientId } }),
     Proposals.list({ eq: { client_id: clientId } }),
     Payments.list({ eq: { client_id: clientId }, order: { col: 'paid_on', asc: false } }),
+    TimeEntries.list({ eq: { client_id: clientId }, order: { col: 'created_at', asc: false } }),
   ]);
-  return { tasks, invoices, activities, content, assets, reviews, proposals, payments };
+  return { tasks, invoices, activities, content, assets, reviews, proposals, payments, time };
 }
 
 // Move a client to a new stage. When they become a client for the first time

@@ -2,13 +2,14 @@
 // (weekly → every-3-years), renewals included. Completing a recurring task rolls
 // it forward to the next cycle instead of closing it. Exports openTaskForm +
 // markTaskDone, reused by the client detail sheet.
-import { Tasks, Clients, tasksFor } from './db.js';
+import { Tasks, Clients, tasksFor, runningTimer } from './db.js';
 import { TEAM, TASK_CATEGORY, TASK_STATUS, RECUR_INTERVAL } from './config.js';
 import {
   el, clear, iconSvg, pageHeader, badge, relDue, fmtDate, daysUntil, emptyState, primaryBtn,
   field, textInput, textArea, selectInput, dateInput, checkbox, readForm,
   openSheet, toast, confirmDialog, labelOf,
 } from './ui.js';
+import { timerButton } from './timer.js';
 
 let clientCache = null;
 async function clients() { if (!clientCache) clientCache = await Clients.list({ order: { col: 'business_name', asc: true } }); return clientCache; }
@@ -63,8 +64,8 @@ export async function renderTasks(root) {
   const wrap = el('div');
   root.append(wrap);
 
-  let all = [], list = [];
-  async function load() { [all, list] = await Promise.all([tasksFor(null), clients()]); }
+  let all = [], list = [], running = null;
+  async function load() { [all, list, running] = await Promise.all([tasksFor(null), clients(), runningTimer()]); }
 
   function refresh() {
     clear(wrap);
@@ -123,6 +124,7 @@ export async function renderTasks(root) {
           recur ? badge(intervalLabel(t.recur_interval), 'blue') : null,
         ]),
       ]),
+      done ? null : timerButton({ client_id: t.client_id, task_id: t.id, kind: t.category === 'build' ? 'build' : 'task' }, running, refreshAfter),
       el('button.icon-btn', { html: iconSvg('trash', 16), onclick: async () => { if (await confirmDialog('Delete this task?')) { await Tasks.remove(t.id); refreshAfter(); } } }),
     ]);
   }

@@ -209,6 +209,8 @@ export const REPORT_METRICS = [
   { key: 'reviews',      label: 'New reviews' },
   { key: 'ad_spend',     label: 'Ad spend', prefix: '$' },
   { key: 'cost_per_lead',label: 'Cost per lead', prefix: '$' },
+  { key: 'hours',        label: 'Hours worked', suffix: 'h', decimals: 1, internal: true },
+  { key: 'miles',        label: 'Miles driven', suffix: ' mi', internal: true },
 ];
 
 // Universal prefill language for a monthly report (edit per report).
@@ -257,7 +259,20 @@ export const MONTHLY_TEMPLATE = [
 ];
 
 // ---- Mileage & meetings ----------------------------------------------------
-// IRS standard business mileage rate ($/mile). Update yearly.
-export const MILEAGE_RATE = 0.70;
+// IRS standard business mileage rates ($/mile), newest first. The IRS raised
+// the 2026 rate mid-year (72.5¢ Jan–Jun, 76¢ from Jul 1). Add new brackets on
+// top as they change.
+export const MILEAGE_RATES = [
+  { from: '2026-07-01', rate: 0.76 },
+  { from: '2026-01-01', rate: 0.725 },
+  { from: '2025-01-01', rate: 0.70 },
+];
+// Rate in effect on a given date (defaults to today / newest bracket).
+export function mileageRateFor(dateStr) {
+  const d = dateStr || new Date().toISOString().slice(0, 10);
+  return (MILEAGE_RATES.find((b) => d >= b.from) || MILEAGE_RATES[0]).rate;
+}
+// Current default rate (today).
+export const MILEAGE_RATE = mileageRateFor();
 export const TRIP_PURPOSES = ['Client meeting', 'Site visit', 'Sales call', 'Delivery / drop-off', 'Networking', 'Errand', 'Other'];
 export const MEETING_TYPES = ['In person', 'Phone', 'Video', 'On site'];
