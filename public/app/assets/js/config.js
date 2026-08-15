@@ -142,6 +142,7 @@ export const TASK_STATUS = [
 export const RECUR_INTERVAL = [
   { key: 'none',       label: 'One-time',   months: 0 },
   { key: 'weekly',     label: 'Weekly',     months: 0, days: 7 },
+  { key: 'biweekly',   label: 'Every 2 weeks', months: 0, days: 14 },
   { key: 'monthly',    label: 'Monthly',    months: 1 },
   { key: 'quarterly',  label: 'Quarterly',  months: 3 },
   { key: 'semiannual', label: 'Every 6 mo', months: 6 },

@@ -63,7 +63,7 @@ function generateMonthlyInvoices_() {
   var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   if ((lastDay - dom) > CONFIG.BILLING_DAYS_FROM_END) return;   // only the last week of the month
   var monthStart = Utilities.formatDate(now, tz, 'yyyy-MM') + '-01';
-  var clients = sbGet_('clients?stage=eq.client&mrr=gt.0&select=id,business_name,email,mrr,billing_mode');
+  var clients = sbGet_('clients?stage=eq.client&mrr=gt.0&select=id,business_name,email,mrr,billing_mode,recurring_addons');
   if (!clients.length) return;
   var billed = {};
   sbGet_('invoices?type=eq.monthly&issued_on=gte.' + monthStart + '&select=client_id').forEach(function (i) { billed[i.client_id] = true; });
@@ -84,10 +84,14 @@ function generateMonthlyInvoices_() {
     var periodName = (c.billing_mode === 'arrears') ? monthName : nextMonthName;
     var label = periodName + ' — Monthly management';
     var num = 'INV-' + ('000' + maxNum).slice(-4);
+    var items = [{ label: label, amount: Number(c.mrr) }];
+    var addons = (c.recurring_addons && c.recurring_addons.length) ? c.recurring_addons : [];
+    for (var a = 0; a < addons.length; a++) items.push({ label: addons[a].label, amount: Number(addons[a].amount || 0) });
+    var total = items.reduce(function (s, it) { return s + Number(it.amount || 0); }, 0);
     var row = {
       client_id: c.id, number: num, type: 'monthly',
-      amount: Number(c.mrr), status: CONFIG.AUTO_SEND_MONTHLY ? 'sent' : 'draft', method: 'Relay',
-      issued_on: issued, due_on: due, description: label, items: [{ label: label, amount: Number(c.mrr) }],
+      amount: total, status: CONFIG.AUTO_SEND_MONTHLY ? 'sent' : 'draft', method: 'Relay',
+      issued_on: issued, due_on: due, description: items.map(function (it) { return it.label; }).join(', '), items: items,
     };
     if (CONFIG.AUTO_SEND_MONTHLY && c.email) { row.send_status = 'queued'; row.sent_to = c.email; row.drive_status = 'queued'; }
     try { sbInsert_('invoices', row); created.push({ name: c.business_name, num: num, amount: Number(c.mrr) }); }

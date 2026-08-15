@@ -5,13 +5,26 @@ import {
 } from './config.js';
 import {
   el, field, textInput, textArea, selectInput, numberInput, dateInput,
-  chipSelect, readForm, openSheet, toast,
+  chipSelect, readForm, openSheet, toast, iconSvg,
 } from './ui.js';
 import { logoField } from './logofield.js';
 
 // Build the form body node. Returns { node, read } where read() gives the patch.
 export function clientForm(c = {}) {
   const services = chipSelect('services', SERVICES, c.services || []);
+
+  // Recurring add-ons: extra charges rolled into every monthly invoice
+  // (e.g. A&O's managed Facebook Ads). label + amount rows.
+  const addonsWrap = el('div');
+  const addonRow = (a = {}) => {
+    const label = el('input.input', { value: a.label || '', placeholder: 'e.g. Facebook Ads (managed)' });
+    const amt = el('input.input', { type: 'number', step: '0.01', value: a.amount ?? '', placeholder: '0', style: 'max-width:104px' });
+    const row = el('div.field-row', { style: 'gap:8px;align-items:center' }, [label, amt,
+      el('button.icon-btn', { type: 'button', title: 'Remove', html: iconSvg('trash', 15), onclick: () => row.remove() })]);
+    row._get = () => ({ label: label.value.trim(), amount: Number(amt.value || 0) });
+    return row;
+  };
+  (Array.isArray(c.recurring_addons) ? c.recurring_addons : []).forEach((a) => addonsWrap.append(addonRow(a)));
   const node = el('div.form', {}, [
     el('div.form-grid.cols-2', {}, [
       field('Business name', textInput('business_name', c.business_name, { placeholder: 'ABC Plumbing' })),
@@ -39,6 +52,10 @@ export function clientForm(c = {}) {
       field('Next follow-up', dateInput('next_follow_up', c.next_follow_up)),
       field('Follow-up note', textInput('follow_up_note', c.follow_up_note, { placeholder: 'Call back re: proposal' })),
     ]),
+    field('Recurring add-ons (billed every month)', el('div', {}, [
+      addonsWrap,
+      el('button.btn.btn-ghost.btn-sm.mt-8', { type: 'button', html: iconSvg('plus', 14) + ' Add recurring charge', onclick: () => addonsWrap.append(addonRow({})) }),
+    ])),
     logoField(c),
     field('Notes', textArea('notes', c.notes, { rows: 3, placeholder: 'Anything worth remembering…' })),
   ]);
@@ -48,6 +65,8 @@ export function clientForm(c = {}) {
     v.rating = v.rating == null ? null : Number(v.rating);
     v.mrr = Number(v.mrr || 0);
     v.build_fee = Number(v.build_fee || 0);
+    const addons = [...addonsWrap.children].map((r) => r._get && r._get()).filter((a) => a && (a.label || a.amount));
+    v.recurring_addons = addons.length ? addons : null;
     return v;
   };
   return { node, read };

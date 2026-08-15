@@ -1,11 +1,11 @@
 // Financials — the money command center. Build fees, collected, outstanding,
 // MRR; one-click new invoice to any client/lead/prospect; record payments;
 // editable statuses and amounts.
-import { Clients, Invoices, Payments } from './db.js';
-import { INVOICE_STATUS, INVOICE_TYPE, PAYMENT_KIND, INVOICE_NET_DAYS } from './config.js';
+import { Clients, Invoices, Payments, Expenses, Trips, getSetting, setSetting } from './db.js';
+import { INVOICE_STATUS, INVOICE_TYPE, PAYMENT_KIND, INVOICE_NET_DAYS, mileageRateFor } from './config.js';
 import {
   el, clear, money, iconSvg, pageHeader, badge, statusBadge, labelOf, fmtDate,
-  relDue, todayISO, emptyState, primaryBtn, selectInput, toast, confirmDialog,
+  relDue, todayISO, emptyState, primaryBtn, selectInput, numberInput, toast, confirmDialog,
   openSheet, field,
 } from './ui.js';
 import { openInvoiceForm } from './invoices.js';
@@ -28,19 +28,24 @@ export async function renderFinancials(root) {
   root.append(summary);
 
   const seg = el('div.segmented.mt-16');
-  [['invoices', 'Invoices'], ['payments', 'Payments'], ['clients', 'By client']].forEach(([k, l]) =>
+  [['invoices', 'Invoices'], ['payments', 'Payments'], ['clients', 'By client'], ['taxes', 'Taxes']].forEach(([k, l]) =>
     seg.append(el('button.seg' + (state.view === k ? '.on' : ''), { text: l, dataset: { v: k }, onclick: () => { state.view = k; seg.querySelectorAll('.seg').forEach((s) => s.classList.toggle('on', s.dataset.v === k)); refresh(); } })));
   root.append(el('div.toolbar', {}, [seg]));
 
   const wrap = el('div');
   root.append(wrap);
 
-  let list = [], invoices = [], payments = [];
+  let list = [], invoices = [], payments = [], expenses = [], trips = [], taxRate = 0.25;
   let clientCache = null;
   async function clients() { if (!clientCache) clientCache = await Clients.list({ order: { col: 'business_name', asc: true } }); return clientCache; }
   async function load() {
     clientCache = null;
-    [list, invoices, payments] = await Promise.all([clients(), Invoices.list({ order: { col: 'issued_on', asc: false } }), Payments.list({ order: { col: 'paid_on', asc: false } })]);
+    let tax;
+    [list, invoices, payments, expenses, trips, tax] = await Promise.all([
+      clients(), Invoices.list({ order: { col: 'issued_on', asc: false } }), Payments.list({ order: { col: 'paid_on', asc: false } }),
+      Expenses.list(), Trips.list(), getSetting('tax', { effective_rate: 0.25 }),
+    ]);
+    taxRate = Number(tax.effective_rate) || 0.25;
     markOverdue(invoices);
   }
 
@@ -79,7 +84,73 @@ export async function renderFinancials(root) {
 
     if (state.view === 'invoices') viewInvoices();
     else if (state.view === 'payments') viewPayments();
+    else if (state.view === 'taxes') viewTaxes();
     else viewByClient();
+  }
+
+  // Rolling tax estimate: net profit (income − deductions) × effective rate.
+  function viewTaxes() {
+    const yr = String(new Date().getFullYear());
+    const inYr = (d) => (d || '').slice(0, 4) === yr;
+    const st = (v, l, sub, tone) => el('div.stat' + (tone ? '.stat-' + tone : ''), {}, [el('div.stat-value', { text: v }), el('div.stat-label', { text: l }), sub ? el('div.stat-sub', { text: sub }) : null]);
+
+    const incomeInv = invoices.filter((i) => i.status === 'paid' && inYr(i.paid_on || i.issued_on)).reduce((s, i) => s + n(i.amount), 0);
+    const incomePay = payments.filter((p) => inYr(p.paid_on)).reduce((s, p) => s + n(p.amount), 0);
+    const income = incomeInv + incomePay;
+    const expTotal = expenses.filter((e) => inYr(e.expense_date)).reduce((s, e) => s + n(e.amount), 0);
+    const mileageDed = trips.filter((t) => inYr(t.trip_date)).reduce((s, t) => s + n(t.miles) * (t.rate == null ? mileageRateFor(t.trip_date) : n(t.rate)), 0);
+    const deductions = expTotal + mileageDed;
+    const net = Math.max(0, income - deductions);
+    const estTax = net * taxRate;
+    const monthsElapsed = new Date().getMonth() + 1;
+    const projTax = (net / monthsElapsed) * 12 * taxRate;
+
+    wrap.append(el('div.section-title', {}, [el('h3', { text: `${yr} so far` })]));
+    wrap.append(el('div.statstrip', {}, [
+      st(money(income), 'Income'),
+      st(money(deductions), 'Deductions'),
+      st(money(net), 'Net profit'),
+    ]));
+    wrap.append(el('div.section-title', {}, [el('h3', { text: 'Estimated tax to set aside' })]));
+    wrap.append(el('div.grid.grid-3', {}, [
+      st(money(estTax), 'Set aside so far', Math.round(taxRate * 100) + '% effective', 'gold'),
+      st(money(projTax), 'Projected full year'),
+      st(money(mileageDed), 'Mileage deduction'),
+    ]));
+
+    const rateInput = numberInput('rate', Math.round(taxRate * 1000) / 10, { step: '0.1' });
+    rateInput.style.maxWidth = '110px';
+    wrap.append(el('div.card.card-pad.mt-16', {}, [
+      el('div.field-row', { style: 'align-items:center;gap:10px;flex-wrap:wrap' }, [
+        el('span', { text: 'Effective tax rate' }), rateInput, el('span', { text: '%' }),
+        el('button.btn.btn-primary.btn-sm', { text: 'Save', onclick: async () => { taxRate = Number(rateInput.value || 0) / 100; await setSetting('tax', { effective_rate: taxRate }); toast('Saved'); refreshAfter(); } }),
+        el('button.btn.btn-ghost.btn-sm', { text: 'Calibrate from last year', onclick: openCalibrate }),
+      ]),
+      el('div.field-hint.mt-8', { html: 'Rough estimate: <b>net profit × your effective rate</b> (income tax + ~15.3% self-employment tax + state). As income and expenses change through the year, this updates so you can adjust what you set aside.' }),
+    ]));
+  }
+
+  function openCalibrate() {
+    const taxIn = numberInput('t', '', { placeholder: '0' });
+    const incIn = numberInput('i', '', { placeholder: '0' });
+    const node = el('div.form', {}, [
+      field('Total tax paid last year', taxIn),
+      field('Net business income last year', incIn),
+      el('div.field-hint', { text: 'Your effective rate = total tax ÷ net income. Use last year’s Schedule C net profit and the total federal + self-employment + state tax that income drove.' }),
+    ]);
+    const { close } = openSheet({
+      title: 'Calibrate tax rate', body: node,
+      actions: [
+        { label: 'Cancel', tone: 'ghost', onClick: () => close() },
+        { label: 'Set rate', tone: 'primary', onClick: async () => {
+          const t = Number(taxIn.value || 0), i = Number(incIn.value || 0);
+          if (!i) { toast('Enter last year’s net income', 'err'); return; }
+          taxRate = Math.round((t / i) * 1000) / 1000;
+          await setSetting('tax', { effective_rate: taxRate });
+          toast('Effective rate set to ' + Math.round(taxRate * 100) + '%'); close(); refreshAfter();
+        } },
+      ],
+    });
   }
 
   function viewInvoices() {
@@ -160,7 +231,10 @@ export async function renderFinancials(root) {
         maxNum += 1;
         const periodName = c.billing_mode === 'arrears' ? monthName : nextMonthName;
         const label = `${periodName} — Monthly management`;
-        await Invoices.create({ client_id: c.id, number: 'INV-' + String(maxNum).padStart(4, '0'), type: 'monthly', amount: n(c.mrr), status: 'draft', method: 'Relay', issued_on: todayISO(), due_on: dueStr, description: label, items: [{ label, amount: n(c.mrr) }] });
+        const addons = Array.isArray(c.recurring_addons) ? c.recurring_addons : [];
+        const items = [{ label, amount: n(c.mrr) }, ...addons.map((a) => ({ label: a.label, amount: n(a.amount) }))];
+        const total = items.reduce((s, it) => s + n(it.amount), 0);
+        await Invoices.create({ client_id: c.id, number: 'INV-' + String(maxNum).padStart(4, '0'), type: 'monthly', amount: total, status: 'draft', method: 'Relay', issued_on: todayISO(), due_on: dueStr, description: items.map((it) => it.label).join(', '), items });
       }
       toast(`Created ${targets.length} draft invoice${targets.length > 1 ? 's' : ''}`);
       refreshAfter();
