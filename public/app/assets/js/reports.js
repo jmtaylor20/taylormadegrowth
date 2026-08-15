@@ -155,42 +155,64 @@ function periodToYM(period) {
   return (mi < 0 || !yr) ? null : yr + '-' + String(mi + 1).padStart(2, '0');
 }
 
-// Branded monthly-report HTML (shared shape with the Apps Script PDF).
+// Branded two-page monthly-report HTML (shared shape with the Apps Script PDF).
 export function reportDocHtml(r, clientName, opts = {}) {
   const logo = opts.logo || 'https://taylormadegrowth.com/app/assets/img/logo-proposal.png';
   const metrics = r.metrics || {};
-  const shown = REPORT_METRICS.filter((m) => metrics[m.key] != null && metrics[m.key] !== '');
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const tiles = shown.map((m) => `<div class="tile"><div class="tv">${esc(fmtMetric(metrics[m.key], m))}</div><div class="tl">${esc(m.label)}</div></div>`).join('') || '<div class="muted">No metrics entered.</div>';
+  const has = (k) => metrics[k] != null && metrics[k] !== '';
+  const metricFor = (k) => REPORT_METRICS.find((m) => m.key === k);
+  const shown = REPORT_METRICS.filter((m) => has(m.key) && !m.internal);
+  // Headline KPIs — the few that matter most, in priority order (up to 4).
+  const HEAD = ['conversions', 'clicks', 'impressions', 'ctr', 'calls', 'forms', 'reach', 'sessions'];
+  const headline = HEAD.filter(has).map(metricFor).slice(0, 4);
+  const headCards = headline.map((m) => `<div class="kpi"><div class="kv">${esc(fmtMetric(metrics[m.key], m))}</div><div class="kl">${esc(m.label)}</div></div>`).join('')
+    || '<div class="muted">Add this month’s metrics to populate the report.</div>';
+  const tiles = shown.map((m) => `<div class="tile"><div class="tv">${esc(fmtMetric(metrics[m.key], m))}</div><div class="tl">${esc(m.label)}</div></div>`).join('') || '<div class="muted">No metrics entered yet.</div>';
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(clientName)} — ${esc(r.period || 'Report')}</title><style>
     *{box-sizing:border-box}html,body{margin:0}
     body{font-family:Georgia,'Times New Roman',serif;color:#1b1b1b;background:#fff}
-    .page{max-width:720px;margin:0 auto;padding:24px 10px}
+    .page{max-width:720px;margin:0 auto;padding:26px 34px 34px}
+    .p2{page-break-before:always}
     .top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;border-bottom:3px solid #13294b;padding-bottom:16px}
     .logo{width:220px;height:auto}.contact{text-align:right;font-size:12.5px;line-height:1.5;color:#333}
     .eyebrow{font-family:Arial,Helvetica,sans-serif;font-weight:800;letter-spacing:3px;font-size:12px;color:#b98d1a;margin-top:22px}
-    h1{font-family:Arial,Helvetica,sans-serif;font-size:28px;color:#0d1b30;margin:3px 0 6px}.subline{font-size:14.5px;color:#444}
-    .sec{font-family:Arial,Helvetica,sans-serif;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;font-size:12.5px;color:#0d1b30;border-bottom:1.5px solid #0d1b30;padding-bottom:4px;margin:22px 0 12px;page-break-after:avoid}
-    .body{font-size:15px;line-height:1.6;margin:0 0 10px}
+    h1{font-family:Arial,Helvetica,sans-serif;font-size:30px;color:#0d1b30;margin:3px 0 6px}.subline{font-size:14.5px;color:#444}
+    .sec{font-family:Arial,Helvetica,sans-serif;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;font-size:12.5px;color:#0d1b30;border-bottom:1.5px solid #0d1b30;padding-bottom:4px;margin:24px 0 12px;page-break-after:avoid}
+    .body{font-size:15px;line-height:1.65;margin:0 0 10px}
+    .kpis{display:flex;gap:14px;margin-top:6px}
+    .kpi{flex:1;border:2px solid #13294b;border-radius:14px;padding:18px 14px;text-align:center;page-break-inside:avoid}
+    .kpi .kv{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:30px;color:#0d1b30;line-height:1}
+    .kpi .kl{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#b98d1a;font-family:Arial,Helvetica,sans-serif;font-weight:700;margin-top:8px}
     .grid{display:flex;flex-wrap:wrap;gap:12px}
     .tile{border:1.5px solid #d8dbe2;border-radius:12px;padding:14px 16px;min-width:150px;flex:1;page-break-inside:avoid}
-    .tile .tv{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:24px;color:#0d1b30}
+    .tile .tv{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:23px;color:#0d1b30}
     .tile .tl{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#666;font-family:Arial,Helvetica,sans-serif;margin-top:3px}
     .muted{color:#888}.body,.tile{page-break-inside:avoid}
+    .cta{border:2px solid #b98d1a;border-radius:14px;padding:18px 20px;margin-top:24px;page-break-inside:avoid}
+    .cta .h{font-family:Arial,Helvetica,sans-serif;font-weight:800;color:#0d1b30;font-size:15px;margin-bottom:4px}
     .foot{margin-top:26px;border-top:1px solid #e4e4e4;padding-top:12px;text-align:center;color:#888;font-size:12px;font-family:Arial,Helvetica,sans-serif}
     @page{margin:0.5in}
-  </style></head><body><div class="page">
-    <div class="top"><img class="logo" src="${logo}" alt="TaylorMade Brands"><div class="contact">${esc(BUSINESS.name)}<br>${esc(BUSINESS.phone)}<br>${esc(BUSINESS.email)}</div></div>
-    <div class="eyebrow">MONTHLY GROWTH REPORT</div>
-    <h1>${esc(clientName || 'Your business')}</h1>
-    <div class="subline">${esc(r.period || '')}</div>
-    ${r.highlights ? '<div class="sec">Highlights</div><p class="body">' + esc(r.highlights) + '</p>' : ''}
-    <div class="sec">The Numbers</div>
-    <div class="grid">${tiles}</div>
-    ${r.notes ? '<div class="sec">Notes</div><p class="body">' + esc(r.notes) + '</p>' : ''}
-    ${r.next_steps ? '<div class="sec">What’s Next</div><p class="body">' + esc(r.next_steps) + '</p>' : ''}
-    <div class="foot">${esc(BUSINESS.name)} · ${esc(BUSINESS.website)} · Growing your business, together.</div>
-  </div></body></html>`;
+  </style></head><body>
+    <div class="page">
+      <div class="top"><img class="logo" src="${logo}" alt="TaylorMade Brands"><div class="contact">${esc(BUSINESS.name)}<br>${esc(BUSINESS.phone)}<br>${esc(BUSINESS.email)}</div></div>
+      <div class="eyebrow">MONTHLY GROWTH REPORT</div>
+      <h1>${esc(clientName || 'Your business')}</h1>
+      <div class="subline">${esc(r.period || '')}</div>
+      <div class="sec">Executive Summary</div>
+      <p class="body">${esc(r.highlights || 'Here’s a snapshot of your marketing performance this month, the results it drove, and where we’re focused next.')}</p>
+      <div class="sec">Performance at a Glance</div>
+      <div class="kpis">${headCards}</div>
+    </div>
+    <div class="page p2">
+      <div class="sec">The Numbers</div>
+      <div class="grid">${tiles}</div>
+      ${r.notes ? '<div class="sec">What We Focused On</div><p class="body">' + esc(r.notes) + '</p>' : ''}
+      ${r.next_steps ? '<div class="sec">What’s Next</div><p class="body">' + esc(r.next_steps) + '</p>' : ''}
+      <div class="cta"><div class="h">Let’s keep the momentum going.</div><div class="body" style="margin:0">Questions about anything in this report, or want to talk about scaling what’s working? Just reply to this email or give us a call — we’re always a message away.</div></div>
+      <div class="foot">${esc(BUSINESS.name)} · ${esc(BUSINESS.website)} · Growing your business, together.</div>
+    </div>
+  </body></html>`;
 }
 
 function previewReport(r, clientName) {
