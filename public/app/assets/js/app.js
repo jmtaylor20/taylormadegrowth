@@ -1,7 +1,7 @@
 // Entry point: PIN lock → responsive shell (sidebar / bottom tabs) → hash router.
 import { APP_PIN } from './config.js';
 import { CONFIGURED } from './db.js';
-import { el, clear, iconSvg } from './ui.js';
+import { el, clear, iconSvg, fmtElapsedMs } from './ui.js';
 import { renderClients } from './clients.js';
 import { renderLeads } from './leads.js';
 import { renderTasks } from './tasks.js';
@@ -143,6 +143,17 @@ function boot() {
   if (!location.hash) location.hash = '#/clients';
   route();
   registerSW();
+  startTimerTicker();
+}
+
+// Keep any live running-timer labels ticking every second.
+let timerTick = null;
+function startTimerTicker() {
+  if (timerTick) return;
+  timerTick = setInterval(() => {
+    const nodes = document.querySelectorAll('.timer-live[data-start]');
+    nodes.forEach((e) => { e.textContent = fmtElapsedMs(Date.now() - Date.parse(e.dataset.start)); });
+  }, 1000);
 }
 
 function registerSW() {

@@ -1,7 +1,7 @@
 // Tracker — mileage log (with IRS-rate deduction) + meeting log. One tab, two
 // views. Both can be tied to a client and filed newest-first.
 import { Trips, Meetings, Clients } from './db.js';
-import { MILEAGE_RATE, TRIP_PURPOSES, MEETING_TYPES } from './config.js';
+import { MILEAGE_RATE, mileageRateFor, TRIP_PURPOSES, MEETING_TYPES } from './config.js';
 import {
   el, clear, iconSvg, pageHeader, badge, fmtDate, todayISO, emptyState, primaryBtn,
   field, textInput, numberInput, textArea, selectInput, dateInput, readForm,
@@ -11,7 +11,7 @@ import {
 const n = (x) => Number(x || 0);
 const usd = (x) => '$' + n(x).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const miFmt = (x) => n(x).toLocaleString('en-US', { maximumFractionDigits: 1 });
-const tripDeduction = (t) => n(t.miles) * (t.rate == null ? MILEAGE_RATE : n(t.rate));
+const tripDeduction = (t) => n(t.miles) * (t.rate == null ? mileageRateFor(t.trip_date) : n(t.rate));
 const nameFor = (list, id) => (list.find((c) => c.id === id) || {}).business_name || '';
 
 export async function renderTracker(root) {
@@ -54,7 +54,7 @@ export async function renderTracker(root) {
       stat(usd(sumDed(inMonth)), 'Deduction (mo)'),
       stat(usd(sumDed(inYear)), 'Deduction (YTD)'),
     ]));
-    wrap.append(el('div.field-hint.mt-8', { text: `Deduction figured at $${MILEAGE_RATE.toFixed(2)}/mile (IRS standard rate).` }));
+    wrap.append(el('div.field-hint.mt-8', { text: `Deduction uses the IRS rate for each trip's date (currently $${MILEAGE_RATE.toFixed(3)}/mile).` }));
 
     if (!trips.length) { wrap.append(emptyState('No trips logged yet. Tap Log to add one.', 'money')); return; }
     const rows = el('div.rows.card.mt-16');
@@ -111,14 +111,14 @@ function openTripForm(existing = {}, onSaved, list) {
       field('Miles', numberInput('miles', existing.miles ?? '', { step: '0.1', placeholder: '0' })),
       field('Client', selectInput('client_id', clientOptions(list), existing.client_id || '')),
       field('Purpose', selectInput('purpose', TRIP_PURPOSES, existing.purpose || TRIP_PURPOSES[0])),
-      field('Rate ($/mi)', numberInput('rate', existing.rate ?? MILEAGE_RATE, { step: '0.01' })),
+      field('Rate ($/mi)', numberInput('rate', existing.rate ?? mileageRateFor(existing.trip_date), { step: '0.005' })),
     ]),
     field('Notes', textInput('notes', existing.notes, { placeholder: 'Where to / from, or anything worth noting' })),
   ]);
   const collect = () => {
     const v = readForm(node);
     v.miles = Number(v.miles || 0);
-    v.rate = v.rate === '' || v.rate == null ? MILEAGE_RATE : Number(v.rate);
+    v.rate = v.rate === '' || v.rate == null ? mileageRateFor(v.trip_date) : Number(v.rate);
     if (!v.client_id) v.client_id = null;
     return v;
   };

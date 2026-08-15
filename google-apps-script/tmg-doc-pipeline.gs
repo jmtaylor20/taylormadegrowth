@@ -346,6 +346,7 @@ var REPORT_METRICS_ = [
   { key: 'calls', label: 'Phone calls' }, { key: 'forms', label: 'Form submissions' },
   { key: 'conversions', label: 'Conversions / leads' }, { key: 'reviews', label: 'New reviews' },
   { key: 'ad_spend', label: 'Ad spend', prefix: '$' }, { key: 'cost_per_lead', label: 'Cost per lead', prefix: '$' },
+  { key: 'hours', label: 'Hours worked', suffix: 'h' }, { key: 'miles', label: 'Miles driven', suffix: ' mi' },
 ];
 function reportHtml_(r, client) {
   var LOGO = 'https://taylormadegrowth.com/app/assets/img/logo-proposal.png';
@@ -354,7 +355,7 @@ function reportHtml_(r, client) {
   for (var i = 0; i < REPORT_METRICS_.length; i++) {
     var m = REPORT_METRICS_[i], v = metrics[m.key];
     if (v == null || v === '') continue;
-    var num = Number(v).toLocaleString('en-US', { maximumFractionDigits: m.key === 'ctr' ? 1 : 0 });
+    var num = Number(v).toLocaleString('en-US', { maximumFractionDigits: (m.key === 'ctr' || m.key === 'hours') ? 1 : 0 });
     tiles += '<div class="tile"><div class="tv">' + (m.prefix || '') + num + (m.suffix || '') + '</div><div class="tl">' + esc_(m.label) + '</div></div>';
   }
   if (!tiles) tiles = '<div class="muted">No metrics entered.</div>';

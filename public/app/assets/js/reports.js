@@ -1,7 +1,7 @@
 // Reports — monthly client growth reports. Enter the month's metrics (most
 // language prefilled), then Send to email the client a branded report and file
 // it to Drive. Same pipeline as proposals/invoices.
-import { Reports, Clients } from './db.js';
+import { Reports, Clients, Trips, TimeEntries } from './db.js';
 import {
   REPORT_METRICS, REPORT_HIGHLIGHTS_TEMPLATE, REPORT_NEXTSTEPS_TEMPLATE, BUSINESS,
 } from './config.js';
@@ -94,6 +94,26 @@ function openReportForm(existing = {}, onSaved, list) {
     field('What’s next', textArea('next_steps', existing.next_steps ?? REPORT_NEXTSTEPS_TEMPLATE, { rows: 2 })),
   ]);
 
+  // Auto-fill the internal metrics (hours worked, miles driven) from tracked
+  // data for the chosen client + month. Only fills blanks, so saved/edited
+  // values are preserved.
+  async function autofill() {
+    const cid = node.querySelector('[name=client_id]').value;
+    const ym = periodToYM(node.querySelector('[name=period]').value);
+    if (!cid || !ym) return;
+    try {
+      const [trips, time] = await Promise.all([Trips.list({ eq: { client_id: cid } }), TimeEntries.list({ eq: { client_id: cid } })]);
+      const miles = trips.filter((t) => (t.trip_date || '').slice(0, 7) === ym).reduce((s, t) => s + Number(t.miles || 0), 0);
+      const mins = time.filter((e) => (e.entry_date || e.created_at || '').slice(0, 7) === ym).reduce((s, e) => s + Number(e.minutes || 0), 0);
+      const mEl = node.querySelector('[name=mx_miles]'); const hEl = node.querySelector('[name=mx_hours]');
+      if (mEl && !mEl.value && miles) mEl.value = Math.round(miles);
+      if (hEl && !hEl.value && mins) hEl.value = Math.round((mins / 60) * 10) / 10;
+    } catch (e) { /* non-fatal */ }
+  }
+  node.querySelector('[name=client_id]').addEventListener('change', autofill);
+  node.querySelector('[name=period]').addEventListener('change', autofill);
+  autofill();
+
   function collect() {
     const v = readForm(node);
     const metrics = {};
@@ -123,8 +143,16 @@ function openReportForm(existing = {}, onSaved, list) {
 
 function fmtMetric(v, m) {
   const num = Number(v);
-  const s = m.key === 'ctr' ? num.toLocaleString('en-US', { maximumFractionDigits: 1 }) : num.toLocaleString('en-US');
+  const dec = m.decimals != null ? m.decimals : (m.key === 'ctr' ? 1 : 0);
+  const s = num.toLocaleString('en-US', { maximumFractionDigits: dec });
   return (m.prefix || '') + s + (m.suffix || '');
+}
+
+// "August 2026" -> "2026-08"
+function periodToYM(period) {
+  const [mon, yr] = String(period || '').split(' ');
+  const mi = MONTHS.indexOf(mon);
+  return (mi < 0 || !yr) ? null : yr + '-' + String(mi + 1).padStart(2, '0');
 }
 
 // Branded monthly-report HTML (shared shape with the Apps Script PDF).

@@ -1,6 +1,6 @@
 // Client detail sheet — the hub that pulls a client's package, statuses,
 // onboarding, tasks, invoices, activity, and monthly report into one place.
-import { Clients, Invoices, Tasks, Activities, Reviews, Payments, clientBundle, clientFinance, setStage } from './db.js';
+import { Clients, Invoices, Tasks, Activities, Reviews, Payments, TimeEntries, clientBundle, clientFinance, setStage, runningTimer, startTimer, stopTimer } from './db.js';
 import {
   SERVICE_LABEL, STAGES, STAGE_LABEL, WEBSITE_STATUS, GBP_STATUS, ADS_STATUS,
   INVOICE_STATUS, INVOICE_TYPE, TASK_STATUS, REVIEW_STATUS, TEAM, MONTHLY_TEMPLATE, CONTRACT_STATUS,
@@ -10,8 +10,9 @@ import {
   el, clear, money, fmtDate, relDue, todayISO, badge, statusBadge, labelOf,
   openSheet, closeSheet, confirmDialog, toast, iconSvg, field, textInput,
   numberInput, dateInput, textArea, selectInput, readForm, emptyState, primaryBtn,
-  clientAvatar,
+  clientAvatar, fmtHours,
 } from './ui.js';
+import { timerButton } from './timer.js';
 import { openClientForm } from './forms.js';
 import { openReport } from './report.js';
 import { openInvoiceForm } from './invoices.js';
@@ -21,11 +22,11 @@ import { RECUR_INTERVAL } from './config.js';
 const initials = (name) => (name || '?').split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
 export async function openClient(id, onChange) {
-  let client, bundle;
+  let client, bundle, running = null;
   try {
     [client] = await Promise.all([Clients.list({ eq: { id } }).then((r) => r[0])]);
     if (!client) { toast('Client not found', 'err'); return; }
-    bundle = await clientBundle(id);
+    [bundle, running] = await Promise.all([clientBundle(id), runningTimer()]);
   } catch (e) { toast(e.message || 'Load failed', 'err'); return; }
 
   const body = el('div');
@@ -34,8 +35,7 @@ export async function openClient(id, onChange) {
   sheet.sheet.querySelector('.sheet-title').style.display = 'none';
 
   const rerender = async () => {
-    bundle = await clientBundle(id);
-    client = (await Clients.list({ eq: { id } }))[0];
+    [bundle, running, client] = await Promise.all([clientBundle(id), runningTimer(), Clients.list({ eq: { id } }).then((r) => r[0])]);
     paint();
   };
   const patch = async (p) => {
@@ -221,8 +221,39 @@ export async function openClient(id, onChange) {
     ]));
   }
 
-  // ---- Work (tasks) -------------------------------------------------------
+  // ---- Work (tasks + time) ------------------------------------------------
   function paneWork(pane) {
+    // Time summary: total + this-month hours, plus a client-level work timer.
+    const time = bundle.time || [];
+    const ym = new Date().toISOString().slice(0, 7);
+    const mins = (arr) => arr.reduce((s, e) => s + Number(e.minutes || 0), 0);
+    const totalMin = mins(time);
+    const monthMin = mins(time.filter((e) => (e.entry_date || e.created_at || '').slice(0, 7) === ym));
+    const clientTimerCtx = { client_id: id, task_id: null, kind: 'build' };
+    const clientTimerMatch = (r) => !r.task_id && r.client_id === id;
+    pane.append(el('div.section-title', {}, [el('h3', { text: 'Time' })]));
+    pane.append(el('div.statstrip', {}, [
+      el('div.stat', {}, [el('div.stat-value', { text: fmtHours(monthMin) }), el('div.stat-label', { text: 'This month' })]),
+      el('div.stat', {}, [el('div.stat-value', { text: fmtHours(totalMin) }), el('div.stat-label', { text: 'All time' })]),
+      el('div.stat', {}, [el('div.stat-value', { text: String(time.filter((e) => e.minutes != null).length) }), el('div.stat-label', { text: 'Entries' })]),
+    ]));
+    pane.append(el('div.pill-row.mt-8', {}, [
+      el('div', {}, [timerButton(clientTimerCtx, running, rerender, clientTimerMatch)]),
+      el('span.field-hint', { text: running && clientTimerMatch(running) ? 'Working…' : 'Start a general work timer for this client' }),
+      el('button.btn.btn-ghost.btn-sm', { text: 'Log time', onclick: () => openTimeForm({ client_id: id }, rerender) }),
+    ]));
+    if (time.some((e) => e.minutes != null)) {
+      const trows = el('div.rows.card.mt-8');
+      time.filter((e) => e.minutes != null).slice(0, 8).forEach((e) => trows.append(el('div.row', {}, [
+        el('div.row-main', {}, [
+          el('div.row-title', { text: fmtHours(e.minutes) + (e.notes ? ' · ' + e.notes : '') }),
+          el('div.row-sub', {}, [badge(e.kind || 'time', 'gray'), e.entry_date ? fmtDate(e.entry_date) : '']),
+        ]),
+        el('button.icon-btn', { html: iconSvg('trash', 16), onclick: async () => { if (await confirmDialog('Delete this time entry?')) { await TimeEntries.remove(e.id); rerender(); } } }),
+      ])));
+      pane.append(trows);
+    }
+
     pane.append(el('div.section-title', {}, [
       el('h3', { text: 'Tasks' }),
       el('div.pill-row', {}, [
@@ -239,7 +270,7 @@ export async function openClient(id, onChange) {
     const tasks = bundle.tasks;
     if (!tasks.length) { pane.append(emptyState('No tasks yet.', 'tasks')); return; }
     const rows = el('div.rows.card');
-    tasks.forEach((t) => rows.append(taskRow(t, rerender)));
+    tasks.forEach((t) => rows.append(taskRow(t, rerender, running)));
     pane.append(rows);
   }
 
@@ -381,7 +412,7 @@ export async function openClient(id, onChange) {
 }
 
 // ---- shared row renderers (exported for reuse) ----------------------------
-export function taskRow(t, refresh) {
+export function taskRow(t, refresh, running) {
   const done = t.status === 'done';
   const recur = t.recur_interval && t.recur_interval !== 'none';
   const recurLabel = (RECUR_INTERVAL.find((r) => r.key === t.recur_interval) || {}).label;
@@ -400,8 +431,36 @@ export function taskRow(t, refresh) {
         recur ? badge(recurLabel, 'blue') : null,
       ]),
     ]),
+    done ? null : timerButton({ client_id: t.client_id, task_id: t.id, kind: t.category === 'build' ? 'build' : 'task' }, running, refresh),
     el('button.icon-btn', { html: iconSvg('trash', 16), onclick: async () => { if (await confirmDialog('Delete this task?')) { await Tasks.remove(t.id); refresh?.(); } } }),
   ]);
+}
+
+// Manually log a chunk of time against a client (hours + optional note).
+function openTimeForm(base, onSaved) {
+  const node = el('div.form', {}, [
+    el('div.form-grid.cols-2', {}, [
+      field('Hours', numberInput('hours', '', { step: '0.25', placeholder: '1.5' })),
+      field('Date', dateInput('entry_date', todayISO())),
+      field('Kind', selectInput('kind', [{ key: 'task', label: 'Task work' }, { key: 'build', label: 'Build' }, { key: 'meeting', label: 'Meeting' }, { key: 'general', label: 'General' }], base.kind || 'general')),
+    ]),
+    field('Note', textInput('notes', '', { placeholder: 'What did you work on?' })),
+  ]);
+  const { close } = openSheet({
+    title: 'Log time', body: node,
+    actions: [
+      { label: 'Cancel', tone: 'ghost', onClick: () => close() },
+      { label: 'Save', tone: 'primary', onClick: async () => {
+        const v = readForm(node);
+        const hrs = Number(v.hours || 0);
+        if (!hrs) { toast('Enter hours', 'err'); return; }
+        try {
+          await TimeEntries.create({ client_id: base.client_id, kind: v.kind, minutes: Math.round(hrs * 60), entry_date: v.entry_date || todayISO(), notes: v.notes });
+          toast('Logged'); close(); onSaved?.();
+        } catch (e) { toast(e.message, 'err'); }
+      } },
+    ],
+  });
 }
 
 export function invoiceRow(i, refresh) {

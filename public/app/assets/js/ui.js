@@ -259,10 +259,27 @@ const P = {
   wallet: '<path d="M4 7a2 2 0 0 1 2-2h13v4"/><path d="M3 7v10a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-3M21 11h-5a2 2 0 0 0 0 4h5v-4z"/>',
   dots: '<circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/>',
   car: '<path d="M5 11l1.6-4.3A2 2 0 0 1 8.5 5.4h7a2 2 0 0 1 1.9 1.3L19 11M4 11h16a1 1 0 0 1 1 1v4H3v-4a1 1 0 0 1 1-1zM6 16v1.5a1 1 0 0 1-1 1H4.5a1 1 0 0 1-1-1V16M20.5 16v1.5a1 1 0 0 1-1 1H19a1 1 0 0 1-1-1V16"/><circle cx="7" cy="13.5" r="1" fill="currentColor" stroke="none"/><circle cx="17" cy="13.5" r="1" fill="currentColor" stroke="none"/>',
+  play: '<path d="M7 4.5l12 7.5-12 7.5V4.5z" fill="currentColor" stroke="none"/>',
+  stop: '<rect x="6" y="6" width="12" height="12" rx="2.5" fill="currentColor" stroke="none"/>',
+  timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/>',
 };
 export function iconSvg(name, size = 24) {
   const body = P[name] || P.dashboard;
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+}
+
+// ---- Time helpers ---------------------------------------------------------
+// Live stopwatch label, e.g. "3:07" or "1:12:09".
+export function fmtElapsedMs(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+  return (h ? h + ':' + String(m).padStart(2, '0') : String(m)) + ':' + String(ss).padStart(2, '0');
+}
+// Minutes -> friendly hours, e.g. 95 -> "1.6h", 30 -> "30m".
+export function fmtHours(mins) {
+  const n = Number(mins || 0);
+  if (n < 60) return Math.round(n) + 'm';
+  return (Math.round((n / 60) * 10) / 10) + 'h';
 }
 
 // ---- Client avatar --------------------------------------------------------
