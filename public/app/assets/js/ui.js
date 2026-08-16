@@ -185,6 +185,24 @@ export function selectInput(name, options, value) {
 export function checkbox(name, checked = false) {
   return el('input.checkbox', { name, type: 'checkbox', checked: !!checked });
 }
+// Hours picker — a dropdown in 30-minute steps from 30 min to 10 hours. An
+// existing off-grid value (from older entries) is added so edits round-trip.
+function hoursLabel(h) {
+  if (Math.abs(h * 2 - Math.round(h * 2)) > 0.001) return h + ' hr';
+  const whole = Math.floor(h); const half = (h - whole) >= 0.5; const parts = [];
+  if (whole) parts.push(whole + ' hr');
+  if (half) parts.push('30 min');
+  return parts.join(' ') || '0';
+}
+export function hoursSelect(name, value = '') {
+  const cur = (value === '' || value == null) ? '' : Math.round(Number(value) * 100) / 100;
+  const vals = [];
+  for (let h = 0.5; h <= 10.0001; h += 0.5) vals.push(Math.round(h * 10) / 10);
+  if (cur !== '' && !vals.includes(cur)) vals.push(cur);
+  vals.sort((a, b) => a - b);
+  const opts = [{ key: '', label: '— Hours —' }, ...vals.map((h) => ({ key: String(h), label: hoursLabel(h) }))];
+  return selectInput(name, opts, cur === '' ? '' : String(cur));
+}
 
 // Multi-select chip control. Returns node; read selected via node._value().
 export function chipSelect(name, options, selected = []) {
