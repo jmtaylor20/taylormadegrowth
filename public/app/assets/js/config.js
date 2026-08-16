@@ -73,9 +73,9 @@ const PROFILES = {
     host: 'wyatt',
     keepPct: 0.5,
     agencyPct: 0.5,
-    supabaseUrl: '__WYATT_SUPABASE_URL__',   // filled when Wyatt's DB is provisioned
-    supabaseKey: '__WYATT_SUPABASE_KEY__',
-    pin: '__WYATT_PIN__',
+    supabaseUrl: 'https://roitmijkrjtkxzggoxnn.supabase.co',
+    supabaseKey: 'sb_publishable_hsEtNckXRpJgan_MMXG0RA_GQSCxQaB',
+    pin: '2468',   // TEMPORARY — tell me Wyatt's PIN and I'll set it
     owner: 'Wyatt',
     team: ['Wyatt'],
     features: {
