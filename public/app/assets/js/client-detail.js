@@ -16,7 +16,7 @@ import { openTimeForm, quickLogSheet } from './quicklog.js';
 import { openClientForm } from './forms.js';
 import { openReport } from './report.js';
 import { openInvoiceForm } from './invoices.js';
-import { openTaskForm, markTaskDone } from './tasks.js';
+import { openTaskForm, markTaskDone, hoursQuickSelect } from './tasks.js';
 import { RECUR_INTERVAL } from './config.js';
 
 const initials = (name) => (name || '?').split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
@@ -410,24 +410,20 @@ export async function openClient(id, onChange) {
 // ---- shared row renderers (exported for reuse) ----------------------------
 export function taskRow(t, refresh, clientList) {
   const done = t.status === 'done';
-  const recur = t.recur_interval && t.recur_interval !== 'none';
-  const recurLabel = (RECUR_INTERVAL.find((r) => r.key === t.recur_interval) || {}).label;
   return el('div.row', {}, [
-    el('input.checkbox', { type: 'checkbox', checked: done, onchange: async (e) => {
+    el('input.checkbox', { type: 'checkbox', checked: done, title: 'Mark complete', onchange: async (e) => {
       const r = await markTaskDone(t, e.target.checked);
       if (r.recurred) toast('Recurring — next due ' + fmtDate(r.next));
       refresh?.();
     } }),
-    el('div.row-main', {}, [
+    el('div.row-main', { style: 'cursor:pointer', onclick: () => openTaskForm(t, refresh, null, clientList) }, [
       el('div.row-title', { text: t.title, style: done ? 'text-decoration:line-through;color:var(--muted)' : '' }),
       el('div.row-sub', {}, [
         badge(t.assignee, 'gold'),
-        badge(labelOf([{ key: 'monthly', label: 'Monthly' }, { key: 'onboarding', label: 'Onboarding' }, { key: 'build', label: 'Build' }, { key: 'content', label: 'Content' }, { key: 'renewal', label: 'Renewal' }, { key: 'general', label: 'General' }], t.category), t.category === 'renewal' ? 'violet' : 'gray'),
         t.due_date ? el('span', { class: dueClass(t.due_date, done), text: relDue(t.due_date) + (t.due_time ? ' · ' + fmtTime(t.due_time) : '') }) : null,
-        recur ? badge(recurLabel, 'blue') : null,
       ]),
     ]),
-    el('button.icon-btn', { title: 'Log mileage / expense', html: iconSvg('logentry', 16), onclick: () => quickLogSheet(t, clientList || [], refresh) }),
+    done ? null : hoursQuickSelect(t, refresh),
     el('button.icon-btn', { html: iconSvg('trash', 16), onclick: async () => { if (await confirmDialog('Delete this task?')) { await Tasks.remove(t.id); refresh?.(); } } }),
   ]);
 }

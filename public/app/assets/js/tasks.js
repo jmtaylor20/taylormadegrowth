@@ -5,13 +5,29 @@
 import { Tasks, Clients, TimeEntries, tasksFor } from './db.js';
 import { TEAM, TASK_CATEGORY, TASK_PRESETS, RECUR_INTERVAL } from './config.js';
 import {
-  el, clear, iconSvg, pageHeader, badge, relDue, fmtDate, fmtTime, daysUntil, emptyState, primaryBtn,
+  el, clear, iconSvg, pageHeader, badge, relDue, fmtDate, fmtTime, fmtHours, daysUntil, emptyState, primaryBtn,
   field, textInput, textArea, selectInput, numberInput, dateInput, checkbox, readForm, hoursSelect,
   openSheet, toast, confirmDialog, labelOf,
 } from './ui.js';
 import { quickLogSheet, openTripForm, openExpenseForm } from './quicklog.js';
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
+
+// Compact hours picker for a task row — logs a time entry the moment you pick.
+export function hoursQuickSelect(t, onDone) {
+  const sel = hoursSelect('', '');
+  if (sel.options[0]) sel.options[0].text = '+ hrs';
+  sel.style.maxWidth = '96px'; sel.title = 'Log hours for this task';
+  sel.onchange = async () => {
+    const h = Number(sel.value || 0);
+    if (!h) return;
+    try {
+      await TimeEntries.create({ client_id: t.client_id || null, task_id: t.id, kind: t.category === 'build' ? 'build' : 'task', minutes: Math.round(h * 60), entry_date: todayStr(), notes: t.title });
+      toast(fmtHours(Math.round(h * 60)) + ' logged'); sel.value = ''; onDone?.();
+    } catch (e) { toast(e.message, 'err'); }
+  };
+  return sel;
+}
 
 let clientCache = null;
 async function clients() { if (!clientCache) clientCache = await Clients.list({ order: { col: 'business_name', asc: true } }); return clientCache; }
@@ -110,9 +126,8 @@ export async function renderTasks(root) {
 
   function row(t) {
     const done = t.status === 'done';
-    const recur = t.recur_interval && t.recur_interval !== 'none';
     return el('div.row', {}, [
-      el('input.checkbox', { type: 'checkbox', checked: done, onchange: async (e) => {
+      el('input.checkbox', { type: 'checkbox', checked: done, title: 'Mark complete', onchange: async (e) => {
         const r = await markTaskDone(t, e.target.checked);
         if (r.recurred) toast('Recurring — next due ' + fmtDate(r.next));
         refreshAfter();
@@ -121,12 +136,10 @@ export async function renderTasks(root) {
         el('div.row-title', { text: t.title, style: done ? 'text-decoration:line-through;color:var(--muted)' : '' }),
         el('div.row-sub', {}, [
           badge(t.assignee, 'gold'),
-          badge(labelOf(TASK_CATEGORY, t.category), t.category === 'renewal' ? 'violet' : 'gray'),
           t.due_date ? el('span', { class: due(t.due_date, done), text: relDue(t.due_date) + (t.due_time ? ' · ' + fmtTime(t.due_time) : '') }) : null,
-          recur ? badge(intervalLabel(t.recur_interval), 'blue') : null,
         ]),
       ]),
-      el('button.icon-btn', { title: 'Log mileage / expense', html: iconSvg('logentry', 16), onclick: () => quickLogSheet(t, list, refreshAfter) }),
+      done ? null : hoursQuickSelect(t, refreshAfter),
       el('button.icon-btn', { html: iconSvg('trash', 16), onclick: async () => { if (await confirmDialog('Delete this task?')) { await Tasks.remove(t.id); refreshAfter(); } } }),
     ]);
   }
