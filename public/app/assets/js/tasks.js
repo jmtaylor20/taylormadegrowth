@@ -5,7 +5,7 @@
 import { Tasks, Clients, TimeEntries, tasksFor } from './db.js';
 import { TEAM, TASK_CATEGORY, TASK_PRESETS, RECUR_INTERVAL } from './config.js';
 import {
-  el, clear, iconSvg, pageHeader, badge, relDue, fmtDate, fmtTime, fmtHours, daysUntil, emptyState, primaryBtn,
+  el, clear, iconSvg, pageHeader, badge, relDue, fmtDate, fmtTime, fmtHours, daysUntil, emptyState, primaryBtn, clientAvatar,
   field, textInput, textArea, selectInput, numberInput, dateInput, checkbox, readForm, hoursSelect,
   openSheet, toast, confirmDialog, labelOf,
 } from './ui.js';
@@ -58,10 +58,19 @@ export async function markTaskDone(t, done) {
 
 export async function renderTasks(root) {
   const state = { assignee: 'all', status: 'open', due: 'any' };
-  root.append(pageHeader('Tasks', 'By client — one-time & recurring', el('div.pill-row', {}, [
+  root.append(pageHeader('Tasks', 'Sorted by due date — soonest first', el('div.pill-row', {}, [
+    el('button.btn.btn-ghost.btn-sm', { html: 'Reminders', title: 'Add upcoming tasks to iOS Reminders', onclick: () => exportReminders() }),
     el('button.btn.btn-ghost.btn-sm', { html: `${iconSvg('renew', 15)} Renewal`, onclick: async () => openTaskForm({ category: 'renewal', recur_interval: 'annual' }, refreshAfter, null, await clients()) }),
     primaryBtn('Task', async () => openTaskForm({}, refreshAfter, null, await clients()), 'plus'),
   ])));
+
+  // Export upcoming open, dated tasks to an iOS-importable reminders file.
+  function exportReminders() {
+    const upcoming = all.filter((t) => t.status !== 'done' && t.due_date);
+    if (!upcoming.length) { toast('No upcoming dated tasks to add'); return; }
+    downloadICS(tasksToICS(upcoming, (id) => nameFor(list, id)), 'taylormade-reminders.ics');
+    toast('Opening ' + upcoming.length + ' reminders — tap “Add” in iOS');
+  }
 
   const assignees = el('div.segmented');
   ['all', ...TEAM].forEach((a) => assignees.append(el('button.seg' + (state.assignee === a ? '.on' : ''), {
@@ -103,40 +112,34 @@ export async function renderTasks(root) {
 
     if (!items.length) { wrap.append(emptyState('No tasks match.', 'tasks')); return; }
 
-    // Group by client, ordered by client name; internal (no client) last.
-    const groups = new Map();
-    items.forEach((t) => { const k = t.client_id || '__internal'; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(t); });
-    const ordered = list.map((c) => c.id).filter((id) => groups.has(id));
-    if (groups.has('__internal')) ordered.push('__internal');
+    // Flat list sorted by due date/time — soonest (and overdue) at the top,
+    // undated tasks last. Client is shown by logo/avatar on each row.
+    const key = (t) => (t.due_date ? t.due_date + 'T' + (t.due_time || '00:00') : '9999-12-31T99:99');
+    items.sort((a, b) => { const ka = key(a), kb = key(b); return ka < kb ? -1 : ka > kb ? 1 : 0; });
 
-    ordered.forEach((key) => {
-      const group = groups.get(key).sort((a, b) => (a.due_date || '9999') > (b.due_date || '9999') ? 1 : -1);
-      const name = key === '__internal' ? 'Internal / no client' : nameFor(list, key);
-      const openCount = group.filter((t) => t.status !== 'done').length;
-      const head = el('div.section-title', {}, [
-        el('h3', { text: name, style: key !== '__internal' ? 'cursor:pointer;text-decoration:underline;text-decoration-color:var(--line)' : '', onclick: key !== '__internal' ? () => { location.hash = '#/client/' + key; } : undefined }),
-        el('span.badge.badge-gray', { text: openCount + ' open' }),
-      ]);
-      wrap.append(head);
-      const rows = el('div.rows.card');
-      group.forEach((t) => rows.append(row(t)));
-      wrap.append(rows);
-    });
+    const rows = el('div.rows.card');
+    items.forEach((t) => rows.append(row(t)));
+    wrap.append(rows);
   }
 
   function row(t) {
     const done = t.status === 'done';
+    const client = list.find((c) => c.id === t.client_id);
+    const av = client ? clientAvatar(client) : el('div.avatar', { text: '—' });
+    av.style.width = '34px'; av.style.height = '34px'; av.style.fontSize = '.76rem';
+    if (client) { av.style.cursor = 'pointer'; av.onclick = (e) => { e.stopPropagation(); location.hash = '#/client/' + client.id; }; }
     return el('div.row', {}, [
       el('input.checkbox', { type: 'checkbox', checked: done, title: 'Mark complete', onchange: async (e) => {
         const r = await markTaskDone(t, e.target.checked);
         if (r.recurred) toast('Recurring — next due ' + fmtDate(r.next));
         refreshAfter();
       } }),
+      av,
       el('div.row-main', { style: 'cursor:pointer', onclick: () => openTaskForm(t, refreshAfter, null, list) }, [
         el('div.row-title', { text: t.title, style: done ? 'text-decoration:line-through;color:var(--muted)' : '' }),
         el('div.row-sub', {}, [
-          badge(t.assignee, 'gold'),
-          t.due_date ? el('span', { class: due(t.due_date, done), text: relDue(t.due_date) + (t.due_time ? ' · ' + fmtTime(t.due_time) : '') }) : null,
+          el('span.muted', { text: client ? client.business_name : 'Internal' }),
+          t.due_date ? el('span', { class: due(t.due_date, done), text: relDue(t.due_date) + (t.due_time ? ' · ' + fmtTime(t.due_time) : '') }) : el('span.muted', { text: 'No date' }),
         ]),
       ]),
       done ? null : hoursQuickSelect(t, refreshAfter),
@@ -153,6 +156,34 @@ function due(date, done) {
   if (done) return 'text-green';
   const n = (new Date(date + 'T00:00:00') - new Date(new Date().toDateString())) / 86400000;
   return n < 0 ? 'text-red' : n <= 3 ? 'text-amber' : 'muted';
+}
+
+// ---- iOS Reminders export (.ics VTODO) ------------------------------------
+// A website can't write into the Reminders app directly, but iOS offers to add
+// VTODO items when you open an .ics. Tasks with no time default to 9:00 AM.
+const icsPad = (n) => String(n).padStart(2, '0');
+function icsStamp() { const d = new Date(); return d.getUTCFullYear() + icsPad(d.getUTCMonth() + 1) + icsPad(d.getUTCDate()) + 'T' + icsPad(d.getUTCHours()) + icsPad(d.getUTCMinutes()) + icsPad(d.getUTCSeconds()) + 'Z'; }
+const icsEsc = (s) => String(s || '').replace(/\\/g, '\\\\').replace(/[,;]/g, '\\$&').replace(/\n/g, '\\n');
+function tasksToICS(tasks, nameForId) {
+  const stamp = icsStamp();
+  const out = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//TaylorMade Brands//Ops//EN', 'CALSCALE:GREGORIAN'];
+  tasks.filter((t) => t.due_date).forEach((t) => {
+    const time = (t.due_time && /^\d\d:\d\d/.test(t.due_time)) ? t.due_time.slice(0, 5) : '09:00';
+    const dueStamp = t.due_date.replace(/-/g, '') + 'T' + time.replace(':', '') + '00';
+    const title = t.title + (t.client_id ? ' — ' + (nameForId(t.client_id) || '') : '');
+    out.push('BEGIN:VTODO', 'UID:' + t.id + '@taylormadegrowth', 'DTSTAMP:' + stamp,
+      'SUMMARY:' + icsEsc(title), 'DUE:' + dueStamp, 'STATUS:NEEDS-ACTION', 'END:VTODO');
+  });
+  out.push('END:VCALENDAR');
+  return out.join('\r\n');
+}
+function downloadICS(text, filename) {
+  const blob = new Blob([text], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 1500);
 }
 
 // Shared task create/edit sheet — one screen does it all: pick the task (or
@@ -205,6 +236,14 @@ export async function openTaskForm(existing = {}, onSaved, client, clientList) {
     el('div.pill-row', {}, [
       el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('car', 15) + ' Add mileage', onclick: () => { const cid = node.querySelector('[name=client_id]')?.value || null; close(); openTripForm({ client_id: cid }, onSaved, list); } }),
       el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('money', 15) + ' Add expense', onclick: () => { const cid = node.querySelector('[name=client_id]')?.value || null; close(); openExpenseForm({ client_id: cid }, onSaved, list); } }),
+      el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('renew', 15) + ' Remind (iOS)', title: 'Add to iOS Reminders', onclick: () => {
+        const v = readForm(node);
+        const dd = v.due_date || existing.due_date;
+        if (!dd) { toast('Add a due date first', 'err'); return; }
+        const title = v.preset === '__other__' ? v.title_other : (v.preset || existing.title);
+        downloadICS(tasksToICS([{ id: existing.id || 'new', title: title || existing.title, client_id: v.client_id || existing.client_id, due_date: dd, due_time: v.due_time || existing.due_time }], (id) => nameFor(list, id)), 'reminder.ics');
+        toast('Tap “Add” in iOS to save the reminder');
+      } }),
     ]),
   ]);
   syncOther();
