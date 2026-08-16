@@ -32,7 +32,7 @@
 }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; }
+html, body { margin: 0; padding: 0; height: 100%; }
 body {
   font-family: var(--font);
   background: var(--bg);
@@ -40,7 +40,6 @@ body {
   -webkit-font-smoothing: antialiased;
   line-height: 1.45;
   overscroll-behavior-y: none;
-  height: 100dvh;
   overflow: hidden;            /* app shell — the body never scrolls; .main does */
   touch-action: manipulation;  /* no double-tap zoom */
   -webkit-text-size-adjust: 100%; text-size-adjust: 100%;  /* no auto text inflation */
@@ -74,18 +73,18 @@ body.locked { background: radial-gradient(120% 120% at 50% 0%, #16305a 0%, var(-
 @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
 
 /* ---- App layout ---------------------------------------------------------- */
-.layout { display: grid; grid-template-columns: 1fr; height: 100dvh; }
+.layout { display: grid; grid-template-columns: 1fr; position: fixed; inset: 0; }
 .sidebar { display: none; }
 .main {
   min-width: 0;
-  height: 100dvh; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
+  height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
   padding: calc(16px + env(safe-area-inset-top)) 16px calc(84px + env(safe-area-inset-bottom));
   max-width: 1180px; width: 100%; margin: 0 auto;
 }
 
 /* Bottom tab bar (mobile) */
 .tabbar {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 40;
   display: flex; justify-content: space-around;
   background: rgba(255,255,255,.92); backdrop-filter: blur(12px);
   border-top: 1px solid var(--line);
@@ -117,7 +116,7 @@ body.locked { background: radial-gradient(120% 120% at 50% 0%, #16305a 0%, var(-
   .layout { grid-template-columns: var(--sidebar-w) 1fr; }
   .sidebar {
     display: flex; flex-direction: column; gap: 4px;
-    position: sticky; top: 0; height: 100dvh; overflow-y: auto;
+    position: sticky; top: 0; height: 100%; overflow-y: auto;
     background: linear-gradient(180deg, var(--navy) 0%, var(--navy-dark) 100%);
     color: #cdd8e8; padding: 20px 12px;
   }
