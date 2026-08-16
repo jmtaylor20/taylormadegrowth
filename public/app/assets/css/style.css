@@ -42,6 +42,8 @@ body {
   overscroll-behavior-y: none;
   height: 100dvh;
   overflow: hidden;            /* app shell — the body never scrolls; .main does */
+  touch-action: manipulation;  /* no double-tap zoom */
+  -webkit-text-size-adjust: 100%; text-size-adjust: 100%;  /* no auto text inflation */
 }
 body.no-scroll .main { overflow: hidden; }   /* freeze content behind an open sheet */
 h1, h2, h3, h4 { font-family: var(--head); font-weight: 700; margin: 0; letter-spacing: -.01em; }

@@ -4,7 +4,7 @@ import { Trips, Meetings, Clients, Expenses, TimeEntries } from './db.js';
 import { MILEAGE_RATE, mileageRateFor, TRIP_PURPOSES, MEETING_TYPES, EXPENSE_CATEGORIES } from './config.js';
 import {
   el, clear, iconSvg, pageHeader, badge, fmtDate, fmtHours, relDue, daysUntil, money, todayISO, emptyState, primaryBtn,
-  field, textInput, numberInput, textArea, selectInput, dateInput, readForm,
+  field, textInput, numberInput, textArea, selectInput, dateInput, readForm, hoursSelect,
   openSheet, toast, confirmDialog,
 } from './ui.js';
 import { photoToDataUrl } from './logofield.js';
@@ -360,7 +360,7 @@ export function openTimeForm(existing = {}, onSaved, list) {
   const hrs0 = existing.minutes != null ? Math.round(existing.minutes / 60 * 100) / 100 : (existing.hours ?? '');
   const node = el('div.form', {}, [
     el('div.form-grid.cols-2', {}, [
-      field('Hours', numberInput('hours', hrs0, { step: '0.25', placeholder: '1.5' })),
+      field('Hours', hoursSelect('hours', hrs0)),
       field('Date', dateInput('entry_date', existing.entry_date || todayISO())),
       field('Kind', selectInput('kind', [{ key: 'task', label: 'Task work' }, { key: 'build', label: 'Build' }, { key: 'meeting', label: 'Meeting' }, { key: 'general', label: 'General' }], existing.kind || 'general')),
       ...(list ? [field('Client', selectInput('client_id', clientOptions(list), existing.client_id || ''))] : []),

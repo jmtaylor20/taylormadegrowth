@@ -6,7 +6,7 @@ import { Tasks, Clients, TimeEntries, tasksFor } from './db.js';
 import { TEAM, TASK_CATEGORY, TASK_PRESETS, RECUR_INTERVAL } from './config.js';
 import {
   el, clear, iconSvg, pageHeader, badge, relDue, fmtDate, fmtTime, daysUntil, emptyState, primaryBtn,
-  field, textInput, textArea, selectInput, numberInput, dateInput, checkbox, readForm,
+  field, textInput, textArea, selectInput, numberInput, dateInput, checkbox, readForm, hoursSelect,
   openSheet, toast, confirmDialog, labelOf,
 } from './ui.js';
 import { quickLogSheet, openTripForm, openExpenseForm } from './quicklog.js';
@@ -184,13 +184,14 @@ export async function openTaskForm(existing = {}, onSaved, client, clientList) {
     ]),
     field('Details (optional)', textArea('detail', existing.detail, { rows: 2 })),
     el('div.form-grid.cols-2', {}, [
-      field('Hours worked (optional)', numberInput('hours', '', { step: '0.25', min: '0', placeholder: 'e.g. 1.5' })),
+      field('Hours worked (optional)', hoursSelect('hours', '')),
       el('label.field-row', { style: 'align-items:center;gap:8px;margin-top:24px' }, [checkbox('__done', existing.status === 'done'), el('span', { text: 'Mark complete' })]),
     ]),
-    // Mileage / expense stay one tap away (they need addresses / amounts).
-    isNew ? null : el('div.pill-row', {}, [
-      el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('car', 15) + ' Add mileage', onclick: () => { close(); openTripForm({ client_id: existing.client_id }, onSaved, list); } }),
-      el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('money', 15) + ' Add expense', onclick: () => { close(); openExpenseForm({ client_id: existing.client_id }, onSaved, list); } }),
+    // Mileage / expense (need addresses / amounts, so they open their own form).
+    // Available on new tasks too — pulls the client you've selected above.
+    el('div.pill-row', {}, [
+      el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('car', 15) + ' Add mileage', onclick: () => { const cid = node.querySelector('[name=client_id]')?.value || null; close(); openTripForm({ client_id: cid }, onSaved, list); } }),
+      el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('money', 15) + ' Add expense', onclick: () => { const cid = node.querySelector('[name=client_id]')?.value || null; close(); openExpenseForm({ client_id: cid }, onSaved, list); } }),
     ]),
   ]);
   syncOther();
