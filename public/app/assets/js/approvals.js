@@ -7,7 +7,7 @@
 import { CONTRACTOR_DBS } from './config.js';
 import {
   el, clear, money, iconSvg, pageHeader, badge, emptyState, toast,
-  openSheet, field, textArea, fmtDate, todayISO,
+  openSheet, field, textArea, fmtDate, todayISO, openDocPreview,
 } from './ui.js';
 import { proposalDocHtml } from './proposals.js';
 
@@ -157,7 +157,5 @@ export async function renderApprovals(root) {
 }
 
 function previewDoc(p, clientName) {
-  const w = window.open('', '_blank', 'width=880,height=1040');
-  if (!w) { toast('Allow pop-ups to preview', 'err'); return; }
-  w.document.write(proposalDocHtml(p, clientName)); w.document.close();
+  openDocPreview(proposalDocHtml(p, clientName), p.title || 'Proposal');
 }
