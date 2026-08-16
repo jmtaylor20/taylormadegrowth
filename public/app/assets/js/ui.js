@@ -307,6 +307,23 @@ export function iconSvg(name, size = 24) {
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
 }
 
+// Full-screen document preview (invoices, proposals). Renders the doc HTML in a
+// sandboxed iframe inside an in-app overlay with a Close button — the installed
+// PWA gives a popup window no way back, so we never use window.open here.
+export function openDocPreview(html, title = 'Preview') {
+  const frame = el('iframe', { style: 'flex:1 1 auto;width:100%;border:0;background:#fff' });
+  const overlay = el('div', { style: 'position:fixed;inset:0;z-index:3000;display:flex;flex-direction:column;background:#0d1b30;padding-top:env(safe-area-inset-top)' });
+  const bar = el('div', { style: 'display:flex;align-items:center;gap:10px;padding:10px 12px;background:#0d1b30;color:#fff;flex:0 0 auto' }, [
+    el('button.icon-btn', { style: 'color:#fff', title: 'Close', html: iconSvg('x', 22), onclick: () => overlay.remove() }),
+    el('div', { text: title, style: 'font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis' }),
+    el('button.btn.btn-gold.btn-sm', { text: 'Print / Save PDF', onclick: () => { try { frame.contentWindow.focus(); frame.contentWindow.print(); } catch (e) {} } }),
+  ]);
+  overlay.append(bar, frame);
+  document.body.append(overlay);
+  frame.srcdoc = html;
+  return overlay;
+}
+
 // ---- Time helpers ---------------------------------------------------------
 // Live stopwatch label, e.g. "3:07" or "1:12:09".
 export function fmtElapsedMs(ms) {

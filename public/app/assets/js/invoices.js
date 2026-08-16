@@ -5,7 +5,7 @@ import { INVOICE_STATUS, INVOICE_TYPE, BUSINESS, FEATURES } from './config.js';
 import {
   el, clear, money, iconSvg, pageHeader, badge, statusBadge, relDue, fmtDate,
   todayISO, emptyState, primaryBtn, field, textInput, numberInput, textArea,
-  selectInput, dateInput, readForm, openSheet, toast, confirmDialog, labelOf,
+  selectInput, dateInput, readForm, openSheet, toast, confirmDialog, labelOf, openDocPreview,
 } from './ui.js';
 import { queueDoc, docBadges } from './docs.js';
 
@@ -217,9 +217,7 @@ export function invoiceDocHtml(inv, client = {}) {
 }
 
 function previewInvoice(inv, client) {
-  const w = window.open('', '_blank', 'width=880,height=1040');
-  if (!w) { toast('Allow pop-ups to preview', 'err'); return; }
-  w.document.write(invoiceDocHtml(inv, client)); w.document.close();
+  openDocPreview(invoiceDocHtml(inv, client), 'Invoice ' + (inv.number || ''));
 }
 
 const n = (x) => Number(x || 0);

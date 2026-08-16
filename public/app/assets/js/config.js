@@ -44,6 +44,7 @@ const PROFILES = {
     mode: 'contractor',
     brand: 'TaylorMade Brands',
     contractor: 'Tony',
+    host: 'tony',
     keepPct: 0.75,
     agencyPct: 0.25,
     supabaseUrl: 'https://obweziktfdhdswtwzzmh.supabase.co',
@@ -64,6 +65,32 @@ const PROFILES = {
       approvalsInbox: false,
     },
   },
+  // Wyatt — same stripped contractor copy as Tony, 50/50 split with TaylorMade.
+  wyatt: {
+    mode: 'contractor',
+    brand: 'TaylorMade Brands',
+    contractor: 'Wyatt',
+    host: 'wyatt',
+    keepPct: 0.5,
+    agencyPct: 0.5,
+    supabaseUrl: '__WYATT_SUPABASE_URL__',   // filled when Wyatt's DB is provisioned
+    supabaseKey: '__WYATT_SUPABASE_KEY__',
+    pin: '__WYATT_PIN__',
+    owner: 'Wyatt',
+    team: ['Wyatt'],
+    features: {
+      assignee: false,
+      contractorsTab: false,
+      splitDeposit: false,
+      welcomeEmail: false,
+      repPicker: false,
+      revShareSelf: true,
+      invoicing: false,
+      proposalApproval: true,
+      buildReview: true,
+      approvalsInbox: false,
+    },
+  },
 };
 
 // Pick the active profile by hostname. Tony's copy lives at a `tony.*`
@@ -71,7 +98,14 @@ const PROFILES = {
 // other host is Josh's full app.
 function resolveProfile() {
   const h = (typeof location !== 'undefined' ? location.hostname : '').toLowerCase();
-  if (/(^|\.)tony(\.|-|$)/.test(h) || h.startsWith('tony')) return PROFILES.tony;
+  // A contractor profile owns any host that starts with its token (e.g.
+  // tony.taylormadegrowth.com, wyatt-taylormade.netlify.app) or carries it as
+  // a label. Everything else is the full owner app.
+  for (const key of Object.keys(PROFILES)) {
+    const p = PROFILES[key];
+    if (!p.host) continue;
+    if (h === p.host || h.startsWith(p.host + '.') || h.startsWith(p.host + '-') || h.includes('.' + p.host + '.') || h.includes('.' + p.host + '-')) return p;
+  }
   return PROFILES.owner;
 }
 export const PROFILE = resolveProfile();

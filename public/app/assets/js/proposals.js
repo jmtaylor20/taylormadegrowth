@@ -13,7 +13,7 @@ const SCOPE_STARTER = [
 import {
   el, clear, money, iconSvg, pageHeader, badge, statusBadge, labelOf, fmtDate,
   emptyState, primaryBtn, field, textInput, numberInput, textArea, selectInput,
-  dateInput, readForm, openSheet, toast, confirmDialog, todayISO,
+  dateInput, readForm, openSheet, toast, confirmDialog, todayISO, openDocPreview,
 } from './ui.js';
 import { queueDoc, docBadges } from './docs.js';
 
@@ -372,9 +372,7 @@ export function proposalDocHtml(p, clientName, opts = {}) {
 }
 
 function previewProposal(p, clientName) {
-  const w = window.open('', '_blank', 'width=880,height=1040');
-  if (!w) { toast('Allow pop-ups to preview', 'err'); return; }
-  w.document.write(proposalDocHtml(p, clientName)); w.document.close();
+  openDocPreview(proposalDocHtml(p, clientName), p.title || 'Proposal');
 }
 
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
