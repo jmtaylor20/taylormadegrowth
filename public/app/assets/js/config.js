@@ -31,6 +31,10 @@ const PROFILES = {
       welcomeEmail: true,    // auto welcome email when a lead becomes a client
       repPicker: true,       // per-invoice contractor/rep split picker
       revShareSelf: false,   // show "you keep X% · TaylorMade Y%" summaries
+      invoicing: true,       // create/send invoices
+      proposalApproval: false, // proposals need owner sign-off before sending
+      buildReview: false,    // website builds submitted for owner review
+      approvalsInbox: true,  // owner sees a queue of contractors' pending items
     },
   },
   // Tony — TaylorMade-branded, operates under Josh's umbrella. Keeps the
@@ -54,6 +58,10 @@ const PROFILES = {
       welcomeEmail: false,
       repPicker: false,
       revShareSelf: true,
+      invoicing: false,        // Tony doesn't invoice
+      proposalApproval: true,  // his proposals need Josh's sign-off before sending
+      buildReview: true,       // his website builds get submitted for Josh's review
+      approvalsInbox: false,
     },
   },
 };
@@ -68,6 +76,13 @@ function resolveProfile() {
 }
 export const PROFILE = resolveProfile();
 export const FEATURES = PROFILE.features;
+
+// Contractor databases the owner app reads for the Approvals queue. Each entry
+// is a separate Supabase project (a contractor's isolated data). The owner app
+// connects to these read/write to approve proposals and build reviews.
+export const CONTRACTOR_DBS = Object.values(PROFILES)
+  .filter((p) => p.mode === 'contractor' && !String(p.supabaseUrl).startsWith('__'))
+  .map((p) => ({ name: p.contractor, url: p.supabaseUrl, key: p.supabaseKey, keepPct: p.keepPct, agencyPct: p.agencyPct }));
 
 // The Supabase publishable key is safe for the browser (governed by RLS).
 export const SUPABASE_URL = PROFILE.supabaseUrl;

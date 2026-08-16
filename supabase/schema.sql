@@ -51,7 +51,9 @@ create table if not exists public.clients (
   billing_mode text default 'advance',
   recurring_addons jsonb,
   google_ads_id text,
-  cole_pct numeric default 0
+  cole_pct numeric default 0,
+  build_review_status text default 'none',
+  build_review_note text
 );
 
 -- ---- Tasks ----------------------------------------------------------------
@@ -163,7 +165,10 @@ create table if not exists public.proposals (
   drive_url text,
   drive_saved_at timestamptz,
   drive_error text,
-  details jsonb not null default '{}'
+  details jsonb not null default '{}',
+  approval_status text,
+  approval_note text,
+  approved_at timestamptz
 );
 
 -- ---- Activities -----------------------------------------------------------

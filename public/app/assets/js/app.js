@@ -1,5 +1,5 @@
 // Entry point: PIN lock → responsive shell (sidebar / bottom tabs) → hash router.
-import { APP_PIN } from './config.js';
+import { APP_PIN, FEATURES } from './config.js';
 import { CONFIGURED } from './db.js';
 import { el, clear, iconSvg, fmtElapsedMs } from './ui.js';
 import { renderClients } from './clients.js';
@@ -9,6 +9,7 @@ import { renderFinancials } from './financials.js';
 import { renderProposals } from './proposals.js';
 import { renderReports } from './reports.js';
 import { renderTracker } from './tracker.js';
+import { renderApprovals } from './approvals.js';
 import { openClient } from './client-detail.js';
 
 const root = document.getElementById('root');
@@ -24,6 +25,11 @@ export const NAV = [
   { id: 'reports',    label: 'Reports',   icon: 'report',   render: renderReports },
   { id: 'tracker',    label: 'Tracker',   icon: 'car',      render: renderTracker },
 ];
+
+// Owner-only: the approvals queue for contractors' proposals & builds.
+if (FEATURES.approvalsInbox) {
+  NAV.push({ id: 'approvals', label: 'Approvals', icon: 'inbox', render: renderApprovals });
+}
 
 // A NAV item's glyph: its brand logo image when set, else a line icon.
 function navGlyph(n, size) {
@@ -110,7 +116,7 @@ function tabLink(n) {
     html: `<span class="tab-ic">${navGlyph(n, 24)}</span><span>${n.label}</span>`,
   });
 }
-const BUILD = 'v27';
+const BUILD = 'v28';
 function moreTab() {
   const overflow = NAV.filter((n) => !n.primary);
   const tab = el('a.tab.tab-more', {

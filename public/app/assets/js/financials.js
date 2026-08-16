@@ -14,13 +14,13 @@ import { openPaymentForm } from './client-detail.js';
 const nameFor = (list, id) => (list.find((c) => c.id === id) || {}).business_name || '—';
 
 export async function renderFinancials(root) {
-  const state = { view: 'invoices', filter: 'all' };
-  root.append(pageHeader('Financials', 'Build fees, retainers, payments'));
+  const state = { view: FEATURES.invoicing ? 'invoices' : 'payments', filter: 'all' };
+  root.append(pageHeader('Financials', FEATURES.invoicing ? 'Build fees, retainers, payments' : 'Your money & split'));
 
   const actions = el('div.toolbar', {}, [
-    primaryBtn('New invoice', async () => openInvoiceForm({}, refreshAfter, null, await clients()), 'plus'),
+    FEATURES.invoicing ? primaryBtn('New invoice', async () => openInvoiceForm({}, refreshAfter, null, await clients()), 'plus') : null,
     el('button.btn.btn-gold', { html: `${iconSvg('plus', 16)} Record payment`, onclick: async () => openPickClientThenPayment(await clients(), refreshAfter) }),
-    el('button.btn.btn-ghost', { html: `${iconSvg('renew', 16)} Generate monthly`, title: 'Create this month’s retainer invoices', onclick: generateMonthly }),
+    FEATURES.invoicing ? el('button.btn.btn-ghost', { html: `${iconSvg('renew', 16)} Generate monthly`, title: 'Create this month’s retainer invoices', onclick: generateMonthly }) : null,
     FEATURES.splitDeposit ? el('button.btn.btn-ghost', { html: `${iconSvg('wallet', 16)} Split deposit`, title: 'Allocate an incoming payment across your buckets', onclick: async () => openSplitDeposit(await clients()) }) : null,
   ]);
   root.append(actions);
@@ -29,7 +29,7 @@ export async function renderFinancials(root) {
   root.append(summary);
 
   const seg = el('div.segmented.mt-16');
-  const segTabs = [['invoices', 'Invoices'], ['payments', 'Payments'], ['clients', 'By client'],
+  const segTabs = [...(FEATURES.invoicing ? [['invoices', 'Invoices']] : []), ['payments', 'Payments'], ['clients', 'By client'],
     ...(FEATURES.contractorsTab ? [['contractors', 'Contractors']] : []), ['taxes', 'Taxes']];
   segTabs.forEach(([k, l]) =>
     seg.append(el('button.seg' + (state.view === k ? '.on' : ''), { text: l, dataset: { v: k }, onclick: () => { state.view = k; seg.querySelectorAll('.seg').forEach((s) => s.classList.toggle('on', s.dataset.v === k)); refresh(); } })));

@@ -36,7 +36,19 @@ var CONFIG = {
   INVOICE_NET_DAYS: 15,          // due this many days after issue
   AUTO_SEND_MONTHLY: false,      // false = save as DRAFTS and email you a review prompt; true = also email clients
   NOTIFY_EMAIL: 'josh@taylormadegrowth.com',  // where the "drafts ready to review" prompt is sent
+  // ---- Contractor apps (separate databases) ----------------------------------
+  // Each contractor runs their own isolated Supabase project. Proposals they
+  // create are only emailed AFTER you approve them in your app's Approvals tab
+  // (which sets approval_status='approved' and queues the send). This script
+  // then emails those from YOUR Gmail, exactly like your own proposals.
+  CONTRACTOR_SOURCES: [
+    { name: 'Tony', url: 'https://obweziktfdhdswtwzzmh.supabase.co', key: 'sb_publishable_JTKaZ1V3rU0nUiCk6OgVeQ_BaRJ2weB' },
+  ],
 };
+
+// The Supabase project the DB helpers currently point at. Defaults to your own
+// project; processContractorProposals_ swaps it per contractor and restores it.
+var ACTIVE = { url: CONFIG.SUPABASE_URL, key: CONFIG.SUPABASE_KEY };
 
 // ==== ENTRY POINTS =========================================================
 
@@ -47,6 +59,39 @@ function processQueue() {
   processTable_('invoices');
   processTable_('reports');
   processWelcome_();
+  processContractorProposals_();
+}
+
+// Email contractors' APPROVED proposals from your Gmail. A proposal is only
+// ever sent once you've approved it in the app (approval_status='approved')
+// AND it's been queued (send_status='queued'). Reuses the same PDF + email
+// path as your own proposals, pointed at each contractor's own database.
+function processContractorProposals_() {
+  var sources = CONFIG.CONTRACTOR_SOURCES || [];
+  for (var s = 0; s < sources.length; s++) {
+    var src = sources[s];
+    ACTIVE = { url: src.url, key: src.key };
+    try {
+      var rows = sbGet_('proposals?approval_status=eq.approved&or=(send_status.eq.queued,drive_status.eq.queued)&select=*');
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i];
+        try {
+          processRow_('proposals', row);
+        } catch (err) {
+          var f = (row.send_status === 'queued') ? 'send' : 'drive';
+          var patch = {};
+          patch[f + '_status'] = 'error';
+          patch[f + '_error'] = String(err).slice(0, 400);
+          sbPatch_('proposals', row.id, patch);
+          Logger.log('Contractor(' + src.name + ') proposal ' + row.id + ' error: ' + err);
+        }
+      }
+    } catch (err2) {
+      Logger.log('Contractor source ' + src.name + ' failed: ' + err2);
+    } finally {
+      ACTIVE = { url: CONFIG.SUPABASE_URL, key: CONFIG.SUPABASE_KEY };
+    }
+  }
 }
 
 // ==== AUTO MONTHLY INVOICES ================================================
@@ -232,10 +277,10 @@ function targetFolder_(clientName) {
 // ==== SUPABASE REST ========================================================
 
 function authHeaders_() {
-  return { apikey: CONFIG.SUPABASE_KEY, Authorization: 'Bearer ' + CONFIG.SUPABASE_KEY };
+  return { apikey: ACTIVE.key, Authorization: 'Bearer ' + ACTIVE.key };
 }
 function sbGet_(path) {
-  var res = UrlFetchApp.fetch(CONFIG.SUPABASE_URL + '/rest/v1/' + path, {
+  var res = UrlFetchApp.fetch(ACTIVE.url + '/rest/v1/' + path, {
     method: 'get', headers: authHeaders_(), muteHttpExceptions: true,
   });
   var body = res.getContentText();
@@ -243,7 +288,7 @@ function sbGet_(path) {
   return JSON.parse(body || '[]');
 }
 function sbInsert_(table, row) {
-  var res = UrlFetchApp.fetch(CONFIG.SUPABASE_URL + '/rest/v1/' + table, {
+  var res = UrlFetchApp.fetch(ACTIVE.url + '/rest/v1/' + table, {
     method: 'post',
     headers: Object.assign(authHeaders_(), { 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
     payload: JSON.stringify(row), muteHttpExceptions: true,
@@ -251,7 +296,7 @@ function sbInsert_(table, row) {
   if (res.getResponseCode() >= 300) throw new Error('POST ' + table + ' -> ' + res.getResponseCode() + ' ' + res.getContentText());
 }
 function sbPatch_(table, id, patch) {
-  var res = UrlFetchApp.fetch(CONFIG.SUPABASE_URL + '/rest/v1/' + table + '?id=eq.' + id, {
+  var res = UrlFetchApp.fetch(ACTIVE.url + '/rest/v1/' + table + '?id=eq.' + id, {
     method: 'patch',
     headers: Object.assign(authHeaders_(), { 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
     payload: JSON.stringify(patch), muteHttpExceptions: true,
