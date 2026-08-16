@@ -69,7 +69,7 @@ export async function renderTasks(root) {
     const upcoming = all.filter((t) => t.status !== 'done' && t.due_date);
     if (!upcoming.length) { toast('No upcoming dated tasks to add'); return; }
     downloadICS(tasksToICS(upcoming, (id) => nameFor(list, id)), 'taylormade-reminders.ics');
-    toast('Opening ' + upcoming.length + ' reminders — tap “Add” in iOS');
+    toast('Sharing ' + upcoming.length + ' reminders — choose “Reminders” / “Add All”');
   }
 
   const assignees = el('div.segmented');
@@ -177,13 +177,25 @@ function tasksToICS(tasks, nameForId) {
   out.push('END:VCALENDAR');
   return out.join('\r\n');
 }
-function downloadICS(text, filename) {
-  const blob = new Blob([text], { type: 'text/calendar;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click();
-  setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 1500);
+// Deliver the .ics. iOS installed PWAs can't download files, but they can
+// share them (share sheet → Add to Reminders) and can open a data URL (native
+// import prompt). Try share first, then data URL, then a plain download.
+async function downloadICS(text, filename) {
+  try {
+    const file = new File([text], filename, { type: 'text/calendar' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: 'Add to Reminders' });
+      return;
+    }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  const dataUrl = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(text);
+  try { const w = window.open(dataUrl, '_blank'); if (w) return; } catch (e) { /* ignore */ }
+  try {
+    const a = document.createElement('a');
+    a.href = dataUrl; a.download = filename; a.rel = 'noopener';
+    document.body.appendChild(a); a.click();
+    setTimeout(() => a.remove(), 1500);
+  } catch (e) { toast('Could not open reminders on this device', 'err'); }
 }
 
 // Shared task create/edit sheet — one screen does it all: pick the task (or
@@ -242,7 +254,7 @@ export async function openTaskForm(existing = {}, onSaved, client, clientList) {
         if (!dd) { toast('Add a due date first', 'err'); return; }
         const title = v.preset === '__other__' ? v.title_other : (v.preset || existing.title);
         downloadICS(tasksToICS([{ id: existing.id || 'new', title: title || existing.title, client_id: v.client_id || existing.client_id, due_date: dd, due_time: v.due_time || existing.due_time }], (id) => nameFor(list, id)), 'reminder.ics');
-        toast('Tap “Add” in iOS to save the reminder');
+        toast('Choose “Reminders” in the share sheet');
       } }),
     ]),
   ]);
