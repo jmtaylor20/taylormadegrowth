@@ -55,6 +55,7 @@ export const Trips     = table('trips');
 export const Meetings  = table('meetings');
 export const TimeEntries = table('time_entries');
 export const Expenses   = table('expenses');
+export const Contractors = table('contractors');
 export const AdMetrics  = table('ad_metrics');
 export const Settings   = table('app_settings');
 

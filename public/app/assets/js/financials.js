@@ -1,7 +1,7 @@
 // Financials — the money command center. Build fees, collected, outstanding,
 // MRR; one-click new invoice to any client/lead/prospect; record payments;
 // editable statuses and amounts.
-import { Clients, Invoices, Payments, Expenses, Trips, getSetting, setSetting } from './db.js';
+import { Clients, Invoices, Payments, Expenses, Trips, Contractors, getSetting, setSetting } from './db.js';
 import { INVOICE_STATUS, INVOICE_TYPE, PAYMENT_KIND, INVOICE_NET_DAYS, ALLOCATION, mileageRateFor } from './config.js';
 import {
   el, clear, money, iconSvg, pageHeader, badge, statusBadge, labelOf, fmtDate,
@@ -29,22 +29,22 @@ export async function renderFinancials(root) {
   root.append(summary);
 
   const seg = el('div.segmented.mt-16');
-  [['invoices', 'Invoices'], ['payments', 'Payments'], ['clients', 'By client'], ['taxes', 'Taxes']].forEach(([k, l]) =>
+  [['invoices', 'Invoices'], ['payments', 'Payments'], ['clients', 'By client'], ['contractors', 'Contractors'], ['taxes', 'Taxes']].forEach(([k, l]) =>
     seg.append(el('button.seg' + (state.view === k ? '.on' : ''), { text: l, dataset: { v: k }, onclick: () => { state.view = k; seg.querySelectorAll('.seg').forEach((s) => s.classList.toggle('on', s.dataset.v === k)); refresh(); } })));
   root.append(el('div.toolbar', {}, [seg]));
 
   const wrap = el('div');
   root.append(wrap);
 
-  let list = [], invoices = [], payments = [], expenses = [], trips = [], taxRate = 0.25, taxReserve = 0, taxApr = 0;
+  let list = [], invoices = [], payments = [], expenses = [], trips = [], contractors = [], taxRate = 0.25, taxReserve = 0, taxApr = 0;
   let clientCache = null;
   async function clients() { if (!clientCache) clientCache = await Clients.list({ order: { col: 'business_name', asc: true } }); return clientCache; }
   async function load() {
     clientCache = null;
     let tax;
-    [list, invoices, payments, expenses, trips, tax] = await Promise.all([
+    [list, invoices, payments, expenses, trips, contractors, tax] = await Promise.all([
       clients(), Invoices.list({ order: { col: 'issued_on', asc: false } }), Payments.list({ order: { col: 'paid_on', asc: false } }),
-      Expenses.list(), Trips.list(), getSetting('tax', { effective_rate: 0.25 }),
+      Expenses.list(), Trips.list(), Contractors.list({ order: { col: 'name', asc: true } }), getSetting('tax', { effective_rate: 0.25 }),
     ]);
     taxRate = Number(tax.effective_rate) || 0.25;
     taxReserve = Number(tax.reserve_balance) || 0;
@@ -90,7 +90,68 @@ export async function renderFinancials(root) {
     if (state.view === 'invoices') viewInvoices();
     else if (state.view === 'payments') viewPayments();
     else if (state.view === 'taxes') viewTaxes();
+    else if (state.view === 'contractors') viewContractors();
     else viewByClient();
+  }
+
+  // Contractor rev-share payouts: for each contractor, what you've collected on
+  // their invoices, what you owe them (their %), and what you keep. "Collected"
+  // = paid invoices; "pipeline" = still-open invoices.
+  function viewContractors() {
+    const st = (v, l, sub, tone) => el('div.stat' + (tone ? '.stat-' + tone : ''), {}, [el('div.stat-value', { text: v }), el('div.stat-label', { text: l }), sub ? el('div.stat-sub', { text: sub }) : null]);
+    wrap.append(el('div.section-title', {}, [
+      el('h3', { text: 'Contractor payouts' }),
+      el('button.btn.btn-ghost.btn-sm', { html: `${iconSvg('plus', 14)} Manage`, onclick: () => openContractorManager() }),
+    ]));
+    if (!contractors.length) { wrap.append(emptyState('No contractors yet. Tap Manage to add one.', 'users')); return; }
+
+    contractors.forEach((c) => {
+      const inv = invoices.filter((i) => i.rep === c.name);
+      const paid = inv.filter((i) => i.status === 'paid');
+      const collected = paid.reduce((s, i) => s + n(i.amount), 0);
+      const owe = paid.reduce((s, i) => s + n(i.amount) * (i.rep_pct != null ? n(i.rep_pct) : n(c.split_pct)), 0);
+      const yours = collected - owe;
+      const openAmt = inv.filter((i) => i.status === 'sent' || i.status === 'overdue').reduce((s, i) => s + n(i.amount), 0);
+      wrap.append(el('div.section-title', {}, [el('h3', { text: c.name }), badge(Math.round(n(c.split_pct) * 100) + '% to them', 'violet')]));
+      wrap.append(el('div.grid.grid-3', {}, [
+        st(money(collected), 'Collected'),
+        st(money(owe), 'Owe ' + c.name.split(' ')[0], null, owe > 0 ? 'gold' : null),
+        st(money(yours), 'You keep'),
+      ]));
+      if (openAmt) wrap.append(el('div.field-hint.mt-8', { text: money(openAmt) + ' still open (unpaid) on their invoices' }));
+    });
+  }
+
+  // Add / edit contractors and their split %.
+  function openContractorManager() {
+    const body = el('div.form');
+    const listWrap = el('div');
+    const render = () => {
+      clear(listWrap);
+      contractors.forEach((c) => {
+        const nameIn = el('input.input', { value: c.name, style: 'flex:1' });
+        const pctIn = numberInput('', Math.round(n(c.split_pct) * 100), { step: '1' }); pctIn.style.maxWidth = '80px';
+        listWrap.append(el('div.field-row', { style: 'gap:8px;align-items:center;margin-bottom:8px' }, [
+          nameIn, pctIn, el('span.field-hint', { text: '%' }),
+          el('button.btn.btn-primary.btn-sm', { type: 'button', text: 'Save', onclick: async () => { await Contractors.update(c.id, { name: nameIn.value.trim(), split_pct: Number(pctIn.value || 0) / 100 }); toast('Saved'); await reload(); } }),
+          el('button.icon-btn', { type: 'button', html: iconSvg('trash', 15), onclick: async () => { if (await confirmDialog('Remove ' + c.name + '?')) { await Contractors.remove(c.id); await reload(); } } }),
+        ]));
+      });
+    };
+    const reload = async () => { contractors = await Contractors.list({ order: { col: 'name', asc: true } }); render(); refresh(); };
+    const newName = el('input.input', { placeholder: 'New contractor name', style: 'flex:1' });
+    const newPct = numberInput('', '', { step: '1', placeholder: '%' }); newPct.style.maxWidth = '80px';
+    body.append(
+      el('div.section-title', {}, [el('h3', { text: 'Contractors & their split' })]),
+      el('div.field-hint.mb-8', { text: 'The % each contractor keeps of their invoices. You keep the rest.' }),
+      listWrap,
+      el('div.field-row', { style: 'gap:8px;align-items:center;margin-top:6px' }, [
+        newName, newPct, el('span.field-hint', { text: '%' }),
+        el('button.btn.btn-gold.btn-sm', { type: 'button', text: 'Add', onclick: async () => { if (!newName.value.trim()) { toast('Name required', 'err'); return; } await Contractors.create({ name: newName.value.trim(), split_pct: Number(newPct.value || 50) / 100 }); newName.value = ''; newPct.value = ''; await reload(); } }),
+      ]),
+    );
+    render();
+    const { close } = openSheet({ title: 'Contractors', body, actions: [{ label: 'Done', tone: 'primary', onClick: () => close() }] });
   }
 
   // Rolling tax estimate: net profit (income − deductions) × effective rate.

@@ -1,6 +1,6 @@
 // Invoices — build fees, monthly retainers, one-offs, and payment status.
 // Money summary up top. Exports openInvoiceForm for the client detail sheet.
-import { Invoices, Clients } from './db.js';
+import { Invoices, Clients, Contractors } from './db.js';
 import { INVOICE_STATUS, INVOICE_TYPE, BUSINESS } from './config.js';
 import {
   el, clear, money, iconSvg, pageHeader, badge, statusBadge, relDue, fmtDate,
@@ -11,6 +11,8 @@ import { queueDoc, docBadges } from './docs.js';
 
 let clientCache = null;
 async function clients() { if (!clientCache) clientCache = await Clients.list({ order: { col: 'business_name', asc: true } }); return clientCache; }
+let contractorCache = null;
+async function contractorsList() { if (!contractorCache) contractorCache = await Contractors.list({ order: { col: 'name', asc: true } }); return contractorCache; }
 const nameFor = (list, id) => (list.find((c) => c.id === id) || {}).business_name || '—';
 
 export async function renderInvoices(root) {
@@ -60,6 +62,7 @@ export async function renderInvoices(root) {
         el('div.row-title', { text: (i.number ? i.number + ' · ' : '') + nameFor(list, i.client_id) }),
         el('div.row-sub', {}, [
           badge(labelOf(INVOICE_TYPE, i.type), 'gray'),
+          i.rep ? badge(i.rep + ' ' + Math.round((i.rep_pct || 0) * 100) + '%', 'violet') : null,
           i.description ? el('span', { text: i.description }) : null,
           i.status === 'paid' ? el('span.text-green', { text: 'paid ' + (i.paid_on ? fmtDate(i.paid_on) : '') }) : (i.due_on ? el('span', { class: dueClass(i.due_on), text: 'due ' + relDue(i.due_on) }) : null),
           ...docBadges(i),
@@ -86,13 +89,29 @@ export async function openInvoiceForm(existing = {}, onSaved, client, clientList
   const isNew = !existing.id;
   const clientOptions = [{ key: '', label: '— No client —' }, ...list.map((c) => ({ key: c.id, label: c.business_name }))];
 
+  // ---- Contractor / rev-share ----
+  const reps = (await contractorsList()).filter((r) => r.active !== false);
+  const repOptions = [{ key: '', label: 'Just me — no split' }, ...reps.map((r) => ({ key: r.name, label: `${r.name} (${Math.round((r.split_pct || 0) * 100)}% to them)` }))];
+  const repSelect = selectInput('rep', repOptions, existing.rep || '');
+  const splitEl = el('div.field-hint.mt-8');
+  const repPctFor = (name) => { const r = reps.find((x) => x.name === name); return r ? Number(r.split_pct) : (name && name === existing.rep ? Number(existing.rep_pct || 0) : 0); };
+  function updateSplit() {
+    const rep = repSelect.value;
+    const total = currentItems().reduce((s, i) => s + i.amount, 0);
+    if (!rep || !total) { splitEl.style.display = 'none'; return; }
+    const pct = repPctFor(rep); const theirs = total * pct;
+    splitEl.style.display = '';
+    splitEl.textContent = `Split: ${rep} gets ${money(theirs)} (${Math.round(pct * 100)}%) · you keep ${money(total - theirs)}`;
+  }
+  repSelect.addEventListener('change', updateSplit);
+
   // ---- Line items editor ----
   const startItems = (existing.items && existing.items.length)
     ? existing.items
     : [{ label: existing.description || '', amount: existing.amount ?? '' }];
   const itemsWrap = el('div.inv-items');
   const totalEl = el('span.row-amount');
-  function recalc() { totalEl.textContent = money(currentItems().reduce((s, i) => s + i.amount, 0)); }
+  function recalc() { totalEl.textContent = money(currentItems().reduce((s, i) => s + i.amount, 0)); updateSplit(); }
   function currentItems() { return [...itemsWrap.children].map((r) => r._get()).filter((i) => i.label || i.amount); }
   function itemRow(it) {
     const label = el('input.input', { value: it.label || '', placeholder: 'e.g. Monthly management, extra blog post' });
@@ -109,6 +128,8 @@ export async function openInvoiceForm(existing = {}, onSaved, client, clientList
   const node = el('div.form', {}, [
     el('div.form-grid.cols-2', {}, [
       field('Client', selectInput('client_id', clientOptions, existing.client_id || (client && client.id) || '')),
+      field('Contact person', textInput('contact_name', existing.contact_name, { placeholder: 'Customer contact name' })),
+      field('Contractor / rep', repSelect),
       field('Invoice #', textInput('number', existing.number, { placeholder: 'INV-001' })),
       field('Type', selectInput('type', INVOICE_TYPE, existing.type || 'monthly')),
       field('Status', selectInput('status', INVOICE_STATUS, existing.status || 'draft')),
@@ -122,6 +143,7 @@ export async function openInvoiceForm(existing = {}, onSaved, client, clientList
         el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('plus', 14) + ' Add item', onclick: () => itemsWrap.append(itemRow({})) }),
         el('div', {}, [el('span.field-hint', { text: 'Total ' }), totalEl]),
       ]),
+      splitEl,
     ])),
   ]);
   recalc();
@@ -133,6 +155,10 @@ export async function openInvoiceForm(existing = {}, onSaved, client, clientList
     v.amount = items.reduce((s, i) => s + i.amount, 0);
     v.description = items.map((i) => i.label).filter(Boolean).join(', ') || null;
     if (!v.client_id) v.client_id = null;
+    v.contact_name = v.contact_name || null;
+    // Rep split: keep the historical % on edit unless the rep changed.
+    if (v.rep) v.rep_pct = (v.rep === existing.rep && existing.rep_pct != null) ? existing.rep_pct : (repPctFor(v.rep) || null);
+    else { v.rep = null; v.rep_pct = null; }
     if (v.status === 'paid' && !v.paid_on) v.paid_on = todayISO();
     return v;
   }
@@ -180,7 +206,7 @@ export function invoiceDocHtml(inv, client = {}) {
     <div class="top"><img class="logo" src="${logo}"><div class="contact">${esc(BUSINESS.address1)}<br>${esc(BUSINESS.address2)}<br>${esc(BUSINESS.phone)}<br>${esc(BUSINESS.email)}</div></div>
     <div class="title">INVOICE</div>
     <div class="cols">
-      <div class="col"><div class="sec" style="margin-top:0">BILL TO</div><div class="billname">${esc(client.business_name || '')}</div>${client.contact_name ? esc(client.contact_name) + '<br>' : ''}${esc(cityState)}</div>
+      <div class="col"><div class="sec" style="margin-top:0">BILL TO</div><div class="billname">${esc(client.business_name || '')}</div>${(inv.contact_name || client.contact_name) ? esc(inv.contact_name || client.contact_name) + '<br>' : ''}${esc(cityState)}</div>
       <div class="col right"><div class="sec" style="margin-top:0">DETAILS</div>${detail('Invoice #', inv.number)}${detail('Issued', inv.issued_on)}${detail('Due', inv.due_on)}</div>
     </div>
     <table><thead><tr><th>Description</th><th class="r">Amount</th></tr></thead><tbody>${rows}</tbody>
