@@ -318,19 +318,19 @@ function openSplitDeposit(list = []) {
     const D = n(amt.value);
     clear(out);
     if (!D) { out.append(el('div.field-hint', { text: 'Enter a deposit amount to see the split.' })); return; }
-    const tax = D * ALLOCATION.tax;
-    const topUp = Math.max(0, ALLOCATION.floor - n(chk.value));
     const cole = D * (n(colePct.value) / 100);
+    const tax = (D - cole) * ALLOCATION.tax;   // Cole is deductible — tax only your share
+    const topUp = Math.max(0, ALLOCATION.floor - n(chk.value));
     const draw = D * ALLOCATION.draw;
-    const debt = D - tax - topUp - cole - draw;
+    const debt = D - cole - tax - topUp - draw;
     const row = (label, val, sub) => el('div.row', {}, [
       el('div.row-main', {}, [el('div.row-title', { text: label }), sub ? el('div.row-sub', {}, [el('span.muted', { text: sub })]) : null]),
       el('span.row-amount', { text: money(Math.max(0, val)) }),
     ]);
     out.append(el('div.rows.card', {}, [
-      row('→ Tax Bucket', tax, Math.round(ALLOCATION.tax * 100) + '% off the top'),
+      cole ? row('→ Cole', cole, n(colePct.value) + '% of deposit') : null,
+      row('→ Tax Bucket', tax, Math.round(ALLOCATION.tax * 100) + '% of what’s left after Cole'),
       topUp ? row('→ Keep in Checking', topUp, 'top up to $' + ALLOCATION.floor) : null,
-      row('→ Cole', cole, n(colePct.value) + '%'),
       row('→ Owner’s Draw', draw, Math.round(ALLOCATION.draw * 100) + '%'),
       row('→ Personal Debt', debt, 'remainder'),
     ]));
@@ -343,7 +343,7 @@ function openSplitDeposit(list = []) {
     field('Client (sets Cole’s %)', clientSel),
     el('div.form-grid.cols-2', {}, [field('Deposit amount', amt), field('Cole % (auto)', colePct)]),
     field('Current checking balance', chk),
-    el('div.field-hint', { text: `Tax comes off the full deposit first, then checking tops back to $${ALLOCATION.floor}, then Cole + draw, and the rest goes to debt. Cole is 15% for clients he brought (5% for A&O), 0 otherwise — pick the client to auto-fill.` }),
+    el('div.field-hint', { text: `Cole's commission comes out first (it's a deductible expense, so it isn't taxed as your income), then 30% tax on what's left, then checking tops back to $${ALLOCATION.floor}, draw, and the rest to debt. Cole is 15% for clients he brought (5% for A&O), 0 otherwise — pick the client to auto-fill.` }),
     out,
   ]);
   const { close } = openSheet({ title: 'Split a deposit', body, actions: [{ label: 'Done', tone: 'ghost', onClick: () => close() }] });
