@@ -59,7 +59,7 @@ export async function markTaskDone(t, done) {
 export async function renderTasks(root) {
   const state = { assignee: 'all', status: 'open', due: 'any' };
   root.append(pageHeader('Tasks', 'Sorted by due date — soonest first', el('div.pill-row', {}, [
-    el('button.btn.btn-ghost.btn-sm', { html: 'Reminders', title: 'Add upcoming tasks to iOS Reminders', onclick: () => exportReminders() }),
+    el('button.btn.btn-ghost.btn-sm', { html: 'Add to Cal', title: 'Add upcoming tasks to your calendar (with alerts)', onclick: () => exportReminders() }),
     el('button.btn.btn-ghost.btn-sm', { html: `${iconSvg('renew', 15)} Renewal`, onclick: async () => openTaskForm({ category: 'renewal', recur_interval: 'annual' }, refreshAfter, null, await clients()) }),
     primaryBtn('Task', async () => openTaskForm({}, refreshAfter, null, await clients()), 'plus'),
   ])));
@@ -68,8 +68,8 @@ export async function renderTasks(root) {
   function exportReminders() {
     const upcoming = all.filter((t) => t.status !== 'done' && t.due_date);
     if (!upcoming.length) { toast('No upcoming dated tasks to add'); return; }
-    downloadICS(tasksToICS(upcoming, (id) => nameFor(list, id)), 'taylormade-reminders.ics');
-    toast('Sharing ' + upcoming.length + ' reminders — choose “Reminders” / “Add All”');
+    downloadICS(tasksToICS(upcoming, (id) => nameFor(list, id)), 'taylormade-tasks.ics');
+    toast(upcoming.length + ' events — tap “Add All to Calendar”');
   }
 
   const assignees = el('div.segmented');
@@ -166,13 +166,18 @@ function icsStamp() { const d = new Date(); return d.getUTCFullYear() + icsPad(d
 const icsEsc = (s) => String(s || '').replace(/\\/g, '\\\\').replace(/[,;]/g, '\\$&').replace(/\n/g, '\\n');
 function tasksToICS(tasks, nameForId) {
   const stamp = icsStamp();
-  const out = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//TaylorMade Brands//Ops//EN', 'CALSCALE:GREGORIAN'];
+  // Calendar events (VEVENT) — iOS reliably offers "Add All to Calendar", and
+  // the alarm at the start time notifies just like a reminder. Undated-time
+  // tasks default to 9:00 AM.
+  const out = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//TaylorMade Brands//Ops//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
   tasks.filter((t) => t.due_date).forEach((t) => {
     const time = (t.due_time && /^\d\d:\d\d/.test(t.due_time)) ? t.due_time.slice(0, 5) : '09:00';
-    const dueStamp = t.due_date.replace(/-/g, '') + 'T' + time.replace(':', '') + '00';
+    const start = t.due_date.replace(/-/g, '') + 'T' + time.replace(':', '') + '00';
     const title = t.title + (t.client_id ? ' — ' + (nameForId(t.client_id) || '') : '');
-    out.push('BEGIN:VTODO', 'UID:' + t.id + '@taylormadegrowth', 'DTSTAMP:' + stamp,
-      'SUMMARY:' + icsEsc(title), 'DUE:' + dueStamp, 'STATUS:NEEDS-ACTION', 'END:VTODO');
+    out.push('BEGIN:VEVENT', 'UID:' + t.id + '-' + start + '@taylormadegrowth', 'DTSTAMP:' + stamp,
+      'SUMMARY:' + icsEsc(title), 'DTSTART:' + start, 'DURATION:PT30M',
+      'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsEsc(title), 'TRIGGER:PT0S', 'END:VALARM',
+      'END:VEVENT');
   });
   out.push('END:VCALENDAR');
   return out.join('\r\n');
@@ -248,13 +253,13 @@ export async function openTaskForm(existing = {}, onSaved, client, clientList) {
     el('div.pill-row', {}, [
       el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('car', 15) + ' Add mileage', onclick: () => { const cid = node.querySelector('[name=client_id]')?.value || null; close(); openTripForm({ client_id: cid }, onSaved, list); } }),
       el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('money', 15) + ' Add expense', onclick: () => { const cid = node.querySelector('[name=client_id]')?.value || null; close(); openExpenseForm({ client_id: cid }, onSaved, list); } }),
-      el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('renew', 15) + ' Remind (iOS)', title: 'Add to iOS Reminders', onclick: () => {
+      el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('renew', 15) + ' Add to Calendar', title: 'Add to your calendar with an alert', onclick: () => {
         const v = readForm(node);
         const dd = v.due_date || existing.due_date;
         if (!dd) { toast('Add a due date first', 'err'); return; }
         const title = v.preset === '__other__' ? v.title_other : (v.preset || existing.title);
-        downloadICS(tasksToICS([{ id: existing.id || 'new', title: title || existing.title, client_id: v.client_id || existing.client_id, due_date: dd, due_time: v.due_time || existing.due_time }], (id) => nameFor(list, id)), 'reminder.ics');
-        toast('Choose “Reminders” in the share sheet');
+        downloadICS(tasksToICS([{ id: existing.id || 'new', title: title || existing.title, client_id: v.client_id || existing.client_id, due_date: dd, due_time: v.due_time || existing.due_time }], (id) => nameFor(list, id)), 'task.ics');
+        toast('Tap “Add to Calendar”');
       } }),
     ]),
   ]);
