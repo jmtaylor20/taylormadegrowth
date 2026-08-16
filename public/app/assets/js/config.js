@@ -65,32 +65,6 @@ const PROFILES = {
       approvalsInbox: false,
     },
   },
-  // Wyatt — same stripped contractor copy as Tony, 50/50 split with TaylorMade.
-  wyatt: {
-    mode: 'contractor',
-    brand: 'TaylorMade Brands',
-    contractor: 'Wyatt',
-    host: 'wyatt',
-    keepPct: 0.5,
-    agencyPct: 0.5,
-    supabaseUrl: 'https://roitmijkrjtkxzggoxnn.supabase.co',
-    supabaseKey: 'sb_publishable_hsEtNckXRpJgan_MMXG0RA_GQSCxQaB',
-    pin: '2468',   // TEMPORARY — tell me Wyatt's PIN and I'll set it
-    owner: 'Wyatt',
-    team: ['Wyatt'],
-    features: {
-      assignee: false,
-      contractorsTab: false,
-      splitDeposit: false,
-      welcomeEmail: false,
-      repPicker: false,
-      revShareSelf: true,
-      invoicing: false,
-      proposalApproval: true,
-      buildReview: true,
-      approvalsInbox: false,
-    },
-  },
 };
 
 // Pick the active profile by hostname. Tony's copy lives at a `tony.*`

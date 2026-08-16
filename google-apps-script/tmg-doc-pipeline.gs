@@ -43,7 +43,6 @@ var CONFIG = {
   // then emails those from YOUR Gmail, exactly like your own proposals.
   CONTRACTOR_SOURCES: [
     { name: 'Tony', url: 'https://obweziktfdhdswtwzzmh.supabase.co', key: 'sb_publishable_JTKaZ1V3rU0nUiCk6OgVeQ_BaRJ2weB' },
-    { name: 'Wyatt', url: 'https://roitmijkrjtkxzggoxnn.supabase.co', key: 'sb_publishable_hsEtNckXRpJgan_MMXG0RA_GQSCxQaB' },
   ],
 };
 
