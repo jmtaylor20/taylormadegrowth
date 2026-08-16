@@ -16,6 +16,7 @@ import { openTimeForm, quickLogSheet } from './quicklog.js';
 import { openClientForm } from './forms.js';
 import { openReport } from './report.js';
 import { openInvoiceForm } from './invoices.js';
+import { queueDoc, docBadges } from './docs.js';
 import { openTaskForm, markTaskDone, hoursQuickSelect } from './tasks.js';
 import { RECUR_INTERVAL } from './config.js';
 
@@ -345,7 +346,7 @@ export async function openClient(id, onChange) {
     ]));
     if (!inv.length) { pane.append(el('div.muted.mt-8', { text: 'No invoices yet.' })); return; }
     const rows = el('div.rows.card');
-    inv.forEach((i) => rows.append(invoiceRow(i, rerender)));
+    inv.forEach((i) => rows.append(invoiceRow(i, rerender, client)));
     pane.append(rows);
   }
 
@@ -450,17 +451,19 @@ export function taskRow(t, refresh, clientList) {
 // Manually log a chunk of time against a client (hours + optional note).
 // openTimeForm now lives in quicklog.js (shared).
 
-export function invoiceRow(i, refresh) {
+export function invoiceRow(i, refresh, client) {
   return el('div.row', {}, [
     el('div.row-main', {}, [
       el('div.row-title', { text: i.description || labelOf(INVOICE_TYPE, i.type) }),
       el('div.row-sub', {}, [
         badge(labelOf(INVOICE_TYPE, i.type), 'gray'),
         i.due_on ? el('span', { class: dueClass(i.due_on, i.status === 'paid'), text: i.status === 'paid' ? 'paid' : 'due ' + relDue(i.due_on) }) : null,
+        ...docBadges(i),
       ]),
     ]),
     el('div.row-right', {}, [
       el('span.row-amount', { text: money(i.amount) }),
+      FEATURES.invoicing ? el('button.icon-btn', { title: 'Send to client (PDF email + save to Drive)', html: iconSvg('send', 18), onclick: () => queueDoc(Invoices, i, client, { send: true, drive: true }, refresh) }) : null,
       (() => { const s = selectInput('status', INVOICE_STATUS, i.status); s.classList.add('btn-sm'); s.style.width = 'auto'; s.addEventListener('change', async () => { await Invoices.update(i.id, { status: s.value, paid_on: s.value === 'paid' ? todayISO() : null }); refresh?.(); }); return s; })(),
     ]),
   ]);
