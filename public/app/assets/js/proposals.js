@@ -1,7 +1,7 @@
 // Proposals — build a proposal from line items, track its status, and track the
 // contract through to signed. Generate a clean printable proposal to send.
 import { Proposals, Clients } from './db.js';
-import { PROPOSAL_STATUS, CONTRACT_STATUS, SERVICES, DOC_TYPE, SEND_STATUS, DRIVE_STATUS, BUSINESS, OWNER, CONTRACT_TERMS, PROPOSAL_SERVICES } from './config.js';
+import { PROPOSAL_STATUS, CONTRACT_STATUS, SERVICES, DOC_TYPE, SEND_STATUS, DRIVE_STATUS, BUSINESS, OWNER, CONTRACT_TERMS, PROPOSAL_SERVICES, FEATURES } from './config.js';
 
 // Default scope-of-work areas for a growth partnership (editable per proposal).
 const SCOPE_STARTER = [
@@ -59,9 +59,10 @@ export async function renderProposals(root) {
           p.monthly_total ? badge(money(p.monthly_total) + '/mo', 'green') : null,
           p.build_total ? badge(money(p.build_total) + ' build', 'gold') : null,
           ...docBadges(p),
+          (FEATURES.proposalApproval && p.approval_status === 'rejected' && p.approval_note) ? el('span.text-red', { text: 'Note: ' + p.approval_note }) : null,
         ]),
       ]),
-      el('div.row-right', {}, [
+      el('div.row-right', {}, FEATURES.proposalApproval ? approvalActions(p, refreshAfter, list) : [
         statusBadge(PROPOSAL_STATUS, p.status),
         el('button.icon-btn', { title: 'Send to client (PDF email + save to Drive)', html: iconSvg('send', 18), onclick: () => queueDoc(Proposals, p, list.find((c) => c.id === p.client_id), { send: true, drive: true }, refreshAfter) }),
         el('button.icon-btn', { title: 'Save to Google Drive', html: iconSvg('cloud', 18), onclick: () => queueDoc(Proposals, p, list.find((c) => c.id === p.client_id), { drive: true }, refreshAfter) }),
@@ -69,6 +70,23 @@ export async function renderProposals(root) {
       ]),
     ])));
     wrap.append(rows);
+  }
+
+  // Contractor proposals can't be emailed directly — they're submitted for the
+  // owner's approval, and the owner sends the approved ones from their own email.
+  function approvalActions(p, refresh, list) {
+    const preview = el('button.icon-btn', { title: 'Preview / print', html: iconSvg('external', 18), onclick: () => previewProposal(p, nameFor(list, p.client_id)) });
+    const submit = async (label) => {
+      if (!p.client_id) { toast('Pick a client first', 'err'); return; }
+      await Proposals.update(p.id, { approval_status: 'pending', approval_note: null, status: 'sent', sent_on: todayISO() });
+      toast(label); refresh();
+    };
+    const st = p.approval_status;
+    if (st === 'approved') return [badge('Approved', 'green'), preview];
+    if (st === 'pending') return [badge('Awaiting approval', 'amber'), preview];
+    if (st === 'rejected') return [badge('Changes requested', 'red'),
+      el('button.btn.btn-gold.btn-sm', { text: 'Resubmit', onclick: () => submit('Resubmitted for approval') }), preview];
+    return [el('button.btn.btn-primary.btn-sm', { text: 'Submit for approval', onclick: () => submit('Submitted for approval') }), preview];
   }
 
   async function refreshAfter() { clientCache = null; await load(); refresh(); }
@@ -199,7 +217,7 @@ function openProposalForm(existing = {}, onSaved, list) {
     title: isNew ? 'New proposal' : 'Edit proposal', body: node, wide: true,
     actions: [
       { label: 'Cancel', tone: 'ghost', onClick: () => close() },
-      { label: 'Email now', tone: 'ghost', onClick: () => { const v = collect(); emailProposal({ ...existing, ...v }, list.find((c) => c.id === v.client_id)); } },
+      ...(FEATURES.proposalApproval ? [] : [{ label: 'Email now', tone: 'ghost', onClick: () => { const v = collect(); emailProposal({ ...existing, ...v }, list.find((c) => c.id === v.client_id)); } }]),
       { label: 'Preview', tone: 'ghost', onClick: () => { const v = collect(); previewProposal({ ...existing, ...v }, nameFor(list, v.client_id)); } },
       { label: isNew ? 'Add' : 'Save', tone: 'primary', onClick: async () => {
         const v = collect();

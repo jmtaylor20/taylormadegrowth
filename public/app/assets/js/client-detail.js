@@ -167,6 +167,24 @@ export async function openClient(id, onChange) {
       })(),
     ]));
 
+    // Contractor build review — submit the website build for the owner's
+    // sign-off before it's presented to the client. A "ready for review"
+    // checkpoint; it doesn't block the contractor's day-to-day work.
+    if (FEATURES.buildReview) {
+      const brs = client.build_review_status || 'none';
+      const tone = brs === 'approved' ? 'green' : brs === 'pending' ? 'amber' : brs === 'rejected' ? 'red' : 'gray';
+      const label = brs === 'approved' ? 'Approved by TaylorMade' : brs === 'pending' ? 'Awaiting review' : brs === 'rejected' ? 'Changes requested' : 'Not submitted';
+      pane.append(el('div.card.card-pad.mt-8', {}, [
+        el('div.field-row', { style: 'align-items:center;gap:10px;flex-wrap:wrap' }, [
+          el('span', { text: 'Website review:' }), badge(label, tone),
+          (brs === 'pending' || brs === 'approved') ? null
+            : el('button.btn.btn-primary.btn-sm', { text: brs === 'rejected' ? 'Resubmit for review' : 'Submit build for review', onclick: () => patch({ build_review_status: 'pending', build_review_note: null }) }),
+        ]),
+        (brs === 'rejected' && client.build_review_note) ? el('div.field-hint.mt-8', { text: 'Note: ' + client.build_review_note }) : null,
+        el('div.field-hint.mt-8', { text: 'Add the build link above, then submit it for Josh to review before it goes to the client.' }),
+      ]));
+    }
+
     // Onboarding checklist
     const list = client.onboarding && client.onboarding.length ? client.onboarding : [];
     const doneCount = list.filter((i) => i.done).length;
@@ -319,7 +337,8 @@ export async function openClient(id, onChange) {
       pane.append(rows);
     } else pane.append(el('div.muted.mt-8', { text: 'No payments recorded yet.' }));
 
-    // Invoices
+    // Invoices (owner only — contractor copies don't invoice)
+    if (!FEATURES.invoicing) return;
     pane.append(el('div.section-title', {}, [
       el('h3', { text: 'Invoices' }),
       el('button.btn.btn-primary.btn-sm', { text: '+ Invoice', onclick: () => openInvoiceForm({ client_id: id }, rerender, client) }),
