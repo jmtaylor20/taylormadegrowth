@@ -1,7 +1,7 @@
 // Invoices — build fees, monthly retainers, one-offs, and payment status.
 // Money summary up top. Exports openInvoiceForm for the client detail sheet.
 import { Invoices, Clients, Contractors } from './db.js';
-import { INVOICE_STATUS, INVOICE_TYPE, BUSINESS } from './config.js';
+import { INVOICE_STATUS, INVOICE_TYPE, BUSINESS, FEATURES } from './config.js';
 import {
   el, clear, money, iconSvg, pageHeader, badge, statusBadge, relDue, fmtDate,
   todayISO, emptyState, primaryBtn, field, textInput, numberInput, textArea,
@@ -129,7 +129,7 @@ export async function openInvoiceForm(existing = {}, onSaved, client, clientList
     el('div.form-grid.cols-2', {}, [
       field('Client', selectInput('client_id', clientOptions, existing.client_id || (client && client.id) || '')),
       field('Contact person', textInput('contact_name', existing.contact_name, { placeholder: 'Customer contact name' })),
-      field('Contractor / rep', repSelect),
+      FEATURES.repPicker ? field('Contractor / rep', repSelect) : null,
       field('Invoice #', textInput('number', existing.number, { placeholder: 'INV-001' })),
       field('Type', selectInput('type', INVOICE_TYPE, existing.type || 'monthly')),
       field('Status', selectInput('status', INVOICE_STATUS, existing.status || 'draft')),

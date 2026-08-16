@@ -2,7 +2,7 @@
 // One thin generic CRUD wrapper + a handful of purpose-built loaders.
 // The Supabase client is loaded via a classic <script> in index.html (vendored
 // locally at assets/vendor/supabase.js) and exposed as window.supabase.
-import { SUPABASE_URL, SUPABASE_KEY } from './config.js';
+import { SUPABASE_URL, SUPABASE_KEY, FEATURES } from './config.js';
 
 const { createClient } = window.supabase;
 export const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -133,7 +133,7 @@ export async function clientBundle(clientId) {
 export async function setStage(client, newStage) {
   const patch = { stage: newStage };
   let welcomed = false;
-  if (newStage === 'client' && client.stage !== 'client' && !client.welcome_status && client.email) {
+  if (FEATURES.welcomeEmail && newStage === 'client' && client.stage !== 'client' && !client.welcome_status && client.email) {
     patch.welcome_status = 'queued';
     patch.welcome_to = client.email;
     welcomed = true;

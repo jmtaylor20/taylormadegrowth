@@ -3,7 +3,7 @@
 import { Clients, Invoices, Tasks, Activities, Reviews, Payments, TimeEntries, clientBundle, clientFinance, setStage } from './db.js';
 import {
   SERVICE_LABEL, STAGES, STAGE_LABEL, WEBSITE_STATUS, GBP_STATUS, ADS_STATUS,
-  INVOICE_STATUS, INVOICE_TYPE, TASK_STATUS, REVIEW_STATUS, TEAM, MONTHLY_TEMPLATE, CONTRACT_STATUS,
+  INVOICE_STATUS, INVOICE_TYPE, TASK_STATUS, REVIEW_STATUS, TEAM, OWNER, FEATURES, MONTHLY_TEMPLATE, CONTRACT_STATUS,
   PAYMENT_KIND, PAYMENT_METHODS,
 } from './config.js';
 import {
@@ -213,7 +213,7 @@ export async function openClient(id, onChange) {
         if (!jobs.length) { toast('Add renewal dates first', 'err'); return; }
         try {
           for (const [title, who, date] of jobs) {
-            await Tasks.create({ client_id: id, title: title + (who ? ` (${who})` : ''), category: 'renewal', recur_interval: 'annual', recurring: true, due_date: date, assignee: 'Josh' });
+            await Tasks.create({ client_id: id, title: title + (who ? ` (${who})` : ''), category: 'renewal', recur_interval: 'annual', recurring: true, due_date: date, assignee: OWNER });
           }
           toast(`${jobs.length} renewal task(s) added`); rerender();
         } catch (e) { toast(e.message, 'err'); }
@@ -255,7 +255,7 @@ export async function openClient(id, onChange) {
       el('div.pill-row', {}, [
         el('button.btn.btn-ghost.btn-sm', { text: '+ Monthly set', onclick: async () => {
           try {
-            for (const title of MONTHLY_TEMPLATE) await Tasks.create({ client_id: id, title, category: 'monthly', recurring: true, recur_interval: 'monthly', assignee: 'Josh' });
+            for (const title of MONTHLY_TEMPLATE) await Tasks.create({ client_id: id, title, category: 'monthly', recurring: true, recur_interval: 'monthly', assignee: OWNER });
             toast('Monthly tasks added'); rerender();
           } catch (e) { toast(e.message, 'err'); }
         } }),
@@ -419,7 +419,7 @@ export function taskRow(t, refresh, clientList) {
     el('div.row-main', { style: 'cursor:pointer', onclick: () => openTaskForm(t, refresh, null, clientList) }, [
       el('div.row-title', { text: t.title, style: done ? 'text-decoration:line-through;color:var(--muted)' : '' }),
       el('div.row-sub', {}, [
-        badge(t.assignee, 'gold'),
+        FEATURES.assignee ? badge(t.assignee, 'gold') : null,
         t.due_date ? el('span', { class: dueClass(t.due_date, done), text: relDue(t.due_date) + (t.due_time ? ' · ' + fmtTime(t.due_time) : '') }) : null,
       ]),
     ]),

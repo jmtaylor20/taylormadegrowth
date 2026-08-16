@@ -2,7 +2,7 @@
 // MRR; one-click new invoice to any client/lead/prospect; record payments;
 // editable statuses and amounts.
 import { Clients, Invoices, Payments, Expenses, Trips, Contractors, getSetting, setSetting } from './db.js';
-import { INVOICE_STATUS, INVOICE_TYPE, PAYMENT_KIND, INVOICE_NET_DAYS, ALLOCATION, mileageRateFor } from './config.js';
+import { INVOICE_STATUS, INVOICE_TYPE, PAYMENT_KIND, INVOICE_NET_DAYS, ALLOCATION, mileageRateFor, FEATURES, PROFILE } from './config.js';
 import {
   el, clear, money, iconSvg, pageHeader, badge, statusBadge, labelOf, fmtDate,
   relDue, todayISO, emptyState, primaryBtn, selectInput, numberInput, toast, confirmDialog,
@@ -21,7 +21,7 @@ export async function renderFinancials(root) {
     primaryBtn('New invoice', async () => openInvoiceForm({}, refreshAfter, null, await clients()), 'plus'),
     el('button.btn.btn-gold', { html: `${iconSvg('plus', 16)} Record payment`, onclick: async () => openPickClientThenPayment(await clients(), refreshAfter) }),
     el('button.btn.btn-ghost', { html: `${iconSvg('renew', 16)} Generate monthly`, title: 'Create this month’s retainer invoices', onclick: generateMonthly }),
-    el('button.btn.btn-ghost', { html: `${iconSvg('wallet', 16)} Split deposit`, title: 'Allocate an incoming payment across your buckets', onclick: async () => openSplitDeposit(await clients()) }),
+    FEATURES.splitDeposit ? el('button.btn.btn-ghost', { html: `${iconSvg('wallet', 16)} Split deposit`, title: 'Allocate an incoming payment across your buckets', onclick: async () => openSplitDeposit(await clients()) }) : null,
   ]);
   root.append(actions);
 
@@ -29,7 +29,9 @@ export async function renderFinancials(root) {
   root.append(summary);
 
   const seg = el('div.segmented.mt-16');
-  [['invoices', 'Invoices'], ['payments', 'Payments'], ['clients', 'By client'], ['contractors', 'Contractors'], ['taxes', 'Taxes']].forEach(([k, l]) =>
+  const segTabs = [['invoices', 'Invoices'], ['payments', 'Payments'], ['clients', 'By client'],
+    ...(FEATURES.contractorsTab ? [['contractors', 'Contractors']] : []), ['taxes', 'Taxes']];
+  segTabs.forEach(([k, l]) =>
     seg.append(el('button.seg' + (state.view === k ? '.on' : ''), { text: l, dataset: { v: k }, onclick: () => { state.view = k; seg.querySelectorAll('.seg').forEach((s) => s.classList.toggle('on', s.dataset.v === k)); refresh(); } })));
   root.append(el('div.toolbar', {}, [seg]));
 
@@ -87,10 +89,25 @@ export async function renderFinancials(root) {
       el('div.stat' + (monthlyOutstanding ? '.stat-gold' : ''), {}, [el('div.stat-value', { text: money(monthlyOutstanding) }), el('div.stat-label', { text: 'Outstanding' })]),
     ]));
 
+    // Contractor copy (Tony): show his split on everything he's collected —
+    // he keeps his %, the rest is TaylorMade's cut.
+    if (FEATURES.revShareSelf) {
+      const collectedAll = invoices.filter((i) => i.status === 'paid').reduce((s, i) => s + n(i.amount), 0)
+        + payments.reduce((s, p) => s + n(p.amount), 0);
+      const keep = collectedAll * (PROFILE.keepPct || 0);
+      const agency = collectedAll - keep;
+      summary.append(el('div.section-title', {}, [el('h3', { text: 'Your split' })]));
+      summary.append(el('div.grid.grid-3', {}, [
+        el('div.stat', {}, [el('div.stat-value', { text: money(collectedAll) }), el('div.stat-label', { text: 'Collected' })]),
+        el('div.stat.stat-gold', {}, [el('div.stat-value', { text: money(keep) }), el('div.stat-label', { text: 'You keep' }), el('div.stat-sub', { text: Math.round((PROFILE.keepPct || 0) * 100) + '%' })]),
+        el('div.stat', {}, [el('div.stat-value', { text: money(agency) }), el('div.stat-label', { text: 'TaylorMade' }), el('div.stat-sub', { text: Math.round((PROFILE.agencyPct || 0) * 100) + '%' })]),
+      ]));
+    }
+
     if (state.view === 'invoices') viewInvoices();
     else if (state.view === 'payments') viewPayments();
     else if (state.view === 'taxes') viewTaxes();
-    else if (state.view === 'contractors') viewContractors();
+    else if (state.view === 'contractors' && FEATURES.contractorsTab) viewContractors();
     else viewByClient();
   }
 
