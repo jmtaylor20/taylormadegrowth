@@ -73,7 +73,7 @@ body.locked { background: radial-gradient(120% 120% at 50% 0%, #16305a 0%, var(-
 @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
 
 /* ---- App layout ---------------------------------------------------------- */
-.layout { display: grid; grid-template-columns: 1fr; position: fixed; inset: 0; }
+.layout { display: grid; grid-template-columns: 1fr; position: fixed; top: 0; left: 0; right: 0; height: var(--app-height, 100dvh); }
 .sidebar { display: none; }
 .main {
   min-width: 0;
