@@ -110,6 +110,7 @@ function tabLink(n) {
     html: `<span class="tab-ic">${navGlyph(n, 24)}</span><span>${n.label}</span>`,
   });
 }
+const BUILD = 'v19';
 function moreTab() {
   const overflow = NAV.filter((n) => !n.primary);
   const tab = el('a.tab.tab-more', {
@@ -128,6 +129,7 @@ function toggleMore(items) {
     html: `<span class="ic">${iconSvg(n.icon, 18)}</span> ${n.label}`,
     onclick: () => setTimeout(() => pop.remove(), 0),
   })));
+  pop.append(el('div', { text: 'Build ' + BUILD, style: 'font-size:.7rem;color:var(--muted);padding:8px 12px 2px;text-align:center;border-top:1px solid var(--line);margin-top:4px' }));
   document.body.append(pop);
   setTimeout(() => document.addEventListener('click', function close(ev) {
     if (!pop.contains(ev.target)) { pop.remove(); document.removeEventListener('click', close); }
@@ -144,6 +146,24 @@ function boot() {
   route();
   registerSW();
   startTimerTicker();
+  startAppHeight();
+}
+
+// Pin the app frame to the REAL visible height. iOS mis-measures 100dvh in a
+// standalone PWA (leaving the tab bar floating), so we read the actual visual
+// viewport height in JS and expose it as --app-height, updated on resize.
+function setAppHeight() {
+  const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+  document.documentElement.style.setProperty('--app-height', Math.round(h) + 'px');
+}
+let appHeightWired = false;
+function startAppHeight() {
+  setAppHeight();
+  if (appHeightWired) return;
+  appHeightWired = true;
+  window.addEventListener('resize', setAppHeight);
+  window.addEventListener('orientationchange', () => setTimeout(setAppHeight, 250));
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', setAppHeight);
 }
 
 // Keep any live running-timer labels ticking every second.
