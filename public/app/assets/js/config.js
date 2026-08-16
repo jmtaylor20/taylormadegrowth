@@ -4,17 +4,83 @@
 //
 // The Supabase publishable key is safe for the browser (governed by RLS).
 
-export const SUPABASE_URL = 'https://buubrapkkqyalecwbhkh.supabase.co';
-export const SUPABASE_KEY = 'sb_publishable_h-KXdNNW7Tc_BFut25s_sQ_ypIidBJB';
+// ---- Deployment profiles ---------------------------------------------------
+// ONE codebase serves both TaylorMade's full ops app (Josh) and stripped-down
+// "clean copies" for contractors (Tony, later Wyatt). The active profile is
+// picked by hostname, so the same push deploys to every site — a contractor
+// copy is just a config entry + its own Supabase project + its own subdomain.
+//
+//   mode      'owner'      = the full app (everything on)
+//             'contractor' = a contractor's private copy (admin bits stripped)
+//   features  per-surface switches read across the app (see FEATURES below)
+//   keepPct / agencyPct   contractor's take vs. TaylorMade's cut (contractor mode)
+const PROFILES = {
+  // Josh — the full TaylorMade Brands operating system.
+  owner: {
+    mode: 'owner',
+    brand: 'TaylorMade Brands',
+    supabaseUrl: 'https://buubrapkkqyalecwbhkh.supabase.co',
+    supabaseKey: 'sb_publishable_h-KXdNNW7Tc_BFut25s_sQ_ypIidBJB',
+    pin: '4280',
+    owner: 'Josh',
+    team: ['Josh', 'Wyatt', 'Tony', 'Cole'],
+    features: {
+      assignee: true,        // "assigned to" picker on tasks
+      contractorsTab: true,  // Financials → Contractors payout tab
+      splitDeposit: true,    // Split-deposit waterfall (Josh's Relay buckets)
+      welcomeEmail: true,    // auto welcome email when a lead becomes a client
+      repPicker: true,       // per-invoice contractor/rep split picker
+      revShareSelf: false,   // show "you keep X% · TaylorMade Y%" summaries
+    },
+  },
+  // Tony — TaylorMade-branded, operates under Josh's umbrella. Keeps the
+  // marketing tools (Reports + Google Ads); admin bits stripped. Flat 25% of
+  // everything he collects goes to TaylorMade (he keeps 75%).
+  tony: {
+    mode: 'contractor',
+    brand: 'TaylorMade Brands',
+    contractor: 'Tony',
+    keepPct: 0.75,
+    agencyPct: 0.25,
+    supabaseUrl: 'https://obweziktfdhdswtwzzmh.supabase.co',
+    supabaseKey: 'sb_publishable_JTKaZ1V3rU0nUiCk6OgVeQ_BaRJ2weB',
+    pin: '2468',   // TEMPORARY — change to Tony's own PIN (this line only)
+    owner: 'Tony',
+    team: ['Tony'],
+    features: {
+      assignee: false,
+      contractorsTab: false,
+      splitDeposit: false,
+      welcomeEmail: false,
+      repPicker: false,
+      revShareSelf: true,
+    },
+  },
+};
+
+// Pick the active profile by hostname. Tony's copy lives at a `tony.*`
+// subdomain (e.g. tony.taylormadegrowth.com) pointed at the same site; every
+// other host is Josh's full app.
+function resolveProfile() {
+  const h = (typeof location !== 'undefined' ? location.hostname : '').toLowerCase();
+  if (/(^|\.)tony(\.|-|$)/.test(h) || h.startsWith('tony')) return PROFILES.tony;
+  return PROFILES.owner;
+}
+export const PROFILE = resolveProfile();
+export const FEATURES = PROFILE.features;
+
+// The Supabase publishable key is safe for the browser (governed by RLS).
+export const SUPABASE_URL = PROFILE.supabaseUrl;
+export const SUPABASE_KEY = PROFILE.supabaseKey;
 
 // Light access gate. NOTE: the PIN lives in the client, so it deters casual
 // access rather than being real security. Swap for Supabase logins when you
 // want a true lock-down (the database is already RLS-ready).
-export const APP_PIN = '4280';
+export const APP_PIN = PROFILE.pin;
 
 // ---- Team (task assignment) ----------------------------------------------
-export const OWNER = 'Josh';
-export const TEAM = ['Josh', 'Wyatt', 'Tony', 'Cole'];
+export const OWNER = PROFILE.owner;
+export const TEAM = PROFILE.team;
 
 // ---- Business info (shown on proposals / quotes / estimates / invoices) ----
 export const BUSINESS = {

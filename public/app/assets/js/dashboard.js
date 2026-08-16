@@ -5,7 +5,7 @@ import {
   el, money, fmtDate, relDue, daysUntil, statTile, sectionTitle, emptyState,
   badge, iconSvg, pageHeader,
 } from './ui.js';
-import { STAGE_LABEL, STAGES } from './config.js';
+import { STAGE_LABEL, STAGES, FEATURES } from './config.js';
 import { openClient } from './client-detail.js';
 
 export async function renderDashboard(root) {
@@ -52,7 +52,7 @@ export async function renderDashboard(root) {
   }))));
 
   attn.append(attnCard('Tasks due soon', 'tasks', dueTasks.map((t) => ({
-    title: t.title, sub: badge(t.assignee, 'gold').outerHTML + ' ' + relDue(t.due_date), html: true,
+    title: t.title, sub: (FEATURES.assignee ? badge(t.assignee, 'gold').outerHTML + ' ' : '') + relDue(t.due_date), html: true,
     tone: daysUntil(t.due_date) < 0 ? 'red' : 'amber', onClick: t.client_id ? () => openClient(t.client_id, () => renderDashboard(clear(root))) : null,
   }))));
 

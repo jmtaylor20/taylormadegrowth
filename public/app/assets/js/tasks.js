@@ -3,7 +3,7 @@
 // it forward to the next cycle instead of closing it. Exports openTaskForm +
 // markTaskDone, reused by the client detail sheet.
 import { Tasks, Clients, TimeEntries, tasksFor } from './db.js';
-import { TEAM, TASK_CATEGORY, TASK_PRESETS, RECUR_INTERVAL, SUPABASE_URL } from './config.js';
+import { TEAM, OWNER, FEATURES, TASK_CATEGORY, TASK_PRESETS, RECUR_INTERVAL, SUPABASE_URL } from './config.js';
 import {
   el, clear, iconSvg, pageHeader, badge, relDue, fmtDate, fmtTime, fmtHours, daysUntil, emptyState, primaryBtn, clientAvatar,
   field, textInput, textArea, selectInput, numberInput, dateInput, checkbox, readForm, hoursSelect,
@@ -72,11 +72,15 @@ export async function renderTasks(root) {
     toast('Opening Calendar — tap “Subscribe”');
   }
 
-  const assignees = el('div.segmented');
-  ['all', ...TEAM].forEach((a) => assignees.append(el('button.seg' + (state.assignee === a ? '.on' : ''), {
-    text: a === 'all' ? 'Everyone' : a, dataset: { a }, onclick: () => { state.assignee = a; assignees.querySelectorAll('.seg').forEach((s) => s.classList.toggle('on', s.dataset.a === a)); refresh(); },
-  })));
-  root.append(el('div.toolbar', {}, [assignees]));
+  // Assignee filter — only shown when the profile has a team (owner mode).
+  // A contractor copy is a team of one, so the picker is hidden.
+  if (FEATURES.assignee) {
+    const assignees = el('div.segmented');
+    ['all', ...TEAM].forEach((a) => assignees.append(el('button.seg' + (state.assignee === a ? '.on' : ''), {
+      text: a === 'all' ? 'Everyone' : a, dataset: { a }, onclick: () => { state.assignee = a; assignees.querySelectorAll('.seg').forEach((s) => s.classList.toggle('on', s.dataset.a === a)); refresh(); },
+    })));
+    root.append(el('div.toolbar', {}, [assignees]));
+  }
 
   const statuses = el('div.segmented');
   [['open', 'Open'], ['done', 'Done'], ['all', 'All']].forEach(([k, l]) => statuses.append(el('button.seg' + (state.status === k ? '.on' : ''), {
@@ -192,7 +196,7 @@ export async function openTaskForm(existing = {}, onSaved, client, clientList) {
     otherField,
     el('div.form-grid.cols-2', {}, [
       field('Client', selectInput('client_id', clientOptions, existing.client_id || (client && client.id) || '')),
-      field('Assignee', selectInput('assignee', TEAM, existing.assignee || 'Josh')),
+      FEATURES.assignee ? field('Assignee', selectInput('assignee', TEAM, existing.assignee || OWNER)) : null,
       field('Category', catSel),
       field('Repeat', selectInput('recur_interval', RECUR_INTERVAL, existing.recur_interval || 'none')),
       field('Date', dateInput('due_date', existing.due_date || todayStr())),
@@ -227,7 +231,7 @@ export async function openTaskForm(existing = {}, onSaved, client, clientList) {
         const patch = {
           title,
           client_id: cid,
-          assignee: v.assignee || 'Josh',
+          assignee: v.assignee || OWNER,
           category: v.category || 'general',
           recur_interval: v.recur_interval || 'none',
           recurring: !!(v.recur_interval && v.recur_interval !== 'none'),
