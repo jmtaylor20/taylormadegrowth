@@ -110,7 +110,7 @@ function tabLink(n) {
     html: `<span class="tab-ic">${navGlyph(n, 24)}</span><span>${n.label}</span>`,
   });
 }
-const BUILD = 'v20';
+const BUILD = 'v21';
 function moreTab() {
   const overflow = NAV.filter((n) => !n.primary);
   const tab = el('a.tab.tab-more', {
@@ -129,7 +129,11 @@ function toggleMore(items) {
     html: `<span class="ic">${iconSvg(n.icon, 18)}</span> ${n.label}`,
     onclick: () => setTimeout(() => pop.remove(), 0),
   })));
-  pop.append(el('div', { text: 'Build ' + BUILD, style: 'font-size:.7rem;color:var(--muted);padding:8px 12px 2px;text-align:center;border-top:1px solid var(--line);margin-top:4px' }));
+  const tb = document.querySelector('.tabbar');
+  const rb = tb ? Math.round(tb.getBoundingClientRect().bottom) : 0;
+  const vv = window.visualViewport;
+  const dbg = `iH${Math.round(window.innerHeight)} vv${vv ? Math.round(vv.height) : '-'} sc${(window.screen || {}).height || '-'} tbB${rb}`;
+  pop.append(el('div', { text: 'Build ' + BUILD + ' · ' + dbg, style: 'font-size:.62rem;color:var(--muted);padding:8px 10px 2px;text-align:center;border-top:1px solid var(--line);margin-top:4px' }));
   document.body.append(pop);
   setTimeout(() => document.addEventListener('click', function close(ev) {
     if (!pop.contains(ev.target)) { pop.remove(); document.removeEventListener('click', close); }

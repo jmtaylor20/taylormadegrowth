@@ -84,7 +84,7 @@ body.locked { background: radial-gradient(120% 120% at 50% 0%, #16305a 0%, var(-
 
 /* Bottom tab bar (mobile) */
 .tabbar {
-  position: absolute; left: 0; right: 0; bottom: 0; z-index: 40;
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
   display: flex; justify-content: space-around;
   background: rgba(255,255,255,.92); backdrop-filter: blur(12px);
   border-top: 1px solid var(--line);
