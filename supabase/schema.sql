@@ -306,6 +306,33 @@ create table if not exists public.contractors (
   created_at timestamptz default now()
 );
 
+-- ---- Money entries (unified in/out ledger) --------------------------------
+-- One row per money movement. Money records outlive the client they came from,
+-- so client_id/invoice_id are set null on delete, never cascaded.
+create table if not exists public.money_entries (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  entry_date date not null default current_date,
+  direction text not null default 'in',        -- in | out
+  amount numeric(10,2) not null default 0,
+  category text,                               -- retainer, build_fee, software, mileage…
+  client_id uuid references public.clients (id) on delete set null,
+  invoice_id uuid references public.invoices (id) on delete set null,
+  vendor text,
+  method text,                                 -- stripe, zelle, card, cash…
+  deductible boolean not null default false,
+  taxable boolean not null default true,
+  note text,
+  receipt_url text,
+  source text not null default 'manual',       -- manual | payment | expense | import
+  source_id uuid,                              -- row this was mirrored from, if any
+  constraint money_entries_direction_check check (direction in ('in', 'out'))
+);
+
+create index if not exists money_entries_date_idx      on public.money_entries (entry_date desc);
+create index if not exists money_entries_client_idx    on public.money_entries (client_id);
+create index if not exists money_entries_direction_idx on public.money_entries (direction);
+
 -- ---- Row-level security ----------------------------------------------------
 -- Permissive: the app is PIN-gated and uses the publishable (anon) key.
 do $$
@@ -314,7 +341,7 @@ begin
   foreach t in array array[
     'clients','tasks','invoices','content_items','assets','reviews','proposals',
     'activities','payments','reports','trips','meetings','time_entries','expenses',
-    'app_settings','ad_metrics','contractors'
+    'app_settings','ad_metrics','contractors','money_entries'
   ] loop
     execute format('alter table public.%I enable row level security;', t);
     execute format('drop policy if exists %I on public.%I;', t || '_all', t);
