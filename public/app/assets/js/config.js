@@ -48,7 +48,7 @@ const PROFILES = {
     agencyPct: 0.25,
     supabaseUrl: 'https://obweziktfdhdswtwzzmh.supabase.co',
     supabaseKey: 'sb_publishable_JTKaZ1V3rU0nUiCk6OgVeQ_BaRJ2weB',
-    pin: '2468',   // TEMPORARY — change to Tony's own PIN (this line only)
+    pin: '0519',   // Tony's PIN
     owner: 'Tony',
     team: ['Tony'],
     features: {
