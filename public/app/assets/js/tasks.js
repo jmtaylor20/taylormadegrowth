@@ -3,7 +3,7 @@
 // it forward to the next cycle instead of closing it. Exports openTaskForm +
 // markTaskDone, reused by the client detail sheet.
 import { Tasks, Clients, TimeEntries, tasksFor } from './db.js';
-import { TEAM, TASK_CATEGORY, TASK_PRESETS, RECUR_INTERVAL } from './config.js';
+import { TEAM, TASK_CATEGORY, TASK_PRESETS, RECUR_INTERVAL, SUPABASE_URL } from './config.js';
 import {
   el, clear, iconSvg, pageHeader, badge, relDue, fmtDate, fmtTime, fmtHours, daysUntil, emptyState, primaryBtn, clientAvatar,
   field, textInput, textArea, selectInput, numberInput, dateInput, checkbox, readForm, hoursSelect,
@@ -59,17 +59,17 @@ export async function markTaskDone(t, done) {
 export async function renderTasks(root) {
   const state = { assignee: 'all', status: 'open', due: 'any' };
   root.append(pageHeader('Tasks', 'Sorted by due date — soonest first', el('div.pill-row', {}, [
-    el('button.btn.btn-ghost.btn-sm', { html: 'Add to Cal', title: 'Add upcoming tasks to your calendar (with alerts)', onclick: () => exportReminders() }),
+    el('button.btn.btn-ghost.btn-sm', { html: 'Sync Calendar', title: 'Subscribe to your tasks as a live iOS/Google calendar', onclick: () => subscribeCalendar() }),
     el('button.btn.btn-ghost.btn-sm', { html: `${iconSvg('renew', 15)} Renewal`, onclick: async () => openTaskForm({ category: 'renewal', recur_interval: 'annual' }, refreshAfter, null, await clients()) }),
     primaryBtn('Task', async () => openTaskForm({}, refreshAfter, null, await clients()), 'plus'),
   ])));
 
-  // Export upcoming open, dated tasks to an iOS-importable reminders file.
-  function exportReminders() {
-    const upcoming = all.filter((t) => t.status !== 'done' && t.due_date);
-    if (!upcoming.length) { toast('No upcoming dated tasks to add'); return; }
-    downloadICS(tasksToICS(upcoming, (id) => nameFor(list, id)), 'taylormade-tasks.ics');
-    toast(upcoming.length + ' events — tap “Add All to Calendar”');
+  // Subscribe to the live task feed. webcal:// is handled by iOS Calendar
+  // directly (no download), and it auto-refreshes as tasks change.
+  function subscribeCalendar() {
+    const feed = SUPABASE_URL.replace(/^https?:/, 'webcal:') + '/functions/v1/calendar';
+    window.location.href = feed;
+    toast('Opening Calendar — tap “Subscribe”');
   }
 
   const assignees = el('div.segmented');
@@ -158,51 +158,6 @@ function due(date, done) {
   return n < 0 ? 'text-red' : n <= 3 ? 'text-amber' : 'muted';
 }
 
-// ---- iOS Reminders export (.ics VTODO) ------------------------------------
-// A website can't write into the Reminders app directly, but iOS offers to add
-// VTODO items when you open an .ics. Tasks with no time default to 9:00 AM.
-const icsPad = (n) => String(n).padStart(2, '0');
-function icsStamp() { const d = new Date(); return d.getUTCFullYear() + icsPad(d.getUTCMonth() + 1) + icsPad(d.getUTCDate()) + 'T' + icsPad(d.getUTCHours()) + icsPad(d.getUTCMinutes()) + icsPad(d.getUTCSeconds()) + 'Z'; }
-const icsEsc = (s) => String(s || '').replace(/\\/g, '\\\\').replace(/[,;]/g, '\\$&').replace(/\n/g, '\\n');
-function tasksToICS(tasks, nameForId) {
-  const stamp = icsStamp();
-  // Calendar events (VEVENT) — iOS reliably offers "Add All to Calendar", and
-  // the alarm at the start time notifies just like a reminder. Undated-time
-  // tasks default to 9:00 AM.
-  const out = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//TaylorMade Brands//Ops//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
-  tasks.filter((t) => t.due_date).forEach((t) => {
-    const time = (t.due_time && /^\d\d:\d\d/.test(t.due_time)) ? t.due_time.slice(0, 5) : '09:00';
-    const start = t.due_date.replace(/-/g, '') + 'T' + time.replace(':', '') + '00';
-    const title = t.title + (t.client_id ? ' — ' + (nameForId(t.client_id) || '') : '');
-    out.push('BEGIN:VEVENT', 'UID:' + t.id + '-' + start + '@taylormadegrowth', 'DTSTAMP:' + stamp,
-      'SUMMARY:' + icsEsc(title), 'DTSTART:' + start, 'DURATION:PT30M',
-      'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsEsc(title), 'TRIGGER:PT0S', 'END:VALARM',
-      'END:VEVENT');
-  });
-  out.push('END:VCALENDAR');
-  return out.join('\r\n');
-}
-// Deliver the .ics. iOS installed PWAs can't download files, but they can
-// share them (share sheet → Add to Reminders) and can open a data URL (native
-// import prompt). Try share first, then data URL, then a plain download.
-async function downloadICS(text, filename) {
-  try {
-    const file = new File([text], filename, { type: 'text/calendar' });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], title: 'Add to Reminders' });
-      return;
-    }
-  } catch (e) { if (e && e.name === 'AbortError') return; }
-  const dataUrl = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(text);
-  try { const w = window.open(dataUrl, '_blank'); if (w) return; } catch (e) { /* ignore */ }
-  try {
-    const a = document.createElement('a');
-    a.href = dataUrl; a.download = filename; a.rel = 'noopener';
-    document.body.appendChild(a); a.click();
-    setTimeout(() => a.remove(), 1500);
-  } catch (e) { toast('Could not open reminders on this device', 'err'); }
-}
-
 // Shared task create/edit sheet — one screen does it all: pick the task (or
 // type a custom one), set client + date, optionally punch in hours, and check
 // "complete". A single Save creates/updates the task, logs the hours as a time
@@ -253,14 +208,6 @@ export async function openTaskForm(existing = {}, onSaved, client, clientList) {
     el('div.pill-row', {}, [
       el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('car', 15) + ' Add mileage', onclick: () => { const cid = node.querySelector('[name=client_id]')?.value || null; close(); openTripForm({ client_id: cid }, onSaved, list); } }),
       el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('money', 15) + ' Add expense', onclick: () => { const cid = node.querySelector('[name=client_id]')?.value || null; close(); openExpenseForm({ client_id: cid }, onSaved, list); } }),
-      el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('renew', 15) + ' Add to Calendar', title: 'Add to your calendar with an alert', onclick: () => {
-        const v = readForm(node);
-        const dd = v.due_date || existing.due_date;
-        if (!dd) { toast('Add a due date first', 'err'); return; }
-        const title = v.preset === '__other__' ? v.title_other : (v.preset || existing.title);
-        downloadICS(tasksToICS([{ id: existing.id || 'new', title: title || existing.title, client_id: v.client_id || existing.client_id, due_date: dd, due_time: v.due_time || existing.due_time }], (id) => nameFor(list, id)), 'task.ics');
-        toast('Tap “Add to Calendar”');
-      } }),
     ]),
   ]);
   syncOther();
