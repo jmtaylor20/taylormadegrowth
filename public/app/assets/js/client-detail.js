@@ -463,7 +463,7 @@ export function invoiceRow(i, refresh, client) {
     ]),
     el('div.row-right', {}, [
       el('span.row-amount', { text: money(i.amount) }),
-      FEATURES.invoicing ? el('button.icon-btn', { title: 'Send to client (PDF email + save to Drive)', html: iconSvg('send', 18), onclick: () => queueDoc(Invoices, i, client, { send: true, drive: true }, refresh) }) : null,
+      FEATURES.invoicing ? el('button.icon-btn', { title: (i.status === 'paid' ? 'Send receipt (PDF email + Drive)' : 'Send to client (PDF email + Drive)'), html: iconSvg('send', 18), onclick: () => queueDoc(Invoices, i, client, { send: true, drive: true }, refresh) }) : null,
       (() => { const s = selectInput('status', INVOICE_STATUS, i.status); s.classList.add('btn-sm'); s.style.width = 'auto'; s.addEventListener('change', async () => { await Invoices.update(i.id, { status: s.value, paid_on: s.value === 'paid' ? todayISO() : null }); refresh?.(); }); return s; })(),
     ]),
   ]);
