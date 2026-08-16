@@ -227,6 +227,7 @@ function processRow_(table, row) {
       var subject;
       if (type === 'proposal') subject = 'Your ' + docLabel + ' from ' + CONFIG.BUSINESS_NAME + (row.title ? ' — ' + row.title : '');
       else if (type === 'report') subject = 'Your ' + (row.period ? row.period + ' ' : '') + 'growth report from ' + CONFIG.BUSINESS_NAME;
+      else if (row.status === 'paid') subject = ('Receipt' + (row.number ? ' for ' + row.number : '') + ' from ' + CONFIG.BUSINESS_NAME).trim();
       else subject = ('Invoice ' + (row.number || '') + ' from ' + CONFIG.BUSINESS_NAME).trim();
       GmailApp.sendEmail(to, subject, emailPlain_(type, row, client), {
         name: CONFIG.FROM_NAME,
@@ -383,6 +384,7 @@ function invoiceHtml_(inv, client) {
   var items = (inv.items && inv.items.length) ? inv.items : [{ label: inv.description || titleCase_(inv.type || 'Service'), amount: inv.amount }];
   var total = items.reduce(function (s, it) { return s + Number(it.amount || 0); }, 0) || Number(inv.amount || 0);
   var itemRows = items.map(function (it) { return '<tr><td>' + esc_(it.label || '') + '</td><td class="r">' + money_(Number(it.amount || 0)) + '</td></tr>'; }).join('');
+  var paid = String(inv.status) === 'paid';
   function detail(label, value) {
     return '<div class="drow"><span class="dl">' + esc_(label) + '</span><span class="dv">' + esc_(value || '—') + '</span></div>';
   }
@@ -406,19 +408,22 @@ function invoiceHtml_(inv, client) {
     '.pay{font-size:13px;color:#444}.foot{margin-top:20px;text-align:center;color:#888;font-size:11px;font-family:Arial}' +
     '</style></head><body><div class="frame">' +
     '<div class="top"><img class="logo" src="' + LOGO + '"><div class="contact">1346 Tallapoosa Street<br>Notasulga, AL 36866<br>334.391.6641<br>josh@taylormadegrowth.com</div></div>' +
-    '<div class="title">INVOICE</div>' +
+    '<div class="title">' + (paid ? 'RECEIPT' : 'INVOICE') + '</div>' +
+    (paid ? '<div style="text-align:center;color:#1a7f37;font-family:Arial,Helvetica,sans-serif;font-weight:800;letter-spacing:3px;font-size:13px;margin:-8px 0 12px">PAID</div>' : '') +
     '<div class="cols">' +
       '<div class="col"><div class="sec" style="margin-top:0">BILL TO</div>' +
         '<div class="billname">' + esc_(client.business_name || '') + '</div>' +
         (client.contact_name ? esc_(client.contact_name) + '<br>' : '') + esc_(cityState) + '</div>' +
       '<div class="col right"><div class="sec" style="margin-top:0">DETAILS</div>' +
-        detail('Invoice #', inv.number) + detail('Issued', inv.issued_on) + detail('Due', inv.due_on) + '</div>' +
+        detail('Invoice #', inv.number) + detail('Issued', inv.issued_on) +
+        (paid ? detail('Paid on', inv.paid_on) + (inv.method ? detail('Method', inv.method) : '') : detail('Due', inv.due_on)) + '</div>' +
     '</div>' +
     '<table><thead><tr><th>Description</th><th class="r">Amount</th></tr></thead>' +
     '<tbody>' + itemRows + '</tbody>' +
-    '<tfoot><tr><td>Total due</td><td class="r">' + money_(total) + '</td></tr></tfoot></table>' +
-    (inv.method ? '<div class="pay">Payment method: ' + esc_(inv.method) + '</div>' : '') +
-    '<div class="foot">Thank you for your business.  TaylorMade Brands · taylormadegrowth.com</div>' +
+    '<tfoot><tr><td>' + (paid ? 'Total paid' : 'Total due') + '</td><td class="r">' + money_(total) + '</td></tr>' +
+      (paid ? '<tr><td style="font-weight:400;color:#555">Balance due</td><td class="r" style="font-weight:400;color:#555">' + money_(0) + '</td></tr>' : '') + '</tfoot></table>' +
+    (!paid && inv.method ? '<div class="pay">Payment method: ' + esc_(inv.method) + '</div>' : '') +
+    '<div class="foot">' + (paid ? 'Paid in full — thank you for your business.' : 'Thank you for your business.') + '  TaylorMade Brands · taylormadegrowth.com</div>' +
     '</div></body></html>';
 }
 
@@ -443,6 +448,10 @@ function emailPlain_(type, row, client) {
     return hi + 'Here’s your ' + (row.period ? row.period + ' ' : '') + 'growth report — a snapshot of your marketing this month is attached.' +
       (row.highlights ? '\n\n' + row.highlights : '') + sign;
   }
+  if (row.status === 'paid') {
+    return hi + 'Thank you for your payment! Your receipt' + (row.number ? ' for invoice ' + row.number : '') +
+      ' is attached — paid in full: ' + money_(row.amount) + '.' + sign;
+  }
   return hi + 'Please find your invoice' + (row.number ? ' ' + row.number : '') + ' attached' +
     (row.due_on ? ', due ' + row.due_on : '') + '. The amount due is ' + money_(row.amount) + '.\n\nThanks for your business,\n' + CONFIG.FROM_NAME + '\n' + CONFIG.WEBSITE;
 }
@@ -454,6 +463,9 @@ function emailHtml_(type, row, client) {
   } else if (type === 'report') {
     body = '<p>Here’s your ' + (row.period ? esc_(row.period) + ' ' : '') + 'growth report — a snapshot of your marketing this month is attached.</p>' +
       (row.highlights ? '<p>' + esc_(row.highlights) + '</p>' : '');
+  } else if (row.status === 'paid') {
+    body = '<p>Thank you for your payment! Your receipt' + (row.number ? ' for invoice ' + esc_(row.number) : '') +
+      ' is attached — <b>paid in full: ' + money_(row.amount) + '</b>.</p>';
   } else {
     body = '<p>Please find your invoice' + (row.number ? ' ' + esc_(row.number) : '') + ' attached' +
       (row.due_on ? ', due ' + esc_(row.due_on) : '') + '. The amount due is <b>' + money_(row.amount) + '</b>.</p>';

@@ -187,6 +187,7 @@ export function invoiceDocHtml(inv, client = {}) {
   const total = items.reduce((s, it) => s + Number(it.amount || 0), 0) || Number(inv.amount || 0);
   const cityState = [client.city, client.state].filter(Boolean).join(', ');
   const rows = items.map((it) => `<tr><td>${esc(it.label || '')}</td><td class="r">${money(Number(it.amount || 0))}</td></tr>`).join('');
+  const paid = inv.status === 'paid';
   const detail = (l, v) => `<div class="drow"><span class="dl">${esc(l)}</span> <span>${esc(v || '—')}</span></div>`;
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
     html,body{margin:0}body{font-family:Georgia,'Times New Roman',serif;color:#1c1c1c}
@@ -204,15 +205,16 @@ export function invoiceDocHtml(inv, client = {}) {
     .pay{font-size:13px;color:#444}.foot{margin-top:20px;text-align:center;color:#888;font-size:11px;font-family:Arial}
   </style></head><body><div class="frame">
     <div class="top"><img class="logo" src="${logo}"><div class="contact">${esc(BUSINESS.address1)}<br>${esc(BUSINESS.address2)}<br>${esc(BUSINESS.phone)}<br>${esc(BUSINESS.email)}</div></div>
-    <div class="title">INVOICE</div>
+    <div class="title">${paid ? 'RECEIPT' : 'INVOICE'}</div>
+    ${paid ? '<div style="text-align:center;color:#1a7f37;font-family:Arial,Helvetica,sans-serif;font-weight:800;letter-spacing:3px;font-size:13px;margin:-8px 0 12px">PAID</div>' : ''}
     <div class="cols">
       <div class="col"><div class="sec" style="margin-top:0">BILL TO</div><div class="billname">${esc(client.business_name || '')}</div>${(inv.contact_name || client.contact_name) ? esc(inv.contact_name || client.contact_name) + '<br>' : ''}${esc(cityState)}</div>
-      <div class="col right"><div class="sec" style="margin-top:0">DETAILS</div>${detail('Invoice #', inv.number)}${detail('Issued', inv.issued_on)}${detail('Due', inv.due_on)}</div>
+      <div class="col right"><div class="sec" style="margin-top:0">DETAILS</div>${detail('Invoice #', inv.number)}${detail('Issued', inv.issued_on)}${paid ? detail('Paid on', inv.paid_on) + (inv.method ? detail('Method', inv.method) : '') : detail('Due', inv.due_on)}</div>
     </div>
     <table><thead><tr><th>Description</th><th class="r">Amount</th></tr></thead><tbody>${rows}</tbody>
-    <tfoot><tr><td>Total due</td><td class="r">${money(total)}</td></tr></tfoot></table>
-    ${inv.method ? `<div class="pay">Payment method: ${esc(inv.method)}</div>` : ''}
-    <div class="foot">Thank you for your business.  ${esc(BUSINESS.name)} · ${esc(BUSINESS.website)}</div>
+    <tfoot><tr><td>${paid ? 'Total paid' : 'Total due'}</td><td class="r">${money(total)}</td></tr>${paid ? `<tr><td style="font-weight:400;color:#555">Balance due</td><td class="r" style="font-weight:400;color:#555">${money(0)}</td></tr>` : ''}</tfoot></table>
+    ${(!paid && inv.method) ? `<div class="pay">Payment method: ${esc(inv.method)}</div>` : ''}
+    <div class="foot">${paid ? 'Paid in full — thank you for your business.' : 'Thank you for your business.'}  ${esc(BUSINESS.name)} · ${esc(BUSINESS.website)}</div>
   </div></body></html>`;
 }
 

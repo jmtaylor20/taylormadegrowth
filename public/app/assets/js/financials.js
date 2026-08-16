@@ -286,7 +286,7 @@ export async function renderFinancials(root) {
       ]),
       el('div.row-right', {}, [
         el('span.row-amount', { text: money(i.amount) }),
-        el('button.icon-btn', { title: 'Send to client (PDF email + save to Drive)', html: iconSvg('send', 18), onclick: () => queueDoc(Invoices, i, list.find((c) => c.id === i.client_id), { send: true, drive: true }, refreshAfter) }),
+        el('button.icon-btn', { title: (i.status === 'paid' ? 'Send receipt (PDF email + Drive)' : 'Send to client (PDF email + Drive)'), html: iconSvg('send', 18), onclick: () => queueDoc(Invoices, i, list.find((c) => c.id === i.client_id), { send: true, drive: true }, refreshAfter) }),
         el('button.icon-btn', { title: 'Save to Google Drive', html: iconSvg('cloud', 18), onclick: () => queueDoc(Invoices, i, list.find((c) => c.id === i.client_id), { drive: true }, refreshAfter) }),
         (() => { const s = selectInput('status', INVOICE_STATUS, i.status); s.style.width = 'auto'; s.classList.add('btn-sm'); s.addEventListener('change', async () => { await Invoices.update(i.id, { status: s.value, paid_on: s.value === 'paid' ? todayISO() : null }); refreshAfter(); }); return s; })(),
       ]),
