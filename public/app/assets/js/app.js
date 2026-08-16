@@ -52,7 +52,7 @@ async function route() {
   highlight(item.id);
   clear(mainEl);
   if (!CONFIGURED) mainEl.append(configBanner());
-  window.scrollTo(0, 0);
+  mainEl.scrollTop = 0;
   try {
     await item.render(mainEl);
   } catch (e) {

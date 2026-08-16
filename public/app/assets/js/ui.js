@@ -94,6 +94,7 @@ export function openSheet({ title, body, actions = [], wide = false, onClose }) 
     el('h2.sheet-title', { text: title || '' }),
     el('button.icon-btn', { type: 'button', title: 'Close', onclick: () => closeSheet(onClose), html: iconSvg('x', 22) }),
   ]);
+  const grip = el('div.sheet-grip', { 'aria-hidden': 'true' }, [el('span')]);
   const content = el('div.sheet-body', {}, [body]);
   const foot = actions.length ? el('div.sheet-foot') : null;
   actions.forEach((a) => {
@@ -102,9 +103,28 @@ export function openSheet({ title, body, actions = [], wide = false, onClose }) 
       onclick: async (ev) => { const r = a.onClick?.(ev); if (r instanceof Promise) await r; },
     }));
   });
-  sheet.append(head, content); if (foot) sheet.append(foot);
+  sheet.append(grip, head, content); if (foot) sheet.append(foot);
   overlay.append(sheet);
   overlay.addEventListener('click', (e) => { if (e.target === overlay) closeSheet(onClose); });
+
+  // Pull-down-to-close: grab the grip or header and drag down.
+  let dragY = null;
+  const ptY = (e) => (e.touches && e.touches[0] ? e.touches[0].clientY : (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientY : e.clientY));
+  const onStart = (e) => { dragY = ptY(e); sheet.style.transition = 'none'; };
+  const onMove = (e) => { if (dragY == null) return; const dy = ptY(e) - dragY; if (dy > 0) sheet.style.transform = `translateY(${dy}px)`; };
+  const onEnd = (e) => {
+    if (dragY == null) return;
+    const dy = ptY(e) - dragY; dragY = null; sheet.style.transition = '';
+    if (dy > 90) { sheet.style.transform = 'translateY(100%)'; closeSheet(onClose); }
+    else sheet.style.transform = '';
+  };
+  [grip, head].forEach((elm) => {
+    elm.addEventListener('touchstart', onStart, { passive: true });
+    elm.addEventListener('touchmove', onMove, { passive: true });
+    elm.addEventListener('touchend', onEnd);
+    elm.addEventListener('touchcancel', onEnd);
+  });
+
   document.body.append(overlay);
   document.body.classList.add('no-scroll');
   return { overlay, sheet, body: content, close: () => closeSheet(onClose) };

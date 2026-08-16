@@ -40,8 +40,10 @@ body {
   -webkit-font-smoothing: antialiased;
   line-height: 1.45;
   overscroll-behavior-y: none;
+  height: 100dvh;
+  overflow: hidden;            /* app shell — the body never scrolls; .main does */
 }
-body.no-scroll { overflow: hidden; }
+body.no-scroll .main { overflow: hidden; }   /* freeze content behind an open sheet */
 h1, h2, h3, h4 { font-family: var(--head); font-weight: 700; margin: 0; letter-spacing: -.01em; }
 a { color: inherit; text-decoration: none; }
 button { font-family: inherit; cursor: pointer; }
@@ -70,10 +72,11 @@ body.locked { background: radial-gradient(120% 120% at 50% 0%, #16305a 0%, var(-
 @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
 
 /* ---- App layout ---------------------------------------------------------- */
-.layout { display: grid; grid-template-columns: 1fr; min-height: 100dvh; }
+.layout { display: grid; grid-template-columns: 1fr; height: 100dvh; }
 .sidebar { display: none; }
 .main {
   min-width: 0;
+  height: 100dvh; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
   padding: calc(16px + env(safe-area-inset-top)) 16px calc(84px + env(safe-area-inset-bottom));
   max-width: 1180px; width: 100%; margin: 0 auto;
 }
@@ -281,12 +284,15 @@ body.locked { background: radial-gradient(120% 120% at 50% 0%, #16305a 0%, var(-
 .overlay { position: fixed; inset: 0; z-index: 60; background: rgba(8,26,51,.5); backdrop-filter: blur(2px); display: flex; align-items: flex-end; justify-content: center; }
 .sheet { background: var(--card); width: 100%; max-width: 560px; max-height: 92dvh; border-radius: 20px 20px 0 0; display: flex; flex-direction: column; box-shadow: var(--shadow-lg); animation: sheet-up .24s cubic-bezier(.2,.8,.2,1); }
 .sheet-wide { max-width: 780px; }
+.sheet-grip { display: flex; justify-content: center; padding: 9px 0 3px; touch-action: none; cursor: grab; flex: 0 0 auto; }
+.sheet-grip span { width: 42px; height: 5px; border-radius: 3px; background: var(--line); display: block; }
+.sheet-head { touch-action: none; }
 @keyframes sheet-up { from { transform: translateY(30px); opacity: .6; } to { transform: none; opacity: 1; } }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: #fff; border-radius: 20px 20px 0 0; }
 .sheet-title { font-size: 1.15rem; color: var(--navy-dark); }
-.sheet-body { padding: 18px; overflow-y: auto; }
+.sheet-body { padding: 18px; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .sheet-foot { padding: 14px 18px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); display: flex; gap: 10px; justify-content: flex-end; position: sticky; bottom: 0; background: #fff; }
-@media (min-width: 640px) { .overlay { align-items: center; } .sheet { border-radius: 20px; } .sheet-head { border-radius: 20px 20px 0 0; } }
+@media (min-width: 640px) { .overlay { align-items: center; } .sheet { border-radius: 20px; } .sheet-head { border-radius: 20px 20px 0 0; } .sheet-grip { display: none; } }
 .confirm-msg { color: var(--ink); font-size: .95rem; }
 
 /* ---- Client detail ------------------------------------------------------- */
