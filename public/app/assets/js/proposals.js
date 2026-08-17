@@ -304,13 +304,13 @@ export function proposalDocHtml(p, clientName, opts = {}) {
     ? '<div class="sec">Terms</div>' + extras.map(([l, v]) => `<div class="trow"><span class="tl">${esc(l)}</span><span class="tv">${esc(v)}</span></div>`).join('')
     : '';
 
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(p.title || docType)}</title><style>
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(p.title || docType)}</title><style>
     *{box-sizing:border-box}html,body{margin:0}
-    body{font-family:Georgia,'Times New Roman',serif;color:#1b1b1b;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{font-family:Georgia,'Times New Roman',serif;color:#1b1b1b;background:#fff;overflow-x:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .page{max-width:720px;margin:0 auto;padding:24px 10px}
-    .top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;border-bottom:3px solid #13294b;padding-bottom:16px}
-    .logo{width:230px;height:auto}
-    .contact{text-align:right;font-size:13px;line-height:1.55;color:#333}
+    .top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap;border-bottom:3px solid #13294b;padding-bottom:16px}
+    .logo{width:230px;max-width:56%;height:auto}
+    .contact{text-align:right;font-size:13px;line-height:1.55;color:#333;word-break:break-word;min-width:0}
     .eyebrow{font-family:Arial,Helvetica,sans-serif;font-weight:800;letter-spacing:3px;font-size:12px;color:#b98d1a;margin-top:24px}
     h1{font-family:Arial,Helvetica,sans-serif;font-size:30px;line-height:1.15;color:#0d1b30;margin:4px 0 8px}
     .subline{font-size:15px;color:#444}
@@ -336,6 +336,7 @@ export function proposalDocHtml(p, clientName, opts = {}) {
     .sec{page-break-after:avoid;break-after:avoid}
     h1,.subline{page-break-after:avoid}
     table,tr,.chips,.trow,.sign,.term,.top,.body{page-break-inside:avoid;break-inside:avoid}
+    @media (max-width:560px){.top{flex-direction:column}.contact{text-align:left}.logo{max-width:70%}.cols{flex-direction:column;gap:10px}.col.right{text-align:left}h1{font-size:24px}}
     @page{margin:0.5in}
   </style></head><body><div class="page">
     <div class="top"><img class="logo" src="${logo}" alt="TaylorMade Brands"><div class="contact">${esc(BUSINESS.name)}<br>${esc(BUSINESS.address1)}<br>${esc(BUSINESS.address2)}<br>${esc(BUSINESS.phone)}<br>${esc(BUSINESS.email)}</div></div>
