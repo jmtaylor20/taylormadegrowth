@@ -7,6 +7,7 @@ import * as store from '../store.js';
 import { el, money, signed, ord, stat, section, sheet, field, input } from '../ui.js';
 import {
   payPeriods, payDaysFor, rebalance, runningBalance, floatTarget, recurringFor,
+  reimbursementGaps,
 } from '../calc.js';
 
 export default function paydays(state) {
@@ -131,12 +132,40 @@ function accountBlock(state, acct) {
       'The pay periods are already about as balanced as moving dates can make them. What is left is a size problem, not a timing one.')));
   }
 
+  // ---- Reimbursement timing ------------------------------------------------
+
+  const gaps = reimbursementGaps(state, acct.id);
+  for (const g of gaps) {
+    block.append(el('div.card', { style: { borderColor: 'var(--gold)' } },
+      el('div', { style: { fontWeight: '650', fontSize: '15px', marginBottom: '8px' } }, '⏱ You are floating a bill that pays you back'),
+      el('p', { style: { margin: '0 0 12px', fontSize: '14px', lineHeight: '1.5' } },
+        `${g.bill.name} leaves on the ${ord(g.bill.day)}, but the ${g.credit.name.toLowerCase()} that covers it does not land until the ${ord(g.creditDay)}. So every month you front ${money(g.bill.amount)} of your own money for ${g.creditDay - g.bill.day} day${g.creditDay - g.bill.day === 1 ? '' : 's'} — and those are the days the account is at its thinnest.`),
+      el('p', { style: { margin: '0 0 12px', fontSize: '14px', lineHeight: '1.5' } },
+        `Move it to the ${ord(g.suggested)} and it funds itself. Costs nothing, and it is the single cheapest fix on this page.`),
+      el('button.btn.sm.wide', {
+        type: 'button', text: `Move to the ${ord(g.suggested)}`,
+        onclick: async () => {
+          if (!confirm(`Set ${g.bill.name} to the ${ord(g.suggested)}? Do this once the biller has actually changed it.`)) return;
+          await store.commit((s) => {
+            const r = s.recurring.find((x) => x.id === g.bill.id);
+            if (r) r.day = g.suggested;
+          });
+        },
+      }),
+    ));
+  }
+
   // ---- Running balance -----------------------------------------------------
+
+  // The "after" line reflects every fix offered above — rebalancing moves and
+  // the reimbursement-timing move alike — so the curve matches the advice.
+  const overrides = { ...(plan?.overrides ?? {}) };
+  for (const g of gaps) overrides[g.bill.id] = g.suggested;
 
   const run = runningBalance(state, acct.id, 0);
   const need = floatTarget(state, acct.id);
-  const runAfter = plan ? runningBalance(state, acct.id, 0, plan.overrides) : run;
-  const needAfter = plan ? Math.max(0, -runAfter.low.balance) : need;
+  const runAfter = runningBalance(state, acct.id, 0, overrides);
+  const needAfter = Math.max(0, -runAfter.low.balance);
 
   block.append(el('div.card', {},
     el('div', { style: { fontWeight: '650', fontSize: '15px', marginBottom: '4px' } }, 'Cushion needed'),
@@ -145,12 +174,15 @@ function accountBlock(state, acct) {
     curve(run.points, runAfter.points),
     el('div.stats', { style: { marginTop: '14px' } },
       stat('As it stands', money(need), `low point on the ${ord(run.low.day)}`, need > 0 ? 'neg' : 'pos'),
-      stat('After moving dates', money(needAfter), needAfter < need ? `${money(need - needAfter)} less to hold` : 'no change', needAfter > 0 ? 'warn' : 'pos'),
+      stat('After the fixes', money(needAfter), needAfter < need ? `${money(need - needAfter)} less to hold` : 'no change',
+        needAfter > 0 ? 'warn' : 'pos'),
     ),
     el('p', { style: { margin: '12px 0 0', fontSize: '14px', lineHeight: '1.5' } },
-      need > 0
-        ? `Hold ${money(needAfter || need)} in this account that you never spend and the front-end crunch stops happening. That buffer is worth more than it looks: it is what stops a tight week turning into a card swipe at ${acct.id === 'laci' ? '25%' : '22%'}.`
-        : 'The account never dips below zero across the month. The timing is fine.'),
+      need <= 0
+        ? 'The account never dips below zero across the month. The timing is fine.'
+        : needAfter < need * 0.5
+          ? `Make those changes and the cushion you need drops from ${money(need)} to ${money(needAfter)} — the dip all but disappears without a dollar of extra income. Until then, hold ${money(need)} you never touch.`
+          : `Hold ${money(need)} in this account that you never spend and the front-end crunch stops happening. That buffer is worth more than it looks: it is what stops a tight week turning into a card swipe.`),
   ));
 
   return block;

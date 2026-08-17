@@ -47,6 +47,16 @@ export function recurringFor(state, accountId) {
     .sort((a, b) => (a.day ?? 32) - (b.day ?? 32));
 }
 
+// Bills that have stopped — a carrier switch, a payment that ended, spend that
+// moved to the business account. Kept visible rather than deleted: seeing what
+// came off is half the point of tracking it.
+export const endedFor = (state, accountId) =>
+  forAccount(state.recurring, accountId).filter((r) => r.paused);
+
+// Still being paid, but you have decided to stop them.
+export const cancelList = (state, accountId) =>
+  forAccount(state.recurring, accountId).filter((r) => r.action === 'cancel' && !r.paused);
+
 export function recurringTotals(state, accountId) {
   const rows = recurringFor(state, accountId);
   const household = rows.filter((r) => !isBusiness(r)).reduce((s, r) => s + r.amount, 0);
@@ -86,11 +96,16 @@ export function actuals(state, accountId) {
   const avgIn = a.statements.reduce((s, x) => s + x.in - (x.oneOffIn ?? 0), 0) / n;
   const { all } = recurringTotals(state, accountId);
   const payroll = monthlyIncome(state, accountId);
+  // Statements are history. Bills that have since stopped were part of that
+  // outflow, so they have to be credited back or the unplanned figure absorbs
+  // them and looks worse than reality.
+  const sinceEnded = endedFor(state, accountId).reduce((s, r) => s + r.amount, 0);
   return {
     avgIn,
     avgOut,
     recurring: all,
-    unplanned: Math.max(0, avgOut - all),
+    sinceEnded,
+    unplanned: Math.max(0, avgOut - all - sinceEnded),
     // Deposits arriving on top of payroll: business draws, Venmo, mobile
     // deposits, reimbursements. What is quietly holding the month together.
     nonPayrollIn: Math.max(0, avgIn - payroll),
@@ -105,8 +120,9 @@ export function actualsHousehold(state) {
     avgOut: acc.avgOut + p.avgOut,
     recurring: acc.recurring + p.recurring,
     unplanned: acc.unplanned + p.unplanned,
+    sinceEnded: acc.sinceEnded + p.sinceEnded,
     nonPayrollIn: acc.nonPayrollIn + p.nonPayrollIn,
-  }), { avgIn: 0, avgOut: 0, recurring: 0, unplanned: 0, nonPayrollIn: 0 });
+  }), { avgIn: 0, avgOut: 0, recurring: 0, unplanned: 0, sinceEnded: 0, nonPayrollIn: 0 });
 }
 
 export function household(state) {
@@ -126,11 +142,19 @@ export function household(state) {
 // on day D has to carry every bill until the next one lands, so the month is
 // modelled as pay periods that wrap around the month boundary.
 
+export const incomeDays = (i) => i.payDays ?? (i.day ? [i.day] : []);
+
+// Periods are defined by paychecks, not by every deposit. A reimbursement
+// landing mid-month is income inside whatever period it falls in — treating it
+// as its own payday would chop the month into stretches nobody is actually
+// budgeting against.
+const isWage = (i) => i.kind !== 'credit';
+
 export function payDaysFor(state, accountId) {
   const days = new Set();
   for (const i of forAccount(state.income, accountId)) {
-    if (i.excludeFromPlan) continue;
-    for (const d of i.payDays ?? (i.day ? [i.day] : [])) days.add(d);
+    if (i.excludeFromPlan || !isWage(i)) continue;
+    for (const d of incomeDays(i)) days.add(d);
   }
   return [...days].sort((a, b) => a - b);
 }
@@ -160,8 +184,9 @@ export function payPeriods(state, accountId, overrides = {}) {
     const span = daysInPeriod(start, next);
     const spanSet = new Set(span);
 
+    // The paycheck that opens the period, plus any credit landing inside it.
     const income = incomes
-      .filter((i) => (i.payDays ?? [i.day]).includes(start))
+      .filter((i) => (isWage(i) ? [start] : span).some((d) => incomeDays(i).includes(d)))
       .reduce((s, i) => s + i.amount, 0);
 
     const items = bills.filter((b) => spanSet.has(overrides[b.id] ?? b.day));
@@ -228,6 +253,21 @@ export function rebalance(state, accountId) {
   return { before: base, after: payPeriods(state, accountId, overrides), moves, overrides };
 }
 
+// A bill that is reimbursed, but leaves the account before the reimbursement
+// lands, forces you to float it out of pocket every single month. Moving it a
+// few days later makes it self-funding — no money required, just a date.
+export function reimbursementGaps(state, accountId) {
+  const out = [];
+  for (const r of recurringFor(state, accountId)) {
+    if (!r.reimbursedBy || !r.day) continue;
+    const src = state.income.find((i) => i.id === r.reimbursedBy);
+    const creditDay = src && incomeDays(src)[0];
+    if (!creditDay || r.day > creditDay) continue;
+    out.push({ bill: r, credit: src, creditDay, suggested: Math.min(28, creditDay + 2) });
+  }
+  return out;
+}
+
 // Day-by-day cash position across one cycle. The walk starts at the first
 // payday, not the 1st of the month — a month-end paycheck is what funds the
 // following 1st, and starting at the calendar boundary would count those bills
@@ -245,7 +285,7 @@ export function runningBalance(state, accountId, opening = 0, overrides = {}) {
   let day = startDay;
   for (let n = 0; n < 31; n += 1) {
     for (const i of incomes) {
-      if ((i.payDays ?? [i.day]).includes(day)) bal += i.amount;
+      if (incomeDays(i).includes(day)) bal += i.amount;
     }
     for (const b of bills) {
       if ((overrides[b.id] ?? b.day) === day) bal -= b.amount;

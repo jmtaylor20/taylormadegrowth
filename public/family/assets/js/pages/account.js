@@ -9,6 +9,7 @@ import {
 import {
   recurringFor, recurringTotals, byCategory, leftover, monthlyIncome, upsideIncome,
   forAccount, isBusiness, colorFor, pipelineSummary, monthlySetAside, actuals,
+  endedFor, cancelList,
 } from '../calc.js';
 
 const CATEGORIES = ['Housing', 'Debt', 'Insurance', 'Utilities', 'Kids', 'Transport', 'Subscriptions', 'Health', 'Business', 'Other'];
@@ -107,6 +108,59 @@ export default function account(state, id) {
     onclick: () => editRecurring(state, null, id),
   }));
 
+  // ---- Decided to cut ------------------------------------------------------
+
+  const cutting = cancelList(state, id);
+  if (cutting.length) {
+    const total = cutting.reduce((s, r) => s + r.amount, 0);
+    wrap.append(section('Decided to cut', `${money(total)}/mo`));
+    const c = el('div.card.flush');
+    for (const r of cutting) {
+      c.append(el('div.row', {},
+        el('div.day', { text: '✕', style: { color: 'var(--gold)' } }),
+        el('div.mid', {}, el('div.nm', {}, el('span.t', { text: r.name })),
+          el('div.meta', { text: r.note ?? 'Still being charged.' })),
+        el('div', { style: { textAlign: 'right' } },
+          el('div.amt', { text: money(r.amount, true) }),
+          el('div.tiny', { text: `${money(r.amount * 12)}/yr` })),
+      ));
+    }
+    c.append(el('div', { style: { padding: '12px 16px' } },
+      el('button.btn.sm.wide', {
+        type: 'button', text: 'Mark as cancelled',
+        onclick: async () => {
+          if (!confirm('Mark these as cancelled and take them out of the plan?')) return;
+          await store.commit((s) => {
+            for (const r of s.recurring) if (r.action === 'cancel') { r.paused = true; delete r.action; }
+          });
+        },
+      })));
+    wrap.append(c);
+    wrap.append(el('p.tiny', { style: { margin: '8px 2px 0' } },
+      `Still leaving the account until you actually cancel. ${money(total * 12)} a year once done.`));
+  }
+
+  // ---- No longer running ---------------------------------------------------
+
+  const ended = endedFor(state, id);
+  if (ended.length) {
+    const saved = ended.reduce((s, r) => s + r.amount, 0);
+    wrap.append(section('No longer running', `${money(saved)}/mo off`));
+    const c = el('div.card.flush');
+    for (const r of ended) {
+      c.append(el('button.row', { type: 'button', onclick: () => editRecurring(state, r) },
+        el('div.day', { text: '✓', style: { background: 'rgba(47,191,120,.16)', color: 'var(--josh)' } }),
+        el('div.mid', {},
+          el('div.nm', {}, el('span.t.strike', { text: r.name })),
+          el('div.meta', { text: r.note ?? 'Stopped.' })),
+        el('div.amt.mut.strike', { text: money(r.amount, true) }),
+      ));
+    }
+    wrap.append(c);
+    wrap.append(el('p.tiny', { style: { margin: '8px 2px 0' } },
+      `${money(saved)} a month that used to leave this account and no longer does — ${money(saved * 12)} a year. Tap any of them to put one back if it restarts.`));
+  }
+
   // ---- Business commingling ------------------------------------------------
 
   if (business > 0) {
@@ -175,6 +229,10 @@ export default function account(state, id) {
       ),
       el('p', { style: { margin: '12px 0 0', fontSize: '14px', lineHeight: '1.5' } },
         `${money(act.recurring)} of that is the recurring above. The other ${money(act.unplanned)} is groceries, fuel, eating out and one-offs — ${Math.round((act.unplanned / (act.avgOut || 1)) * 100)}% of everything leaving this account.`),
+      act.sinceEnded > 0
+        ? el('p.tiny', { style: { margin: '10px 0 0' } },
+            `These averages come from statements that predate your recent changes, so ${money(act.sinceEnded)} of now-cancelled bills has been credited back out of the unplanned figure. Next month's statement is the one that will confirm it.`)
+        : null,
       act.nonPayrollIn > 400
         ? el('p', { style: { margin: '10px 0 0', fontSize: '14px', lineHeight: '1.5' } },
             `${money(act.nonPayrollIn)} a month lands here beyond payroll. Without it this account does not balance.`)
@@ -215,6 +273,8 @@ function recurringRow(state, r) {
   else if (r.confidence === 'likely') flags.append(el('span.flag.guess', { text: 'GUESS' }));
   if (r.variable) flags.append(el('span.flag.var', { text: 'VARIES' }));
   if (isBusiness(r)) flags.append(el('span.flag.biz', { text: 'BIZ' }));
+  if (r.reimbursed) flags.append(el('span.flag', { text: 'REIMBURSED', style: { background: 'rgba(47,191,120,.16)', color: 'var(--josh)' } }));
+  if (r.action === 'cancel') flags.append(el('span.flag.ask', { text: 'CANCELLING' }));
 
   const meta = [r.category, r.day ? `${ord(r.day)} of the month` : null, r.observed ? `seen ${r.observed.length}×` : null]
     .filter(Boolean).join(' · ');

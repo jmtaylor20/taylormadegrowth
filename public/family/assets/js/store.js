@@ -96,8 +96,19 @@ async function applyUpdate(shipped) {
     }),
     debts: shipped.debts.map((d) => {
       const mine = state.debts.find((x) => x.id === d.id);
-      // Balances you filled in beat the placeholders I shipped.
-      return mine && mine.balance > 0 && d.balance === 0 ? { ...d, ...mine } : d;
+      // Balances you filled in beat the placeholders I shipped — but only the
+      // figures. Spreading the whole stale record over the update would drag
+      // back an old name, type or answered question along with them.
+      if (!mine || !(mine.balance > 0) || d.balance > 0) return d;
+      return {
+        ...d,
+        balance: mine.balance,
+        apr: mine.apr || d.apr,
+        limit: mine.limit || d.limit,
+        asOf: mine.asOf || d.asOf,
+        confidence: 'confirmed',
+        question: undefined,
+      };
     }),
   };
 
