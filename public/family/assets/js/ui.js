@@ -87,13 +87,49 @@ export function legend(parts, fmt = money) {
 }
 
 // Bottom sheet. `body(close)` returns the content; resolve by calling close().
+//
+// The scrim is pinned to the *visual* viewport rather than left to `inset: 0`.
+// On iOS a `position: fixed` element is anchored to the layout viewport, which
+// does not shrink when the keyboard opens — so the sheet gets laid out behind
+// the keyboard while the page is visually scrolled up. The result is a panel
+// you can see but cannot tap: the button is drawn in one place and the touch
+// lands somewhere else entirely. Following visualViewport keeps what is on
+// screen and what is tappable in the same place.
 export function sheet(title, body) {
   const scrim = el('div.scrim');
-  const close = () => scrim.remove();
+  const vv = window.visualViewport;
+
+  const sync = () => {
+    if (!vv) return;
+    scrim.style.top = `${vv.offsetTop}px`;
+    scrim.style.left = `${vv.offsetLeft}px`;
+    scrim.style.height = `${vv.height}px`;
+    scrim.style.width = `${vv.width}px`;
+    scrim.style.bottom = 'auto';
+    scrim.style.right = 'auto';
+  };
+
+  const close = () => {
+    vv?.removeEventListener('resize', sync);
+    vv?.removeEventListener('scroll', sync);
+    scrim.remove();
+  };
+
   scrim.addEventListener('click', (e) => { if (e.target === scrim) close(); });
   const panel = el('div.sheet', {}, el('h3', { text: title }), body(close));
   scrim.append(panel);
   document.body.append(scrim);
+
+  sync();
+  vv?.addEventListener('resize', sync);
+  vv?.addEventListener('scroll', sync);
+
+  // Typing in a field must never push the action out of reach. Whatever the
+  // keyboard does to the viewport, bring the focused field back into view.
+  panel.addEventListener('focusin', (e) => {
+    setTimeout(() => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }), 220);
+  });
+
   const first = panel.querySelector('input, select, textarea');
   if (first) setTimeout(() => first.focus(), 60);
   return close;

@@ -40,7 +40,10 @@ body {
 }
 
 button, input, select, textarea { font: inherit; color: inherit; }
-button { cursor: pointer; border: 0; background: none; }
+button { cursor: pointer; border: 0; background: none; touch-action: manipulation; }
+/* Without this a disabled button is indistinguishable from a live one, which
+   turns a guard into a bug report. */
+button:disabled { opacity: .45; cursor: default; }
 a { color: var(--blue); }
 
 /* ---------- Lock screen ---------- */
@@ -270,11 +273,24 @@ label.f input:focus, label.f select:focus { outline: 2px solid var(--blue); outl
   border-radius: 20px 20px 0 0;
   border-top: 1px solid var(--line);
   padding: 18px var(--pad) calc(env(safe-area-inset-bottom, 0px) + 20px);
-  max-height: 88dvh; overflow-y: auto;
+  /* The scrim is sized to the visual viewport in JS, so 100% here is the
+     space actually on screen — dvh would include the area behind the iOS
+     keyboard and push the action button out of reach. */
+  max-height: 100%; overflow-y: auto;
+  overscroll-behavior: contain;
   animation: rise .22s ease;
 }
 @keyframes rise { from { transform: translateY(24px); opacity: .6; } }
 .sheet h3 { margin: 0 0 14px; font-size: 17px; }
+
+/* A sheet's primary action stays pinned to the bottom of it. Sheet content can
+   be taller than the screen — and the iOS keyboard makes the screen shorter
+   still — so an action that scrolls away with the content ends up just past
+   the fold: visible enough to look present, far enough to be unreachable. */
+.sheet .btn.primary.wide {
+  position: sticky; bottom: 0; z-index: 1;
+  box-shadow: 0 -8px 14px -4px var(--bg-raise), 0 -18px 12px -12px var(--bg-raise);
+}
 
 /* ---------- Misc ---------- */
 .empty { text-align: center; padding: 34px 20px; color: var(--ink-3); font-size: 14px; }
