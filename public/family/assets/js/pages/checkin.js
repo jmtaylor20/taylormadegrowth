@@ -1,11 +1,11 @@
-// Monthly check-in and the spending envelope.
+// Monthly check-in, the spending budget, and measured debt progress.
 //
 // There is no bank connection and there does not need to be one. Balances drift;
-// the recurring list barely moves. So the app stays current on about eight
-// numbers typed once a month, and it tells you plainly when they are stale.
+// the recurring list barely moves. So the app stays current on a handful of
+// numbers typed once a month, and it says plainly when they are stale.
 
 import * as store from '../store.js';
-import { el, money, signed, stat, sheet, field, input, select, today, longDate, bar } from '../ui.js';
+import { el, money, signed, stat, sheet, field, input, today, longDate, bar } from '../ui.js';
 import { checkInStatus, spendingStatus, debtTotals, attackable, debtTrend } from '../calc.js';
 
 // ---- Check-in --------------------------------------------------------------
@@ -22,7 +22,7 @@ export function checkInCard(state) {
     ),
     el('p.tiny', { style: { margin: '0 0 12px' } },
       s.days === null
-        ? 'Eight numbers, about five minutes. Run it when your statements land and everything here stays true.'
+        ? 'A handful of numbers, about five minutes. Run it when your statements land and everything here stays true.'
         : s.stale
           ? 'These figures are old enough to be misleading now. The projections are only as good as the last time you typed a balance in.'
           : s.due
@@ -56,14 +56,6 @@ export function runCheckIn(state) {
       return { d, i };
     });
 
-    const env = envelopeStatus(state);
-    let envInput = null;
-    if (env.configured) {
-      wrap.append(el('div.sect', {}, el('h2', { text: 'Spending money' })));
-      envInput = input({ type: 'number', step: '0.01', inputmode: 'decimal', placeholder: String(env.balance.toFixed(2)) });
-      wrap.append(field('Venmo balance right now', envInput));
-    }
-
     const note = el('textarea', { rows: '2', placeholder: 'Anything that changed this month?' });
     wrap.append(field('Notes', note));
 
@@ -89,17 +81,12 @@ export function runCheckIn(state) {
             if (v !== null && t) { t.balance = v; t.asOf = stamp; t.confidence = 'confirmed'; }
             debts[d.id] = t?.balance ?? 0;
           }
-          if (envInput) {
-            const v = num(envInput);
-            if (v !== null) { s.envelope.balance = v; s.envelope.asOf = stamp; }
-          }
           s.checkIns ??= [];
           s.checkIns.push({
             date: stamp,
             balances,
             debts,
             totalDebt: Object.values(debts).reduce((x, y) => x + y, 0),
-            envelope: s.envelope?.balance ?? null,
             note: note.value.trim() || undefined,
           });
         });
