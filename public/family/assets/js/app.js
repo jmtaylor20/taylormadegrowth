@@ -61,6 +61,33 @@ function renderLock() {
   go.addEventListener('click', submit);
   pass.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
 
+  // Restore path for a device that has never seen this vault, after the
+  // passphrase has been changed away from the one it shipped with.
+  const picker = el('input', { type: 'file', accept: 'application/json,.json', style: { display: 'none' } });
+  picker.addEventListener('change', async () => {
+    const file = picker.files?.[0];
+    if (!file) return;
+    if (!pass.value) { err.textContent = 'Type the passphrase first, then pick the file.'; return; }
+    try {
+      await store.unlockFromFile(file, pass.value);
+      renderApp();
+    } catch (e) {
+      err.textContent = String(e.message || '').includes('backup')
+        ? e.message
+        : 'That passphrase does not open this backup.';
+    } finally {
+      picker.value = '';
+    }
+  });
+
+  inner.append(
+    picker,
+    el('button.linky', {
+      type: 'button', text: 'Set up from a backup file',
+      onclick: () => picker.click(),
+    }),
+  );
+
   clear(root).append(el('div.lock', {}, inner));
   setTimeout(() => pass.focus(), 80);
 }
@@ -143,20 +170,35 @@ function settingsSheet() {
       ),
 
       el('div.sect', {}, el('h2', { text: 'Passphrase' })),
+      el('p.tiny', { text: 'Pick something you will actually remember — a short sentence beats a random string, and a longer phrase is stronger anyway. Minimum 12 characters.' }),
     );
 
     const p1 = input({ type: 'password', placeholder: 'New passphrase', autocomplete: 'new-password' });
     const msg = el('div.tiny');
+    const after = el('div');
     wrap.append(
       field('Change passphrase', p1),
       el('button.btn.sm', {
         text: 'Save passphrase', type: 'button',
         onclick: async () => {
-          try { await store.changePassphrase(p1.value); msg.textContent = 'Changed. Use it next time you unlock.'; msg.className = 'tiny pos'; }
-          catch (e) { msg.textContent = e.message; msg.className = 'tiny neg'; }
+          try {
+            await store.changePassphrase(p1.value);
+            msg.textContent = 'Changed on this device.';
+            msg.className = 'tiny pos';
+            p1.value = '';
+            after.replaceChildren(
+              el('p.tiny', { style: { marginTop: '10px' } },
+                'This only changed the copy on this phone. To use the new passphrase on another device, save a sealed backup and open it there with “Set up from a backup file” on the unlock screen.'),
+              el('button.btn.sm.primary', {
+                type: 'button', text: 'Save sealed backup', style: { marginTop: '8px' },
+                onclick: async () => download(await store.exportSealed(), `family-vault-${new Date().toISOString().slice(0, 10)}.json`),
+              }),
+            );
+          } catch (e) { msg.textContent = e.message; msg.className = 'tiny neg'; }
         },
       }),
       msg,
+      after,
 
       el('div.sect', {}, el('h2', { text: 'Danger zone' })),
       el('p.tiny', { text: 'Wipes this device’s copy and every edit in it, then reloads from the file the app shipped with.' }),

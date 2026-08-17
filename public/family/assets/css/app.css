@@ -72,6 +72,12 @@ a { color: var(--blue); }
   border-radius: 12px;
 }
 .lock .err { color: var(--red); font-size: 13px; min-height: 20px; margin-top: 10px; }
+.linky {
+  display: block; margin: 4px auto 0; padding: 8px;
+  font-size: 13px; color: var(--ink-3); text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.linky:hover { color: var(--ink-2); }
 .shake { animation: shake .35s; }
 @keyframes shake {
   0%,100% { transform: translateX(0); }

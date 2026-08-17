@@ -127,6 +127,24 @@ async function applyUpdate(shipped) {
   emit();
 }
 
+// Restore from a sealed backup file. This is what makes a self-chosen
+// passphrase actually portable: the vault shipped with the app is still sealed
+// with whatever passphrase built it, so without this route a fresh device would
+// always need the original one.
+export async function unlockFromFile(file, pass) {
+  let envelope;
+  try { envelope = JSON.parse(await file.text()); }
+  catch { throw new Error('That file is not a vault backup.'); }
+  if (!envelope?.ct || !envelope?.kdf) throw new Error('That file is not a vault backup.');
+
+  state = await open(envelope, pass);
+  passphrase = pass;
+  migrate();
+  await persist();
+  emit();
+  return state;
+}
+
 export function lock() {
   state = null;
   passphrase = null;
