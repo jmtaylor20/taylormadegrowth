@@ -8,8 +8,7 @@ import {
 } from '../ui.js';
 import {
   recurringFor, recurringTotals, byCategory, leftover, monthlyIncome, upsideIncome,
-  forAccount, isBusiness, colorFor, pipelineSummary, monthlySetAside, actuals,
-  endedFor, cancelList,
+  forAccount, isBusiness, colorFor, endedFor, cancelList, untilNextPayday,
 } from '../calc.js';
 
 const CATEGORIES = ['Housing', 'Debt', 'Insurance', 'Utilities', 'Kids', 'Transport', 'Subscriptions', 'Health', 'Business', 'Other'];
@@ -45,6 +44,38 @@ export default function account(state, id) {
   if (upside > 0) {
     wrap.append(el('p.tiny', { style: { margin: '10px 2px 0' } },
       `Not counted above: ${money(upside)} of irregular deposits (${forAccount(state.income, id).filter((i) => i.excludeFromPlan).map((i) => i.name).join(', ')}). The plan holds without them — anything that lands is ahead of plan.`));
+  }
+
+  // ---- Runway --------------------------------------------------------------
+
+  const rw = untilNextPayday(state, id);
+  if (rw) {
+    wrap.append(section('Before the next paycheck', `${rw.daysAway} days`));
+    const card = el('div.card.flush');
+    for (const b of rw.due) {
+      card.append(el('div.row', {},
+        el('div.day', { text: b.day }),
+        el('div.mid', {}, el('div.nm', {}, el('span.t', { text: b.name })),
+          el('div.meta', { text: b.category })),
+        el('div.amt.neg', { text: '−' + money(b.amount, true) })));
+    }
+    for (const c of rw.credits) {
+      card.append(el('div.row', {},
+        el('div.day', { text: c.day, style: { background: 'rgba(47,191,120,.16)', color: 'var(--josh)' } }),
+        el('div.mid', {}, el('div.nm', {}, el('span.t', { text: c.name })), el('div.meta', { text: 'credit' })),
+        el('div.amt.pos', { text: '+' + money(c.amount, true) })));
+    }
+    if (!rw.due.length && !rw.credits.length) {
+      card.append(el('div.empty', { text: 'Nothing else scheduled before payday.' }));
+    }
+    card.append(el('div.row', { style: { background: 'var(--bg-raise)' } },
+      el('div.mid', {}, el('div.nm', {}, el('span.t', { text: 'Free after these' }))),
+      el('div.amt', { class: rw.free < 0 ? 'neg' : 'pos', text: money(rw.free, true) })));
+    wrap.append(card);
+    wrap.append(el('p.tiny', { style: { margin: '8px 2px 0' } },
+      `${money(acct.balance)} today, ${money(rw.billsTotal)} of scheduled bills left`
+      + (rw.creditsTotal ? ` and ${money(rw.creditsTotal)} of credits due` : '')
+      + `, next paycheck ${money(rw.paycheck)} on ${longDate(rw.nextPayday)}. Recurring only — groceries and fuel are not in this.`));
   }
 
   // ---- Where it goes -------------------------------------------------------
@@ -179,70 +210,6 @@ export default function account(state, id) {
         stat('Household bills', money(household), 'the real number', ''),
         stat('Business bills', money(business), 'move these off', 'mut'),
       ),
-    ));
-  }
-
-  // ---- What's coming -------------------------------------------------------
-
-  const pipe = forAccount(state.pipeline, id).sort((a, b) => a.due.localeCompare(b.due)).slice(0, 4);
-  if (pipe.length) {
-    wrap.append(section('Coming down the pipe', `${money(pipe.reduce((s, p) => s + monthlySetAside(p), 0))}/mo to be ready`));
-    const c = el('div.card.flush');
-    for (const p of pipe) {
-      c.append(el('div.row', {},
-        el('div.day', { text: shortDate(p.due).split(' ')[0] }),
-        el('div.mid', {}, el('div.nm', {}, el('span.t', { text: p.name })),
-          el('div.meta', { text: `${shortDate(p.due)} · set aside ${money(monthlySetAside(p))}/mo` })),
-        el('div.amt', { text: money(p.amount) }),
-      ));
-    }
-    wrap.append(c);
-  }
-
-  // ---- Statement history ---------------------------------------------------
-
-  wrap.append(section('Statement history'));
-  const tbl = el('table.tbl', {},
-    el('thead', {}, el('tr', {},
-      el('th', { text: 'Period' }), el('th.r', { text: 'In' }), el('th.r', { text: 'Out' }), el('th.r', { text: 'Net' }), el('th.r', { text: 'Close' }))),
-    el('tbody', {}, acct.statements.map((s) => {
-      const net = s.in - s.out;
-      return el('tr', {},
-        el('td', { text: s.period }),
-        el('td.r.pos', { text: money(s.in) }),
-        el('td.r.neg', { text: money(s.out) }),
-        el('td.r', { text: signed(net), class: net >= 0 ? 'pos' : 'neg' }),
-        el('td.r', { text: money(s.close) }));
-    })),
-  );
-  wrap.append(el('div.card.flush', {}, tbl));
-
-  const net3 = acct.statements.reduce((s, x) => s + (x.in - x.out), 0);
-  wrap.append(el('p.tiny', { style: { margin: '8px 2px 0' } },
-    net3 < 0
-      ? `Across these statements the account ran ${money(Math.abs(net3))} behind — more went out than came in. That gap is what the debt plan has to close.`
-      : `Across these statements the account finished ${money(net3)} ahead.`));
-
-  // ---- Planned vs actual ---------------------------------------------------
-
-  const act = actuals(state, id);
-  if (act) {
-    wrap.append(section('Off the plan', 'monthly average'));
-    wrap.append(el('div.card', {},
-      el('div.stats', {},
-        stat('Leaves per month', money(act.avgOut), 'per the statements', 'neg'),
-        stat('Not on the list', money(act.unplanned), 'unscheduled spending', 'warn'),
-      ),
-      el('p', { style: { margin: '12px 0 0', fontSize: '14px', lineHeight: '1.5' } },
-        `${money(act.recurring)} of that is the recurring above. The other ${money(act.unplanned)} is groceries, fuel, eating out and one-offs — ${Math.round((act.unplanned / (act.avgOut || 1)) * 100)}% of everything leaving this account.`),
-      act.sinceEnded > 0
-        ? el('p.tiny', { style: { margin: '10px 0 0' } },
-            `These averages come from statements that predate your recent changes, so ${money(act.sinceEnded)} of now-cancelled bills has been credited back out of the unplanned figure. Next month's statement is the one that will confirm it.`)
-        : null,
-      act.nonPayrollIn > 400
-        ? el('p', { style: { margin: '10px 0 0', fontSize: '14px', lineHeight: '1.5' } },
-            `${money(act.nonPayrollIn)} a month lands here beyond payroll. Without it this account does not balance.`)
-        : null,
     ));
   }
 

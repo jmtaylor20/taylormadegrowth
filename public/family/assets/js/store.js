@@ -75,8 +75,10 @@ async function applyUpdate(shipped) {
     ...shipped,
     // Statement-derived facts come from the update; anything the user owns stays.
     goals: state.goals,
-    pipeline: state.pipeline,
     log: state.log,
+    checkIns: state.checkIns,
+    allocations: state.allocations,
+    windfalls: state.windfalls,
     settings: { ...shipped.settings, ...state.settings },
     recurring: shipped.recurring.map((r) => {
       const mine = edited.get(r.id);
@@ -124,6 +126,24 @@ async function applyUpdate(shipped) {
   emit();
 }
 
+// Restore from a sealed backup file. This is what makes a self-chosen
+// passphrase actually portable: the vault shipped with the app is still sealed
+// with whatever passphrase built it, so without this route a fresh device would
+// always need the original one.
+export async function unlockFromFile(file, pass) {
+  let envelope;
+  try { envelope = JSON.parse(await file.text()); }
+  catch { throw new Error('That file is not a vault backup.'); }
+  if (!envelope?.ct || !envelope?.kdf) throw new Error('That file is not a vault backup.');
+
+  state = await open(envelope, pass);
+  passphrase = pass;
+  migrate();
+  await persist();
+  emit();
+  return state;
+}
+
 export function lock() {
   state = null;
   passphrase = null;
@@ -143,9 +163,13 @@ function migrate() {
   state.seedVersion ??= 1;
   state.log ??= [];
   state.goals ??= [];
-  state.pipeline ??= [];
   state.debts ??= [];
+  state.checkIns ??= [];
+  state.windfalls ??= [];
+  state.allocations ??= [];
   state.settings ??= {};
+  state.settings.monthlySpending ??= 0;
+  state.settings.monthlyToGoals ??= 0;
   state.settings.extraToDebt ??= 0;
   state.settings.strategy ??= 'avalanche';
   state.settings.emergencyFundTarget ??= 2000;

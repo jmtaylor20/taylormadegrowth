@@ -1,24 +1,21 @@
 // Household overview — the one screen that answers "are we okay this month?"
 
-import { el, money, signed, stat, section, splitBar, legend, bar, ord } from '../ui.js';
+import { el, money, signed, stat, section, splitBar, legend, bar, ord, longDate } from '../ui.js';
+import { checkInCard, envelopeCard } from './checkin.js';
+import { windfallCard } from './windfall.js';
 import {
   household, monthlyIncome, recurringTotals, leftover, byCategory,
-  debtTotals, attackable, unknownDebts, simulate, pipelineSummary, goalSummary,
-  actualsHousehold, payPeriods, rebalance, floatTarget,
+  debtTotals, attackable, unknownDebts, simulate, goalSummary,
+  payPeriods, rebalance, floatTarget, runwayHousehold, releaseHousehold,
 } from '../calc.js';
 
 export default function home(state) {
   const wrap = el('div');
   const h = household(state);
   const debt = debtTotals(state);
-  const pipe = pipelineSummary(state);
   const goals = goalSummary(state);
   const extra = state.settings.extraToDebt ?? 0;
 
-  // True monthly slack: income, minus every recurring bill, minus what the
-  // pipeline needs set aside, minus what the goals need. Debt minimums are
-  // already inside the recurring list, so they are not subtracted twice.
-  const slack = h.left - pipe.setAside;
 
   wrap.append(
     el('div.card.hero', {},
@@ -31,9 +28,51 @@ export default function home(state) {
   wrap.append(el('div.stats', {},
     stat('Household bills', money(h.household), `${state.recurring.filter((r) => r.category !== 'Business' && !r.paused).length} recurring`, 'neg'),
     stat('Business on personal', money(h.business), 'move off these accounts', 'mut'),
-    stat('Pipeline set-aside', money(pipe.setAside), `${pipe.items.length} known one-offs`, 'warn'),
-    stat('Truly spare', money(slack), 'after pipeline funding', slack < 0 ? 'neg' : 'pos'),
+    stat('Left after bills', money(h.left), 'before everyday spending', h.left < 0 ? 'neg' : 'pos'),
   ));
+
+  // ---- Runway --------------------------------------------------------------
+
+  const rw = runwayHousehold(state);
+  wrap.append(section('Between now and the next paycheck'));
+  wrap.append(el('div.card', {},
+    el('div.stats', {},
+      stat('In both accounts', money(rw.balance), 'right now', ''),
+      stat('Still to clear', money(rw.billsTotal), 'scheduled bills', 'neg'),
+      stat('Credits due', money(rw.creditsTotal), 'before payday', rw.creditsTotal > 0 ? 'pos' : 'mut'),
+      stat('Free', money(rw.free), 'after every scheduled bill', rw.free < 0 ? 'neg' : 'pos'),
+    ),
+    el('p.tiny', { style: { margin: '12px 0 0' } },
+      'Recurring only — no groceries, fuel or eating out in this figure. It is what is spoken for, not what will get spent.'),
+    ...rw.parts.map(({ a, r }) => el('div.tiny', { style: { marginTop: '8px' } },
+      `${a.owner}: ${money(r.balance)} − ${money(r.billsTotal)} in ${r.due.length} bill${r.due.length === 1 ? '' : 's'}`
+      + (r.creditsTotal ? ` + ${money(r.creditsTotal)} credits` : '')
+      + ` = ${money(r.free)} by ${longDate(r.nextPayday)}`)),
+  ));
+
+  // ---- Safe to sweep -------------------------------------------------------
+
+  const rel = releaseHousehold(state, 250);
+  if (rel.total > 100) {
+    wrap.append(section('Idle cash', 'safe to move out'));
+    wrap.append(el('div.card', { style: { borderColor: 'var(--josh)' } },
+      el('div', { style: { fontWeight: '650', fontSize: '15px', marginBottom: '6px' } }, '🧹 Sweep to the debt'),
+      el('div', { style: { fontSize: '30px', fontWeight: '680', letterSpacing: '-0.02em' }, class: 'num pos', text: money(rel.total) }),
+      el('p', { style: { margin: '8px 0 12px', fontSize: '14px', lineHeight: '1.5' } },
+        'Once everyday spending runs off the business, whatever sits here beyond the bills is idle. This is how far each account can be swept without the cycle dipping below its buffer — measured at the low point, not today.'),
+      ...rel.parts.map(({ a, r }) => el('div.tiny', { style: { marginTop: '6px' } },
+        `${a.owner}: low of ${money(r.low)}${r.lowDate ? ` on ${longDate(r.lowDate)}` : ''} → release ${money(r.release)}, keep ${money(Math.min(r.balance, r.buffer + (r.balance - r.release - r.buffer)))}`)),
+    ));
+  }
+
+  wrap.append(section('Keeping it honest'));
+  wrap.append(checkInCard(state));
+  wrap.append(envelopeCard(state));
+
+  if ((state.windfalls ?? []).some((w) => !w.applied)) {
+    wrap.append(section('Money coming in'));
+    wrap.append(windfallCard(state));
+  }
 
   // ---- Per person ----------------------------------------------------------
 
@@ -106,22 +145,6 @@ export default function home(state) {
       : null,
   ));
 
-  // ---- Coming up -----------------------------------------------------------
-
-  if (pipe.items.length) {
-    const soon = pipe.items.slice(0, 3);
-    wrap.append(section('Next up', `${money(pipe.next90)} in 90 days`));
-    const c = el('div.card.flush');
-    for (const p of soon) {
-      c.append(el('button.row', { type: 'button', onclick: () => { location.hash = 'pipeline'; } },
-        el('div.day', { text: new Date(p.due + 'T12:00:00').toLocaleDateString('en-US', { month: 'short' }) }),
-        el('div.mid', {}, el('div.nm', {}, el('span.t', { text: p.name })),
-          el('div.meta', { text: new Date(p.due + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) })),
-        el('div.amt', { text: money(p.amount) })));
-    }
-    wrap.append(c);
-  }
-
   // ---- Goals ---------------------------------------------------------------
 
   if (goals.goals.length) {
@@ -138,56 +161,27 @@ export default function home(state) {
     wrap.append(c);
   }
 
-  // ---- Planned vs actual ---------------------------------------------------
-
-  const act = actualsHousehold(state);
-  if (act) {
-    wrap.append(section('Plan vs. statements', 'monthly average'));
-    wrap.append(el('div.card', {},
-      el('div.stats', {},
-        stat('Actually leaves', money(act.avgOut), 'across both accounts', 'neg'),
-        stat('Off the plan', money(act.unplanned), 'groceries, fuel, one-offs', 'warn'),
-      ),
-      el('p', { style: { margin: '12px 0 0', fontSize: '14px', lineHeight: '1.5' } },
-        `The recurring list covers ${money(act.recurring)} a month. Statements show ${money(act.avgOut)} actually leaving — so ${money(act.unplanned)} a month is unscheduled spending. That is the part no bill schedule will ever catch, and it is where any real cut has to come from.`),
-      act.nonPayrollIn > 500
-        ? el('p', { style: { margin: '10px 0 0', fontSize: '14px', lineHeight: '1.5' } },
-            `On the income side, ${money(act.nonPayrollIn)} a month is arriving on top of the two paychecks — business draws, Venmo, mobile deposits, reimbursements. Payroll alone does not cover this household right now; that extra money is what's holding it together. Worth knowing plainly, because it's the thing that would hurt most if it paused.`)
-        : null,
-    ));
-  }
-
   // ---- The honest read -----------------------------------------------------
 
   wrap.append(section('The honest read'));
-  wrap.append(el('div.card', {}, verdict(state, h, debt, pipe, slack, act)));
+  wrap.append(el('div.card', {}, verdict(state, h, debt)));
 
   return wrap;
 }
 
-function verdict(state, h, debt, pipe, slack, act) {
+function verdict(state, h, debt) {
   const lines = [];
   const commit = (h.household + h.business) / (h.income || 1);
 
-  lines.push(`${Math.round(commit * 100)}% of your take-home is spoken for before anyone buys groceries. Housing and debt alone are ${money(
+  lines.push(`${Math.round(commit * 100)}% of your take-home is committed to recurring bills. Housing and debt alone are ${money(
     state.recurring.filter((r) => ['Housing', 'Debt'].includes(r.category) && !r.paused).reduce((s, r) => s + r.amount, 0))} a month.`);
 
   if (debt.monthlyInterest > 0) {
-    lines.push(`Interest is costing ${money(debt.monthlyInterest)} a month — ${money(debt.monthlyInterest * 12)} a year that buys nothing. That is most of a Disney trip, every year, on autopilot.`);
-  }
-
-  if (slack < 0) {
-    lines.push(`On paper the month comes up ${money(Math.abs(slack))} short once the pipeline is funded. That is why balances drift up. The fix is either less recurring or more income — the plan can't square it by itself.`);
-  } else {
-    lines.push(`There is roughly ${money(slack)} of genuine slack. Put it at the Chase Prime Visa first — highest rate and smallest balance, so there is no trade-off to argue about.`);
-  }
-
-  if (act && act.unplanned > 1000) {
-    lines.push(`The lever nobody wants to hear about: ${money(act.unplanned)} a month leaves outside the bill schedule. Cutting a fifth of that frees ${money(act.unplanned * 0.2)} — more than any subscription you could cancel, and enough to change the payoff date by years.`);
+    lines.push(`Interest is costing ${money(debt.monthlyInterest)} a month — ${money(debt.monthlyInterest * 12)} a year that buys nothing.`);
   }
 
   const asks = state.recurring.filter((r) => r.question && !r.answered).length;
-  if (asks) lines.push(`${asks} line items still need your read — they are flagged ASK on Josh's and Laci's tabs. A few of them look like they could just go away.`);
+  if (asks) lines.push(`${asks} line items still need your read — they are flagged ASK on Josh's and Laci's tabs.`);
 
   return el('div', {}, lines.map((t, i) =>
     el('p', { text: t, style: { margin: i ? '10px 0 0' : '0', fontSize: '14px', lineHeight: '1.5' } })));

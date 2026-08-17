@@ -6,9 +6,9 @@ import { el, clear, icon, ICONS, sheet, field, input, download, longDate } from 
 import home from './pages/home.js';
 import account from './pages/account.js';
 import paydays from './pages/paydays.js';
-import pipeline from './pages/pipeline.js';
 import debt from './pages/debt.js';
 import goals from './pages/goals.js';
+import scenarios from './pages/scenarios.js';
 
 const root = document.getElementById('root');
 
@@ -17,9 +17,9 @@ const ROUTES = [
   { id: 'josh', label: 'Josh', icon: 'josh', title: 'Josh', render: (s) => account(s, 'josh'), tint: 'josh' },
   { id: 'laci', label: 'Laci', icon: 'laci', title: 'Laci', render: (s) => account(s, 'laci'), tint: 'laci' },
   { id: 'paydays', label: 'Paydays', icon: 'pay', title: 'Paydays vs. bills', render: paydays },
-  { id: 'pipeline', label: 'Pipeline', icon: 'pipe', title: 'Coming down the pipe', render: pipeline },
   { id: 'debt', label: 'Debt', icon: 'debt', title: 'Debt attack plan', render: debt },
   { id: 'goals', label: 'Goals', icon: 'goal', title: 'Goals', render: goals },
+  { id: 'scenarios', label: 'What if', icon: 'what', title: 'Scenarios', render: scenarios },
 ];
 
 const currentRoute = () => ROUTES.find((r) => r.id === location.hash.slice(1)) || ROUTES[0];
@@ -27,11 +27,17 @@ const currentRoute = () => ROUTES.find((r) => r.id === location.hash.slice(1)) |
 // ---- Lock screen -----------------------------------------------------------
 
 function renderLock() {
-  const pass = el('input', { type: 'password', placeholder: 'Passphrase', autocomplete: 'current-password', spellcheck: 'false' });
+  // autocapitalize/autocorrect off: iOS will happily capitalise or "fix" the
+  // first word of a passphrase, and a mangled character is indistinguishable
+  // from a wrong one — the vault just refuses to open.
+  const pass = el('input', {
+    type: 'password', placeholder: 'Passphrase', autocomplete: 'current-password',
+    spellcheck: 'false', autocapitalize: 'none', autocorrect: 'off',
+  });
   const err = el('div.err');
   const go = el('button.go', { text: 'Unlock', type: 'button' });
   const inner = el('div.lock-inner', {},
-    el('div.lock-mark', { text: '🏡' }),
+    el('img.lock-mark', { src: './assets/img/icon-192.png', alt: '', width: '72', height: '72' }),
     el('h1', { text: 'Taylor Family Money' }),
     el('p', { text: 'Private. Everything stays on this device.' }),
     pass, go, err,
@@ -60,6 +66,33 @@ function renderLock() {
 
   go.addEventListener('click', submit);
   pass.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+
+  // Restore path for a device that has never seen this vault, after the
+  // passphrase has been changed away from the one it shipped with.
+  const picker = el('input', { type: 'file', accept: 'application/json,.json', style: { display: 'none' } });
+  picker.addEventListener('change', async () => {
+    const file = picker.files?.[0];
+    if (!file) return;
+    if (!pass.value) { err.textContent = 'Type the passphrase first, then pick the file.'; return; }
+    try {
+      await store.unlockFromFile(file, pass.value);
+      renderApp();
+    } catch (e) {
+      err.textContent = String(e.message || '').includes('backup')
+        ? e.message
+        : 'That passphrase does not open this backup.';
+    } finally {
+      picker.value = '';
+    }
+  });
+
+  inner.append(
+    picker,
+    el('button.linky', {
+      type: 'button', text: 'Set up from a backup file',
+      onclick: () => picker.click(),
+    }),
+  );
 
   clear(root).append(el('div.lock', {}, inner));
   setTimeout(() => pass.focus(), 80);
@@ -110,7 +143,7 @@ async function offerUpdate() {
     el('p', { style: { margin: '0 0 14px', fontSize: '14px', lineHeight: '1.5' } },
       `A newer read of your statements has been published (v${update.version}). Loading it refreshes the accounts, income, recurring bills and debts.`),
     el('p.tiny', { style: { margin: '0 0 16px' } },
-      'Your goals, pipeline, spend log, settings, any balances you filled in, and any question you already answered are all kept.'),
+      'Your goals, allocations, spend log, settings, any balances you filled in, and any question you already answered are all kept.'),
     el('button.btn.primary.wide', {
       type: 'button', text: 'Load it',
       onclick: async () => { await update.apply(); close(); },
@@ -143,20 +176,38 @@ function settingsSheet() {
       ),
 
       el('div.sect', {}, el('h2', { text: 'Passphrase' })),
+      el('p.tiny', { text: 'Pick something you will actually remember — a short sentence beats a random string, and a longer phrase is stronger anyway. Minimum 12 characters.' }),
     );
 
-    const p1 = input({ type: 'password', placeholder: 'New passphrase', autocomplete: 'new-password' });
+    const p1 = input({
+      type: 'password', placeholder: 'New passphrase', autocomplete: 'new-password',
+      spellcheck: 'false', autocapitalize: 'none', autocorrect: 'off',
+    });
     const msg = el('div.tiny');
+    const after = el('div');
     wrap.append(
       field('Change passphrase', p1),
       el('button.btn.sm', {
         text: 'Save passphrase', type: 'button',
         onclick: async () => {
-          try { await store.changePassphrase(p1.value); msg.textContent = 'Changed. Use it next time you unlock.'; msg.className = 'tiny pos'; }
-          catch (e) { msg.textContent = e.message; msg.className = 'tiny neg'; }
+          try {
+            await store.changePassphrase(p1.value);
+            msg.textContent = 'Changed on this device.';
+            msg.className = 'tiny pos';
+            p1.value = '';
+            after.replaceChildren(
+              el('p.tiny', { style: { marginTop: '10px' } },
+                'This only changed the copy on this phone. To use the new passphrase on another device, save a sealed backup and open it there with “Set up from a backup file” on the unlock screen.'),
+              el('button.btn.sm.primary', {
+                type: 'button', text: 'Save sealed backup', style: { marginTop: '8px' },
+                onclick: async () => download(await store.exportSealed(), `family-vault-${new Date().toISOString().slice(0, 10)}.json`),
+              }),
+            );
+          } catch (e) { msg.textContent = e.message; msg.className = 'tiny neg'; }
         },
       }),
       msg,
+      after,
 
       el('div.sect', {}, el('h2', { text: 'Danger zone' })),
       el('p.tiny', { text: 'Wipes this device’s copy and every edit in it, then reloads from the file the app shipped with.' }),

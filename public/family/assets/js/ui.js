@@ -127,4 +127,5 @@ export const ICONS = {
   pipe: '<path d="M3 6h18"/><path d="M6 12h12"/><path d="M10 18h4"/>',
   debt: '<path d="M4 19V5"/><path d="M4 15l5-5 4 4 7-8"/>',
   goal: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/>',
+  what: '<path d="M3 17.5 9 11l4 4 8-8.5"/><path d="M15.5 6.5H21V12"/>',
 };

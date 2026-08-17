@@ -1,21 +1,21 @@
 // Goals — the reason any of the rest of it is worth doing.
+//
+// What goes toward trips is a decision, not something to be inferred from what
+// is left over after bills. So the rate is set here and everything else follows
+// from it: what each goal needs, when each one lands, and which dates the
+// current rate will not reach.
 
 import * as store from '../store.js';
 import {
   el, money, stat, section, bar, sheet, field, input, longDate, today, monthsBetween,
 } from '../ui.js';
-import { goalSummary, goalPace, household, pipelineSummary, debtTotals, simulate } from '../calc.js';
+import { goalSummary, goalPace } from '../calc.js';
 
 export default function goals(state) {
   const wrap = el('div');
   const g = goalSummary(state);
-  const h = household(state);
-  const pipe = pipelineSummary(state);
-  const totals = debtTotals(state);
-  const extra = state.settings.extraToDebt ?? 0;
-
-  const totalPace = g.goals.reduce((s, x) => s + goalPace(x).perMonth, 0);
-  const slack = h.left - pipe.setAside - extra;
+  const rate = state.settings.monthlyToGoals ?? 0;
+  const needed = g.goals.reduce((s, x) => s + goalPace(x).perMonth, 0);
 
   wrap.append(el('div.card.hero', {},
     el('div.label', { text: 'Saved toward trips' }),
@@ -24,11 +24,34 @@ export default function goals(state) {
   ));
 
   wrap.append(el('div.stats', {},
-    stat('Needed / mo', money(totalPace), 'to hit every date', 'warn'),
-    stat('Actually spare', money(slack), 'after bills, pipeline & debt', slack < totalPace ? 'neg' : 'pos'),
+    stat('Putting in', money(rate), 'each month', rate > 0 ? 'pos' : 'mut'),
+    stat('Needed', money(needed), 'to hit every date', needed > rate ? 'warn' : 'pos'),
   ));
 
-  wrap.append(el('p.tiny', { style: { margin: '10px 2px 0' } }, tradeoff(state, totalPace, slack, extra, totals)));
+  // ---- The rate ------------------------------------------------------------
+
+  wrap.append(section('What you are putting toward trips'));
+  const rateCard = el('div.card');
+  const rateInput = el('input', {
+    type: 'number', step: '25', inputmode: 'decimal', value: rate || '',
+    placeholder: '0',
+    style: {
+      width: '100%', padding: '13px 16px', fontSize: '24px', fontWeight: '680',
+      textAlign: 'center', background: 'var(--bg-raise)',
+      border: '1px solid var(--line)', borderRadius: '12px',
+      fontVariantNumeric: 'tabular-nums',
+    },
+  });
+  rateCard.append(
+    rateInput,
+    el('p.tiny', { style: { margin: '10px 0 0' } },
+      'A month at a time, from wherever you choose to fund it. Everything below is worked out from this number, so it is worth being honest rather than optimistic.'),
+    el('button.btn.sm.wide', {
+      type: 'button', text: 'Save', style: { marginTop: '12px' },
+      onclick: () => store.commit((s) => { s.settings.monthlyToGoals = Number(rateInput.value) || 0; }),
+    }),
+  );
+  wrap.append(rateCard);
 
   // ---- Goals ---------------------------------------------------------------
 
@@ -61,8 +84,8 @@ export default function goals(state) {
 
   // ---- Sequencing ----------------------------------------------------------
 
-  wrap.append(section('If you do them one at a time'));
-  wrap.append(sequence(state, g, slack));
+  wrap.append(section('One at a time', rate > 0 ? `at ${money(rate)}/mo` : null));
+  wrap.append(sequence(state, g, rate));
 
   // ---- Emergency fund ------------------------------------------------------
 
@@ -73,7 +96,7 @@ export default function goals(state) {
       el('span', { style: { fontWeight: '650' }, text: '🧯 Starter emergency fund' }),
       el('span', { style: { marginLeft: 'auto', fontWeight: '650' }, text: money(ef.emergencyFundTarget) })),
     el('div.tiny', { style: { marginBottom: '10px' } },
-      'Both accounts have dipped under $250 in the last three months. One tire, one vet bill, one AC repair and it goes on a 22% card — which is how the balances got here. A small buffer is what stops the loop.'),
+      'A small buffer that is not the credit cards. Without one, the next tyre or vet bill becomes a balance at 25% — which is the loop worth breaking first.'),
     bar(ef.emergencyFundSaved / (ef.emergencyFundTarget || 1), 'var(--blue)'),
     el('div.tiny', { style: { marginTop: '7px' } }, `${money(ef.emergencyFundSaved)} of ${money(ef.emergencyFundTarget)}`),
     el('button.btn.sm.ghost', {
@@ -85,51 +108,51 @@ export default function goals(state) {
   return wrap;
 }
 
-function tradeoff(state, pace, slack, extra, totals) {
-  if (slack >= pace) {
-    return `The trips fit — ${money(pace)} a month covers all three on the dates you set, and you would still be putting ${money(extra)} at the debt.`;
-  }
-  const short = pace - slack;
-  const interestYear = totals.monthlyInterest * 12;
-  return `Funding all three on schedule needs ${money(pace)} a month and there is ${money(Math.max(0, slack))} spare — about ${money(short)} short. Two honest options: move a date out, or clear debt first. Interest is eating ${money(interestYear)} a year right now, so every month the cards stay open costs roughly ${money(totals.monthlyInterest)} that could have been trip money.`;
-}
-
-// Goals funded back to back rather than all at once — usually the realistic
-// version, and it shows what each date actually costs the ones behind it.
-function sequence(state, g, slack) {
-  const card = el('div.card.flush');
-  if (slack <= 0) {
+// Funded back to back rather than all at once — usually the realistic version,
+// and it shows what each date costs the ones behind it.
+function sequence(state, g, rate) {
+  if (rate <= 0) {
     return el('div.card', {}, el('p.tiny', {
       style: { margin: 0 },
-      text: 'There is no spare money in the plan right now, so a sequence would be fiction. Free up room on Josh’s or Laci’s tab first — the ASK-flagged lines are the place to look.',
+      text: 'Set a monthly amount above and this fills in with the date each trip is actually funded by.',
     }));
   }
 
-  const ordered = [...g.goals].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+  const card = el('div.card.flush');
+  const ordered = [...g.goals].filter((x) => x.saved < x.target)
+    .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+
+  if (!ordered.length) {
+    return el('div.card', {}, el('div.empty', { text: 'Every goal is funded.' }));
+  }
+
   let month = 0;
+  let anyLate = false;
   for (const goal of ordered) {
-    const need = Math.max(0, goal.target - goal.saved);
-    const months = Math.ceil(need / slack);
-    month += months;
+    const need = goal.target - goal.saved;
+    month += Math.ceil(need / rate);
     const d = new Date();
     d.setDate(1);
     d.setMonth(d.getMonth() + month);
     const readyBy = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
     const late = monthsBetween(today(), goal.targetDate) + 1 < month;
+    if (late) anyLate = true;
 
     card.append(el('div.row', {},
       el('div.day', { text: goal.emoji ?? '🎯', style: { fontSize: '17px' } }),
       el('div.mid', {},
         el('div.nm', {}, el('span.t', { text: goal.name }),
           late ? el('span.flag.ask', { text: 'LATE' }) : null),
-        el('div.meta', { text: `${months} months at ${money(slack)}/mo · funded by ${readyBy}` }),
+        el('div.meta', { text: `funded by ${readyBy} · wanted ${longDate(goal.targetDate)}` }),
       ),
       el('div.amt', { text: money(need) }),
     ));
   }
 
   card.append(el('div', { style: { padding: '12px 16px' } }, el('div.tiny', {
-    text: `All three funded ${month} months out, one after another, at ${money(slack)} a month. Doing them in parallel does not make them arrive sooner — it just makes all three late at once.`,
+    text: anyLate
+      ? `At ${money(rate)} a month the trips flagged LATE are funded after the date you wanted them. Either the rate goes up or those dates move.`
+      : `All of them funded ${month} months out at ${money(rate)} a month, one after another.`,
   })));
 
   return card;

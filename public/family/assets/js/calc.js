@@ -1,7 +1,7 @@
 // The money math. Every page reads its numbers from here so a change to how
 // something is counted lands everywhere at once.
 
-import { monthsBetween, today } from './ui.js';
+import { monthsBetween, today, parseDay } from './ui.js';
 
 export const CATEGORY_COLORS = {
   Housing: '#5aa9f0',
@@ -81,48 +81,6 @@ export function leftover(state, accountId) {
   const income = monthlyIncome(state, accountId);
   const { household, business } = recurringTotals(state, accountId);
   return { income, household, business, left: income - household - business };
-}
-
-// The recurring list is only the scheduled half of the story. Statements show
-// what actually left. The difference is the unplanned spend — groceries, fuel,
-// eating out, one-offs — and it is usually the number people are missing.
-export function actuals(state, accountId) {
-  const a = state.accounts.find((x) => x.id === accountId);
-  if (!a?.statements?.length) return null;
-  const n = a.statements.length;
-  // One-time events (a car payoff funded by a matching deposit) would swamp the
-  // averages, so they are netted out.
-  const avgOut = a.statements.reduce((s, x) => s + x.out - (x.oneOffOut ?? 0), 0) / n;
-  const avgIn = a.statements.reduce((s, x) => s + x.in - (x.oneOffIn ?? 0), 0) / n;
-  const { all } = recurringTotals(state, accountId);
-  const payroll = monthlyIncome(state, accountId);
-  // Statements are history. Bills that have since stopped were part of that
-  // outflow, so they have to be credited back or the unplanned figure absorbs
-  // them and looks worse than reality.
-  const sinceEnded = endedFor(state, accountId).reduce((s, r) => s + r.amount, 0);
-  return {
-    avgIn,
-    avgOut,
-    recurring: all,
-    sinceEnded,
-    unplanned: Math.max(0, avgOut - all - sinceEnded),
-    // Deposits arriving on top of payroll: business draws, Venmo, mobile
-    // deposits, reimbursements. What is quietly holding the month together.
-    nonPayrollIn: Math.max(0, avgIn - payroll),
-  };
-}
-
-export function actualsHousehold(state) {
-  const parts = state.accounts.map((a) => actuals(state, a.id)).filter(Boolean);
-  if (!parts.length) return null;
-  return parts.reduce((acc, p) => ({
-    avgIn: acc.avgIn + p.avgIn,
-    avgOut: acc.avgOut + p.avgOut,
-    recurring: acc.recurring + p.recurring,
-    unplanned: acc.unplanned + p.unplanned,
-    sinceEnded: acc.sinceEnded + p.sinceEnded,
-    nonPayrollIn: acc.nonPayrollIn + p.nonPayrollIn,
-  }), { avgIn: 0, avgOut: 0, recurring: 0, unplanned: 0, sinceEnded: 0, nonPayrollIn: 0 });
 }
 
 export function household(state) {
@@ -302,27 +260,6 @@ export function runningBalance(state, accountId, opening = 0, overrides = {}) {
 export const floatTarget = (state, accountId, overrides = {}) =>
   Math.max(0, -runningBalance(state, accountId, 0, overrides).low.balance);
 
-// ---- Pipeline --------------------------------------------------------------
-
-// A one-off in four months costs a quarter of itself every month starting now.
-// That is the number worth budgeting, not the lump.
-export function monthlySetAside(item, from = today()) {
-  const months = Math.max(1, monthsBetween(from, item.due) + 1);
-  return item.amount / months;
-}
-
-export function pipelineSummary(state, from = today()) {
-  const items = [...state.pipeline].sort((a, b) => a.due.localeCompare(b.due));
-  const next90 = items.filter((i) => monthsBetween(from, i.due) <= 3);
-  return {
-    items,
-    total: items.reduce((s, i) => s + i.amount, 0),
-    setAside: items.reduce((s, i) => s + monthlySetAside(i, from), 0),
-    next90: next90.reduce((s, i) => s + i.amount, 0),
-    next90Count: next90.length,
-  };
-}
-
 // ---- Debt ------------------------------------------------------------------
 
 export const attackable = (state) =>
@@ -341,8 +278,12 @@ export function debtTotals(state) {
   return { balance, minimums, allMinimums, monthlyInterest, weightedApr, count: live.length };
 }
 
-export function order(state, strategy) {
-  const live = [...attackable(state)];
+// Everything with a balance, including the mortgages the attack plan leaves
+// alone — scenarios ask when *every* obligation ends, not just the expensive ones.
+export const allDebts = (state) => state.debts.filter((d) => d.balance > 0);
+
+export function order(state, strategy, { includeAll = false } = {}) {
+  const live = [...(includeAll ? allDebts(state) : attackable(state))];
   return strategy === 'snowball'
     ? live.sort((a, b) => a.balance - b.balance || b.apr - a.apr)
     : live.sort((a, b) => b.apr - a.apr || a.balance - b.balance);
@@ -351,6 +292,12 @@ export function order(state, strategy) {
 // Month-by-month simulation: everyone gets their minimum, the target debt gets
 // the minimum plus every spare dollar, and a cleared debt's payment rolls into
 // the next target. Interest accrues monthly on the running balance.
+// The part of a payment that actually pays the debt down. A mortgage payment
+// carries escrow for taxes and insurance, which never amortizes and never goes
+// away — counting it as principal would make the house look years cheaper than
+// it is.
+export const amortizing = (d) => Math.max(0, d.minimum - (d.escrow ?? 0));
+
 // A minimum that does not even cover the interest would leave the balance
 // growing forever — which is a data artefact, not reality. Card issuers set the
 // minimum at roughly interest plus 1% of the balance, so fall back to that
@@ -358,12 +305,26 @@ export function order(state, strategy) {
 // $0 due simply because autopay had already settled that cycle.
 function effectiveMinimum(d) {
   const interest = (d.balance * (d.apr / 100)) / 12;
-  return d.minimum > interest ? d.minimum : Math.max(d.minimum, interest + d.balance * 0.01);
+  const pay = amortizing(d);
+  return pay > interest ? pay : Math.max(pay, interest + d.balance * 0.01);
 }
 
-export function simulate(state, strategy, extra, cap = 600) {
-  const debts = order(state, strategy).map((d) => ({
-    id: d.id, name: d.name, apr: d.apr, minimum: d.minimum,
+// Recurring payments with a known end date — a lease running out, a loan on a
+// fixed term. When one stops, that money is free without anyone earning more.
+export function freedPayments(state) {
+  return (state.recurring ?? [])
+    // A term ending only frees money if nothing takes its place. A lease that
+    // will be rolled into another vehicle is a payment that continues, and
+    // treating its end date as a windfall would flatter every projection.
+    .filter((r) => !r.paused && r.endsAfterMonths > 0 && !r.replaced)
+    .map((r) => ({ fromMonth: r.endsAfterMonths + 1, amount: r.amount, name: r.name }))
+    .sort((a, b) => a.fromMonth - b.fromMonth);
+}
+
+export function simulate(state, strategy, extra, cap = 600, opts = {}) {
+  const steps = opts.steps ?? [];
+  const debts = order(state, strategy, opts).map((d) => ({
+    id: d.id, name: d.name, apr: d.apr, minimum: d.minimum, escrow: d.escrow ?? 0,
     balance: d.balance, paid: 0, interest: 0, clearedMonth: null,
   }));
   if (!debts.length) return { months: 0, totalInterest: 0, debts, timeline: [], impossible: false };
@@ -374,7 +335,8 @@ export function simulate(state, strategy, extra, cap = 600) {
 
   while (debts.some((d) => d.balance > 0.005) && month < cap) {
     month += 1;
-    let pool = debts.reduce((s, d) => s + (d.balance > 0.005 ? effectiveMinimum(d) : 0), 0) + extra;
+    const stepped = steps.reduce((s, x) => s + (month >= x.fromMonth ? x.amount : 0), 0);
+    let pool = debts.reduce((s, d) => s + (d.balance > 0.005 ? effectiveMinimum(d) : 0), 0) + extra + stepped;
     let accrued = 0;
 
     // Interest first, then minimums, then everything spare at the front debt.
@@ -409,6 +371,9 @@ export function simulate(state, strategy, extra, cap = 600) {
     totalInterest,
     debts,
     timeline,
+    // Escrow keeps being paid after the loan clears — worth stating separately
+    // so "debt free" is not mistaken for "no housing payment".
+    escrowAfter: debts.reduce((s, d) => s + (d.escrow ?? 0), 0),
     // Minimums alone can't cover the interest — the balance would grow forever.
     impossible: month >= cap,
   };
@@ -460,6 +425,398 @@ export const addMonths = (n) => {
   d.setMonth(d.getMonth() + n);
   return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 };
+
+// ---- Runway to the next paycheck -------------------------------------------
+//
+// The most useful number day to day: of what is sitting in the account right
+// now, how much is already committed to scheduled bills before the next
+// paycheck lands, and how much is genuinely free. Discretionary spending is
+// deliberately excluded — this answers "what is spoken for", not "what will I
+// spend".
+
+export function untilNextPayday(state, accountId, from = new Date()) {
+  const a = state.accounts.find((x) => x.id === accountId);
+  const payDays = payDaysFor(state, accountId);
+  if (!a || !payDays.length) return null;
+
+  const incomes = forAccount(state.income, accountId).filter((i) => !i.excludeFromPlan);
+  const bills = recurringFor(state, accountId);
+
+  const cursor = new Date(from.getFullYear(), from.getMonth(), from.getDate(), 12);
+  const due = [];
+  const credits = [];
+  let nextPayday = null;
+  let days = 0;
+
+  // Start tomorrow: anything dated today is assumed already reflected in the
+  // balance that was just read off the banking app.
+  for (let n = 0; n < 62; n += 1) {
+    cursor.setDate(cursor.getDate() + 1);
+    days += 1;
+    const dom = cursor.getDate();
+    const lastDom = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
+    const hits = (d) => d === dom || (d > lastDom && dom === lastDom);
+
+    if (payDays.some(hits)) {
+      nextPayday = new Date(cursor);
+      break;
+    }
+    for (const b of bills) if (hits(b.day)) due.push({ ...b, on: cursor.toISOString().slice(0, 10) });
+    for (const i of incomes) if (incomeDays(i).some(hits)) credits.push({ ...i, on: cursor.toISOString().slice(0, 10) });
+  }
+
+  const billsTotal = due.reduce((s, b) => s + b.amount, 0);
+  const creditsTotal = credits.reduce((s, i) => s + i.amount, 0);
+  const paycheck = incomes
+    .filter((i) => isWage(i) && nextPayday && incomeDays(i).includes(nextPayday.getDate()))
+    .reduce((s, i) => s + i.amount, 0);
+
+  return {
+    nextPayday: nextPayday ? nextPayday.toISOString().slice(0, 10) : null,
+    daysAway: days,
+    due: due.sort((x, y) => x.day - y.day),
+    billsTotal,
+    credits,
+    creditsTotal,
+    paycheck,
+    // What is left once every scheduled bill between now and payday has cleared.
+    free: a.balance - billsTotal + creditsTotal,
+    balance: a.balance,
+  };
+}
+
+export function runwayHousehold(state, from = new Date()) {
+  const parts = state.accounts
+    .map((a) => ({ a, r: untilNextPayday(state, a.id, from) }))
+    .filter((x) => x.r);
+  return {
+    parts,
+    balance: parts.reduce((s, x) => s + x.r.balance, 0),
+    billsTotal: parts.reduce((s, x) => s + x.r.billsTotal, 0),
+    creditsTotal: parts.reduce((s, x) => s + x.r.creditsTotal, 0),
+    free: parts.reduce((s, x) => s + x.r.free, 0),
+  };
+}
+
+// ---- Safe to release -------------------------------------------------------
+//
+// Once everyday spending moves off an account, whatever sits in it beyond the
+// bills is idle. But "free today" is the wrong measure — what matters is the
+// account's lowest point across the coming cycle, because that is where an
+// overdraft would happen. Sweep down to that low, less a buffer, and no more.
+
+export function safeToRelease(state, accountId, buffer = 250, horizonDays = 45) {
+  const a = state.accounts.find((x) => x.id === accountId);
+  if (!a) return null;
+
+  const incomes = forAccount(state.income, accountId).filter((i) => !i.excludeFromPlan);
+  const bills = recurringFor(state, accountId);
+
+  let bal = a.balance;
+  let low = { balance: bal, date: null };
+  const cursor = new Date();
+  cursor.setHours(12, 0, 0, 0);
+
+  for (let n = 0; n < horizonDays; n += 1) {
+    cursor.setDate(cursor.getDate() + 1);
+    const dom = cursor.getDate();
+    const lastDom = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
+    const hits = (d) => d === dom || (d > lastDom && dom === lastDom);
+
+    for (const b of bills) if (hits(b.day)) bal -= b.amount;
+    for (const i of incomes) if (incomeDays(i).some(hits)) bal += i.amount;
+    if (bal < low.balance) low = { balance: bal, date: cursor.toISOString().slice(0, 10) };
+  }
+
+  return {
+    low: low.balance,
+    lowDate: low.date,
+    buffer,
+    release: Math.max(0, low.balance - buffer),
+    balance: a.balance,
+  };
+}
+
+export function releaseHousehold(state, buffer = 250) {
+  const parts = state.accounts
+    .map((a) => ({ a, r: safeToRelease(state, a.id, buffer) }))
+    .filter((x) => x.r);
+  return { parts, total: parts.reduce((s, x) => s + x.r.release, 0) };
+}
+
+// ---- Check-ins -------------------------------------------------------------
+//
+// No bank linking. The app stays current on a handful of numbers typed once a
+// month — balances drift, the recurring list barely moves — so the only thing
+// worth chasing is whether those numbers are stale.
+
+export const DAY = 86_400_000;
+
+export function checkInStatus(state) {
+  const last = state.checkIns?.at(-1) ?? null;
+  const days = last ? Math.floor((Date.now() - parseDay(last.date).getTime()) / DAY) : null;
+  return {
+    last,
+    days,
+    // A month is the natural rhythm — it is when statements land.
+    due: days === null || days >= 28,
+    stale: days !== null && days >= 45,
+    count: state.checkIns?.length ?? 0,
+  };
+}
+
+// Total attackable debt at each check-in — the one line that proves the plan is
+// working. Everything else is forecast; this is measured.
+export function debtTrend(state) {
+  const points = (state.checkIns ?? [])
+    .filter((c) => c.totalDebt != null)
+    .map((c) => ({ date: c.date, total: c.totalDebt }));
+  const now = debtTotals(state).balance;
+  const lastDate = points.at(-1)?.date;
+  if (!lastDate || lastDate !== today()) points.push({ date: today(), total: now });
+  if (points.length < 2) return null;
+
+  const first = points[0];
+  const latest = points.at(-1);
+  const months = Math.max(1, monthsBetween(first.date, latest.date));
+  return {
+    points,
+    change: latest.total - first.total,
+    perMonth: (latest.total - first.total) / months,
+    months,
+  };
+}
+
+// ---- Spending envelope -----------------------------------------------------
+//
+// Move a fixed amount to a separate account each payday and spend only from
+// there. It caps discretionary spending by construction instead of by willpower,
+// and it collapses a hundred card swipes into one transfer.
+
+// ---- Monthly spending budget -----------------------------------------------
+//
+// One number a month for everyday spending, funded from the business. Money is
+// allocated to it as it arrives rather than in a single transfer, so what
+// matters is how much of the month's budget has already been sent.
+
+export const monthKey = (iso) => iso.slice(0, 7);
+
+export function spendingThisMonth(state, month = today().slice(0, 7)) {
+  return (state.allocations ?? [])
+    .filter((a) => monthKey(a.date) === month)
+    .reduce((s, a) => s + (a.toSpending ?? 0), 0);
+}
+
+export function spendingStatus(state) {
+  const budget = state.settings?.monthlySpending ?? 0;
+  const sent = spendingThisMonth(state);
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  return {
+    budget, sent,
+    remaining: Math.max(0, budget - sent),
+    over: Math.max(0, sent - budget),
+    dayOfMonth: now.getDate(),
+    daysInMonth,
+    daysLeft: daysInMonth - now.getDate(),
+  };
+}
+
+// Top the month's spending budget up first, then everything else goes at the
+// highest rate. Splitting the other way round would just mean borrowing at 25%
+// to cover groceries later in the month.
+export function allocate(state, amount, strategy = 'avalanche') {
+  const s = spendingStatus(state);
+  const toSpending = Math.min(Math.max(0, amount), s.remaining);
+  const toDebt = Math.max(0, amount - toSpending);
+  const target = order(state, strategy)[0] ?? null;
+  return {
+    amount,
+    toSpending,
+    toDebt,
+    target,
+    // How much of the debt share this particular account can absorb.
+    clears: target ? toDebt >= target.balance : false,
+    spending: s,
+  };
+}
+
+// ---- Windfalls -------------------------------------------------------------
+//
+// The instinct with a lump sum is to throw it at the highest rate. That is the
+// wrong first move when a dated, committed expense is sitting just ahead of it:
+// paying down a card and then charging the trip back onto that same card leaves
+// you worse off by the whole trip, and it happens at the same interest rate. So
+// committed spending inside the horizon gets funded first — not as indulgence,
+// but because it is the cheapest debt avoidance available.
+
+// Business money arrives gross. A fixed share is reserved for tax before any of
+// it is spendable, so a windfall's headline figure is not what can be deployed.
+// Monthly figures are entered net and are unaffected.
+export function windfallNet(state, w) {
+  const rate = w.gross === false ? 0 : (state.settings?.taxReserveRate ?? 0);
+  const reserve = w.amount * rate;
+  return { gross: w.amount, reserve, net: w.amount - reserve, rate };
+}
+
+export function committedGoals(state, horizonMonths = 12) {
+  return [...(state.goals ?? [])]
+    .filter((g) => g.committed && g.saved < g.target)
+    .map((g) => ({ ...g, need: g.target - g.saved, monthsUntil: Math.max(0, monthsBetween(today(), g.targetDate)) }))
+    .filter((g) => g.monthsUntil <= horizonMonths)
+    .sort((a, b) => a.monthsUntil - b.monthsUntil);
+}
+
+// What is actually going toward goals each month. This is a stated rate rather
+// than slack inferred from the bill schedule — money left after bills does not
+// reach a trip fund on its own, and treating it as though it does is how a plan
+// ends up describing a life nobody is living.
+export const monthlyCapacity = (state) => state.settings?.monthlyToGoals ?? 0;
+
+// A lump sum should only cover what monthly cashflow cannot reach in time —
+// and "in time" is cumulative, not per-goal. By the month a trip falls due,
+// cashflow has produced capacity × months, and every earlier trip has already
+// drawn on it. Only the running shortfall needs the windfall; everything left
+// belongs on the highest rate, because a dollar there always beats a dollar
+// sitting in a trip fund that cashflow was going to reach anyway.
+export function allocateWindfall(state, amount, { horizonMonths = 6 } = {}) {
+  const steps = [];
+  let left = amount;
+
+  const goals = committedGoals(state, horizonMonths);
+  const cardApr = Math.max(0, ...attackable(state).filter((d) => d.limit > 0).map((d) => d.apr));
+  const capacity = monthlyCapacity(state);
+
+  let cumNeed = 0;
+  let earmarked = 0;
+  for (const g of goals) {
+    if (left <= 0.5) break;
+    cumNeed += g.need;
+    const fromCashflow = capacity * g.monthsUntil;
+    const shortfall = cumNeed - fromCashflow - earmarked;
+    if (shortfall <= 0.5) continue;
+
+    const give = Math.min(shortfall, left);
+    left -= give;
+    earmarked += give;
+    steps.push({
+      kind: 'goal', id: g.id, name: g.name, amount: give,
+      avoids: give * (cardApr / 100) * (Math.max(1, g.monthsUntil) / 12),
+      why: g.monthsUntil <= 1
+        ? `${longDateISO(g.targetDate)} — too close to save for. Unfunded it goes on a card at ${cardApr.toFixed(2)}%.`
+        : `${longDateISO(g.targetDate)}. ${money0(fromCashflow)} of cashflow arrives by then; this covers the ${money0(shortfall)} gap.`,
+    });
+  }
+
+  const ef = state.settings ?? {};
+  const efGap = Math.max(0, (ef.emergencyFundTarget ?? 0) - (ef.emergencyFundSaved ?? 0));
+  if (left > 0.5 && efGap > 0) {
+    const give = Math.min(efGap, left);
+    left -= give;
+    steps.push({
+      kind: 'emergency', id: 'ef', name: 'Starter emergency fund', amount: give,
+      avoids: 0,
+      why: 'Both accounts have dipped under $250 this year. Without a buffer the next surprise becomes card debt at full rate.',
+    });
+  }
+
+  for (const d of order(state, 'avalanche')) {
+    if (left <= 0.5) break;
+    const give = Math.min(d.balance, left);
+    left -= give;
+    steps.push({
+      kind: 'debt', id: d.id, name: d.name, amount: give,
+      avoids: give * (d.apr / 100),
+      why: `Highest rate left at ${d.apr.toFixed(2)}%.`,
+    });
+  }
+
+  return {
+    amount,
+    steps,
+    unallocated: left,
+    avoidedInterest: steps.reduce((s, x) => s + x.avoids, 0),
+    goalsCovered: steps.filter((s) => s.kind === 'goal').length,
+  };
+}
+
+const money0 = (n) => '$' + Math.round(n).toLocaleString('en-US');
+
+const longDateISO = (iso) =>
+  parseDay(iso).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+// Both plans end the horizon at the same balance — the trips cost what they
+// cost. What separates them is *when* money is on the books, so the only honest
+// comparison is interest accrued month by month across the horizon.
+export function windfallCompare(state, amount, opts = {}) {
+  const { horizonMonths = 6 } = opts;
+  const smart = allocateWindfall(state, amount, { horizonMonths });
+  const goals = committedGoals(state, horizonMonths);
+  const committed = goals.reduce((s, g) => s + g.need, 0);
+  const apr = Math.max(0, ...attackable(state).filter((d) => d.limit > 0).map((d) => d.apr));
+
+  // Walk the horizon: an unfunded trip lands on a card in the month it happens.
+  const run = (fundedByGoal) => {
+    const fundedTotal = Object.values(fundedByGoal).reduce((s, x) => s + x, 0);
+    let delta = -(amount - fundedTotal); // negative = debt paid down today
+    let interest = 0;
+    for (let m = 1; m <= horizonMonths; m += 1) {
+      for (const g of goals) {
+        if (g.monthsUntil === m) delta += g.need - (fundedByGoal[g.id] ?? 0);
+      }
+      interest += Math.max(0, delta) * (apr / 100) / 12;
+      if (delta < 0) interest += delta * (apr / 100) / 12; // paydown earns the same rate back
+    }
+    return { interest, endDelta: delta };
+  };
+
+  const smartFunded = Object.fromEntries(
+    smart.steps.filter((s) => s.kind === 'goal').map((s) => [s.id, s.amount]),
+  );
+  const planned = run(smartFunded);
+  const allToDebt = run({});
+  const allToGoals = run(Object.fromEntries(goals.map((g) => [g.id, Math.min(g.need, amount)])));
+
+  return {
+    smart, committed, apr, horizonMonths,
+    planned, allToDebt, allToGoals,
+    // Positive = the recommended plan costs less interest over the horizon.
+    vsAllToDebt: allToDebt.interest - planned.interest,
+    vsAllToGoals: allToGoals.interest - planned.interest,
+    sameEndBalance: Math.abs(planned.endDelta - allToDebt.endDelta) < 1,
+  };
+}
+
+// ---- Scenarios -------------------------------------------------------------
+//
+// The business draw is the lever. Split it between everyday spending and debt,
+// and the rest of the plan follows: household slack after bills is already free
+// (spending no longer comes out of the bank accounts), so it stacks on top.
+
+export function scenario(state, {
+  draw = 0, spending = 0, slack = null, includeAll = false,
+  strategy = 'avalanche', useFreed = true,
+} = {}) {
+  const fromSlack = slack === null ? Math.max(0, household(state).left) : slack;
+  const toSpending = Math.min(spending, draw);
+  const fromDraw = Math.max(0, draw - toSpending);
+  const extra = fromSlack + fromDraw;
+  const steps = useFreed ? freedPayments(state) : [];
+
+  const sim = simulate(state, strategy, extra, 600, { includeAll, steps });
+  const base = simulate(state, strategy, 0, 600, { includeAll, steps });
+  const minimums = (includeAll ? allDebts(state) : attackable(state))
+    .reduce((s, d) => s + d.minimum, 0);
+
+  return {
+    draw, toSpending, fromDraw, fromSlack, extra, minimums, includeAll, steps,
+    sim, base,
+    monthsSaved: base.impossible ? null : base.months - sim.months,
+    interestSaved: base.impossible ? null : base.totalInterest - sim.totalInterest,
+    // Every dollar leaving for debt each month, minimums included.
+    totalMonthly: minimums + extra,
+  };
+}
 
 // ---- Goals -----------------------------------------------------------------
 
