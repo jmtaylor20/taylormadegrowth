@@ -1,6 +1,7 @@
 // Household overview — the one screen that answers "are we okay this month?"
 
 import { el, money, signed, stat, section, splitBar, legend, bar, ord } from '../ui.js';
+import { checkInCard, envelopeCard } from './checkin.js';
 import {
   household, monthlyIncome, recurringTotals, leftover, byCategory,
   debtTotals, attackable, unknownDebts, simulate, pipelineSummary, goalSummary,
@@ -34,6 +35,10 @@ export default function home(state) {
     stat('Pipeline set-aside', money(pipe.setAside), `${pipe.items.length} known one-offs`, 'warn'),
     stat('Truly spare', money(slack), 'after pipeline funding', slack < 0 ? 'neg' : 'pos'),
   ));
+
+  wrap.append(section('Keeping it honest'));
+  wrap.append(checkInCard(state));
+  wrap.append(envelopeCard(state));
 
   // ---- Per person ----------------------------------------------------------
 

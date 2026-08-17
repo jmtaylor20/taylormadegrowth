@@ -1,7 +1,7 @@
 // The money math. Every page reads its numbers from here so a change to how
 // something is counted lands everywhere at once.
 
-import { monthsBetween, today } from './ui.js';
+import { monthsBetween, today, parseDay } from './ui.js';
 
 export const CATEGORY_COLORS = {
   Housing: '#5aa9f0',
@@ -460,6 +460,96 @@ export const addMonths = (n) => {
   d.setMonth(d.getMonth() + n);
   return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 };
+
+// ---- Check-ins -------------------------------------------------------------
+//
+// No bank linking. The app stays current on a handful of numbers typed once a
+// month — balances drift, the recurring list barely moves — so the only thing
+// worth chasing is whether those numbers are stale.
+
+export const DAY = 86_400_000;
+
+export function checkInStatus(state) {
+  const last = state.checkIns?.at(-1) ?? null;
+  const days = last ? Math.floor((Date.now() - parseDay(last.date).getTime()) / DAY) : null;
+  return {
+    last,
+    days,
+    // A month is the natural rhythm — it is when statements land.
+    due: days === null || days >= 28,
+    stale: days !== null && days >= 45,
+    count: state.checkIns?.length ?? 0,
+  };
+}
+
+// Total attackable debt at each check-in — the one line that proves the plan is
+// working. Everything else is forecast; this is measured.
+export function debtTrend(state) {
+  const points = (state.checkIns ?? [])
+    .filter((c) => c.totalDebt != null)
+    .map((c) => ({ date: c.date, total: c.totalDebt }));
+  const now = debtTotals(state).balance;
+  const lastDate = points.at(-1)?.date;
+  if (!lastDate || lastDate !== today()) points.push({ date: today(), total: now });
+  if (points.length < 2) return null;
+
+  const first = points[0];
+  const latest = points.at(-1);
+  const months = Math.max(1, monthsBetween(first.date, latest.date));
+  return {
+    points,
+    change: latest.total - first.total,
+    perMonth: (latest.total - first.total) / months,
+    months,
+  };
+}
+
+// ---- Spending envelope -----------------------------------------------------
+//
+// Move a fixed amount to a separate account each payday and spend only from
+// there. It caps discretionary spending by construction instead of by willpower,
+// and it collapses a hundred card swipes into one transfer.
+
+export function envelopeStatus(state) {
+  const e = state.envelope ?? {};
+  const perPeriod = e.perPeriod ?? 0;
+  const cadence = e.cadence ?? 'semimonthly';
+  const perMonth = cadence === 'semimonthly' ? perPeriod * 2 : perPeriod;
+
+  const asOf = e.asOf ?? null;
+  const daysIn = asOf ? Math.floor((Date.now() - parseDay(asOf).getTime()) / DAY) : null;
+  const periodDays = cadence === 'semimonthly' ? 15 : 30;
+
+  // Straight-line burn: where the balance should be this far into the period.
+  const expected = perPeriod > 0 && daysIn !== null
+    ? Math.max(0, perPeriod * (1 - Math.min(1, daysIn / periodDays)))
+    : null;
+  const balance = e.balance ?? 0;
+
+  return {
+    ...e, perPeriod, cadence, perMonth, balance, asOf, daysIn, periodDays, expected,
+    ahead: expected === null ? null : balance - expected,
+    daysLeft: daysIn === null ? null : Math.max(0, periodDays - daysIn),
+    configured: perPeriod > 0,
+  };
+}
+
+// What the envelope has to be capped at for the debt plan to work on household
+// income alone. Any business draw on top reduces the cut required.
+export function envelopeTarget(state) {
+  const act = actualsHousehold(state);
+  const h = household(state);
+  if (!act) return null;
+  const extra = state.settings.extraToDebt ?? 0;
+  const shortfall = Math.max(0, extra - Math.max(0, h.left));
+  return {
+    current: act.unplanned,
+    target: Math.max(0, act.unplanned - shortfall),
+    cut: shortfall,
+    slack: h.left,
+    extra,
+  };
+}
 
 // ---- Goals -----------------------------------------------------------------
 

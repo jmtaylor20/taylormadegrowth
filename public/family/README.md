@@ -62,6 +62,31 @@ passphrase using the steps above.
 | **Debt** | Attack order, avalanche vs. snowball, and a payoff projection that moves with the extra-payment dial. |
 | **Goals** | Trips, funding pace, and what they cost in months if taken one at a time. |
 
+## Keeping it current
+
+There is no bank connection, and there does not need to be one. Balances drift;
+the recurring list barely moves. So the app stays true on about eight numbers
+typed **once a month** — two checking balances, the debt balances, and the
+envelope — through the **Monthly check-in** on the Home tab.
+
+The card tracks how long it has been and starts nagging at 28 days, which is
+roughly when statements land. Each check-in is saved, and once there are two of
+them the Debt tab grows a **measured** progress line: not a projection, but what
+the balances actually did. That line is the only one that settles whether the
+plan is working.
+
+## The spending envelope
+
+Move a set amount to a separate account each payday and spend only from there.
+It caps discretionary spending by construction rather than by willpower, and it
+collapses a hundred card swipes into one transfer — which is what makes a
+checking account readable at a glance.
+
+The envelope card suggests a per-payday figure worked back from what the
+statements actually show leaving, less whatever the debt plan needs. Log the
+transfer when you make it; at each check-in, type what is left. The app compares
+that against an even burn and says whether you are ahead or behind pace.
+
 ## Reading the flags
 
 | Flag | Meaning |
@@ -81,6 +106,7 @@ passphrase using the steps above.
 | All the money math | `assets/js/calc.js` |
 | DOM helpers, formatters, sheets | `assets/js/ui.js` |
 | Screens | `assets/js/pages/{home,account,paydays,pipeline,debt,goals}.js` |
+| Check-in flow, envelope, trend chart | `assets/js/pages/checkin.js` |
 | Seal script | `../../scripts/seal-vault.mjs` |
 
 The math lives in one file on purpose: change how something is counted in

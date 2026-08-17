@@ -77,6 +77,8 @@ async function applyUpdate(shipped) {
     goals: state.goals,
     pipeline: state.pipeline,
     log: state.log,
+    checkIns: state.checkIns,
+    envelope: state.envelope,
     settings: { ...shipped.settings, ...state.settings },
     recurring: shipped.recurring.map((r) => {
       const mine = edited.get(r.id);
@@ -145,6 +147,8 @@ function migrate() {
   state.goals ??= [];
   state.pipeline ??= [];
   state.debts ??= [];
+  state.checkIns ??= [];
+  state.envelope ??= { perPeriod: 0, cadence: 'semimonthly', balance: 0, asOf: null, funded: [] };
   state.settings ??= {};
   state.settings.extraToDebt ??= 0;
   state.settings.strategy ??= 'avalanche';

@@ -5,6 +5,7 @@ import * as store from '../store.js';
 import {
   el, money, pct, stat, section, bar, sheet, field, input, select, longDate, ord,
 } from '../ui.js';
+import { trendCard } from './checkin.js';
 import {
   debtTotals, attackable, unknownDebts, order, simulate, compare, addMonths, household,
   payoffTargets,
@@ -45,6 +46,9 @@ export default function debt(state) {
         onclick: () => editDebt(state, missing[0]),
       })));
   }
+
+  wrap.append(section('Measured, not forecast'));
+  wrap.append(trendCard(state));
 
   // ---- The dial ------------------------------------------------------------
 
