@@ -31,7 +31,7 @@ function renderLock() {
   const err = el('div.err');
   const go = el('button.go', { text: 'Unlock', type: 'button' });
   const inner = el('div.lock-inner', {},
-    el('div.lock-mark', { text: '🏡' }),
+    el('img.lock-mark', { src: './assets/img/icon-192.png', alt: '', width: '72', height: '72' }),
     el('h1', { text: 'Taylor Family Money' }),
     el('p', { text: 'Private. Everything stays on this device.' }),
     pass, go, err,

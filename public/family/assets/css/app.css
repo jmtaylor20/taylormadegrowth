@@ -53,11 +53,10 @@ a { color: var(--blue); }
 }
 .lock-inner { width: 100%; max-width: 340px; }
 .lock-mark {
-  width: 64px; height: 64px; margin: 0 auto 18px;
-  border-radius: 18px;
-  display: grid; place-items: center;
-  background: linear-gradient(150deg, var(--josh), var(--laci));
-  font-size: 30px;
+  width: 72px; height: 72px; margin: 0 auto 18px;
+  border-radius: 20px;
+  display: block;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .35);
 }
 .lock h1 { font-size: 22px; margin: 0 0 6px; letter-spacing: -0.01em; }
 .lock p { color: var(--ink-3); font-size: 14px; margin: 0 0 22px; }
