@@ -278,8 +278,12 @@ export function debtTotals(state) {
   return { balance, minimums, allMinimums, monthlyInterest, weightedApr, count: live.length };
 }
 
-export function order(state, strategy) {
-  const live = [...attackable(state)];
+// Everything with a balance, including the mortgages the attack plan leaves
+// alone — scenarios ask when *every* obligation ends, not just the expensive ones.
+export const allDebts = (state) => state.debts.filter((d) => d.balance > 0);
+
+export function order(state, strategy, { includeAll = false } = {}) {
+  const live = [...(includeAll ? allDebts(state) : attackable(state))];
   return strategy === 'snowball'
     ? live.sort((a, b) => a.balance - b.balance || b.apr - a.apr)
     : live.sort((a, b) => b.apr - a.apr || a.balance - b.balance);
@@ -288,6 +292,12 @@ export function order(state, strategy) {
 // Month-by-month simulation: everyone gets their minimum, the target debt gets
 // the minimum plus every spare dollar, and a cleared debt's payment rolls into
 // the next target. Interest accrues monthly on the running balance.
+// The part of a payment that actually pays the debt down. A mortgage payment
+// carries escrow for taxes and insurance, which never amortizes and never goes
+// away — counting it as principal would make the house look years cheaper than
+// it is.
+export const amortizing = (d) => Math.max(0, d.minimum - (d.escrow ?? 0));
+
 // A minimum that does not even cover the interest would leave the balance
 // growing forever — which is a data artefact, not reality. Card issuers set the
 // minimum at roughly interest plus 1% of the balance, so fall back to that
@@ -295,12 +305,13 @@ export function order(state, strategy) {
 // $0 due simply because autopay had already settled that cycle.
 function effectiveMinimum(d) {
   const interest = (d.balance * (d.apr / 100)) / 12;
-  return d.minimum > interest ? d.minimum : Math.max(d.minimum, interest + d.balance * 0.01);
+  const pay = amortizing(d);
+  return pay > interest ? pay : Math.max(pay, interest + d.balance * 0.01);
 }
 
-export function simulate(state, strategy, extra, cap = 600) {
-  const debts = order(state, strategy).map((d) => ({
-    id: d.id, name: d.name, apr: d.apr, minimum: d.minimum,
+export function simulate(state, strategy, extra, cap = 600, opts = {}) {
+  const debts = order(state, strategy, opts).map((d) => ({
+    id: d.id, name: d.name, apr: d.apr, minimum: d.minimum, escrow: d.escrow ?? 0,
     balance: d.balance, paid: 0, interest: 0, clearedMonth: null,
   }));
   if (!debts.length) return { months: 0, totalInterest: 0, debts, timeline: [], impossible: false };
@@ -346,6 +357,9 @@ export function simulate(state, strategy, extra, cap = 600) {
     totalInterest,
     debts,
     timeline,
+    // Escrow keeps being paid after the loan clears — worth stating separately
+    // so "debt free" is not mistaken for "no housing payment".
+    escrowAfter: debts.reduce((s, d) => s + (d.escrow ?? 0), 0),
     // Minimums alone can't cover the interest — the balance would grow forever.
     impossible: month >= cap,
   };
@@ -756,6 +770,33 @@ export function windfallCompare(state, amount, opts = {}) {
     vsAllToDebt: allToDebt.interest - planned.interest,
     vsAllToGoals: allToGoals.interest - planned.interest,
     sameEndBalance: Math.abs(planned.endDelta - allToDebt.endDelta) < 1,
+  };
+}
+
+// ---- Scenarios -------------------------------------------------------------
+//
+// The business draw is the lever. Split it between everyday spending and debt,
+// and the rest of the plan follows: household slack after bills is already free
+// (spending no longer comes out of the bank accounts), so it stacks on top.
+
+export function scenario(state, { draw = 0, spending = 0, slack = null, includeAll = false, strategy = 'avalanche' } = {}) {
+  const fromSlack = slack === null ? Math.max(0, household(state).left) : slack;
+  const toSpending = Math.min(spending, draw);
+  const fromDraw = Math.max(0, draw - toSpending);
+  const extra = fromSlack + fromDraw;
+
+  const sim = simulate(state, strategy, extra, 600, { includeAll });
+  const base = simulate(state, strategy, 0, 600, { includeAll });
+  const minimums = (includeAll ? allDebts(state) : attackable(state))
+    .reduce((s, d) => s + d.minimum, 0);
+
+  return {
+    draw, toSpending, fromDraw, fromSlack, extra, minimums, includeAll,
+    sim, base,
+    monthsSaved: base.impossible ? null : base.months - sim.months,
+    interestSaved: base.impossible ? null : base.totalInterest - sim.totalInterest,
+    // Every dollar leaving for debt each month, minimums included.
+    totalMonthly: minimums + extra,
   };
 }
 

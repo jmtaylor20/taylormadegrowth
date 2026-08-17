@@ -8,6 +8,7 @@ import account from './pages/account.js';
 import paydays from './pages/paydays.js';
 import debt from './pages/debt.js';
 import goals from './pages/goals.js';
+import scenarios from './pages/scenarios.js';
 
 const root = document.getElementById('root');
 
@@ -18,6 +19,7 @@ const ROUTES = [
   { id: 'paydays', label: 'Paydays', icon: 'pay', title: 'Paydays vs. bills', render: paydays },
   { id: 'debt', label: 'Debt', icon: 'debt', title: 'Debt attack plan', render: debt },
   { id: 'goals', label: 'Goals', icon: 'goal', title: 'Goals', render: goals },
+  { id: 'scenarios', label: 'What if', icon: 'what', title: 'Scenarios', render: scenarios },
 ];
 
 const currentRoute = () => ROUTES.find((r) => r.id === location.hash.slice(1)) || ROUTES[0];

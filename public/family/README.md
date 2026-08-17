@@ -60,6 +60,7 @@ passphrase using the steps above.
 | **Paydays** | The timing problem. Splits the month into pay periods, shows which stretch is carrying more than its paycheck, and names the specific due dates to move. |
 | **Debt** | Allocate money you have on hand, then attack order, avalanche vs. snowball, and a payoff projection. |
 | **Goals** | Trips, the monthly rate you set toward them, and which dates that rate will not reach. |
+| **What if** | The business draw as the one variable: split it between everyday spending and debt and watch the payoff date move, with or without the mortgage. |
 
 ## Keeping it current
 
@@ -103,7 +104,7 @@ remainder rather than starting the budget over.
 | State, persistence, export | `assets/js/store.js` |
 | All the money math | `assets/js/calc.js` |
 | DOM helpers, formatters, sheets | `assets/js/ui.js` |
-| Screens | `assets/js/pages/{home,account,paydays,debt,goals}.js` |
+| Screens | `assets/js/pages/{home,account,paydays,debt,goals,scenarios}.js` |
 | Check-in flow, spending budget, trend chart | `assets/js/pages/checkin.js` |
 | Seal script | `../../scripts/seal-vault.mjs` |
 
@@ -119,7 +120,10 @@ The math lives in one file on purpose: change how something is counted in
   balance, everyone gets their minimum, the target gets the rest, and a cleared
   debt's payment rolls forward into the next one.
 - Mortgages are excluded from the attack plan — extra dollars belong on
-  high-rate revolving debt first.
+  high-rate revolving debt first — but can be switched on in Scenarios.
+- A mortgage payment carries escrow for taxes and insurance, which never
+  amortizes and does not stop when the loan clears. Only the rest of the payment
+  pays the house down, so "paid off" is not the same as "no housing payment".
 - Irregular income (business draws, reimbursements) is deliberately left out of
   the baseline so the plan holds on payroll alone.
 - Everyday spending and trip funding are both rates you set, not figures derived
