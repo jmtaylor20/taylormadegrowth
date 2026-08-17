@@ -726,6 +726,15 @@ export function envelopeTarget(state) {
 // committed spending inside the horizon gets funded first — not as indulgence,
 // but because it is the cheapest debt avoidance available.
 
+// Business money arrives gross. A fixed share is reserved for tax before any of
+// it is spendable, so a windfall's headline figure is not what can be deployed.
+// Monthly figures are entered net and are unaffected.
+export function windfallNet(state, w) {
+  const rate = w.gross === false ? 0 : (state.settings?.taxReserveRate ?? 0);
+  const reserve = w.amount * rate;
+  return { gross: w.amount, reserve, net: w.amount - reserve, rate };
+}
+
 export function committedGoals(state, horizonMonths = 12) {
   return [...(state.goals ?? [])]
     .filter((g) => g.committed && g.saved < g.target)

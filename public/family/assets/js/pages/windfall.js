@@ -1,8 +1,8 @@
 // Windfall allocator — where a lump sum should actually go, and why.
 
 import * as store from '../store.js';
-import { el, money, stat, sheet, field, input, longDate, today } from '../ui.js';
-import { allocateWindfall, windfallCompare } from '../calc.js';
+import { el, money, stat, sheet, field, input, select, longDate, today } from '../ui.js';
+import { allocateWindfall, windfallCompare, windfallNet } from '../calc.js';
 
 export function windfallCard(state) {
   const pending = (state.windfalls ?? []).filter((w) => !w.applied);
@@ -20,17 +20,28 @@ export function windfallCard(state) {
 }
 
 function plan(state, w) {
-  const cmp = windfallCompare(state, w.amount);
+  const net = windfallNet(state, w);
+  const cmp = windfallCompare(state, net.net);
   const a = cmp.smart;
 
   const card = el('div.card', { style: { borderColor: 'var(--gold)' } },
     el('div', { style: { display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '4px' } },
       el('div', { style: { fontWeight: '650', fontSize: '15px' } }, `💰 ${w.name}`),
-      el('div', { style: { marginLeft: 'auto', fontWeight: '680', fontSize: '18px' }, class: 'num pos', text: money(w.amount) }),
+      el('div', { style: { marginLeft: 'auto', fontWeight: '680', fontSize: '18px' }, class: 'num pos', text: money(net.net) }),
     ),
     el('div.tiny', { style: { marginBottom: '14px' } },
       w.expected ? `Expected ${longDate(w.expected)}${w.note ? ` · ${w.note}` : ''}` : (w.note ?? '')),
   );
+
+  if (net.reserve > 0) {
+    card.append(el('div', {
+      style: { display: 'flex', gap: '10px', fontSize: '13px', padding: '9px 11px', marginBottom: '12px',
+        background: 'var(--bg-raise)', borderRadius: '9px' },
+    },
+      el('span', { style: { flex: '1' } }, `${money(net.gross)} gross, less ${Math.round(net.rate * 100)}% set aside for tax`),
+      el('span.num.mut', { text: '−' + money(net.reserve) }),
+    ));
+  }
 
   for (const [i, s] of a.steps.entries()) {
     card.append(el('div', {
@@ -111,11 +122,14 @@ function addSheet(state, existing) {
     const name = input({ value: existing?.name ?? '', placeholder: 'Where is it from?' });
     const amount = input({ type: 'number', step: '100', inputmode: 'decimal', value: existing?.amount ?? '' });
     const when = input({ type: 'date', value: existing?.expected ?? today() });
+    const gross = select([['yes', 'Gross — tax not yet set aside'], ['no', 'Net — tax already held back']],
+      existing?.gross === false ? 'no' : 'yes');
 
     return el('div', {},
       field('What', name),
       field('Amount', amount),
       field('Expected', when),
+      field('Is this before or after tax?', gross),
       el('button.btn.primary.wide', {
         type: 'button', text: 'Save',
         onclick: async () => {
@@ -123,7 +137,10 @@ function addSheet(state, existing) {
           if (!amt) return close();
           await store.commit((s) => {
             s.windfalls ??= [];
-            const patch = { name: name.value.trim() || 'Windfall', amount: amt, expected: when.value };
+            const patch = {
+              name: name.value.trim() || 'Windfall', amount: amt,
+              expected: when.value, gross: gross.value === 'yes',
+            };
             const t = s.windfalls.find((x) => x.id === existing?.id);
             if (t) Object.assign(t, patch);
             else s.windfalls.push({ id: store.uid('w'), ...patch });
