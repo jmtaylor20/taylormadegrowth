@@ -313,7 +313,10 @@ function effectiveMinimum(d) {
 // fixed term. When one stops, that money is free without anyone earning more.
 export function freedPayments(state) {
   return (state.recurring ?? [])
-    .filter((r) => !r.paused && r.endsAfterMonths > 0)
+    // A term ending only frees money if nothing takes its place. A lease that
+    // will be rolled into another vehicle is a payment that continues, and
+    // treating its end date as a windfall would flatter every projection.
+    .filter((r) => !r.paused && r.endsAfterMonths > 0 && !r.replaced)
     .map((r) => ({ fromMonth: r.endsAfterMonths + 1, amount: r.amount, name: r.name }))
     .sort((a, b) => a.fromMonth - b.fromMonth);
 }
