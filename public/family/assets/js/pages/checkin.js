@@ -77,7 +77,9 @@ export function runCheckIn(state) {
           for (const { a, i } of acctInputs) {
             const v = num(i);
             const t = s.accounts.find((x) => x.id === a.id);
-            if (v !== null && t) { t.balance = v; t.balanceAsOf = stamp; }
+            // Remember where this leg started so the next check-in can measure
+            // the burn between them.
+            if (v !== null && t) { t.baselineBalance = v; t.balance = v; t.balanceAsOf = stamp; }
             balances[a.id] = t?.balance ?? 0;
           }
           const debts = {};

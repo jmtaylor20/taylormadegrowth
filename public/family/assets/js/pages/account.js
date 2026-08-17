@@ -9,7 +9,7 @@ import {
 import {
   recurringFor, recurringTotals, byCategory, leftover, monthlyIncome, upsideIncome,
   forAccount, isBusiness, colorFor, pipelineSummary, monthlySetAside, actuals,
-  endedFor, cancelList,
+  endedFor, cancelList, expectedBalance,
 } from '../calc.js';
 
 const CATEGORIES = ['Housing', 'Debt', 'Insurance', 'Utilities', 'Kids', 'Transport', 'Subscriptions', 'Health', 'Business', 'Other'];
@@ -222,6 +222,23 @@ export default function account(state, id) {
     net3 < 0
       ? `Across these statements the account ran ${money(Math.abs(net3))} behind — more went out than came in. That gap is what the debt plan has to close.`
       : `Across these statements the account finished ${money(net3)} ahead.`));
+
+  // ---- Since the last check-in ---------------------------------------------
+
+  const variance = expectedBalance(state, id);
+  if (variance && variance.days >= 3) {
+    wrap.append(section('Since the last check-in', `${variance.days} days`));
+    wrap.append(el('div.card', {},
+      el('div.stats', {},
+        stat('Should be at', money(variance.expected), 'income in, bills out', ''),
+        stat('Actually at', money(variance.actual), 'as of today', variance.gap < 0 ? 'neg' : 'pos'),
+      ),
+      el('p', { style: { margin: '12px 0 0', fontSize: '14px', lineHeight: '1.5' } },
+        variance.gap < 0
+          ? `${money(-variance.gap)} has gone out beyond the bill schedule in ${variance.days} days — a run rate of about ${money(-variance.perMonth)} a month. This is measured over days you actually lived, not averaged off old statements, so it is the number to trust.`
+          : `You are ${money(variance.gap)} ahead of where the schedule says you should be. Either money landed that the plan does not know about, or a bill has not posted yet.`),
+    ));
+  }
 
   // ---- Planned vs actual ---------------------------------------------------
 

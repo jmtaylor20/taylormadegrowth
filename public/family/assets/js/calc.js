@@ -461,6 +461,54 @@ export const addMonths = (n) => {
   return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 };
 
+// ---- Balance variance ------------------------------------------------------
+//
+// Walk from the last recorded balance to today, adding each paycheck and
+// subtracting each bill on the day it lands. Where the balance *should* be,
+// minus where it actually is, is money spent outside the plan — measured over
+// days you actually lived, rather than inferred from statements months old.
+
+export function expectedBalance(state, accountId, asOf = new Date()) {
+  const a = state.accounts.find((x) => x.id === accountId);
+  if (!a?.balanceAsOf) return null;
+
+  const from = parseDay(a.balanceAsOf);
+  const to = new Date(asOf.getFullYear(), asOf.getMonth(), asOf.getDate(), 12);
+  const days = Math.round((to - from) / DAY);
+  if (days <= 0) return null;
+
+  const incomes = forAccount(state.income, accountId).filter((i) => !i.excludeFromPlan);
+  const bills = recurringFor(state, accountId);
+
+  let expected = a.baselineBalance ?? a.balanceAtLastCheck ?? null;
+  // Without a stored starting point there is nothing to compare against.
+  if (expected === null) return null;
+
+  let income = 0;
+  let spent = 0;
+  const cursor = new Date(from);
+  for (let n = 0; n < days; n += 1) {
+    cursor.setDate(cursor.getDate() + 1);
+    const dom = cursor.getDate();
+    // A payday or bill dated later than this month's length lands on its last day.
+    const lastDom = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
+    const hits = (d) => d === dom || (d > lastDom && dom === lastDom);
+
+    for (const i of incomes) if (incomeDays(i).some(hits)) { expected += i.amount; income += i.amount; }
+    for (const b of bills) if (hits(b.day)) { expected -= b.amount; spent += b.amount; }
+  }
+
+  const gap = a.balance - expected;
+  return {
+    days, expected, actual: a.balance, gap,
+    income, billsPaid: spent,
+    // Negative gap is unscheduled spending; positive means money arrived that
+    // the plan does not know about.
+    perDay: gap / days,
+    perMonth: (gap / days) * 30,
+  };
+}
+
 // ---- Check-ins -------------------------------------------------------------
 //
 // No bank linking. The app stays current on a handful of numbers typed once a
