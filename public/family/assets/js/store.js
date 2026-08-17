@@ -169,6 +169,7 @@ function migrate() {
   state.allocations ??= [];
   state.settings ??= {};
   state.settings.monthlySpending ??= 0;
+  state.settings.monthlyToGoals ??= 0;
   state.settings.extraToDebt ??= 0;
   state.settings.strategy ??= 'avalanche';
   state.settings.emergencyFundTarget ??= 2000;

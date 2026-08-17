@@ -639,10 +639,11 @@ export function committedGoals(state, horizonMonths = 12) {
     .sort((a, b) => a.monthsUntil - b.monthsUntil);
 }
 
-// Money the household can put toward goals and extra debt each month: the slack
-// left after every bill, plus whatever the business has committed to sending.
-export const monthlyCapacity = (state) =>
-  Math.max(0, household(state).left) + (state.settings?.businessContribution ?? 0);
+// What is actually going toward goals each month. This is a stated rate rather
+// than slack inferred from the bill schedule — money left after bills does not
+// reach a trip fund on its own, and treating it as though it does is how a plan
+// ends up describing a life nobody is living.
+export const monthlyCapacity = (state) => state.settings?.monthlyToGoals ?? 0;
 
 // A lump sum should only cover what monthly cashflow cannot reach in time —
 // and "in time" is cumulative, not per-goal. By the month a trip falls due,

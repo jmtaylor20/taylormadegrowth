@@ -59,7 +59,7 @@ passphrase using the steps above.
 | **Laci** | Same for the Wells Fargo account. |
 | **Paydays** | The timing problem. Splits the month into pay periods, shows which stretch is carrying more than its paycheck, and names the specific due dates to move. |
 | **Debt** | Allocate money you have on hand, then attack order, avalanche vs. snowball, and a payoff projection. |
-| **Goals** | Trips, funding pace, and what they cost in months if taken one at a time. |
+| **Goals** | Trips, the monthly rate you set toward them, and which dates that rate will not reach. |
 
 ## Keeping it current
 
@@ -122,6 +122,9 @@ The math lives in one file on purpose: change how something is counted in
   high-rate revolving debt first.
 - Irregular income (business draws, reimbursements) is deliberately left out of
   the baseline so the plan holds on payroll alone.
+- Everyday spending and trip funding are both rates you set, not figures derived
+  from slack left after bills. Money left over does not reach a trip fund on its
+  own, and a plan that assumes it does describes a life nobody is living.
 - Pay periods run payday-to-payday and wrap the month end, because a month-end
   paycheck is what funds the following 1st. The cushion figure walks a full
   cycle from the last payday, not from the 1st — starting at the calendar
