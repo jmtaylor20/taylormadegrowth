@@ -27,7 +27,13 @@ const currentRoute = () => ROUTES.find((r) => r.id === location.hash.slice(1)) |
 // ---- Lock screen -----------------------------------------------------------
 
 function renderLock() {
-  const pass = el('input', { type: 'password', placeholder: 'Passphrase', autocomplete: 'current-password', spellcheck: 'false' });
+  // autocapitalize/autocorrect off: iOS will happily capitalise or "fix" the
+  // first word of a passphrase, and a mangled character is indistinguishable
+  // from a wrong one — the vault just refuses to open.
+  const pass = el('input', {
+    type: 'password', placeholder: 'Passphrase', autocomplete: 'current-password',
+    spellcheck: 'false', autocapitalize: 'none', autocorrect: 'off',
+  });
   const err = el('div.err');
   const go = el('button.go', { text: 'Unlock', type: 'button' });
   const inner = el('div.lock-inner', {},
@@ -173,7 +179,10 @@ function settingsSheet() {
       el('p.tiny', { text: 'Pick something you will actually remember — a short sentence beats a random string, and a longer phrase is stronger anyway. Minimum 12 characters.' }),
     );
 
-    const p1 = input({ type: 'password', placeholder: 'New passphrase', autocomplete: 'new-password' });
+    const p1 = input({
+      type: 'password', placeholder: 'New passphrase', autocomplete: 'new-password',
+      spellcheck: 'false', autocapitalize: 'none', autocorrect: 'off',
+    });
     const msg = el('div.tiny');
     const after = el('div');
     wrap.append(
