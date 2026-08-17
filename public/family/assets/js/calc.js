@@ -351,6 +351,16 @@ export function order(state, strategy) {
 // Month-by-month simulation: everyone gets their minimum, the target debt gets
 // the minimum plus every spare dollar, and a cleared debt's payment rolls into
 // the next target. Interest accrues monthly on the running balance.
+// A minimum that does not even cover the interest would leave the balance
+// growing forever — which is a data artefact, not reality. Card issuers set the
+// minimum at roughly interest plus 1% of the balance, so fall back to that
+// whenever the recorded figure cannot amortize. Captured statements often show
+// $0 due simply because autopay had already settled that cycle.
+function effectiveMinimum(d) {
+  const interest = (d.balance * (d.apr / 100)) / 12;
+  return d.minimum > interest ? d.minimum : Math.max(d.minimum, interest + d.balance * 0.01);
+}
+
 export function simulate(state, strategy, extra, cap = 600) {
   const debts = order(state, strategy).map((d) => ({
     id: d.id, name: d.name, apr: d.apr, minimum: d.minimum,
@@ -364,7 +374,7 @@ export function simulate(state, strategy, extra, cap = 600) {
 
   while (debts.some((d) => d.balance > 0.005) && month < cap) {
     month += 1;
-    let pool = debts.reduce((s, d) => s + (d.balance > 0.005 ? d.minimum : 0), 0) + extra;
+    let pool = debts.reduce((s, d) => s + (d.balance > 0.005 ? effectiveMinimum(d) : 0), 0) + extra;
     let accrued = 0;
 
     // Interest first, then minimums, then everything spare at the front debt.
@@ -379,7 +389,7 @@ export function simulate(state, strategy, extra, cap = 600) {
 
     for (const d of debts) {
       if (d.balance <= 0.005) continue;
-      const pay = Math.min(d.minimum, d.balance, pool);
+      const pay = Math.min(effectiveMinimum(d), d.balance, pool);
       d.balance -= pay; d.paid += pay; pool -= pay;
       if (d.balance <= 0.005) { d.balance = 0; d.clearedMonth ??= month; }
     }
@@ -402,6 +412,39 @@ export function simulate(state, strategy, extra, cap = 600) {
     // Minimums alone can't cover the interest — the balance would grow forever.
     impossible: month >= cap,
   };
+}
+
+// Run the payoff backwards: given a deadline, what does the extra payment have
+// to be? Binary search over the simulation, since there is no closed form once
+// freed-up minimums start rolling into the next debt.
+export function extraNeededFor(state, targetMonths, strategy = 'avalanche') {
+  const feasible = (extra) => {
+    const s = simulate(state, strategy, extra, targetMonths + 1);
+    return !s.impossible && s.months <= targetMonths;
+  };
+  let lo = 0;
+  let hi = 250;
+  // Grow the ceiling until the deadline is reachable, then bisect.
+  while (!feasible(hi)) {
+    hi *= 2;
+    if (hi > 200_000) return null;
+  }
+  for (let i = 0; i < 26; i += 1) {
+    const mid = (lo + hi) / 2;
+    if (feasible(mid)) hi = mid; else lo = mid;
+  }
+  return Math.ceil(hi / 25) * 25;
+}
+
+// What a business contribution buys, at a glance: pick a finish line, get the
+// monthly number that reaches it.
+export function payoffTargets(state, strategy = 'avalanche', years = [5, 4, 3, 2]) {
+  return years.map((y) => {
+    const months = y * 12;
+    const extra = extraNeededFor(state, months, strategy);
+    const sim = extra === null ? null : simulate(state, strategy, extra);
+    return { years: y, months, extra, interest: sim?.totalInterest ?? null };
+  });
 }
 
 export function compare(state, extra) {

@@ -7,6 +7,7 @@ import {
 } from '../ui.js';
 import {
   debtTotals, attackable, unknownDebts, order, simulate, compare, addMonths, household,
+  payoffTargets,
 } from '../calc.js';
 
 const TYPES = ['Credit card', 'Installment loan', 'Auto loan', 'Student loan', 'Mortgage', 'Other'];
@@ -51,7 +52,7 @@ export default function debt(state) {
   const dialCard = el('div.card');
   const readout = el('div', { style: { display: 'flex', alignItems: 'baseline', gap: '10px' } });
   const slider = el('input.slider', {
-    type: 'range', min: '0', max: '1500', step: '25', value: String(extra),
+    type: 'range', min: '0', max: '3000', step: '25', value: String(extra),
   });
   const summary = el('div');
   const stratSeg = el('div.seg', { style: { marginTop: '14px' } });
@@ -92,6 +93,11 @@ export default function debt(state) {
     text: '+ Add a debt', type: 'button', style: { marginTop: '10px' },
     onclick: () => editDebt(state, null),
   }));
+
+  // ---- What TaylorMade has to produce --------------------------------------
+
+  wrap.append(section('What it takes', 'pick a finish line'));
+  wrap.append(targets(state, strategy, h));
 
   // ---- Strategy comparison -------------------------------------------------
 
@@ -188,6 +194,43 @@ function orderList(state, strategy, extra) {
   });
 
   return card;
+}
+
+// The business is the lever now, so state the ask in the business's own terms:
+// a monthly number it has to clear, after tax, to hit each finish line.
+function targets(state, strategy, h) {
+  const rows = payoffTargets(state, strategy);
+  const slack = Math.max(0, h.left);
+  const base = simulate(state, strategy, 0);
+
+  const tbl = el('table.tbl', {},
+    el('thead', {}, el('tr', {},
+      el('th', { text: 'Debt free in' }),
+      el('th.r', { text: 'Extra / mo' }),
+      el('th.r', { text: 'From TMB' }),
+      el('th.r', { text: 'Interest' }))),
+    el('tbody', {}, rows.map((r) => {
+      const fromBiz = Math.max(0, (r.extra ?? 0) - slack);
+      return el('tr', {},
+        el('td', {}, `${r.years} years`),
+        el('td.r', { text: r.extra === null ? '—' : money(r.extra) }),
+        el('td.r', { class: fromBiz > 0 ? 'warn' : 'pos', text: r.extra === null ? '—' : money(fromBiz) }),
+        el('td.r.tiny', { text: r.interest === null ? '—' : money(r.interest) }));
+    })),
+  );
+
+  const five = rows.find((r) => r.years === 5);
+  return el('div', {},
+    el('div.card.flush', {}, tbl),
+    el('p', { style: { margin: '10px 2px 0', fontSize: '14px', lineHeight: '1.5' } },
+      `"Extra" is on top of every minimum. "From TMB" is what is left once the ${money(slack)} of household slack is already applied — that is the number the business actually has to clear, after tax and after Cole.`),
+    !base.impossible
+      ? el('p', { style: { margin: '10px 2px 0', fontSize: '14px', lineHeight: '1.5' } },
+          `Doing nothing extra takes ${Math.round(base.months / 12)} years and ${money(base.totalInterest)} in interest. ${five && five.extra !== null ? `Getting to five years costs ${money(five.extra)} a month and saves ${money(base.totalInterest - five.interest)} of it.` : ''} Every month you delay, ${money(debtTotals(state).monthlyInterest)} goes to lenders instead of to you.`)
+      : null,
+    el('p.tiny', { style: { margin: '10px 2px 0' } },
+      'Set the slider above to the number you commit to. A figure the business can hold every month beats a bigger one it can only manage twice.'),
+  );
 }
 
 function comparison(state, extra) {

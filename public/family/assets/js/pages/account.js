@@ -124,6 +124,12 @@ export default function account(state, id) {
           el('div.amt', { text: money(r.amount, true) }),
           el('div.tiny', { text: `${money(r.amount * 12)}/yr` })),
       ));
+      if (r.howTo?.length) {
+        c.append(el('div', { style: { padding: '0 16px 14px' } },
+          el('div.tiny', { style: { marginBottom: '6px' } }, 'How to kill it:'),
+          el('ol', { style: { margin: 0, paddingLeft: '18px', fontSize: '13px', lineHeight: '1.55', color: 'var(--ink-2)' } },
+            r.howTo.map((step) => el('li', { text: step, style: { marginBottom: '5px' } })))));
+      }
     }
     c.append(el('div', { style: { padding: '12px 16px' } },
       el('button.btn.sm.wide', {
