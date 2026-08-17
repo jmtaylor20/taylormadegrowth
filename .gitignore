@@ -9,6 +9,8 @@ node_modules/
 # environment
 .env
 .env.production
+# personal finance plaintext — only the sealed vault.json is committed
+private/
 # macOS
 .DS_Store
 # logs

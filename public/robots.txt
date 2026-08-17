@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /family/
+Disallow: /app/
 
 Sitemap: https://taylormadegrowth.com/sitemap-index.xml
