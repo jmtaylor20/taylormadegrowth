@@ -9,7 +9,7 @@ import {
 import {
   recurringFor, recurringTotals, byCategory, leftover, monthlyIncome, upsideIncome,
   forAccount, isBusiness, colorFor, pipelineSummary, monthlySetAside, actuals,
-  endedFor, cancelList, expectedBalance,
+  endedFor, cancelList, expectedBalance, untilNextPayday,
 } from '../calc.js';
 
 const CATEGORIES = ['Housing', 'Debt', 'Insurance', 'Utilities', 'Kids', 'Transport', 'Subscriptions', 'Health', 'Business', 'Other'];
@@ -45,6 +45,38 @@ export default function account(state, id) {
   if (upside > 0) {
     wrap.append(el('p.tiny', { style: { margin: '10px 2px 0' } },
       `Not counted above: ${money(upside)} of irregular deposits (${forAccount(state.income, id).filter((i) => i.excludeFromPlan).map((i) => i.name).join(', ')}). The plan holds without them — anything that lands is ahead of plan.`));
+  }
+
+  // ---- Runway --------------------------------------------------------------
+
+  const rw = untilNextPayday(state, id);
+  if (rw) {
+    wrap.append(section('Before the next paycheck', `${rw.daysAway} days`));
+    const card = el('div.card.flush');
+    for (const b of rw.due) {
+      card.append(el('div.row', {},
+        el('div.day', { text: b.day }),
+        el('div.mid', {}, el('div.nm', {}, el('span.t', { text: b.name })),
+          el('div.meta', { text: b.category })),
+        el('div.amt.neg', { text: '−' + money(b.amount, true) })));
+    }
+    for (const c of rw.credits) {
+      card.append(el('div.row', {},
+        el('div.day', { text: c.day, style: { background: 'rgba(47,191,120,.16)', color: 'var(--josh)' } }),
+        el('div.mid', {}, el('div.nm', {}, el('span.t', { text: c.name })), el('div.meta', { text: 'credit' })),
+        el('div.amt.pos', { text: '+' + money(c.amount, true) })));
+    }
+    if (!rw.due.length && !rw.credits.length) {
+      card.append(el('div.empty', { text: 'Nothing else scheduled before payday.' }));
+    }
+    card.append(el('div.row', { style: { background: 'var(--bg-raise)' } },
+      el('div.mid', {}, el('div.nm', {}, el('span.t', { text: 'Free after these' }))),
+      el('div.amt', { class: rw.free < 0 ? 'neg' : 'pos', text: money(rw.free, true) })));
+    wrap.append(card);
+    wrap.append(el('p.tiny', { style: { margin: '8px 2px 0' } },
+      `${money(acct.balance)} today, ${money(rw.billsTotal)} of scheduled bills left`
+      + (rw.creditsTotal ? ` and ${money(rw.creditsTotal)} of credits due` : '')
+      + `, next paycheck ${money(rw.paycheck)} on ${longDate(rw.nextPayday)}. Recurring only — groceries and fuel are not in this.`));
   }
 
   // ---- Where it goes -------------------------------------------------------

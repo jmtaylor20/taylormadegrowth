@@ -1,12 +1,12 @@
 // Household overview — the one screen that answers "are we okay this month?"
 
-import { el, money, signed, stat, section, splitBar, legend, bar, ord } from '../ui.js';
+import { el, money, signed, stat, section, splitBar, legend, bar, ord, longDate } from '../ui.js';
 import { checkInCard, envelopeCard } from './checkin.js';
 import { windfallCard } from './windfall.js';
 import {
   household, monthlyIncome, recurringTotals, leftover, byCategory,
   debtTotals, attackable, unknownDebts, simulate, pipelineSummary, goalSummary,
-  actualsHousehold, payPeriods, rebalance, floatTarget,
+  actualsHousehold, payPeriods, rebalance, floatTarget, runwayHousehold, untilNextPayday,
 } from '../calc.js';
 
 export default function home(state) {
@@ -35,6 +35,25 @@ export default function home(state) {
     stat('Business on personal', money(h.business), 'move off these accounts', 'mut'),
     stat('Pipeline set-aside', money(pipe.setAside), `${pipe.items.length} known one-offs`, 'warn'),
     stat('Truly spare', money(slack), 'after pipeline funding', slack < 0 ? 'neg' : 'pos'),
+  ));
+
+  // ---- Runway --------------------------------------------------------------
+
+  const rw = runwayHousehold(state);
+  wrap.append(section('Between now and the next paycheck'));
+  wrap.append(el('div.card', {},
+    el('div.stats', {},
+      stat('In both accounts', money(rw.balance), 'right now', ''),
+      stat('Still to clear', money(rw.billsTotal), 'scheduled bills', 'neg'),
+      stat('Credits due', money(rw.creditsTotal), 'before payday', rw.creditsTotal > 0 ? 'pos' : 'mut'),
+      stat('Free', money(rw.free), 'after every scheduled bill', rw.free < 0 ? 'neg' : 'pos'),
+    ),
+    el('p.tiny', { style: { margin: '12px 0 0' } },
+      'Recurring only — no groceries, fuel or eating out in this figure. It is what is spoken for, not what will get spent.'),
+    ...rw.parts.map(({ a, r }) => el('div.tiny', { style: { marginTop: '8px' } },
+      `${a.owner}: ${money(r.balance)} − ${money(r.billsTotal)} in ${r.due.length} bill${r.due.length === 1 ? '' : 's'}`
+      + (r.creditsTotal ? ` + ${money(r.creditsTotal)} credits` : '')
+      + ` = ${money(r.free)} by ${longDate(r.nextPayday)}`)),
   ));
 
   wrap.append(section('Keeping it honest'));

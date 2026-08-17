@@ -509,6 +509,78 @@ export function expectedBalance(state, accountId, asOf = new Date()) {
   };
 }
 
+// ---- Runway to the next paycheck -------------------------------------------
+//
+// The most useful number day to day: of what is sitting in the account right
+// now, how much is already committed to scheduled bills before the next
+// paycheck lands, and how much is genuinely free. Discretionary spending is
+// deliberately excluded — this answers "what is spoken for", not "what will I
+// spend".
+
+export function untilNextPayday(state, accountId, from = new Date()) {
+  const a = state.accounts.find((x) => x.id === accountId);
+  const payDays = payDaysFor(state, accountId);
+  if (!a || !payDays.length) return null;
+
+  const incomes = forAccount(state.income, accountId).filter((i) => !i.excludeFromPlan);
+  const bills = recurringFor(state, accountId);
+
+  const cursor = new Date(from.getFullYear(), from.getMonth(), from.getDate(), 12);
+  const due = [];
+  const credits = [];
+  let nextPayday = null;
+  let days = 0;
+
+  // Start tomorrow: anything dated today is assumed already reflected in the
+  // balance that was just read off the banking app.
+  for (let n = 0; n < 62; n += 1) {
+    cursor.setDate(cursor.getDate() + 1);
+    days += 1;
+    const dom = cursor.getDate();
+    const lastDom = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
+    const hits = (d) => d === dom || (d > lastDom && dom === lastDom);
+
+    if (payDays.some(hits)) {
+      nextPayday = new Date(cursor);
+      break;
+    }
+    for (const b of bills) if (hits(b.day)) due.push({ ...b, on: cursor.toISOString().slice(0, 10) });
+    for (const i of incomes) if (incomeDays(i).some(hits)) credits.push({ ...i, on: cursor.toISOString().slice(0, 10) });
+  }
+
+  const billsTotal = due.reduce((s, b) => s + b.amount, 0);
+  const creditsTotal = credits.reduce((s, i) => s + i.amount, 0);
+  const paycheck = incomes
+    .filter((i) => isWage(i) && nextPayday && incomeDays(i).includes(nextPayday.getDate()))
+    .reduce((s, i) => s + i.amount, 0);
+
+  return {
+    nextPayday: nextPayday ? nextPayday.toISOString().slice(0, 10) : null,
+    daysAway: days,
+    due: due.sort((x, y) => x.day - y.day),
+    billsTotal,
+    credits,
+    creditsTotal,
+    paycheck,
+    // What is left once every scheduled bill between now and payday has cleared.
+    free: a.balance - billsTotal + creditsTotal,
+    balance: a.balance,
+  };
+}
+
+export function runwayHousehold(state, from = new Date()) {
+  const parts = state.accounts
+    .map((a) => ({ a, r: untilNextPayday(state, a.id, from) }))
+    .filter((x) => x.r);
+  return {
+    parts,
+    balance: parts.reduce((s, x) => s + x.r.balance, 0),
+    billsTotal: parts.reduce((s, x) => s + x.r.billsTotal, 0),
+    creditsTotal: parts.reduce((s, x) => s + x.r.creditsTotal, 0),
+    free: parts.reduce((s, x) => s + x.r.free, 0),
+  };
+}
+
 // ---- Check-ins -------------------------------------------------------------
 //
 // No bank linking. The app stays current on a handful of numbers typed once a
