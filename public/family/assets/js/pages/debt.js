@@ -3,12 +3,12 @@
 
 import * as store from '../store.js';
 import {
-  el, money, pct, stat, section, bar, sheet, field, input, select, longDate, ord, today,
+  el, fill, money, pct, stat, section, bar, sheet, field, input, select, longDate, ord, today,
 } from '../ui.js';
 import { trendCard } from './checkin.js';
 import {
   debtTotals, attackable, unknownDebts, order, simulate, compare, addMonths, household,
-  payoffTargets, allocate, spendingStatus,
+  payoffTargets, allocate, spendingStatus, projection,
 } from '../calc.js';
 
 const TYPES = ['Credit card', 'Installment loan', 'Auto loan', 'Student loan', 'Mortgage', 'Other'];
@@ -65,13 +65,33 @@ export default function debt(state) {
   const summary = el('div');
   const stratSeg = el('div.seg', { style: { marginTop: '14px' } });
 
+  // Everything downstream of the dial is rebuilt when the dial moves, so the
+  // five-year path answers "what if I found another two hundred a month?"
+  // without leaving the page.
+  const live = el('div');
+
   const repaint = () => {
-    readout.replaceChildren(
+    fill(readout, 
       el('div', { style: { fontSize: '30px', fontWeight: '680', letterSpacing: '-0.02em' }, class: 'num', text: money(extra) }),
       el('div.tiny', { text: 'a month on top of minimums' }),
     );
-    summary.replaceChildren(planSummary(state, strategy, extra));
+    fill(summary, planSummary(state, strategy, extra));
     [...stratSeg.children].forEach((c) => c.classList.toggle('on', c.dataset.k === strategy));
+
+    fill(live, 
+      section('The next five years', `at ${money(extra)}/mo extra`),
+      fiveYears(state, strategy, extra),
+      section('Attack order', 'tap a debt to edit · Pay to record one'),
+      orderList(state, strategy, extra),
+      el('button.btn.wide.ghost', {
+        text: '+ Add a debt', type: 'button', style: { marginTop: '10px' },
+        onclick: () => editDebt(state, null),
+      }),
+      section('Avalanche vs snowball', `at ${money(extra)}/mo extra`),
+      comparison(state, extra),
+      section('Why this order'),
+      el('div.card', {}, rationale(state, strategy, extra)),
+    );
   };
 
   slider.addEventListener('input', () => { extra = Number(slider.value); repaint(); });
@@ -90,35 +110,132 @@ export default function debt(state) {
 
   dialCard.append(readout, slider, el('div.tiny', { text: `Left after every recurring bill: ${money(h.left)}` }), stratSeg, summary);
   wrap.append(dialCard);
+
+  // ---- Everything the dial drives ------------------------------------------
+
+  wrap.append(live);
   repaint();
-
-  // ---- Payoff order --------------------------------------------------------
-
-  wrap.append(section('Attack order'));
-  wrap.append(orderList(state, strategy, extra));
-
-  wrap.append(el('button.btn.wide.ghost', {
-    text: '+ Add a debt', type: 'button', style: { marginTop: '10px' },
-    onclick: () => editDebt(state, null),
-  }));
 
   // ---- What TaylorMade has to produce --------------------------------------
 
   wrap.append(section('What it takes', 'pick a finish line'));
   wrap.append(targets(state, strategy, h));
 
-  // ---- Strategy comparison -------------------------------------------------
+  return wrap;
+}
 
-  wrap.append(section('Avalanche vs snowball', `at ${money(extra)}/mo extra`));
-  wrap.append(comparison(state, extra));
+// ---- The five-year path ----------------------------------------------------
+//
+// The allocator answers "where does this money go today". This answers the
+// question that actually shapes a plan: after that card dies, what is next, how
+// long do you sit on it, and what does the balance look like the whole way.
 
-  // ---- Why this order ------------------------------------------------------
+function fiveYears(state, strategy, extra) {
+  const p = projection(state, strategy, extra, 60);
+  if (!p) return el('div.card', {}, el('div.empty', { text: 'No balances entered yet.' }));
 
-  wrap.append(section('Why this order'));
-  wrap.append(el('div.card', {}, rationale(state, strategy, extra)));
+  const wrap = el('div');
+
+  wrap.append(el('div.card', {},
+    el('div.stats.three', {},
+      stat('In five years', p.done ? 'Debt free' : money(p.endBalance),
+        p.done ? `cleared ${addMonths(p.monthsToFree)}` : 'still owing', p.done ? 'pos' : 'warn'),
+      stat('Paid down', money(Math.max(0, p.startBalance - p.endBalance)), 'off the balance', 'pos'),
+      stat('Interest', money(p.interest), 'over the five years', 'neg'),
+    ),
+    curve(p),
+    el('p.tiny', { style: { margin: '10px 0 0' } },
+      p.freed.length
+        ? `${p.freed.length} account${p.freed.length === 1 ? '' : 's'} clear inside the window, freeing ${money(p.freed.reduce((s, d) => s + d.minimum, 0))} a month of minimums that roll straight into whatever is next. That rollover is why the last debts fall so much faster than the first.`
+        : 'Nothing clears inside five years at this payment. Raise the dial above until the first account starts falling.'),
+  ));
+
+  // ---- Phase by phase ------------------------------------------------------
+
+  const card = el('div.card.flush', { style: { marginTop: '10px' } });
+  for (const [i, ph] of p.phases.entries()) {
+    const last = i === p.phases.length - 1;
+    card.append(el('div.row', {},
+      el('div.day', {
+        text: String(i + 1),
+        style: i === 0 ? { background: 'var(--josh)', color: '#08131f' } : {},
+      }),
+      el('div.mid', {},
+        el('div.nm', {}, el('span.t', { text: ph.name ?? '—' }),
+          i === 0 ? el('span.flag', { text: 'NOW', style: { background: 'rgba(47,191,120,.18)', color: 'var(--josh)' } }) : null),
+        el('div.meta', {
+          text: `${pct(ph.apr, 2)} · ${money(ph.startBalance)} when you start on it · ${money(ph.poured / ph.months)}/mo going in`,
+        }),
+      ),
+      el('div', { style: { textAlign: 'right', flex: '0 0 auto' } },
+        el('div.amt', { class: ph.clears ? 'pos' : 'warn', text: ph.clears ? addMonths(ph.clearedMonth) : money(ph.endBalance) }),
+        el('div.tiny', {
+          text: ph.clears
+            ? `${ph.months} month${ph.months === 1 ? '' : 's'} on it`
+            : last ? 'where 5 years runs out' : 'still owing',
+        }),
+      ),
+    ));
+  }
+  wrap.append(section('Where the money points, in order', `${p.phases.length} stretches`), card);
+
+  // ---- Year by year --------------------------------------------------------
+
+  wrap.append(section('Year by year'), el('div.card.flush', {}, el('table.tbl', {},
+    el('thead', {}, el('tr', {},
+      el('th', { text: 'Year' }),
+      el('th.r', { text: 'Balance' }),
+      el('th.r', { text: 'Interest' }),
+      el('th', { text: 'Gone by then' }))),
+    el('tbody', {}, p.years.map((y) => el('tr', {},
+      el('td', {}, `${y.year}`),
+      el('td.r', { text: money(y.to) }),
+      el('td.r.tiny', { text: money(y.interest) }),
+      el('td.tiny', { text: y.cleared.length ? y.cleared.map((d) => shortName(d.name)).join(', ') : '—' }),
+    ))),
+  )));
 
   return wrap;
 }
+
+// Balance over the window, with a marker on every month an account dies.
+function curve(p) {
+  const W = 320, H = 112, TOP = 10, BOT = 18;
+  const pts = [{ month: 0, balance: p.startBalance }, ...p.span];
+  const max = Math.max(...pts.map((q) => q.balance)) || 1;
+  const x = (m) => ((m / p.window) * W).toFixed(1);
+  const y = (v) => (TOP + (1 - v / max) * (H - TOP - BOT)).toFixed(1);
+
+  const line = pts.map((q, i) => `${i ? 'L' : 'M'}${x(q.month)},${y(q.balance)}`).join(' ');
+  const base = H - BOT;
+  const area = `${line} L${x(pts.at(-1).month)},${base} L0,${base} Z`;
+
+  const grid = [12, 24, 36, 48].map((m) =>
+    `<line x1="${x(m)}" y1="${TOP}" x2="${x(m)}" y2="${base}" stroke="rgba(127,127,127,.22)" stroke-width="1"/>
+     <text x="${x(m)}" y="${H - 5}" fill="rgba(127,127,127,.75)" font-size="9" text-anchor="middle">${m / 12}y</text>`).join('');
+
+  const kills = p.span.filter((t) => t.cleared.length).map((t) =>
+    `<circle cx="${x(t.month)}" cy="${y(t.balance)}" r="3.4" fill="#2fbf78" stroke="var(--card)" stroke-width="1.6"/>`).join('');
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', '100%');
+  svg.style.cssText = 'display:block;height:112px;margin-top:12px;overflow:visible';
+  svg.innerHTML = `
+    <defs><linearGradient id="dbtfill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2fbf78" stop-opacity=".26"/>
+      <stop offset="100%" stop-color="#2fbf78" stop-opacity="0"/>
+    </linearGradient></defs>
+    ${grid}
+    <path d="${area}" fill="url(#dbtfill)" stroke="none"/>
+    <path d="${line}" fill="none" stroke="#2fbf78" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${kills}`;
+  return svg;
+}
+
+// Lender names are long and the table is narrow; the first two words identify
+// every account here without ambiguity.
+const shortName = (n) => n.split(' ').slice(0, 2).join(' ');
 
 // ---- Allocator -------------------------------------------------------------
 //
@@ -145,14 +262,14 @@ function allocator(state, strategy) {
     const sp = a.spending;
 
     if (!v) {
-      out.replaceChildren(el('p.tiny', { style: { margin: '12px 0 0' } },
+      fill(out, el('p.tiny', { style: { margin: '12px 0 0' } },
         sp.remaining > 0
           ? `${money(sp.sent)} of this month's ${money(sp.budget)} spending budget has gone out. The next ${money(sp.remaining)} tops it up; anything beyond that goes at the debt.`
           : `This month's ${money(sp.budget)} spending budget is already covered. Everything you put in goes straight at the debt.`));
       return;
     }
 
-    out.replaceChildren(
+    fill(out, 
       el('div', { style: { marginTop: '14px' } },
         row('💸', 'Everyday spending', a.toSpending,
           a.toSpending > 0
@@ -263,35 +380,36 @@ function orderList(state, strategy, extra) {
     if (d.confidence === 'unsure') flags.append(el('span.flag.ask', { text: 'ASK' }));
     else if (d.confidence === 'likely') flags.append(el('span.flag.guess', { text: 'GUESS' }));
 
-    card.append(el('button.row', {
-      type: 'button',
-      style: target ? { background: 'rgba(47,191,120,.07)' } : {},
-      onclick: () => editDebt(state, d),
-    },
-      el('div.day', {
-        text: String(i + 1),
-        style: target ? { background: 'var(--josh)', color: '#08131f' } : {},
-      }),
-      el('div.mid', {},
-        el('div.nm', {}, el('span.t', { text: d.name }), flags,
-          target ? el('span.flag', { text: 'TARGET', style: { background: 'rgba(47,191,120,.18)', color: 'var(--josh)' } }) : null),
-        el('div.meta', {
-          text: [
-            pct(d.apr, 2),
-            `min ${money(d.minimum)}`,
-            acct ? `${acct.owner}'s account` : null,
-            d.dueDay ? `due ${ord(d.dueDay)}` : null,
-          ].filter(Boolean).join(' · '),
+    // The row is a div rather than a button so Pay can sit alongside the edit
+    // tap target — a button inside a button is not a thing.
+    card.append(el('div.row', { style: target ? { background: 'rgba(47,191,120,.07)' } : {} },
+      el('button.rowtap', { type: 'button', onclick: () => editDebt(state, d) },
+        el('div.day', {
+          text: String(i + 1),
+          style: target ? { background: 'var(--josh)', color: '#08131f' } : {},
         }),
-        util !== null ? el('div', { style: { marginTop: '7px' } },
-          bar(util, util > 0.7 ? 'var(--red)' : util > 0.3 ? 'var(--gold)' : 'var(--josh)')) : null,
-        util !== null ? el('div.tiny', { style: { marginTop: '4px' } },
-          `${pct(util * 100)} of ${money(d.limit)} limit used${util > 0.3 ? ' — above 30% this is dragging your score' : ''}`) : null,
+        el('div.mid', {},
+          el('div.nm', {}, el('span.t', { text: d.name }), flags,
+            target ? el('span.flag', { text: 'TARGET', style: { background: 'rgba(47,191,120,.18)', color: 'var(--josh)' } }) : null),
+          el('div.meta', {
+            text: [
+              pct(d.apr, 2),
+              `min ${money(d.minimum)}`,
+              acct ? `${acct.owner}'s account` : null,
+              d.dueDay ? `due ${ord(d.dueDay)}` : null,
+            ].filter(Boolean).join(' · '),
+          }),
+          util !== null ? el('div', { style: { marginTop: '7px' } },
+            bar(util, util > 0.7 ? 'var(--red)' : util > 0.3 ? 'var(--gold)' : 'var(--josh)')) : null,
+          util !== null ? el('div.tiny', { style: { marginTop: '4px' } },
+            `${pct(util * 100)} of ${money(d.limit)} limit used${util > 0.3 ? ' — above 30% this is dragging your score' : ''}`) : null,
+        ),
+        el('div', { style: { textAlign: 'right', flex: '0 0 auto' } },
+          el('div.amt', { text: money(d.balance) }),
+          s?.clearedMonth ? el('div.tiny', { text: `gone ${addMonths(s.clearedMonth)}` }) : null,
+        ),
       ),
-      el('div', { style: { textAlign: 'right', flex: '0 0 auto' } },
-        el('div.amt', { text: money(d.balance) }),
-        s?.clearedMonth ? el('div.tiny', { text: `gone ${addMonths(s.clearedMonth)}` }) : null,
-      ),
+      el('button.paybtn', { type: 'button', text: 'Pay', onclick: () => payDebt(state, d) }),
     ));
 
     if (d.question) card.append(el('div.qbox', {}, d.question));
@@ -411,6 +529,83 @@ function rationale(state, strategy, extra) {
 
   return el('div', {}, lines.map((t, i) =>
     el('p', { text: t, style: { margin: i ? '10px 0 0' : '0', fontSize: '14px', lineHeight: '1.5' } })));
+}
+
+// ---- Record a payment ------------------------------------------------------
+//
+// One number typed here moves the balance, and every projection, order and
+// total in the app is derived from that balance — so paying $2,000 on a card
+// reshapes the five-year path the moment you save it.
+
+function payDebt(state, d) {
+  sheet(`Pay ${d.name}`, (close) => {
+    const amount = el('input', {
+      type: 'number', step: '0.01', inputmode: 'decimal', placeholder: '0',
+      style: {
+        width: '100%', padding: '14px 16px', fontSize: '26px', fontWeight: '680',
+        textAlign: 'center', background: 'var(--bg-raise)',
+        border: '1px solid var(--line)', borderRadius: '12px',
+        fontVariantNumeric: 'tabular-nums',
+      },
+    });
+    const date = input({ type: 'date', value: today() });
+    const out = el('div.tiny', { style: { margin: '10px 0 0', textAlign: 'center' } });
+    const save = el('button.btn.primary.wide', { type: 'button', text: 'Record payment', style: { marginTop: '14px' } });
+
+    const paint = () => {
+      const v = Number(amount.value) || 0;
+      const after = Math.max(0, d.balance - v);
+      const interest = (d.balance * (d.apr / 100)) / 12;
+      fill(out, 
+        el('div', {}, `${money(d.balance, true)} → `, el('b', { class: 'pos', text: money(after, true) })),
+        v > 0 ? el('div', { style: { marginTop: '4px' } },
+          after === 0
+            ? 'Clears it. The minimum rolls into the next debt.'
+            : `Saves about ${money((v * d.apr) / 100)} of interest a year. This month's interest on what is left: ${money(((after * (d.apr / 100)) / 12), true)}.`) : null,
+        v === 0 && interest > 0 ? el('div', { style: { marginTop: '4px' } },
+          `Interest accruing at ${money(interest, true)} a month.`) : null,
+      );
+      save.disabled = v <= 0;
+    };
+    amount.addEventListener('input', paint);
+
+    const chip = (label, value) => el('button.btn.sm.ghost', {
+      type: 'button', text: label,
+      onclick: () => { amount.value = String(Math.round(value * 100) / 100); paint(); },
+    });
+
+    save.addEventListener('click', async () => {
+      const v = Number(amount.value) || 0;
+      if (v <= 0) return;
+      await store.commit((s) => {
+        s.payments ??= [];
+        s.payments.push({ id: store.uid('p'), date: date.value || today(), debtId: d.id, amount: v });
+        const t = s.debts.find((x) => x.id === d.id);
+        if (t) { t.balance = Math.max(0, t.balance - v); t.asOf = date.value || today(); }
+      });
+      close();
+    });
+
+    const mine = (state.payments ?? []).filter((x) => x.debtId === d.id).slice(-4).reverse();
+
+    return el('div', {},
+      el('p.tiny', { style: { margin: '0 0 12px' } },
+        `Balance ${money(d.balance, true)} at ${pct(d.apr, 2)}${d.asOf ? `, as of ${longDate(d.asOf)}` : ''}. What you record here drops the balance everywhere in the app.`),
+      amount,
+      el('div.btnrow', { style: { marginTop: '10px', justifyContent: 'center' } },
+        chip(`Minimum ${money(d.minimum)}`, d.minimum),
+        chip('Pay it off', d.balance),
+      ),
+      out,
+      field('Date', date),
+      save,
+      mine.length
+        ? el('div', { style: { marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--line)' } },
+            el('div.tiny', { style: { marginBottom: '6px' } }, 'Recorded on this debt'),
+            ...mine.map((r) => el('div.tiny', { style: { padding: '3px 0' } }, `${longDate(r.date)} — ${money(r.amount, true)}`)))
+        : null,
+    );
+  });
 }
 
 // ---- Editor ----------------------------------------------------------------

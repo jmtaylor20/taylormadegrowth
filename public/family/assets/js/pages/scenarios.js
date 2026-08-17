@@ -5,7 +5,7 @@
 // spending and debt, and watch the finish line move with it.
 
 import * as store from '../store.js';
-import { el, money, pct, stat, section, sheet, field, input, bar } from '../ui.js';
+import { el, fill, money, pct, stat, section, sheet, field, input, bar } from '../ui.js';
 import { scenario, household, addMonths, amortizing, freedPayments } from '../calc.js';
 
 const DRAW_MAX = 12000;
@@ -47,18 +47,18 @@ export default function scenarios(state) {
     const r = scenario(state, { draw, spending, includeAll });
     const sim = r.sim;
 
-    drawOut.replaceChildren(
+    fill(drawOut, 
       el('div', { style: { fontSize: '28px', fontWeight: '680', letterSpacing: '-0.02em' }, class: 'num', text: money(draw) }),
       el('div.tiny', { text: 'drawn from TaylorMade each month' }),
     );
-    spendOut.replaceChildren(
+    fill(spendOut, 
       el('div', { style: { fontSize: '28px', fontWeight: '680', letterSpacing: '-0.02em' }, class: 'num', text: money(r.toSpending) }),
       el('div.tiny', { text: 'of it to everyday spending' }),
     );
     [...scopeSeg.children].forEach((c) => c.classList.toggle('on', c.dataset.k === String(includeAll)));
 
     // ---- Headline ----------------------------------------------------------
-    hero.replaceChildren(
+    fill(hero, 
       el('div.label', { text: includeAll ? 'Everything paid off' : 'Debt free, house aside' }),
       el('div.big', {
         text: sim.impossible ? 'never' : addMonths(sim.months),
@@ -71,7 +71,7 @@ export default function scenarios(state) {
       }),
     );
 
-    stats.replaceChildren(
+    fill(stats, 
       stat('To debt each month', money(r.extra), 'on top of minimums', r.extra > 0 ? 'pos' : 'mut'),
       stat('Every debt payment', money(r.totalMonthly), 'minimums plus extra', ''),
       stat('Sooner by', r.monthsSaved === null ? '—' : `${r.monthsSaved} mo`, 'vs minimums alone', 'pos'),
@@ -79,7 +79,7 @@ export default function scenarios(state) {
     );
 
     // ---- Where the money comes from ---------------------------------------
-    split.replaceChildren(
+    fill(split, 
       el('div', { style: { fontWeight: '650', fontSize: '15px', marginBottom: '10px' } }, 'Where the attack money comes from'),
       el('div.split', {}, [
         { v: r.fromSlack, c: 'var(--blue)' },
@@ -127,7 +127,7 @@ export default function scenarios(state) {
         el('div.amt.neg', { text: money(d.balance) }),
       ));
     }
-    timeline.replaceChildren(section('Order they clear'), card);
+    fill(timeline, section('Order they clear'), card);
 
     // ---- Draw levels side by side -----------------------------------------
     const levels = [0, 2000, 3500, 5000, 6500, 8000];
@@ -135,7 +135,7 @@ export default function scenarios(state) {
       const x = scenario(state, { draw: d, spending, includeAll });
       return { draw: d, x };
     });
-    table.replaceChildren(
+    fill(table, 
       section('At other draw levels', `${money(spending)} to spending`),
       el('div.card.flush', {}, el('table.tbl', {},
         el('thead', {}, el('tr', {},
