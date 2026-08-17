@@ -22,6 +22,17 @@ export function el(spec, props = {}, ...kids) {
 
 export const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return n; };
 
+// Refill a node the way el() fills one. Native replaceChildren stringifies
+// anything that is not a Node, so a conditional `: null` argument lands on the
+// page as the literal word "null" — use this instead and the condition just
+// drops out.
+export function fill(node, ...kids) {
+  node.replaceChildren(...kids.flat(Infinity)
+    .filter((k) => k !== null && k !== undefined && k !== false)
+    .map((k) => (k.nodeType ? k : document.createTextNode(String(k)))));
+  return node;
+}
+
 // ---- Money & dates ---------------------------------------------------------
 
 export const money = (n, cents = false) => (n < 0 ? '-' : '') + '$' + Math.abs(n ?? 0).toLocaleString('en-US', {

@@ -74,10 +74,19 @@ async function applyUpdate(shipped) {
   const merged = {
     ...shipped,
     // Statement-derived facts come from the update; anything the user owns stays.
-    goals: state.goals,
+    goals: shipped.goals.map((g) => {
+      const mine = state.goals.find((x) => x.id === g.id);
+      if (!mine) return g;
+      // A goal you have opened and saved is yours from then on. Until you do,
+      // the update can still reshape it — which is the only way a change you
+      // asked for reaches a phone that already holds its own copy. Either way
+      // the money you have put in is never touched by an update.
+      return mine.edited ? mine : { ...g, saved: mine.saved };
+    }),
     log: state.log,
     checkIns: state.checkIns,
     allocations: state.allocations,
+    payments: state.payments,
     windfalls: state.windfalls,
     settings: { ...shipped.settings, ...state.settings },
     recurring: shipped.recurring.map((r) => {
@@ -98,10 +107,14 @@ async function applyUpdate(shipped) {
     }),
     debts: shipped.debts.map((d) => {
       const mine = state.debts.find((x) => x.id === d.id);
-      // Balances you filled in beat the placeholders I shipped — but only the
-      // figures. Spreading the whole stale record over the update would drag
-      // back an old name, type or answered question along with them.
-      if (!mine || !(mine.balance > 0) || d.balance > 0) return d;
+      if (!mine || !(mine.balance > 0)) return d;
+      // Keep whichever figure was looked at most recently. Recording a payment
+      // stamps asOf, so an update carrying a staler balance can't quietly undo
+      // one — and a placeholder shipped with no balance always loses to a real
+      // number. Only the figures cross over: spreading the whole stale record
+      // would drag back an old name, type or answered question with them.
+      const minesNewer = !(d.balance > 0) || (mine.asOf && (!d.asOf || mine.asOf > d.asOf));
+      if (!minesNewer) return d;
       return {
         ...d,
         balance: mine.balance,
@@ -115,7 +128,7 @@ async function applyUpdate(shipped) {
   };
 
   // Anything the user added themselves has no counterpart in the update.
-  for (const key of ['recurring', 'debts']) {
+  for (const key of ['recurring', 'debts', 'goals']) {
     const ids = new Set(shipped[key].map((x) => x.id));
     merged[key].push(...state[key].filter((x) => !ids.has(x.id)));
   }
@@ -167,6 +180,7 @@ function migrate() {
   state.checkIns ??= [];
   state.windfalls ??= [];
   state.allocations ??= [];
+  state.payments ??= [];
   state.settings ??= {};
   state.settings.monthlySpending ??= 0;
   state.settings.monthlyToGoals ??= 0;

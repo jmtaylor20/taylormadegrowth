@@ -58,8 +58,8 @@ passphrase using the steps above.
 | **Josh** | Regions account: dashboard, recurring bills by date or category, bill calendar, and what is due before the next paycheck. |
 | **Laci** | Same for the Wells Fargo account. |
 | **Paydays** | The timing problem. Splits the month into pay periods, shows which stretch is carrying more than its paycheck, and names the specific due dates to move. |
-| **Debt** | Allocate money you have on hand, then attack order, avalanche vs. snowball, and a payoff projection. |
-| **Goals** | Trips, the monthly rate you set toward them, and which dates that rate will not reach. |
+| **Debt** | Allocate money you have on hand, record a payment against any account, and read the five-year path: which debt the money points at, for how long, and what falls when. |
+| **Goals** | Trips, the monthly rate you set toward them, and which dates that rate will not reach. A goal can be open-ended instead of dated. |
 | **What if** | The business draw as the one variable: split it between everyday spending and debt and watch the payoff date move, with or without the mortgage. |
 
 ## Keeping it current
@@ -74,6 +74,30 @@ roughly when statements land. Each check-in is saved, and once there are two of
 them the Debt tab grows a **measured** progress line: not a projection, but what
 the balances actually did. That line is the only one that settles whether the
 plan is working.
+
+## The five-year path
+
+"Put it on the Chase card" is obvious and not worth a screen. What changes a
+plan is what happens *after* that card dies, so the Debt tab walks the
+simulation and cuts it into phases: contiguous stretches where the money is
+pointed at one account. Each phase names the debt, the rate, the balance when
+you arrive at it, what goes in each month, and the month it clears.
+
+Everything below the extra-payment dial redraws as the dial moves, so "what if I
+found another two hundred a month" is answered without leaving the page.
+
+The curve underneath is the total balance across the whole window, with a marker
+on every month an account dies. The steepening is the point: each cleared debt
+frees its minimum into the next target, which is why the last debts fall so much
+faster than the first.
+
+## Recording a payment
+
+Every debt row carries a **Pay** button. One number typed there drops that
+balance, and because every projection, ordering and total in the app is derived
+from the balances, a $2,000 payment reshapes the whole plan the moment it is
+saved. Payments are kept, and stamp the date the balance was last known — which
+is also what stops a published update from quietly reinstating a staler figure.
 
 ## Allocating money
 
@@ -129,6 +153,9 @@ The math lives in one file on purpose: change how something is counted in
 - Everyday spending and trip funding are both rates you set, not figures derived
   from slack left after bills. Money left over does not reach a trip fund on its
   own, and a plan that assumes it does describes a life nobody is living.
+- A goal can be open-ended. Money owed to a family member at no interest and no
+  deadline is real, but it sets no monthly pace, so it is not counted toward the
+  rate the dated trips need and it queues behind them — and behind every card.
 - Pay periods run payday-to-payday and wrap the month end, because a month-end
   paycheck is what funds the following 1st. The cushion figure walks a full
   cycle from the last payday, not from the 1st — starting at the calendar
@@ -138,6 +165,13 @@ The math lives in one file on purpose: change how something is counted in
 
 Re-seal with a bumped `seedVersion` and the app offers the update on next
 unlock instead of overwriting anything. Taking it refreshes accounts, income,
-recurring and debts while keeping goals, allocations, spend log, settings, any
-balance you filled in, and any question you already answered — including a
-bill you renamed while answering it.
+recurring and debts while keeping allocations, payments, spend log, settings,
+any question you already answered — including a bill you renamed while answering
+it — and every goal you have opened and saved.
+
+Two rules decide the rest. A balance is kept from whichever side looked at it
+most recently, so a payment you recorded is never undone by an update carrying
+an older figure. And a goal you have never edited can still be reshaped by an
+update, which is the only way a change you asked for reaches a phone that
+already holds its own copy; the amount you have put in is preserved either
+way.

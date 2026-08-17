@@ -7,7 +7,7 @@
 
 import * as store from '../store.js';
 import {
-  el, money, stat, section, bar, sheet, field, input, longDate, today, monthsBetween,
+  el, money, stat, section, bar, sheet, field, input, select, longDate, today, monthsBetween,
 } from '../ui.js';
 import { goalSummary, goalPace } from '../calc.js';
 
@@ -20,7 +20,11 @@ export default function goals(state) {
   wrap.append(el('div.card.hero', {},
     el('div.label', { text: 'Saved toward trips' }),
     el('div.big', { text: money(g.saved), class: g.saved > 0 ? 'pos' : 'mut' }),
-    el('div.note', { text: `${money(g.remaining)} still to go of ${money(g.target)}` }),
+    el('div.note', {
+      text: g.flexible.length
+        ? `${money(g.datedRemaining)} still to go on the dated trips · ${money(g.flexible.reduce((s, x) => s + Math.max(0, x.target - x.saved), 0))} more at your own pace`
+        : `${money(g.remaining)} still to go of ${money(g.target)}`,
+    }),
   ));
 
   wrap.append(el('div.stats', {},
@@ -69,11 +73,12 @@ export default function goals(state) {
         el('span', { style: { marginLeft: 'auto', fontWeight: '650' }, class: done ? 'pos' : '', text: money(goal.target) }),
       ),
       el('div.tiny', { style: { marginBottom: '10px' } },
-        done
-          ? 'Funded. Go book it.'
+        done ? 'Funded. Go book it.'
+          : goal.flexible ? 'No deadline — paid back at your own pace'
           : `${longDate(goal.targetDate)} · ${pace.months} months out · ${money(pace.perMonth)}/mo to make it`),
-      bar(goal.saved / (goal.target || 1), done ? 'var(--josh)' : 'var(--gold)'),
+      bar(goal.saved / (goal.target || 1), done ? 'var(--josh)' : goal.flexible ? 'var(--blue)' : 'var(--gold)'),
       el('div.tiny', { style: { marginTop: '7px' } }, `${money(goal.saved)} saved · ${money(Math.max(0, goal.target - goal.saved))} to go`),
+      goal.note ? el('div.tiny', { style: { marginTop: '6px' } }, goal.note) : null,
     ));
   }
 
@@ -119,8 +124,9 @@ function sequence(state, g, rate) {
   }
 
   const card = el('div.card.flush');
-  const ordered = [...g.goals].filter((x) => x.saved < x.target)
-    .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+  // goalSummary already puts the dated goals first and the open-ended ones
+  // behind them, which is also the order they should be funded in.
+  const ordered = [...g.goals].filter((x) => x.saved < x.target);
 
   if (!ordered.length) {
     return el('div.card', {}, el('div.empty', { text: 'Every goal is funded.' }));
@@ -135,7 +141,7 @@ function sequence(state, g, rate) {
     d.setDate(1);
     d.setMonth(d.getMonth() + month);
     const readyBy = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-    const late = monthsBetween(today(), goal.targetDate) + 1 < month;
+    const late = !goal.flexible && monthsBetween(today(), goal.targetDate) + 1 < month;
     if (late) anyLate = true;
 
     card.append(el('div.row', {},
@@ -143,7 +149,11 @@ function sequence(state, g, rate) {
       el('div.mid', {},
         el('div.nm', {}, el('span.t', { text: goal.name }),
           late ? el('span.flag.ask', { text: 'LATE' }) : null),
-        el('div.meta', { text: `funded by ${readyBy} · wanted ${longDate(goal.targetDate)}` }),
+        el('div.meta', {
+          text: goal.flexible
+            ? `settled by ${readyBy} at this rate · no date to hit`
+            : `funded by ${readyBy} · wanted ${longDate(goal.targetDate)}`,
+        }),
       ),
       el('div.amt', { text: money(need) }),
     ));
@@ -174,12 +184,13 @@ function editGoal(state, goal) {
     const date = input({ type: 'date', value: draft.targetDate });
     const emoji = input({ value: draft.emoji ?? '🎯', maxlength: '4' });
     const priority = input({ type: 'number', min: '1', max: '9', value: draft.priority ?? 1, inputmode: 'numeric' });
+    const kind = select([['dated', 'By a date'], ['flex', 'At our own pace']], draft.flexible ? 'flex' : 'dated');
 
     return el('div', {},
       field('Name', name),
       el('div.f2', {}, field('Target', target), field('Saved so far', saved)),
       el('div.f2', {}, field('Want it by', date), field('Order (higher = first)', priority)),
-      field('Emoji', emoji),
+      el('div.f2', {}, field('Emoji', emoji), field('Timing', kind)),
       el('button.btn.primary.wide', {
         type: 'button', text: 'Save',
         onclick: async () => {
@@ -190,6 +201,10 @@ function editGoal(state, goal) {
             targetDate: date.value || draft.targetDate,
             emoji: emoji.value || '🎯',
             priority: Number(priority.value) || 1,
+            flexible: kind.value === 'flex',
+            // From here on this goal is yours, and a published update leaves
+            // it alone.
+            edited: true,
           };
           await store.commit((s) => {
             const t = s.goals.find((x) => x.id === draft.id);

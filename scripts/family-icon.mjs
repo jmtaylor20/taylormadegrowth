@@ -2,8 +2,8 @@
 // Generate the Family Money app icons.
 //
 // Cartoon sticker style: heavy dark outline, flat fills with a single darker
-// shade for depth, gold coins. Drawn on a warm cream ground so the pink reads
-// on both light and dark home screens.
+// shade for depth. Two money bags on a warm cream ground, so the gold reads on
+// both light and dark home screens.
 //
 //   node scripts/family-icon.mjs
 
@@ -12,11 +12,10 @@ import sharp from 'sharp';
 
 const OUT = 'public/family/assets/img/';
 
-const INK = '#2e2419';      // outline
-const PINK = '#f3a6b6';
-const PINK_DARK = '#e5879c'; // belly / ear shading
-const GOLD = '#f6c445';
-const GOLD_DARK = '#e0a72c';
+const INK = '#2e2419';       // outline
+const GOLD = '#f2b93c';      // front bag
+const GOLD_DARK = '#d99a22'; // bag behind, and shading
+const COIN = '#f7d268';
 const CREAM = '#fdf1e3';
 
 // `pad` shrinks the drawing for the maskable variant, whose outer ~20% can be
@@ -25,45 +24,33 @@ const svg = (size, pad = 1) => Buffer.from(`
 <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 100 100">
   <rect width="100" height="100" fill="${CREAM}"/>
   <g transform="translate(50 54) scale(${pad}) translate(-50 -54)"
-     stroke="${INK}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+     stroke="${INK}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
 
-    <!-- coins dropping in. Mostly gold: a filled dark centre turns them into
-         black rings once the icon is scaled down to a home screen. -->
-    <g fill="${GOLD}" stroke-width="2.6">
-      <circle cx="60" cy="16" r="8.4"/>
-      <circle cx="60" cy="16" r="4" fill="none" stroke="${GOLD_DARK}" stroke-width="1.8"/>
-      <circle cx="30" cy="12" r="6.2"/>
-      <circle cx="30" cy="12" r="2.8" fill="none" stroke="${GOLD_DARK}" stroke-width="1.6"/>
+    <!-- Loose coins. Flat discs with a thin darker ring: a filled dark centre
+         turns them into black rings once scaled to a home screen. -->
+    <circle cx="17" cy="30" r="7" fill="${COIN}" stroke-width="2.6"/>
+    <circle cx="17" cy="30" r="3.2" fill="none" stroke="${GOLD_DARK}" stroke-width="1.7"/>
+
+    <!-- Bag behind, to the right. Drawn first so the front bag overlaps it. -->
+    <path d="M70 44c-3.4-2-5-4.9-3.4-6.7 5 1.2 11.6 1.2 16.6 0 1.6 1.8 0 4.7-3.4 6.7
+             7.6 3.6 12.4 10.2 12.4 17.3 0 8.6-6.6 13.4-17.3 13.4S57.6 69.9 57.6 61.3
+             C57.6 54.2 62.4 47.6 70 44Z" fill="${GOLD_DARK}"/>
+
+    <!-- Front bag: ruffled tie at the neck, flaring to a heavy rounded base. -->
+    <path d="M33 42c-6-3.4-8.4-8.6-5.2-11.4 8.4 2.4 20.6 2.4 29 0 3.2 2.8.8 8-5.2 11.4
+             13 6 21.4 17.2 21.4 29.4 0 13-11 20.2-30.7 20.2S11.6 84.4 11.6 71.4
+             C11.6 59.2 20 48 33 42Z" fill="${GOLD}"/>
+
+    <!-- The tie itself, as a band across the neck. It has to stop where the
+         neck stops (x=51.6): overshooting leaves a stub hanging in mid-air
+         that reads as a horn once the icon is scaled down. -->
+    <path d="M33 42c6 1.7 12.6 1.7 18.6 0" fill="none" stroke-width="2.8"/>
+
+    <!-- Dollar sign, drawn rather than typeset so no font is needed. -->
+    <g fill="none" stroke="${INK}" stroke-width="3.4">
+      <path d="M52.6 60.5c-2.6-2.4-13.6-3-13.6 3.4 0 6 13.6 4.4 13.6 11 0 6.6-11.4 5.8-14.2 3.2"/>
+      <path d="M45.8 54.6v31"/>
     </g>
-
-    <!-- behind the body: tail and legs -->
-    <path d="M78 58c6.5 0 8-6.5 3.6-8.2-3.4-1.3-5.2 2.6-2.4 4.2" fill="none"/>
-    <path d="M32 72h9v11h-9z" fill="${PINK_DARK}"/>
-    <path d="M58 72h9v11h-9z" fill="${PINK_DARK}"/>
-
-    <!-- Ear. It has to clear the body silhouette by a good margin: poking out
-         by only a few units leaves nothing but two stroke widths, which reads as
-         a black blob once scaled down. -->
-    <path d="M31 46C29 32 32 25 38 26c5.5 1 8.5 8 9 17z" fill="${PINK_DARK}"/>
-
-    <!-- body -->
-    <ellipse cx="50" cy="57" rx="29" ry="20" fill="${PINK}"/>
-    <path d="M21 62a29 20 0 0 0 58 0z" fill="${PINK_DARK}" stroke="none"/>
-    <ellipse cx="50" cy="57" rx="29" ry="20" fill="none"/>
-
-    <!-- Coin slot: fill only. Stroking it as well doubles its apparent height
-         and it stops reading as a cut in the back. -->
-    <rect x="53" y="42" width="15" height="4.4" rx="2.2" fill="${INK}" stroke="none"
-          transform="rotate(-8 60.5 44.2)"/>
-
-    <!-- snout -->
-    <ellipse cx="19" cy="59" rx="9.5" ry="8" fill="${PINK_DARK}"/>
-    <ellipse cx="16.5" cy="58" rx="1.5" ry="2" fill="${INK}" stroke="none"/>
-    <ellipse cx="22" cy="58" rx="1.5" ry="2" fill="${INK}" stroke="none"/>
-
-    <!-- eye -->
-    <circle cx="33" cy="52" r="3.1" fill="${INK}" stroke="none"/>
-    <circle cx="34.1" cy="50.9" r="1.05" fill="${CREAM}" stroke="none"/>
   </g>
 </svg>`);
 

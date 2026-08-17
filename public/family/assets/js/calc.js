@@ -339,6 +339,15 @@ export function simulate(state, strategy, extra, cap = 600, opts = {}) {
     let pool = debts.reduce((s, d) => s + (d.balance > 0.005 ? effectiveMinimum(d) : 0), 0) + extra + stepped;
     let accrued = 0;
 
+    // Whoever is at the front of the queue this month is the target. Read it
+    // before anything moves: after the payments it would miss a debt that its
+    // own minimum finished off, and after the interest the opening balance
+    // would be quoted a month's interest higher than what is actually owed.
+    const target = debts.find((d) => d.balance > 0.005) ?? null;
+    const targetStart = target?.balance ?? 0;
+    let toTarget = 0;
+    const cleared = [];
+
     // Interest first, then minimums, then everything spare at the front debt.
     for (const d of debts) {
       if (d.balance <= 0.005) continue;
@@ -353,17 +362,29 @@ export function simulate(state, strategy, extra, cap = 600, opts = {}) {
       if (d.balance <= 0.005) continue;
       const pay = Math.min(effectiveMinimum(d), d.balance, pool);
       d.balance -= pay; d.paid += pay; pool -= pay;
-      if (d.balance <= 0.005) { d.balance = 0; d.clearedMonth ??= month; }
+      if (d === target) toTarget += pay;
+      if (d.balance <= 0.005) { d.balance = 0; d.clearedMonth ??= month; cleared.push(d); }
     }
     for (const d of debts) {
       if (pool <= 0.005) break;
       if (d.balance <= 0.005) continue;
       const pay = Math.min(pool, d.balance);
       d.balance -= pay; d.paid += pay; pool -= pay;
-      if (d.balance <= 0.005) { d.balance = 0; d.clearedMonth ??= month; }
+      if (d === target) toTarget += pay;
+      if (d.balance <= 0.005) { d.balance = 0; d.clearedMonth ??= month; cleared.push(d); }
     }
 
-    timeline.push({ month, balance: debts.reduce((s, d) => s + d.balance, 0), interest: accrued });
+    timeline.push({
+      month,
+      balance: debts.reduce((s, d) => s + d.balance, 0),
+      interest: accrued,
+      targetId: target?.id ?? null,
+      targetName: target?.name ?? null,
+      targetApr: target?.apr ?? 0,
+      targetStart,
+      toTarget,
+      cleared: cleared.map((d) => ({ id: d.id, name: d.name, minimum: effectiveMinimum(d) })),
+    });
   }
 
   return {
@@ -376,6 +397,77 @@ export function simulate(state, strategy, extra, cap = 600, opts = {}) {
     escrowAfter: debts.reduce((s, d) => s + (d.escrow ?? 0), 0),
     // Minimums alone can't cover the interest — the balance would grow forever.
     impossible: month >= cap,
+  };
+}
+
+// The path, not just the next payment.
+//
+// "Put it on the Chase card" is obvious and useless on its own — the question
+// that changes decisions is what happens after that card dies, and when. So walk
+// the simulation and cut it into phases: contiguous runs where the money is
+// pointed at the same debt. Each phase is one line you can read and plan around.
+export function projection(state, strategy, extra, months = 60, opts = {}) {
+  const sim = simulate(state, strategy, extra, 600, opts);
+  const span = sim.timeline.slice(0, months);
+  if (!span.length) return null;
+
+  const startBalance = attackable(state).reduce((s, d) => s + d.balance, 0);
+
+  const phases = [];
+  for (const t of span) {
+    const last = phases.at(-1);
+    if (last && last.id === t.targetId) {
+      last.toMonth = t.month;
+      last.poured += t.toTarget;
+    } else {
+      phases.push({
+        id: t.targetId, name: t.targetName, apr: t.targetApr,
+        startBalance: t.targetStart, fromMonth: t.month, toMonth: t.month,
+        poured: t.toTarget,
+      });
+    }
+  }
+  for (const p of phases) {
+    const d = sim.debts.find((x) => x.id === p.id);
+    p.months = p.toMonth - p.fromMonth + 1;
+    p.clearedMonth = d?.clearedMonth ?? null;
+    // A phase that runs to the edge of the window has not finished — it is
+    // simply where the five years ran out.
+    p.clears = !!p.clearedMonth && p.clearedMonth <= months;
+    p.endBalance = p.clears ? 0 : (d?.balance ?? 0);
+  }
+
+  // Every payment freed by a debt clearing inside the window. This is the
+  // compounding part of the plan and the reason later phases move so fast.
+  const freed = span.flatMap((t) => t.cleared);
+
+  const years = [];
+  for (let y = 1; y * 12 - 11 <= span.length; y += 1) {
+    const slice = span.slice((y - 1) * 12, y * 12);
+    if (!slice.length) break;
+    years.push({
+      year: y,
+      from: (y - 1) * 12 === 0 ? startBalance : span[(y - 1) * 12 - 1].balance,
+      to: slice.at(-1).balance,
+      interest: slice.reduce((s, t) => s + t.interest, 0),
+      cleared: slice.flatMap((t) => t.cleared),
+      months: slice.length,
+    });
+  }
+
+  return {
+    sim,
+    span,
+    phases,
+    years,
+    freed,
+    startBalance,
+    endBalance: span.at(-1).balance,
+    interest: span.reduce((s, t) => s + t.interest, 0),
+    // Did the whole thing finish inside the window?
+    done: !sim.impossible && sim.months <= months,
+    monthsToFree: sim.impossible ? null : sim.months,
+    window: months,
   };
 }
 
@@ -821,13 +913,31 @@ export function scenario(state, {
 // ---- Goals -----------------------------------------------------------------
 
 export function goalSummary(state) {
-  const goals = [...state.goals].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+  // Dated goals first, in priority order; anything with no deadline sorts to
+  // the back regardless of priority, because it is never the thing being
+  // raced against a date.
+  const goals = [...state.goals].sort((a, b) =>
+    Number(!!a.flexible) - Number(!!b.flexible) || (b.priority ?? 0) - (a.priority ?? 0));
   const target = goals.reduce((s, g) => s + g.target, 0);
   const saved = goals.reduce((s, g) => s + g.saved, 0);
-  return { goals, target, saved, remaining: target - saved };
+  const dated = goals.filter((g) => !g.flexible);
+  return {
+    goals,
+    dated,
+    flexible: goals.filter((g) => g.flexible),
+    target,
+    saved,
+    remaining: target - saved,
+    // What is actually on a clock — the figure the monthly rate has to beat.
+    datedRemaining: dated.reduce((s, g) => s + Math.max(0, g.target - g.saved), 0),
+  };
 }
 
 export function goalPace(goal, from = today()) {
+  // No deadline, no pace. Being repaid at your own pace by a family member is
+  // not an obligation with a monthly number attached, and inventing one would
+  // make the rate you need look larger than it is.
+  if (goal.flexible) return { months: null, perMonth: 0 };
   const months = Math.max(1, monthsBetween(from, goal.targetDate) + 1);
   return { months, perMonth: Math.max(0, goal.target - goal.saved) / months };
 }
