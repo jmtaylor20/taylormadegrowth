@@ -551,6 +551,142 @@ export function envelopeTarget(state) {
   };
 }
 
+// ---- Windfalls -------------------------------------------------------------
+//
+// The instinct with a lump sum is to throw it at the highest rate. That is the
+// wrong first move when a dated, committed expense is sitting just ahead of it:
+// paying down a card and then charging the trip back onto that same card leaves
+// you worse off by the whole trip, and it happens at the same interest rate. So
+// committed spending inside the horizon gets funded first — not as indulgence,
+// but because it is the cheapest debt avoidance available.
+
+export function committedGoals(state, horizonMonths = 12) {
+  return [...(state.goals ?? [])]
+    .filter((g) => g.committed && g.saved < g.target)
+    .map((g) => ({ ...g, need: g.target - g.saved, monthsUntil: Math.max(0, monthsBetween(today(), g.targetDate)) }))
+    .filter((g) => g.monthsUntil <= horizonMonths)
+    .sort((a, b) => a.monthsUntil - b.monthsUntil);
+}
+
+// Money the household can put toward goals and extra debt each month: the slack
+// left after every bill, plus whatever the business has committed to sending.
+export const monthlyCapacity = (state) =>
+  Math.max(0, household(state).left) + (state.settings?.businessContribution ?? 0);
+
+// A lump sum should only cover what monthly cashflow cannot reach in time —
+// and "in time" is cumulative, not per-goal. By the month a trip falls due,
+// cashflow has produced capacity × months, and every earlier trip has already
+// drawn on it. Only the running shortfall needs the windfall; everything left
+// belongs on the highest rate, because a dollar there always beats a dollar
+// sitting in a trip fund that cashflow was going to reach anyway.
+export function allocateWindfall(state, amount, { horizonMonths = 6 } = {}) {
+  const steps = [];
+  let left = amount;
+
+  const goals = committedGoals(state, horizonMonths);
+  const cardApr = Math.max(0, ...attackable(state).filter((d) => d.limit > 0).map((d) => d.apr));
+  const capacity = monthlyCapacity(state);
+
+  let cumNeed = 0;
+  let earmarked = 0;
+  for (const g of goals) {
+    if (left <= 0.5) break;
+    cumNeed += g.need;
+    const fromCashflow = capacity * g.monthsUntil;
+    const shortfall = cumNeed - fromCashflow - earmarked;
+    if (shortfall <= 0.5) continue;
+
+    const give = Math.min(shortfall, left);
+    left -= give;
+    earmarked += give;
+    steps.push({
+      kind: 'goal', id: g.id, name: g.name, amount: give,
+      avoids: give * (cardApr / 100) * (Math.max(1, g.monthsUntil) / 12),
+      why: g.monthsUntil <= 1
+        ? `${longDateISO(g.targetDate)} — too close to save for. Unfunded it goes on a card at ${cardApr.toFixed(2)}%.`
+        : `${longDateISO(g.targetDate)}. ${money0(fromCashflow)} of cashflow arrives by then; this covers the ${money0(shortfall)} gap.`,
+    });
+  }
+
+  const ef = state.settings ?? {};
+  const efGap = Math.max(0, (ef.emergencyFundTarget ?? 0) - (ef.emergencyFundSaved ?? 0));
+  if (left > 0.5 && efGap > 0) {
+    const give = Math.min(efGap, left);
+    left -= give;
+    steps.push({
+      kind: 'emergency', id: 'ef', name: 'Starter emergency fund', amount: give,
+      avoids: 0,
+      why: 'Both accounts have dipped under $250 this year. Without a buffer the next surprise becomes card debt at full rate.',
+    });
+  }
+
+  for (const d of order(state, 'avalanche')) {
+    if (left <= 0.5) break;
+    const give = Math.min(d.balance, left);
+    left -= give;
+    steps.push({
+      kind: 'debt', id: d.id, name: d.name, amount: give,
+      avoids: give * (d.apr / 100),
+      why: `Highest rate left at ${d.apr.toFixed(2)}%.`,
+    });
+  }
+
+  return {
+    amount,
+    steps,
+    unallocated: left,
+    avoidedInterest: steps.reduce((s, x) => s + x.avoids, 0),
+    goalsCovered: steps.filter((s) => s.kind === 'goal').length,
+  };
+}
+
+const money0 = (n) => '$' + Math.round(n).toLocaleString('en-US');
+
+const longDateISO = (iso) =>
+  parseDay(iso).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+// Both plans end the horizon at the same balance — the trips cost what they
+// cost. What separates them is *when* money is on the books, so the only honest
+// comparison is interest accrued month by month across the horizon.
+export function windfallCompare(state, amount, opts = {}) {
+  const { horizonMonths = 6 } = opts;
+  const smart = allocateWindfall(state, amount, { horizonMonths });
+  const goals = committedGoals(state, horizonMonths);
+  const committed = goals.reduce((s, g) => s + g.need, 0);
+  const apr = Math.max(0, ...attackable(state).filter((d) => d.limit > 0).map((d) => d.apr));
+
+  // Walk the horizon: an unfunded trip lands on a card in the month it happens.
+  const run = (fundedByGoal) => {
+    const fundedTotal = Object.values(fundedByGoal).reduce((s, x) => s + x, 0);
+    let delta = -(amount - fundedTotal); // negative = debt paid down today
+    let interest = 0;
+    for (let m = 1; m <= horizonMonths; m += 1) {
+      for (const g of goals) {
+        if (g.monthsUntil === m) delta += g.need - (fundedByGoal[g.id] ?? 0);
+      }
+      interest += Math.max(0, delta) * (apr / 100) / 12;
+      if (delta < 0) interest += delta * (apr / 100) / 12; // paydown earns the same rate back
+    }
+    return { interest, endDelta: delta };
+  };
+
+  const smartFunded = Object.fromEntries(
+    smart.steps.filter((s) => s.kind === 'goal').map((s) => [s.id, s.amount]),
+  );
+  const planned = run(smartFunded);
+  const allToDebt = run({});
+  const allToGoals = run(Object.fromEntries(goals.map((g) => [g.id, Math.min(g.need, amount)])));
+
+  return {
+    smart, committed, apr, horizonMonths,
+    planned, allToDebt, allToGoals,
+    // Positive = the recommended plan costs less interest over the horizon.
+    vsAllToDebt: allToDebt.interest - planned.interest,
+    vsAllToGoals: allToGoals.interest - planned.interest,
+    sameEndBalance: Math.abs(planned.endDelta - allToDebt.endDelta) < 1,
+  };
+}
+
 // ---- Goals -----------------------------------------------------------------
 
 export function goalSummary(state) {

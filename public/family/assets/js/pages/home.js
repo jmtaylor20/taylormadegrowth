@@ -2,6 +2,7 @@
 
 import { el, money, signed, stat, section, splitBar, legend, bar, ord } from '../ui.js';
 import { checkInCard, envelopeCard } from './checkin.js';
+import { windfallCard } from './windfall.js';
 import {
   household, monthlyIncome, recurringTotals, leftover, byCategory,
   debtTotals, attackable, unknownDebts, simulate, pipelineSummary, goalSummary,
@@ -39,6 +40,11 @@ export default function home(state) {
   wrap.append(section('Keeping it honest'));
   wrap.append(checkInCard(state));
   wrap.append(envelopeCard(state));
+
+  if ((state.windfalls ?? []).some((w) => !w.applied)) {
+    wrap.append(section('Money coming in'));
+    wrap.append(windfallCard(state));
+  }
 
   // ---- Per person ----------------------------------------------------------
 
