@@ -13,3 +13,18 @@
   for = "/_astro/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+# Private household finance app. Keep it out of search engines entirely, and
+# never let a cache hold the encrypted vault — the browser's own copy wins
+# after first unlock.
+[[headers]]
+  for = "/family/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive, noimageindex"
+    Referrer-Policy = "no-referrer"
+
+[[headers]]
+  for = "/family/vault.json"
+  [headers.values]
+    Cache-Control = "no-store"
+    X-Robots-Tag = "noindex, nofollow"

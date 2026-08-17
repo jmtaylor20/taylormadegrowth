@@ -8,7 +8,8 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "family:seal": "node scripts/seal-vault.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.2.1",
