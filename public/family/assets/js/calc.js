@@ -581,6 +581,52 @@ export function runwayHousehold(state, from = new Date()) {
   };
 }
 
+// ---- Safe to release -------------------------------------------------------
+//
+// Once everyday spending moves off an account, whatever sits in it beyond the
+// bills is idle. But "free today" is the wrong measure — what matters is the
+// account's lowest point across the coming cycle, because that is where an
+// overdraft would happen. Sweep down to that low, less a buffer, and no more.
+
+export function safeToRelease(state, accountId, buffer = 250, horizonDays = 45) {
+  const a = state.accounts.find((x) => x.id === accountId);
+  if (!a) return null;
+
+  const incomes = forAccount(state.income, accountId).filter((i) => !i.excludeFromPlan);
+  const bills = recurringFor(state, accountId);
+
+  let bal = a.balance;
+  let low = { balance: bal, date: null };
+  const cursor = new Date();
+  cursor.setHours(12, 0, 0, 0);
+
+  for (let n = 0; n < horizonDays; n += 1) {
+    cursor.setDate(cursor.getDate() + 1);
+    const dom = cursor.getDate();
+    const lastDom = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
+    const hits = (d) => d === dom || (d > lastDom && dom === lastDom);
+
+    for (const b of bills) if (hits(b.day)) bal -= b.amount;
+    for (const i of incomes) if (incomeDays(i).some(hits)) bal += i.amount;
+    if (bal < low.balance) low = { balance: bal, date: cursor.toISOString().slice(0, 10) };
+  }
+
+  return {
+    low: low.balance,
+    lowDate: low.date,
+    buffer,
+    release: Math.max(0, low.balance - buffer),
+    balance: a.balance,
+  };
+}
+
+export function releaseHousehold(state, buffer = 250) {
+  const parts = state.accounts
+    .map((a) => ({ a, r: safeToRelease(state, a.id, buffer) }))
+    .filter((x) => x.r);
+  return { parts, total: parts.reduce((s, x) => s + x.r.release, 0) };
+}
+
 // ---- Check-ins -------------------------------------------------------------
 //
 // No bank linking. The app stays current on a handful of numbers typed once a

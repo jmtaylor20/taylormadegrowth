@@ -6,7 +6,7 @@ import { windfallCard } from './windfall.js';
 import {
   household, monthlyIncome, recurringTotals, leftover, byCategory,
   debtTotals, attackable, unknownDebts, simulate, pipelineSummary, goalSummary,
-  actualsHousehold, payPeriods, rebalance, floatTarget, runwayHousehold, untilNextPayday,
+  actualsHousehold, payPeriods, rebalance, floatTarget, runwayHousehold, untilNextPayday, releaseHousehold,
 } from '../calc.js';
 
 export default function home(state) {
@@ -55,6 +55,21 @@ export default function home(state) {
       + (r.creditsTotal ? ` + ${money(r.creditsTotal)} credits` : '')
       + ` = ${money(r.free)} by ${longDate(r.nextPayday)}`)),
   ));
+
+  // ---- Safe to sweep -------------------------------------------------------
+
+  const rel = releaseHousehold(state, 250);
+  if (rel.total > 100) {
+    wrap.append(section('Idle cash', 'safe to move out'));
+    wrap.append(el('div.card', { style: { borderColor: 'var(--josh)' } },
+      el('div', { style: { fontWeight: '650', fontSize: '15px', marginBottom: '6px' } }, '🧹 Sweep to the debt'),
+      el('div', { style: { fontSize: '30px', fontWeight: '680', letterSpacing: '-0.02em' }, class: 'num pos', text: money(rel.total) }),
+      el('p', { style: { margin: '8px 0 12px', fontSize: '14px', lineHeight: '1.5' } },
+        'Once everyday spending runs off the business, whatever sits here beyond the bills is idle. This is how far each account can be swept without the cycle dipping below its buffer — measured at the low point, not today.'),
+      ...rel.parts.map(({ a, r }) => el('div.tiny', { style: { marginTop: '6px' } },
+        `${a.owner}: low of ${money(r.low)}${r.lowDate ? ` on ${longDate(r.lowDate)}` : ''} → release ${money(r.release)}, keep ${money(Math.min(r.balance, r.buffer + (r.balance - r.release - r.buffer)))}`)),
+    ));
+  }
 
   wrap.append(section('Keeping it honest'));
   wrap.append(checkInCard(state));
