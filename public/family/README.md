@@ -57,6 +57,7 @@ passphrase using the steps above.
 | **Home** | Are we okay this month? Household totals, plan vs. what the statements actually show, and a plain-language read. |
 | **Josh** | Regions account: dashboard, recurring bills by date or category, bill calendar, unscheduled spending, statement history. |
 | **Laci** | Same for the Wells Fargo account. |
+| **Paydays** | The timing problem. Splits the month into pay periods, shows which stretch is carrying more than its paycheck, and names the specific due dates to move. |
 | **Pipeline** | Irregular expenses with due dates, and the monthly set-aside that makes each one a non-event. |
 | **Debt** | Attack order, avalanche vs. snowball, and a payoff projection that moves with the extra-payment dial. |
 | **Goals** | Trips, funding pace, and what they cost in months if taken one at a time. |
@@ -79,7 +80,7 @@ passphrase using the steps above.
 | State, persistence, export | `assets/js/store.js` |
 | All the money math | `assets/js/calc.js` |
 | DOM helpers, formatters, sheets | `assets/js/ui.js` |
-| Screens | `assets/js/pages/{home,account,pipeline,debt,goals}.js` |
+| Screens | `assets/js/pages/{home,account,paydays,pipeline,debt,goals}.js` |
 | Seal script | `../../scripts/seal-vault.mjs` |
 
 The math lives in one file on purpose: change how something is counted in
@@ -96,3 +97,17 @@ The math lives in one file on purpose: change how something is counted in
   high-rate revolving debt first.
 - Irregular income (business draws, reimbursements) is deliberately left out of
   the baseline so the plan holds on payroll alone.
+- One-time events (a car payoff funded by a matching deposit) are netted out of
+  the statement averages so a single month doesn't distort the picture.
+- Pay periods run payday-to-payday and wrap the month end, because a month-end
+  paycheck is what funds the following 1st. The cushion figure walks a full
+  cycle from the last payday, not from the 1st — starting at the calendar
+  boundary would count the front-of-month bills with no paycheck behind them.
+
+## Publishing an updated analysis
+
+Re-seal with a bumped `seedVersion` and the app offers the update on next
+unlock instead of overwriting anything. Taking it refreshes accounts, income,
+recurring and debts while keeping goals, pipeline, spend log, settings, any
+balance you filled in, and any question you already answered — including a
+bill you renamed while answering it.

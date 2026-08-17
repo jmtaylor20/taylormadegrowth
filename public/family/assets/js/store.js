@@ -34,14 +34,14 @@ export async function commit(fn) {
   emit();
 }
 
+const fetchShipped = () => fetch('./vault.json', { cache: 'no-store' }).then((r) => {
+  if (!r.ok) throw new Error(`vault.json ${r.status}`);
+  return r.json();
+});
+
 export async function unlock(pass) {
   const local = localStorage.getItem(LS_KEY);
-  const envelope = local
-    ? JSON.parse(local)
-    : await fetch('./vault.json', { cache: 'no-store' }).then((r) => {
-        if (!r.ok) throw new Error(`vault.json ${r.status}`);
-        return r.json();
-      });
+  const envelope = local ? JSON.parse(local) : await fetchShipped();
 
   state = await open(envelope, pass);
   passphrase = pass;
@@ -53,6 +53,64 @@ export async function unlock(pass) {
   migrate();
   emit();
   return state;
+}
+
+// A newer analysis has been pushed. Offer it rather than silently overwriting —
+// and when taken, keep everything the user owns (goals, pipeline, log, settings,
+// and any question they have already answered).
+export async function checkForUpdate() {
+  if (!state || !passphrase) return null;
+  let shipped;
+  try { shipped = await open(await fetchShipped(), passphrase); }
+  catch { return null; }
+  if ((shipped.seedVersion ?? 1) <= (state.seedVersion ?? 1)) return null;
+  return { version: shipped.seedVersion, apply: () => applyUpdate(shipped) };
+}
+
+async function applyUpdate(shipped) {
+  const answered = new Set(state.recurring.filter((r) => r.answered).map((r) => r.id));
+  const edited = new Map(state.recurring.map((r) => [r.id, r]));
+
+  const merged = {
+    ...shipped,
+    // Statement-derived facts come from the update; anything the user owns stays.
+    goals: state.goals,
+    pipeline: state.pipeline,
+    log: state.log,
+    settings: { ...shipped.settings, ...state.settings },
+    recurring: shipped.recurring.map((r) => {
+      const mine = edited.get(r.id);
+      if (!mine) return r;
+      // A question you already answered stays answered, with your numbers —
+      // including a rename, which is usually the whole point of answering
+      // "what even is this charge?".
+      if (answered.has(r.id)) {
+        return {
+          ...r,
+          name: mine.name, amount: mine.amount, day: mine.day,
+          category: mine.category, note: mine.note,
+          answered: true, confidence: 'confirmed', question: undefined,
+        };
+      }
+      return { ...r, paused: mine.paused };
+    }),
+    debts: shipped.debts.map((d) => {
+      const mine = state.debts.find((x) => x.id === d.id);
+      // Balances you filled in beat the placeholders I shipped.
+      return mine && mine.balance > 0 && d.balance === 0 ? { ...d, ...mine } : d;
+    }),
+  };
+
+  // Anything the user added themselves has no counterpart in the update.
+  for (const key of ['recurring', 'debts']) {
+    const ids = new Set(shipped[key].map((x) => x.id));
+    merged[key].push(...state[key].filter((x) => !ids.has(x.id)));
+  }
+
+  state = merged;
+  migrate();
+  await persist();
+  emit();
 }
 
 export function lock() {
@@ -71,6 +129,7 @@ export function savedAt() {
 // Fill in anything a hand-edited or older seed might be missing, so page code
 // can assume the shape it needs.
 function migrate() {
+  state.seedVersion ??= 1;
   state.log ??= [];
   state.goals ??= [];
   state.pipeline ??= [];

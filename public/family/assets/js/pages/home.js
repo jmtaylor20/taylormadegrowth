@@ -4,7 +4,7 @@ import { el, money, signed, stat, section, splitBar, legend, bar, ord } from '..
 import {
   household, monthlyIncome, recurringTotals, leftover, byCategory,
   debtTotals, attackable, unknownDebts, simulate, pipelineSummary, goalSummary,
-  actualsHousehold,
+  actualsHousehold, payPeriods, rebalance, floatTarget,
 } from '../calc.js';
 
 export default function home(state) {
@@ -53,6 +53,31 @@ export default function home(state) {
       splitBar(cats),
       el('div.tiny', { style: { marginTop: '8px' } },
         `${money(l.income)} in · ${money(l.household + l.business)} out · balance ${money(a.balance)}`),
+    ));
+  }
+
+  // ---- Payday timing -------------------------------------------------------
+
+  const tight = state.accounts
+    .flatMap((a) => payPeriods(state, a.id).map((p) => ({ a, p })))
+    .filter(({ p }) => p.net < 0)
+    .sort((x, y) => x.p.net - y.p.net)[0];
+
+  if (tight) {
+    const fix = rebalance(state, tight.a.id);
+    wrap.append(section('Payday timing', 'front-loaded'));
+    wrap.append(el('button.card', {
+      type: 'button', style: { display: 'block', width: '100%', textAlign: 'left' },
+      onclick: () => { location.hash = 'paydays'; },
+    },
+      el('div.stats', {},
+        stat('Worst stretch', money(tight.p.net), `${tight.a.owner}, ${ord(tight.p.start)}–${ord(tight.p.next === 1 ? 31 : tight.p.next - 1)}`, 'neg'),
+        stat('Cushion needed', money(floatTarget(state, tight.a.id)), 'to never dip below zero', 'warn'),
+      ),
+      el('p', { style: { margin: '12px 0 0', fontSize: '14px', lineHeight: '1.5' } },
+        fix && fix.moves.length
+          ? `${money(Math.abs(tight.p.net))} more leaves than lands in that stretch. ${fix.moves.length === 1 ? 'Moving one due date' : `Moving ${fix.moves.length} due dates`} evens it out — no extra money required.`
+          : `${money(Math.abs(tight.p.net))} more leaves than lands in that stretch.`),
     ));
   }
 

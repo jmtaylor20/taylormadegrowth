@@ -80,8 +80,10 @@ export function actuals(state, accountId) {
   const a = state.accounts.find((x) => x.id === accountId);
   if (!a?.statements?.length) return null;
   const n = a.statements.length;
-  const avgOut = a.statements.reduce((s, x) => s + x.out, 0) / n;
-  const avgIn = a.statements.reduce((s, x) => s + x.in, 0) / n;
+  // One-time events (a car payoff funded by a matching deposit) would swamp the
+  // averages, so they are netted out.
+  const avgOut = a.statements.reduce((s, x) => s + x.out - (x.oneOffOut ?? 0), 0) / n;
+  const avgIn = a.statements.reduce((s, x) => s + x.in - (x.oneOffIn ?? 0), 0) / n;
   const { all } = recurringTotals(state, accountId);
   const payroll = monthlyIncome(state, accountId);
   return {
@@ -116,6 +118,149 @@ export function household(state) {
   }, { household: 0, business: 0 });
   return { income, ...t, left: income - t.household - t.business };
 }
+
+// ---- Paydays ---------------------------------------------------------------
+//
+// Being paid twice a month while the bills cluster on the 1st–13th is a timing
+// problem, not a budget problem — and it needs its own math. A paycheck landing
+// on day D has to carry every bill until the next one lands, so the month is
+// modelled as pay periods that wrap around the month boundary.
+
+export function payDaysFor(state, accountId) {
+  const days = new Set();
+  for (const i of forAccount(state.income, accountId)) {
+    if (i.excludeFromPlan) continue;
+    for (const d of i.payDays ?? (i.day ? [i.day] : [])) days.add(d);
+  }
+  return [...days].sort((a, b) => a - b);
+}
+
+// Days covered by the period starting at `start`, walking forward (and wrapping
+// past the 31st) until the next payday.
+function daysInPeriod(start, next) {
+  const out = [];
+  let d = start;
+  for (let guard = 0; guard < 31; guard += 1) {
+    out.push(d);
+    d = d === 31 ? 1 : d + 1;
+    if (d === next) break;
+  }
+  return out;
+}
+
+export function payPeriods(state, accountId, overrides = {}) {
+  const days = payDaysFor(state, accountId);
+  if (!days.length) return [];
+
+  const incomes = forAccount(state.income, accountId).filter((i) => !i.excludeFromPlan);
+  const bills = recurringFor(state, accountId);
+
+  return days.map((start, idx) => {
+    const next = days[(idx + 1) % days.length];
+    const span = daysInPeriod(start, next);
+    const spanSet = new Set(span);
+
+    const income = incomes
+      .filter((i) => (i.payDays ?? [i.day]).includes(start))
+      .reduce((s, i) => s + i.amount, 0);
+
+    const items = bills.filter((b) => spanSet.has(overrides[b.id] ?? b.day));
+    const outgo = items.reduce((s, b) => s + b.amount, 0);
+
+    return {
+      start, next, span, income, outgo, items,
+      net: income - outgo,
+      // A period that wraps the month end (e.g. the 30th through the 13th).
+      wraps: next < start,
+    };
+  });
+}
+
+// Move bills between periods until the pain is shared. The target is not "every
+// period positive" — that is impossible when the month as a whole is short — but
+// each period carrying a share of the bills proportional to its paycheck.
+export function rebalance(state, accountId) {
+  const base = payPeriods(state, accountId);
+  if (base.length < 2) return null;
+
+  const totalIncome = base.reduce((s, p) => s + p.income, 0);
+  const totalOutgo = base.reduce((s, p) => s + p.outgo, 0);
+  if (!totalIncome) return null;
+
+  const overrides = {};
+  const moves = [];
+  const fairShare = (p) => (p.income / totalIncome) * totalOutgo;
+
+  // Every move is a phone call, so only suggest ones worth making: a period has
+  // to be meaningfully out of balance, and the bill has to be big enough to
+  // matter. Shaving $17 off a gap is not worth anyone's afternoon.
+  const MIN_GAP = 150;
+  const MIN_BILL = 75;
+
+  // Greedy: repeatedly take the most over-loaded period and hand its largest
+  // movable bill to the most under-loaded one, while that actually helps.
+  for (let step = 0; step < 12; step += 1) {
+    const periods = payPeriods(state, accountId, overrides);
+    const scored = periods.map((p) => ({ p, gap: p.outgo - fairShare(p) }));
+    const worst = scored.reduce((a, b) => (b.gap > a.gap ? b : a));
+    const best = scored.reduce((a, b) => (b.gap < a.gap ? b : a));
+    if (worst.p.start === best.p.start || worst.gap < MIN_GAP) break;
+
+    const candidates = worst.p.items
+      .filter((b) => b.movable !== false && !(b.id in overrides) && b.amount >= MIN_BILL)
+      .sort((a, b) => b.amount - a.amount);
+
+    // Prefer the bill that gets both periods closest to their fair share.
+    const pick = candidates.find((b) => b.amount <= worst.gap - best.gap) ?? candidates[0];
+    if (!pick) break;
+
+    const before = Math.max(...scored.map((s) => Math.abs(s.gap)));
+    const targetDay = best.p.span[Math.min(5, best.p.span.length - 1)];
+    overrides[pick.id] = targetDay;
+
+    const after = payPeriods(state, accountId, overrides)
+      .map((p) => Math.abs(p.outgo - fairShare(p)));
+    if (Math.max(...after) >= before) { delete overrides[pick.id]; break; }
+
+    moves.push({ bill: pick, from: pick.day, to: targetDay, fromPeriod: worst.p.start, toPeriod: best.p.start });
+  }
+
+  return { before: base, after: payPeriods(state, accountId, overrides), moves, overrides };
+}
+
+// Day-by-day cash position across one cycle. The walk starts at the first
+// payday, not the 1st of the month — a month-end paycheck is what funds the
+// following 1st, and starting at the calendar boundary would count those bills
+// with no money behind them and overstate the cushion by thousands.
+export function runningBalance(state, accountId, opening = 0, overrides = {}) {
+  const incomes = forAccount(state.income, accountId).filter((i) => !i.excludeFromPlan);
+  const bills = recurringFor(state, accountId);
+  const days = payDaysFor(state, accountId);
+  const startDay = days.length ? days[days.length - 1] : 1;
+
+  const points = [];
+  let bal = opening;
+  let low = { day: startDay, balance: opening };
+
+  let day = startDay;
+  for (let n = 0; n < 31; n += 1) {
+    for (const i of incomes) {
+      if ((i.payDays ?? [i.day]).includes(day)) bal += i.amount;
+    }
+    for (const b of bills) {
+      if ((overrides[b.id] ?? b.day) === day) bal -= b.amount;
+    }
+    points.push({ day, balance: bal });
+    if (bal < low.balance) low = { day, balance: bal };
+    day = day === 31 ? 1 : day + 1;
+  }
+
+  return { points, low, close: bal, startDay };
+}
+
+// The cash cushion that keeps the lowest point of the month at zero.
+export const floatTarget = (state, accountId, overrides = {}) =>
+  Math.max(0, -runningBalance(state, accountId, 0, overrides).low.balance);
 
 // ---- Pipeline --------------------------------------------------------------
 

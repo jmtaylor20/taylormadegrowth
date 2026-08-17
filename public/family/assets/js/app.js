@@ -5,6 +5,7 @@ import { el, clear, icon, ICONS, sheet, field, input, download, longDate } from 
 
 import home from './pages/home.js';
 import account from './pages/account.js';
+import paydays from './pages/paydays.js';
 import pipeline from './pages/pipeline.js';
 import debt from './pages/debt.js';
 import goals from './pages/goals.js';
@@ -15,6 +16,7 @@ const ROUTES = [
   { id: 'home', label: 'Home', icon: 'home', title: 'Taylor Family Money', render: home },
   { id: 'josh', label: 'Josh', icon: 'josh', title: 'Josh', render: (s) => account(s, 'josh'), tint: 'josh' },
   { id: 'laci', label: 'Laci', icon: 'laci', title: 'Laci', render: (s) => account(s, 'laci'), tint: 'laci' },
+  { id: 'paydays', label: 'Paydays', icon: 'pay', title: 'Paydays vs. bills', render: paydays },
   { id: 'pipeline', label: 'Pipeline', icon: 'pipe', title: 'Coming down the pipe', render: pipeline },
   { id: 'debt', label: 'Debt', icon: 'debt', title: 'Debt attack plan', render: debt },
   { id: 'goals', label: 'Goals', icon: 'goal', title: 'Goals', render: goals },
@@ -42,6 +44,7 @@ function renderLock() {
     try {
       await store.unlock(pass.value);
       renderApp();
+      offerUpdate();
     } catch (e) {
       const missing = String(e.message || e).includes('vault.json');
       err.textContent = missing ? 'Could not load the vault file.' : 'That passphrase did not work.';
@@ -96,6 +99,24 @@ function subtitle(route, state) {
     return a ? `${a.bank} ${a.product} ····${a.mask}` : '';
   }
   return `Updated ${longDate(state.updated)}`;
+}
+
+// ---- Data updates ----------------------------------------------------------
+
+async function offerUpdate() {
+  const update = await store.checkForUpdate();
+  if (!update) return;
+  sheet('Updated analysis available', (close) => el('div', {},
+    el('p', { style: { margin: '0 0 14px', fontSize: '14px', lineHeight: '1.5' } },
+      `A newer read of your statements has been published (v${update.version}). Loading it refreshes the accounts, income, recurring bills and debts.`),
+    el('p.tiny', { style: { margin: '0 0 16px' } },
+      'Your goals, pipeline, spend log, settings, any balances you filled in, and any question you already answered are all kept.'),
+    el('button.btn.primary.wide', {
+      type: 'button', text: 'Load it',
+      onclick: async () => { await update.apply(); close(); },
+    }),
+    el('button.btn.wide.ghost', { type: 'button', text: 'Not now', style: { marginTop: '8px' }, onclick: close }),
+  ));
 }
 
 // ---- Settings --------------------------------------------------------------
