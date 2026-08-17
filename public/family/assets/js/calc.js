@@ -309,7 +309,17 @@ function effectiveMinimum(d) {
   return pay > interest ? pay : Math.max(pay, interest + d.balance * 0.01);
 }
 
+// Recurring payments with a known end date — a lease running out, a loan on a
+// fixed term. When one stops, that money is free without anyone earning more.
+export function freedPayments(state) {
+  return (state.recurring ?? [])
+    .filter((r) => !r.paused && r.endsAfterMonths > 0)
+    .map((r) => ({ fromMonth: r.endsAfterMonths + 1, amount: r.amount, name: r.name }))
+    .sort((a, b) => a.fromMonth - b.fromMonth);
+}
+
 export function simulate(state, strategy, extra, cap = 600, opts = {}) {
+  const steps = opts.steps ?? [];
   const debts = order(state, strategy, opts).map((d) => ({
     id: d.id, name: d.name, apr: d.apr, minimum: d.minimum, escrow: d.escrow ?? 0,
     balance: d.balance, paid: 0, interest: 0, clearedMonth: null,
@@ -322,7 +332,8 @@ export function simulate(state, strategy, extra, cap = 600, opts = {}) {
 
   while (debts.some((d) => d.balance > 0.005) && month < cap) {
     month += 1;
-    let pool = debts.reduce((s, d) => s + (d.balance > 0.005 ? effectiveMinimum(d) : 0), 0) + extra;
+    const stepped = steps.reduce((s, x) => s + (month >= x.fromMonth ? x.amount : 0), 0);
+    let pool = debts.reduce((s, d) => s + (d.balance > 0.005 ? effectiveMinimum(d) : 0), 0) + extra + stepped;
     let accrued = 0;
 
     // Interest first, then minimums, then everything spare at the front debt.
@@ -779,19 +790,23 @@ export function windfallCompare(state, amount, opts = {}) {
 // and the rest of the plan follows: household slack after bills is already free
 // (spending no longer comes out of the bank accounts), so it stacks on top.
 
-export function scenario(state, { draw = 0, spending = 0, slack = null, includeAll = false, strategy = 'avalanche' } = {}) {
+export function scenario(state, {
+  draw = 0, spending = 0, slack = null, includeAll = false,
+  strategy = 'avalanche', useFreed = true,
+} = {}) {
   const fromSlack = slack === null ? Math.max(0, household(state).left) : slack;
   const toSpending = Math.min(spending, draw);
   const fromDraw = Math.max(0, draw - toSpending);
   const extra = fromSlack + fromDraw;
+  const steps = useFreed ? freedPayments(state) : [];
 
-  const sim = simulate(state, strategy, extra, 600, { includeAll });
-  const base = simulate(state, strategy, 0, 600, { includeAll });
+  const sim = simulate(state, strategy, extra, 600, { includeAll, steps });
+  const base = simulate(state, strategy, 0, 600, { includeAll, steps });
   const minimums = (includeAll ? allDebts(state) : attackable(state))
     .reduce((s, d) => s + d.minimum, 0);
 
   return {
-    draw, toSpending, fromDraw, fromSlack, extra, minimums, includeAll,
+    draw, toSpending, fromDraw, fromSlack, extra, minimums, includeAll, steps,
     sim, base,
     monthsSaved: base.impossible ? null : base.months - sim.months,
     interestSaved: base.impossible ? null : base.totalInterest - sim.totalInterest,

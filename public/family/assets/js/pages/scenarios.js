@@ -6,7 +6,7 @@
 
 import * as store from '../store.js';
 import { el, money, pct, stat, section, sheet, field, input, bar } from '../ui.js';
-import { scenario, household, allDebts, attackable, addMonths, amortizing } from '../calc.js';
+import { scenario, household, addMonths, amortizing, freedPayments } from '../calc.js';
 
 const DRAW_MAX = 12000;
 const SPEND_MAX = 4000;
@@ -96,6 +96,8 @@ export default function scenarios(state) {
         ? el('p.tiny', { style: { margin: '8px 0 0' }, class: 'tiny warn' },
             `The draw is smaller than the ${money(spending)} you want for spending, so all of it goes there and nothing reaches the debt.`)
         : null,
+      ...r.steps.map((x) => el('p.tiny', { style: { margin: '8px 0 0' }, class: 'tiny pos' },
+        `+ ${money(x.amount)} a month from month ${x.fromMonth}, when the ${x.name.toLowerCase()} ends — assumed not to be replaced.`)),
     );
 
     // ---- Order things clear ------------------------------------------------
