@@ -189,11 +189,11 @@ export function invoiceDocHtml(inv, client = {}) {
   const rows = items.map((it) => `<tr><td>${esc(it.label || '')}</td><td class="r">${money(Number(it.amount || 0))}</td></tr>`).join('');
   const paid = inv.status === 'paid';
   const detail = (l, v) => `<div class="drow"><span class="dl">${esc(l)}</span> <span>${esc(v || '—')}</span></div>`;
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
-    html,body{margin:0}body{font-family:Georgia,'Times New Roman',serif;color:#1c1c1c}
-    .frame{border:2px solid #dcdcdc;padding:20px 30px 22px;margin:12px;max-width:720px}
-    .top{display:flex;justify-content:space-between}.logo{width:238px;height:auto}
-    .contact{text-align:right;font-size:12.5px;line-height:1.5;color:#2a2a2a}
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>
+    *{box-sizing:border-box}html,body{margin:0}body{font-family:Georgia,'Times New Roman',serif;color:#1c1c1c;overflow-x:hidden}
+    .frame{border:2px solid #dcdcdc;padding:20px 24px 22px;margin:12px;max-width:720px}
+    .top{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}.logo{width:238px;max-width:56%;height:auto}
+    .contact{text-align:right;font-size:12.5px;line-height:1.5;color:#2a2a2a;word-break:break-word;min-width:0}
     .title{text-align:center;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:27px;letter-spacing:3px;margin:6px 0 14px;color:#111}
     .sec{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:12px;letter-spacing:1.2px;color:#111;border-bottom:1.5px solid #111;padding-bottom:3px;margin:14px 0 8px}
     .cols{display:flex;justify-content:space-between}.col{font-size:13.5px;line-height:1.6}.col.right{text-align:right}
@@ -203,6 +203,7 @@ export function invoiceDocHtml(inv, client = {}) {
     th{text-align:left;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:.04em;color:#555}
     th.r,td.r{text-align:right}tfoot td{font-weight:800;font-family:Arial,Helvetica,sans-serif;border-top:2px solid #111;border-bottom:0;font-size:15px}
     .pay{font-size:13px;color:#444}.foot{margin-top:20px;text-align:center;color:#888;font-size:11px;font-family:Arial}
+    @media (max-width:560px){.top{flex-direction:column}.contact{text-align:left}.logo{max-width:70%}.cols{flex-direction:column;gap:12px}.col.right{text-align:left}.title{font-size:23px}}
   </style></head><body><div class="frame">
     <div class="top"><img class="logo" src="${logo}"><div class="contact">${esc(BUSINESS.address1)}<br>${esc(BUSINESS.address2)}<br>${esc(BUSINESS.phone)}<br>${esc(BUSINESS.email)}</div></div>
     <div class="title">${paid ? 'RECEIPT' : 'INVOICE'}</div>
