@@ -6,7 +6,6 @@ import { el, clear, icon, ICONS, sheet, field, input, download, longDate } from 
 import home from './pages/home.js';
 import account from './pages/account.js';
 import paydays from './pages/paydays.js';
-import pipeline from './pages/pipeline.js';
 import debt from './pages/debt.js';
 import goals from './pages/goals.js';
 
@@ -17,7 +16,6 @@ const ROUTES = [
   { id: 'josh', label: 'Josh', icon: 'josh', title: 'Josh', render: (s) => account(s, 'josh'), tint: 'josh' },
   { id: 'laci', label: 'Laci', icon: 'laci', title: 'Laci', render: (s) => account(s, 'laci'), tint: 'laci' },
   { id: 'paydays', label: 'Paydays', icon: 'pay', title: 'Paydays vs. bills', render: paydays },
-  { id: 'pipeline', label: 'Pipeline', icon: 'pipe', title: 'Coming down the pipe', render: pipeline },
   { id: 'debt', label: 'Debt', icon: 'debt', title: 'Debt attack plan', render: debt },
   { id: 'goals', label: 'Goals', icon: 'goal', title: 'Goals', render: goals },
 ];
@@ -137,7 +135,7 @@ async function offerUpdate() {
     el('p', { style: { margin: '0 0 14px', fontSize: '14px', lineHeight: '1.5' } },
       `A newer read of your statements has been published (v${update.version}). Loading it refreshes the accounts, income, recurring bills and debts.`),
     el('p.tiny', { style: { margin: '0 0 16px' } },
-      'Your goals, pipeline, spend log, settings, any balances you filled in, and any question you already answered are all kept.'),
+      'Your goals, allocations, spend log, settings, any balances you filled in, and any question you already answered are all kept.'),
     el('button.btn.primary.wide', {
       type: 'button', text: 'Load it',
       onclick: async () => { await update.apply(); close(); },

@@ -54,20 +54,19 @@ passphrase using the steps above.
 
 | Tab | What it answers |
 | --- | --- |
-| **Home** | Are we okay this month? Household totals, plan vs. what the statements actually show, and a plain-language read. |
-| **Josh** | Regions account: dashboard, recurring bills by date or category, bill calendar, unscheduled spending, statement history. |
+| **Home** | Are we okay this month? Household totals, what is committed before the next paycheck, and idle cash that could be swept. |
+| **Josh** | Regions account: dashboard, recurring bills by date or category, bill calendar, and what is due before the next paycheck. |
 | **Laci** | Same for the Wells Fargo account. |
 | **Paydays** | The timing problem. Splits the month into pay periods, shows which stretch is carrying more than its paycheck, and names the specific due dates to move. |
-| **Pipeline** | Irregular expenses with due dates, and the monthly set-aside that makes each one a non-event. |
-| **Debt** | Attack order, avalanche vs. snowball, and a payoff projection that moves with the extra-payment dial. |
+| **Debt** | Allocate money you have on hand, then attack order, avalanche vs. snowball, and a payoff projection. |
 | **Goals** | Trips, funding pace, and what they cost in months if taken one at a time. |
 
 ## Keeping it current
 
 There is no bank connection, and there does not need to be one. Balances drift;
-the recurring list barely moves. So the app stays true on about eight numbers
-typed **once a month** — two checking balances, the debt balances, and the
-envelope — through the **Monthly check-in** on the Home tab.
+the recurring list barely moves. So the app stays true on about seven numbers
+typed **once a month** — two checking balances and the debt balances — through
+the **Monthly check-in** on the Home tab.
 
 The card tracks how long it has been and starts nagging at 28 days, which is
 roughly when statements land. Each check-in is saved, and once there are two of
@@ -75,17 +74,16 @@ them the Debt tab grows a **measured** progress line: not a projection, but what
 the balances actually did. That line is the only one that settles whether the
 plan is working.
 
-## The spending envelope
+## Allocating money
 
-Move a set amount to a separate account each payday and spend only from there.
-It caps discretionary spending by construction rather than by willpower, and it
-collapses a hundred card swipes into one transfer — which is what makes a
-checking account readable at a glance.
+Everyday spending runs off the business, not the bank accounts, against a flat
+monthly budget. When money is available, type the amount on the Debt tab: the
+month's spending budget tops up first, then everything left goes at the highest
+rate. Filling spending first is deliberate — the alternative is covering
+groceries later in the month on a card at 25%.
 
-The envelope card suggests a per-payday figure worked back from what the
-statements actually show leaving, less whatever the debt plan needs. Log the
-transfer when you make it; at each check-in, type what is left. The app compares
-that against an even burn and says whether you are ahead or behind pace.
+Allocations are recorded, so a second payment the same month only tops up the
+remainder rather than starting the budget over.
 
 ## Reading the flags
 
@@ -105,8 +103,8 @@ that against an even burn and says whether you are ahead or behind pace.
 | State, persistence, export | `assets/js/store.js` |
 | All the money math | `assets/js/calc.js` |
 | DOM helpers, formatters, sheets | `assets/js/ui.js` |
-| Screens | `assets/js/pages/{home,account,paydays,pipeline,debt,goals}.js` |
-| Check-in flow, envelope, trend chart | `assets/js/pages/checkin.js` |
+| Screens | `assets/js/pages/{home,account,paydays,debt,goals}.js` |
+| Check-in flow, spending budget, trend chart | `assets/js/pages/checkin.js` |
 | Seal script | `../../scripts/seal-vault.mjs` |
 
 The math lives in one file on purpose: change how something is counted in
@@ -114,8 +112,9 @@ The math lives in one file on purpose: change how something is counted in
 
 ## Notes on the numbers
 
-- Recurring amounts are averages of what was actually observed on the
-  statements, not what a bill says it should be.
+- Recurring amounts came from bank statements, but nothing else does. Spending
+  habits changed after those statements, so no behaviour is inferred from them —
+  the recurring list is the only thing they were used for.
 - Debt payoff is simulated month by month: interest accrues on the running
   balance, everyone gets their minimum, the target gets the rest, and a cleared
   debt's payment rolls forward into the next one.
@@ -123,8 +122,6 @@ The math lives in one file on purpose: change how something is counted in
   high-rate revolving debt first.
 - Irregular income (business draws, reimbursements) is deliberately left out of
   the baseline so the plan holds on payroll alone.
-- One-time events (a car payoff funded by a matching deposit) are netted out of
-  the statement averages so a single month doesn't distort the picture.
 - Pay periods run payday-to-payday and wrap the month end, because a month-end
   paycheck is what funds the following 1st. The cushion figure walks a full
   cycle from the last payday, not from the 1st — starting at the calendar
@@ -134,6 +131,6 @@ The math lives in one file on purpose: change how something is counted in
 
 Re-seal with a bumped `seedVersion` and the app offers the update on next
 unlock instead of overwriting anything. Taking it refreshes accounts, income,
-recurring and debts while keeping goals, pipeline, spend log, settings, any
+recurring and debts while keeping goals, allocations, spend log, settings, any
 balance you filled in, and any question you already answered — including a
 bill you renamed while answering it.

@@ -4,18 +4,17 @@ import * as store from '../store.js';
 import {
   el, money, stat, section, bar, sheet, field, input, longDate, today, monthsBetween,
 } from '../ui.js';
-import { goalSummary, goalPace, household, pipelineSummary, debtTotals, simulate } from '../calc.js';
+import { goalSummary, goalPace, household, debtTotals } from '../calc.js';
 
 export default function goals(state) {
   const wrap = el('div');
   const g = goalSummary(state);
   const h = household(state);
-  const pipe = pipelineSummary(state);
   const totals = debtTotals(state);
   const extra = state.settings.extraToDebt ?? 0;
 
   const totalPace = g.goals.reduce((s, x) => s + goalPace(x).perMonth, 0);
-  const slack = h.left - pipe.setAside - extra;
+  const slack = h.left - extra;
 
   wrap.append(el('div.card.hero', {},
     el('div.label', { text: 'Saved toward trips' }),
@@ -25,7 +24,7 @@ export default function goals(state) {
 
   wrap.append(el('div.stats', {},
     stat('Needed / mo', money(totalPace), 'to hit every date', 'warn'),
-    stat('Actually spare', money(slack), 'after bills, pipeline & debt', slack < totalPace ? 'neg' : 'pos'),
+    stat('Actually spare', money(slack), 'after bills and debt', slack < totalPace ? 'neg' : 'pos'),
   ));
 
   wrap.append(el('p.tiny', { style: { margin: '10px 2px 0' } }, tradeoff(state, totalPace, slack, extra, totals)));

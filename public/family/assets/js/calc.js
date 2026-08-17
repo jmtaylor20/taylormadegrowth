@@ -83,48 +83,6 @@ export function leftover(state, accountId) {
   return { income, household, business, left: income - household - business };
 }
 
-// The recurring list is only the scheduled half of the story. Statements show
-// what actually left. The difference is the unplanned spend — groceries, fuel,
-// eating out, one-offs — and it is usually the number people are missing.
-export function actuals(state, accountId) {
-  const a = state.accounts.find((x) => x.id === accountId);
-  if (!a?.statements?.length) return null;
-  const n = a.statements.length;
-  // One-time events (a car payoff funded by a matching deposit) would swamp the
-  // averages, so they are netted out.
-  const avgOut = a.statements.reduce((s, x) => s + x.out - (x.oneOffOut ?? 0), 0) / n;
-  const avgIn = a.statements.reduce((s, x) => s + x.in - (x.oneOffIn ?? 0), 0) / n;
-  const { all } = recurringTotals(state, accountId);
-  const payroll = monthlyIncome(state, accountId);
-  // Statements are history. Bills that have since stopped were part of that
-  // outflow, so they have to be credited back or the unplanned figure absorbs
-  // them and looks worse than reality.
-  const sinceEnded = endedFor(state, accountId).reduce((s, r) => s + r.amount, 0);
-  return {
-    avgIn,
-    avgOut,
-    recurring: all,
-    sinceEnded,
-    unplanned: Math.max(0, avgOut - all - sinceEnded),
-    // Deposits arriving on top of payroll: business draws, Venmo, mobile
-    // deposits, reimbursements. What is quietly holding the month together.
-    nonPayrollIn: Math.max(0, avgIn - payroll),
-  };
-}
-
-export function actualsHousehold(state) {
-  const parts = state.accounts.map((a) => actuals(state, a.id)).filter(Boolean);
-  if (!parts.length) return null;
-  return parts.reduce((acc, p) => ({
-    avgIn: acc.avgIn + p.avgIn,
-    avgOut: acc.avgOut + p.avgOut,
-    recurring: acc.recurring + p.recurring,
-    unplanned: acc.unplanned + p.unplanned,
-    sinceEnded: acc.sinceEnded + p.sinceEnded,
-    nonPayrollIn: acc.nonPayrollIn + p.nonPayrollIn,
-  }), { avgIn: 0, avgOut: 0, recurring: 0, unplanned: 0, sinceEnded: 0, nonPayrollIn: 0 });
-}
-
 export function household(state) {
   const ids = state.accounts.map((a) => a.id);
   const income = ids.reduce((s, id) => s + monthlyIncome(state, id), 0);
@@ -302,27 +260,6 @@ export function runningBalance(state, accountId, opening = 0, overrides = {}) {
 export const floatTarget = (state, accountId, overrides = {}) =>
   Math.max(0, -runningBalance(state, accountId, 0, overrides).low.balance);
 
-// ---- Pipeline --------------------------------------------------------------
-
-// A one-off in four months costs a quarter of itself every month starting now.
-// That is the number worth budgeting, not the lump.
-export function monthlySetAside(item, from = today()) {
-  const months = Math.max(1, monthsBetween(from, item.due) + 1);
-  return item.amount / months;
-}
-
-export function pipelineSummary(state, from = today()) {
-  const items = [...state.pipeline].sort((a, b) => a.due.localeCompare(b.due));
-  const next90 = items.filter((i) => monthsBetween(from, i.due) <= 3);
-  return {
-    items,
-    total: items.reduce((s, i) => s + i.amount, 0),
-    setAside: items.reduce((s, i) => s + monthlySetAside(i, from), 0),
-    next90: next90.reduce((s, i) => s + i.amount, 0),
-    next90Count: next90.length,
-  };
-}
-
 // ---- Debt ------------------------------------------------------------------
 
 export const attackable = (state) =>
@@ -460,54 +397,6 @@ export const addMonths = (n) => {
   d.setMonth(d.getMonth() + n);
   return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 };
-
-// ---- Balance variance ------------------------------------------------------
-//
-// Walk from the last recorded balance to today, adding each paycheck and
-// subtracting each bill on the day it lands. Where the balance *should* be,
-// minus where it actually is, is money spent outside the plan — measured over
-// days you actually lived, rather than inferred from statements months old.
-
-export function expectedBalance(state, accountId, asOf = new Date()) {
-  const a = state.accounts.find((x) => x.id === accountId);
-  if (!a?.balanceAsOf) return null;
-
-  const from = parseDay(a.balanceAsOf);
-  const to = new Date(asOf.getFullYear(), asOf.getMonth(), asOf.getDate(), 12);
-  const days = Math.round((to - from) / DAY);
-  if (days <= 0) return null;
-
-  const incomes = forAccount(state.income, accountId).filter((i) => !i.excludeFromPlan);
-  const bills = recurringFor(state, accountId);
-
-  let expected = a.baselineBalance ?? a.balanceAtLastCheck ?? null;
-  // Without a stored starting point there is nothing to compare against.
-  if (expected === null) return null;
-
-  let income = 0;
-  let spent = 0;
-  const cursor = new Date(from);
-  for (let n = 0; n < days; n += 1) {
-    cursor.setDate(cursor.getDate() + 1);
-    const dom = cursor.getDate();
-    // A payday or bill dated later than this month's length lands on its last day.
-    const lastDom = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
-    const hits = (d) => d === dom || (d > lastDom && dom === lastDom);
-
-    for (const i of incomes) if (incomeDays(i).some(hits)) { expected += i.amount; income += i.amount; }
-    for (const b of bills) if (hits(b.day)) { expected -= b.amount; spent += b.amount; }
-  }
-
-  const gap = a.balance - expected;
-  return {
-    days, expected, actual: a.balance, gap,
-    income, billsPaid: spent,
-    // Negative gap is unscheduled spending; positive means money arrived that
-    // the plan does not know about.
-    perDay: gap / days,
-    perMonth: (gap / days) * 30,
-  };
-}
 
 // ---- Runway to the next paycheck -------------------------------------------
 //
@@ -676,44 +565,51 @@ export function debtTrend(state) {
 // there. It caps discretionary spending by construction instead of by willpower,
 // and it collapses a hundred card swipes into one transfer.
 
-export function envelopeStatus(state) {
-  const e = state.envelope ?? {};
-  const perPeriod = e.perPeriod ?? 0;
-  const cadence = e.cadence ?? 'semimonthly';
-  const perMonth = cadence === 'semimonthly' ? perPeriod * 2 : perPeriod;
+// ---- Monthly spending budget -----------------------------------------------
+//
+// One number a month for everyday spending, funded from the business. Money is
+// allocated to it as it arrives rather than in a single transfer, so what
+// matters is how much of the month's budget has already been sent.
 
-  const asOf = e.asOf ?? null;
-  const daysIn = asOf ? Math.floor((Date.now() - parseDay(asOf).getTime()) / DAY) : null;
-  const periodDays = cadence === 'semimonthly' ? 15 : 30;
+export const monthKey = (iso) => iso.slice(0, 7);
 
-  // Straight-line burn: where the balance should be this far into the period.
-  const expected = perPeriod > 0 && daysIn !== null
-    ? Math.max(0, perPeriod * (1 - Math.min(1, daysIn / periodDays)))
-    : null;
-  const balance = e.balance ?? 0;
+export function spendingThisMonth(state, month = today().slice(0, 7)) {
+  return (state.allocations ?? [])
+    .filter((a) => monthKey(a.date) === month)
+    .reduce((s, a) => s + (a.toSpending ?? 0), 0);
+}
 
+export function spendingStatus(state) {
+  const budget = state.settings?.monthlySpending ?? 0;
+  const sent = spendingThisMonth(state);
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   return {
-    ...e, perPeriod, cadence, perMonth, balance, asOf, daysIn, periodDays, expected,
-    ahead: expected === null ? null : balance - expected,
-    daysLeft: daysIn === null ? null : Math.max(0, periodDays - daysIn),
-    configured: perPeriod > 0,
+    budget, sent,
+    remaining: Math.max(0, budget - sent),
+    over: Math.max(0, sent - budget),
+    dayOfMonth: now.getDate(),
+    daysInMonth,
+    daysLeft: daysInMonth - now.getDate(),
   };
 }
 
-// What the envelope has to be capped at for the debt plan to work on household
-// income alone. Any business draw on top reduces the cut required.
-export function envelopeTarget(state) {
-  const act = actualsHousehold(state);
-  const h = household(state);
-  if (!act) return null;
-  const extra = state.settings.extraToDebt ?? 0;
-  const shortfall = Math.max(0, extra - Math.max(0, h.left));
+// Top the month's spending budget up first, then everything else goes at the
+// highest rate. Splitting the other way round would just mean borrowing at 25%
+// to cover groceries later in the month.
+export function allocate(state, amount, strategy = 'avalanche') {
+  const s = spendingStatus(state);
+  const toSpending = Math.min(Math.max(0, amount), s.remaining);
+  const toDebt = Math.max(0, amount - toSpending);
+  const target = order(state, strategy)[0] ?? null;
   return {
-    current: act.unplanned,
-    target: Math.max(0, act.unplanned - shortfall),
-    cut: shortfall,
-    slack: h.left,
-    extra,
+    amount,
+    toSpending,
+    toDebt,
+    target,
+    // How much of the debt share this particular account can absorb.
+    clears: target ? toDebt >= target.balance : false,
+    spending: s,
   };
 }
 

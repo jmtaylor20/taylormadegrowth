@@ -8,8 +8,7 @@ import {
 } from '../ui.js';
 import {
   recurringFor, recurringTotals, byCategory, leftover, monthlyIncome, upsideIncome,
-  forAccount, isBusiness, colorFor, pipelineSummary, monthlySetAside, actuals,
-  endedFor, cancelList, expectedBalance, untilNextPayday,
+  forAccount, isBusiness, colorFor, endedFor, cancelList, untilNextPayday,
 } from '../calc.js';
 
 const CATEGORIES = ['Housing', 'Debt', 'Insurance', 'Utilities', 'Kids', 'Transport', 'Subscriptions', 'Health', 'Business', 'Other'];
@@ -211,87 +210,6 @@ export default function account(state, id) {
         stat('Household bills', money(household), 'the real number', ''),
         stat('Business bills', money(business), 'move these off', 'mut'),
       ),
-    ));
-  }
-
-  // ---- What's coming -------------------------------------------------------
-
-  const pipe = forAccount(state.pipeline, id).sort((a, b) => a.due.localeCompare(b.due)).slice(0, 4);
-  if (pipe.length) {
-    wrap.append(section('Coming down the pipe', `${money(pipe.reduce((s, p) => s + monthlySetAside(p), 0))}/mo to be ready`));
-    const c = el('div.card.flush');
-    for (const p of pipe) {
-      c.append(el('div.row', {},
-        el('div.day', { text: shortDate(p.due).split(' ')[0] }),
-        el('div.mid', {}, el('div.nm', {}, el('span.t', { text: p.name })),
-          el('div.meta', { text: `${shortDate(p.due)} · set aside ${money(monthlySetAside(p))}/mo` })),
-        el('div.amt', { text: money(p.amount) }),
-      ));
-    }
-    wrap.append(c);
-  }
-
-  // ---- Statement history ---------------------------------------------------
-
-  wrap.append(section('Statement history'));
-  const tbl = el('table.tbl', {},
-    el('thead', {}, el('tr', {},
-      el('th', { text: 'Period' }), el('th.r', { text: 'In' }), el('th.r', { text: 'Out' }), el('th.r', { text: 'Net' }), el('th.r', { text: 'Close' }))),
-    el('tbody', {}, acct.statements.map((s) => {
-      const net = s.in - s.out;
-      return el('tr', {},
-        el('td', { text: s.period }),
-        el('td.r.pos', { text: money(s.in) }),
-        el('td.r.neg', { text: money(s.out) }),
-        el('td.r', { text: signed(net), class: net >= 0 ? 'pos' : 'neg' }),
-        el('td.r', { text: money(s.close) }));
-    })),
-  );
-  wrap.append(el('div.card.flush', {}, tbl));
-
-  const net3 = acct.statements.reduce((s, x) => s + (x.in - x.out), 0);
-  wrap.append(el('p.tiny', { style: { margin: '8px 2px 0' } },
-    net3 < 0
-      ? `Across these statements the account ran ${money(Math.abs(net3))} behind — more went out than came in. That gap is what the debt plan has to close.`
-      : `Across these statements the account finished ${money(net3)} ahead.`));
-
-  // ---- Since the last check-in ---------------------------------------------
-
-  const variance = expectedBalance(state, id);
-  if (variance && variance.days >= 3) {
-    wrap.append(section('Since the last check-in', `${variance.days} days`));
-    wrap.append(el('div.card', {},
-      el('div.stats', {},
-        stat('Should be at', money(variance.expected), 'income in, bills out', ''),
-        stat('Actually at', money(variance.actual), 'as of today', variance.gap < 0 ? 'neg' : 'pos'),
-      ),
-      el('p', { style: { margin: '12px 0 0', fontSize: '14px', lineHeight: '1.5' } },
-        variance.gap < 0
-          ? `${money(-variance.gap)} has gone out beyond the bill schedule in ${variance.days} days — a run rate of about ${money(-variance.perMonth)} a month. This is measured over days you actually lived, not averaged off old statements, so it is the number to trust.`
-          : `You are ${money(variance.gap)} ahead of where the schedule says you should be. Either money landed that the plan does not know about, or a bill has not posted yet.`),
-    ));
-  }
-
-  // ---- Planned vs actual ---------------------------------------------------
-
-  const act = actuals(state, id);
-  if (act) {
-    wrap.append(section('Off the plan', 'monthly average'));
-    wrap.append(el('div.card', {},
-      el('div.stats', {},
-        stat('Leaves per month', money(act.avgOut), 'per the statements', 'neg'),
-        stat('Not on the list', money(act.unplanned), 'unscheduled spending', 'warn'),
-      ),
-      el('p', { style: { margin: '12px 0 0', fontSize: '14px', lineHeight: '1.5' } },
-        `${money(act.recurring)} of that is the recurring above. The other ${money(act.unplanned)} is groceries, fuel, eating out and one-offs — ${Math.round((act.unplanned / (act.avgOut || 1)) * 100)}% of everything leaving this account.`),
-      act.sinceEnded > 0
-        ? el('p.tiny', { style: { margin: '10px 0 0' } },
-            `These averages come from statements that predate your recent changes, so ${money(act.sinceEnded)} of now-cancelled bills has been credited back out of the unplanned figure. Next month's statement is the one that will confirm it.`)
-        : null,
-      act.nonPayrollIn > 400
-        ? el('p', { style: { margin: '10px 0 0', fontSize: '14px', lineHeight: '1.5' } },
-            `${money(act.nonPayrollIn)} a month lands here beyond payroll. Without it this account does not balance.`)
-        : null,
     ));
   }
 

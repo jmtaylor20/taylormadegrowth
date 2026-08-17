@@ -3,12 +3,12 @@
 
 import * as store from '../store.js';
 import {
-  el, money, pct, stat, section, bar, sheet, field, input, select, longDate, ord,
+  el, money, pct, stat, section, bar, sheet, field, input, select, longDate, ord, today,
 } from '../ui.js';
 import { trendCard } from './checkin.js';
 import {
   debtTotals, attackable, unknownDebts, order, simulate, compare, addMonths, household,
-  payoffTargets,
+  payoffTargets, allocate, spendingStatus,
 } from '../calc.js';
 
 const TYPES = ['Credit card', 'Installment loan', 'Auto loan', 'Student loan', 'Mortgage', 'Other'];
@@ -20,6 +20,10 @@ export default function debt(state) {
   const h = household(state);
   let extra = state.settings.extraToDebt ?? 0;
   let strategy = state.settings.strategy ?? 'avalanche';
+
+  // ---- Allocator -----------------------------------------------------------
+
+  wrap.append(allocator(state, strategy));
 
   // ---- Dashboard -----------------------------------------------------------
 
@@ -84,7 +88,7 @@ export default function debt(state) {
     stratSeg.append(b);
   }
 
-  dialCard.append(readout, slider, el('div.tiny', { text: `Slack after every bill and the pipeline: ${money(h.left)}` }), stratSeg, summary);
+  dialCard.append(readout, slider, el('div.tiny', { text: `Left after every recurring bill: ${money(h.left)}` }), stratSeg, summary);
   wrap.append(dialCard);
   repaint();
 
@@ -115,6 +119,103 @@ export default function debt(state) {
 
   return wrap;
 }
+
+// ---- Allocator -------------------------------------------------------------
+//
+// "I have this much — where does it go?" The month's everyday-spending budget
+// fills first, because the alternative is covering groceries later on a card at
+// 25%. Whatever is left goes at the highest rate.
+
+function allocator(state, strategy) {
+  const card = el('div.card', { style: { borderColor: 'var(--blue)' } });
+  const amount = el('input', {
+    type: 'number', step: '50', inputmode: 'decimal', placeholder: '0',
+    style: {
+      width: '100%', padding: '14px 16px', fontSize: '26px', fontWeight: '680',
+      textAlign: 'center', background: 'var(--bg-raise)',
+      border: '1px solid var(--line)', borderRadius: '12px',
+      fontVariantNumeric: 'tabular-nums',
+    },
+  });
+  const out = el('div');
+
+  const paint = () => {
+    const v = Number(amount.value) || 0;
+    const a = allocate(state, v, strategy);
+    const sp = a.spending;
+
+    if (!v) {
+      out.replaceChildren(el('p.tiny', { style: { margin: '12px 0 0' } },
+        sp.remaining > 0
+          ? `${money(sp.sent)} of this month's ${money(sp.budget)} spending budget has gone out. The next ${money(sp.remaining)} tops it up; anything beyond that goes at the debt.`
+          : `This month's ${money(sp.budget)} spending budget is already covered. Everything you put in goes straight at the debt.`));
+      return;
+    }
+
+    out.replaceChildren(
+      el('div', { style: { marginTop: '14px' } },
+        row('💸', 'Everyday spending', a.toSpending,
+          a.toSpending > 0
+            ? `Tops the month up to ${money(sp.sent + a.toSpending)} of ${money(sp.budget)}`
+            : 'Budget already covered this month'),
+        row('🔥', a.target ? a.target.name : 'Debt', a.toDebt,
+          !a.target ? 'No balances entered'
+            : a.clears ? `Clears it outright — ${money(a.target.balance)} balance`
+            : `Highest rate at ${pct(a.target.apr, 2)} · leaves ${money(a.target.balance - a.toDebt)}`),
+      ),
+      a.toDebt > 0 && a.target
+        ? el('p.tiny', { style: { margin: '12px 0 0' } },
+            `Saves about ${money((a.toDebt * a.target.apr) / 100)} of interest a year.`)
+        : null,
+      el('button.btn.primary.wide', {
+        type: 'button', text: 'Record it', style: { marginTop: '14px' },
+        onclick: async () => {
+          await store.commit((s) => {
+            s.allocations ??= [];
+            s.allocations.push({
+              id: store.uid('a'), date: today(), amount: v,
+              toSpending: a.toSpending, toDebt: a.toDebt,
+              debtId: a.target?.id ?? null,
+            });
+            if (a.toDebt > 0 && a.target) {
+              const d = s.debts.find((x) => x.id === a.target.id);
+              if (d) { d.balance = Math.max(0, d.balance - a.toDebt); d.asOf = today(); }
+            }
+          });
+        },
+      }),
+    );
+  };
+
+  amount.addEventListener('input', paint);
+
+  card.append(
+    el('div', { style: { fontWeight: '650', fontSize: '15px', marginBottom: '4px' } }, '💵 I have money to put somewhere'),
+    el('p.tiny', { style: { margin: '0 0 12px' } }, 'Type what you have. Spending budget fills first, then the rest goes at the highest rate.'),
+    amount, out,
+  );
+  paint();
+
+  const recent = (state.allocations ?? []).slice(-3).reverse();
+  if (recent.length) {
+    card.append(el('div', { style: { marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--line)' } },
+      el('div.tiny', { style: { marginBottom: '6px' } }, 'Recent'),
+      ...recent.map((r) => el('div.tiny', { style: { padding: '3px 0' } },
+        `${longDate(r.date)} — ${money(r.amount)}: ${money(r.toSpending)} spending, ${money(r.toDebt)} debt`))));
+  }
+
+  return card;
+}
+
+const row = (emoji, name, value, note) => el('div', {
+  style: { display: 'flex', alignItems: 'center', gap: '11px', padding: '11px 0', borderTop: '1px solid var(--line)' },
+},
+  el('span', { style: { fontSize: '19px' } }, emoji),
+  el('div', { style: { flex: '1', minWidth: '0' } },
+    el('div', { style: { fontSize: '14px', fontWeight: '600' }, text: name }),
+    el('div.tiny', { text: note })),
+  el('div.num', { style: { fontWeight: '680', fontSize: '17px' }, class: value > 0 ? 'pos' : 'mut', text: money(value) }),
+);
 
 // ---- Pieces ----------------------------------------------------------------
 

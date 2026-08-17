@@ -75,10 +75,9 @@ async function applyUpdate(shipped) {
     ...shipped,
     // Statement-derived facts come from the update; anything the user owns stays.
     goals: state.goals,
-    pipeline: state.pipeline,
     log: state.log,
     checkIns: state.checkIns,
-    envelope: state.envelope,
+    allocations: state.allocations,
     windfalls: state.windfalls,
     settings: { ...shipped.settings, ...state.settings },
     recurring: shipped.recurring.map((r) => {
@@ -164,12 +163,12 @@ function migrate() {
   state.seedVersion ??= 1;
   state.log ??= [];
   state.goals ??= [];
-  state.pipeline ??= [];
   state.debts ??= [];
   state.checkIns ??= [];
   state.windfalls ??= [];
-  state.envelope ??= { perPeriod: 0, cadence: 'semimonthly', balance: 0, asOf: null, funded: [] };
+  state.allocations ??= [];
   state.settings ??= {};
+  state.settings.monthlySpending ??= 0;
   state.settings.extraToDebt ??= 0;
   state.settings.strategy ??= 'avalanche';
   state.settings.emergencyFundTarget ??= 2000;
