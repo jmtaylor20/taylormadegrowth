@@ -39,16 +39,18 @@ export async function renderFinancials(root) {
   const wrap = el('div');
   root.append(wrap);
 
-  let list = [], invoices = [], payments = [], expenses = [], trips = [], contractors = [], taxRate = 0.25, taxReserve = 0, taxApr = 0;
+  let list = [], invoices = [], payments = [], expenses = [], trips = [], contractors = [], recurExp = [], taxRate = 0.25, taxReserve = 0, taxApr = 0;
   let clientCache = null;
   async function clients() { if (!clientCache) clientCache = await Clients.list({ order: { col: 'business_name', asc: true } }); return clientCache; }
   async function load() {
     clientCache = null;
-    let tax;
-    [list, invoices, payments, expenses, trips, contractors, tax] = await Promise.all([
+    let tax, recur;
+    [list, invoices, payments, expenses, trips, contractors, tax, recur] = await Promise.all([
       clients(), Invoices.list({ order: { col: 'issued_on', asc: false } }), Payments.list({ order: { col: 'paid_on', asc: false } }),
       Expenses.list(), Trips.list(), Contractors.list({ order: { col: 'name', asc: true } }), getSetting('tax', { effective_rate: 0.25 }),
+      getSetting('recurring_expenses', { items: [] }),
     ]);
+    recurExp = Array.isArray(recur.items) ? recur.items : [];
     taxRate = Number(tax.effective_rate) || 0.25;
     taxReserve = Number(tax.reserve_balance) || 0;
     taxApr = Number(tax.reserve_apr) || 0;
@@ -90,21 +92,27 @@ export async function renderFinancials(root) {
       el('div.stat' + (monthlyOutstanding ? '.stat-gold' : ''), {}, [el('div.stat-value', { text: money(monthlyOutstanding) }), el('div.stat-label', { text: 'Outstanding' })]),
     ]));
 
-    // Projected monthly take-home from MRR: after Cole's commission, then 30%
-    // to the tax bucket (Cole is deductible, so tax is on your share). This is
-    // a projection off current MRR — before other expenses, mileage, and draw.
+    // Projected monthly take-home from MRR: after Cole's commission, 30% to the
+    // tax bucket (Cole is deductible, so tax is on your share), then your fixed
+    // recurring monthly expenses. A projection off current MRR — before mileage
+    // and owner's draw.
     if (FEATURES.splitDeposit) {
       const coleMo = active.reduce((s, c) => s + n(c.mrr) * (Number(c.cole_pct) || 0), 0);
       const afterCole = mrr - coleMo;
       const taxMo = afterCole * ALLOCATION.tax;
-      const keepMo = afterCole - taxMo;
-      summary.append(el('div.section-title', {}, [el('h3', { text: 'Projected monthly (from MRR)' })]));
-      summary.append(el('div.grid.grid-3', {}, [
-        el('div.stat', {}, [el('div.stat-value', { text: money(coleMo) }), el('div.stat-label', { text: 'Cole’s cut' })]),
-        el('div.stat', {}, [el('div.stat-value', { text: money(taxMo) }), el('div.stat-label', { text: 'Tax bucket (30%)' })]),
-        el('div.stat.stat-gold', {}, [el('div.stat-value', { text: money(keepMo) }), el('div.stat-label', { text: 'You keep / mo' })]),
+      const recurTotal = recurExp.reduce((s, x) => s + n(x.amount), 0);
+      const available = afterCole - taxMo - recurTotal;
+      summary.append(el('div.section-title', {}, [
+        el('h3', { text: 'Projected monthly (from MRR)' }),
+        el('button.btn.btn-ghost.btn-sm', { html: `${iconSvg('wallet', 14)} Recurring expenses`, onclick: () => openRecurringExpenses() }),
       ]));
-      summary.append(el('div.field-hint.mt-8', { text: `From ${money(mrr)} MRR: minus Cole’s commission, then 30% set aside for taxes. Projection only — before other expenses, mileage, and owner’s draw.` }));
+      summary.append(el('div.grid.grid-4', {}, [
+        el('div.stat', {}, [el('div.stat-value', { text: money(coleMo) }), el('div.stat-label', { text: 'Cole’s cut' })]),
+        el('div.stat', {}, [el('div.stat-value', { text: money(taxMo) }), el('div.stat-label', { text: 'Tax (30%)' })]),
+        el('div.stat', {}, [el('div.stat-value', { text: money(recurTotal) }), el('div.stat-label', { text: 'Recurring exp' }), el('div.stat-sub', { text: recurExp.length + ' items' })]),
+        el('div.stat.stat-gold', {}, [el('div.stat-value', { text: money(available) }), el('div.stat-label', { text: 'Available / mo' })]),
+      ]));
+      summary.append(el('div.field-hint.mt-8', { text: `From ${money(mrr)} MRR: minus Cole’s commission, 30% for taxes, and ${money(recurTotal)} recurring expenses. Projection only — before mileage and owner’s draw.` }));
     }
 
     // Contractor copy (Tony): show his split on everything he's collected —
@@ -187,6 +195,49 @@ export async function renderFinancials(root) {
     );
     render();
     const { close } = openSheet({ title: 'Contractors', body, actions: [{ label: 'Done', tone: 'primary', onClick: () => close() }] });
+  }
+
+  // View / edit / add your fixed recurring monthly expenses. Saved to the
+  // 'recurring_expenses' setting and subtracted from the projection.
+  function openRecurringExpenses() {
+    const items = recurExp.map((x) => ({ name: x.name, amount: n(x.amount) }));
+    const body = el('div.form');
+    const listWrap = el('div');
+    const totalEl = el('b');
+    const retotal = () => { totalEl.textContent = money(items.reduce((s, x) => s + n(x.amount), 0)); };
+    const render = () => {
+      clear(listWrap);
+      items.forEach((it, idx) => {
+        const nameIn = el('input.input', { value: it.name || '', placeholder: 'e.g. Adobe, Canva', style: 'flex:1' });
+        const amtIn = numberInput('', it.amount ?? '', { step: '0.01' }); amtIn.style.maxWidth = '110px';
+        nameIn.addEventListener('input', () => { it.name = nameIn.value; });
+        amtIn.addEventListener('input', () => { it.amount = Number(amtIn.value || 0); retotal(); });
+        listWrap.append(el('div.field-row', { style: 'gap:8px;align-items:center;margin-bottom:8px' }, [
+          nameIn, el('span.field-hint', { text: '$/mo' }), amtIn,
+          el('button.icon-btn', { type: 'button', html: iconSvg('trash', 15), onclick: () => { items.splice(idx, 1); render(); retotal(); } }),
+        ]));
+      });
+    };
+    body.append(
+      el('div.field-hint.mb-8', { text: 'Fixed monthly costs subtracted from your projected take-home. For annual tools, enter the monthly equivalent (yearly ÷ 12).' }),
+      listWrap,
+      el('div.field-row', { style: 'justify-content:space-between;align-items:center;margin-top:6px' }, [
+        el('button.btn.btn-gold.btn-sm', { type: 'button', html: iconSvg('plus', 14) + ' Add expense', onclick: () => { items.push({ name: '', amount: 0 }); render(); } }),
+        el('div', {}, [el('span.field-hint', { text: 'Total ' }), totalEl]),
+      ]),
+    );
+    render(); retotal();
+    const { close } = openSheet({
+      title: 'Recurring monthly expenses', body,
+      actions: [
+        { label: 'Cancel', tone: 'ghost', onClick: () => close() },
+        { label: 'Save', tone: 'primary', onClick: async () => {
+          const clean = items.filter((x) => (x.name || '').trim()).map((x) => ({ name: x.name.trim(), amount: n(x.amount) }));
+          try { await setSetting('recurring_expenses', { items: clean }); recurExp = clean; toast('Saved'); close(); refresh(); }
+          catch (e) { toast(e.message, 'err'); }
+        } },
+      ],
+    });
   }
 
   // Rolling tax estimate: net profit (income − deductions) × effective rate.
