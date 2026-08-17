@@ -90,6 +90,23 @@ export async function renderFinancials(root) {
       el('div.stat' + (monthlyOutstanding ? '.stat-gold' : ''), {}, [el('div.stat-value', { text: money(monthlyOutstanding) }), el('div.stat-label', { text: 'Outstanding' })]),
     ]));
 
+    // Projected monthly take-home from MRR: after Cole's commission, then 30%
+    // to the tax bucket (Cole is deductible, so tax is on your share). This is
+    // a projection off current MRR — before other expenses, mileage, and draw.
+    if (FEATURES.splitDeposit) {
+      const coleMo = active.reduce((s, c) => s + n(c.mrr) * (Number(c.cole_pct) || 0), 0);
+      const afterCole = mrr - coleMo;
+      const taxMo = afterCole * ALLOCATION.tax;
+      const keepMo = afterCole - taxMo;
+      summary.append(el('div.section-title', {}, [el('h3', { text: 'Projected monthly (from MRR)' })]));
+      summary.append(el('div.grid.grid-3', {}, [
+        el('div.stat', {}, [el('div.stat-value', { text: money(coleMo) }), el('div.stat-label', { text: 'Cole’s cut' })]),
+        el('div.stat', {}, [el('div.stat-value', { text: money(taxMo) }), el('div.stat-label', { text: 'Tax bucket (30%)' })]),
+        el('div.stat.stat-gold', {}, [el('div.stat-value', { text: money(keepMo) }), el('div.stat-label', { text: 'You keep / mo' })]),
+      ]));
+      summary.append(el('div.field-hint.mt-8', { text: `From ${money(mrr)} MRR: minus Cole’s commission, then 30% set aside for taxes. Projection only — before other expenses, mileage, and owner’s draw.` }));
+    }
+
     // Contractor copy (Tony): show his split on everything he's collected —
     // he keeps his %, the rest is TaylorMade's cut.
     if (FEATURES.revShareSelf) {
