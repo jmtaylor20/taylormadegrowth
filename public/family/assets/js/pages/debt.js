@@ -568,6 +568,9 @@ function payDebt(state, d) {
       save.disabled = v <= 0;
     };
     amount.addEventListener('input', paint);
+    // Paint once up front, so the action starts correctly disabled rather than
+    // looking live and doing nothing until a number has been typed.
+    paint();
 
     const chip = (label, value) => el('button.btn.sm.ghost', {
       type: 'button', text: label,

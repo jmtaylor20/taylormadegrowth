@@ -2,7 +2,7 @@
 // first unlock, and after that the browser's own encrypted copy in
 // localStorage is the source of truth.
 
-const CACHE = 'tfm-v7';
+const CACHE = 'tfm-v8';
 const SHELL = [
   './',
   './index.html',
