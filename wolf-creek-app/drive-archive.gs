@@ -38,9 +38,10 @@ var BINDERS_DIR = 'Monthly Binders';
 
 var LOGO_URL = 'https://wolf-creek-app.netlify.app/assets/img/logo-mark.png';
 var COMPANY_NAME = 'Wolf Creek Farms';
-var COMPANY_TAGLINE = 'Land Clearing, Site Prep & Dirt Work';
-var COMPANY_PHONE = '(334) 207-3331';
+var COMPANY_PHONE = '334-207-3331';
 var COMPANY_EMAIL = 'russ@wolfcreeklands.com';
+var COMPANY_WEBSITE = 'wolfcreeklands.com';
+var COMPANY_ADDRESS = '3914 County Road 54 West, Notasulga, AL 36866';
 
 var BATCH = 25;                 // max PDFs to build per run (keeps under the time limit)
 var TARGET_MONTH = '';          // 'YYYY-MM' — set this then run combineTargetMonth to rebuild one month
@@ -48,7 +49,7 @@ var TARGET_MONTH = '';          // 'YYYY-MM' — set this then run combineTarget
 // ---------------------------------------------------------------------------
 
 // Palette matches wolfcreeklands.com (hunter greens + sage accent).
-var GREEN = '#18382b', GREEN2 = '#2f6244', LIME = '#adc889', GRAYBOX = '#eef1ee', GREENBOX = '#eef3e7', LINE = '#dddddd';
+var GREEN = '#18382b', BORDER = '#c9d2c9';
 
 // ============================================================================
 // ENTRY POINTS
@@ -140,155 +141,230 @@ function combineMonth_(ym) {
 // HTML TEMPLATES
 // ============================================================================
 
-function pageShell_(title, dateLabel, inner) {
-  return '<div style="max-width:720px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#173321;padding:8px 4px;">'
-    + '<table width="100%" cellpadding="0" cellspacing="0"><tr>'
-    + '<td style="vertical-align:middle;"><img src="' + LOGO_URL + '" alt="Wolf Creek Farms" height="60" style="display:block;"></td>'
-    + '<td style="text-align:right;vertical-align:middle;"><div style="font-size:30px;font-weight:bold;color:' + GREEN + ';letter-spacing:1px;">' + esc_(title) + '</div>'
-    + '<div style="height:3px;background:' + LIME + ';margin:6px 0 8px;"></div>'
-    + '<div style="font-size:12px;color:' + GREEN2 + ';font-weight:bold;">' + esc_(dateLabel) + '</div></td>'
+// Laid out to match Wolf Creek's printed estimate form and the emailed documents:
+// oversized title with the logo, a green meta bar, boxed fields, a scope block,
+// a line-item table, and a stacked totals column.
+
+// ---- Building blocks -------------------------------------------------------
+
+function masthead_(title) {
+  return '<table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>'
+    + '<td style="vertical-align:middle;">'
+    + '<div style="font-size:42px;line-height:1;font-weight:bold;color:' + GREEN + ';letter-spacing:1px;">' + esc_(title) + '</div></td>'
+    + '<td style="text-align:right;vertical-align:middle;width:190px;">'
+    + '<img src="' + LOGO_URL + '" alt="' + esc_(COMPANY_NAME) + '" width="180" style="display:inline-block;max-width:180px;height:auto;border:0;"></td>'
     + '</tr></table>'
-    + '<div style="height:2px;background:' + GREEN + ';margin:12px 0 18px;"></div>'
+    + '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:12px;font-size:12.5px;color:#1c2b22;">'
+    + '<tr><td style="padding:2px 0;">' + esc_(COMPANY_PHONE) + '</td><td style="padding:2px 0;">' + esc_(COMPANY_WEBSITE) + '</td></tr>'
+    + '<tr><td style="padding:2px 0;">' + esc_(COMPANY_EMAIL) + '</td><td style="padding:2px 0;">' + esc_(COMPANY_ADDRESS) + '</td></tr>'
+    + '</table>';
+}
+
+function metaBar_(cells) {
+  var head = '', vals = '', w = Math.floor(100 / cells.length);
+  cells.forEach(function (c) {
+    head += '<td width="' + w + '%" style="padding:8px 10px;background:' + GREEN + ';color:#ffffff;font-size:11px;font-weight:bold;letter-spacing:.5px;text-align:center;border-right:1px solid #ffffff;">' + esc_(c[0]) + '</td>';
+    vals += '<td width="' + w + '%" style="padding:9px 10px;border:1px solid ' + BORDER + ';border-top:0;font-size:13px;text-align:center;">' + esc_(c[1] || '') + '</td>';
+  });
+  return '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:16px;"><tr>' + head + '</tr><tr>' + vals + '</tr></table>';
+}
+
+function sectionTitle_(t) {
+  return '<div style="font-size:14px;font-weight:bold;color:' + GREEN + ';letter-spacing:.5px;margin:20px 0 8px;">' + esc_(t) + '</div>';
+}
+
+function fieldBox_(label, value) {
+  return '<div style="border:1px solid ' + BORDER + ';padding:7px 10px;">'
+    + '<div style="font-size:10px;font-weight:bold;color:' + GREEN + ';letter-spacing:.5px;">' + esc_(label) + '</div>'
+    + '<div style="font-size:13.5px;margin-top:2px;">' + esc_(value || '—') + '</div></div>';
+}
+
+function fieldGrid_(pairs) {
+  var rows = '';
+  for (var i = 0; i < pairs.length; i += 2) {
+    var a = pairs[i], b = pairs[i + 1];
+    rows += '<tr><td width="49%" style="padding:0 0 8px 0;vertical-align:top;">' + fieldBox_(a[0], a[1]) + '</td>'
+      + '<td width="2%"></td>'
+      + '<td width="49%" style="padding:0 0 8px 0;vertical-align:top;">' + (b ? fieldBox_(b[0], b[1]) : '') + '</td></tr>';
+  }
+  return '<table width="100%" cellpadding="0" cellspacing="0" border="0">' + rows + '</table>';
+}
+
+function scopeBox_(bullets) {
+  var rows = bullets.map(function (b) {
+    return '<div style="padding:7px 10px;border-bottom:1px solid ' + BORDER + ';font-size:13.5px;">' + esc_(b) + '</div>';
+  }).join('');
+  return '<div style="border:1px solid ' + BORDER + ';">' + (rows || '<div style="padding:7px 10px;">&nbsp;</div>') + '</div>';
+}
+
+function itemsTable_(items) {
+  var head = '<tr><td style="padding:8px 10px;background:' + GREEN + ';color:#ffffff;font-size:11px;font-weight:bold;letter-spacing:.5px;">DESCRIPTION</td>'
+    + '<td width="30%" style="padding:8px 10px;background:' + GREEN + ';color:#ffffff;font-size:11px;font-weight:bold;letter-spacing:.5px;text-align:right;">AMOUNT</td></tr>';
+  var rows = items.map(function (it) {
+    return '<tr><td style="padding:11px 10px;border:1px solid ' + BORDER + ';border-top:0;font-size:13.5px;">' + esc_(it[0]) + '</td>'
+      + '<td style="padding:11px 10px;border:1px solid ' + BORDER + ';border-top:0;border-left:0;font-size:13.5px;text-align:right;font-weight:bold;">' + esc_(it[1]) + '</td></tr>';
+  }).join('');
+  return '<table width="100%" cellpadding="0" cellspacing="0" border="0">' + head + rows + '</table>';
+}
+
+function totals_(rows) {
+  var body = rows.map(function (r, i) {
+    var last = i === rows.length - 1;
+    return '<tr><td style="padding:9px 12px;text-align:right;font-size:12px;font-weight:bold;letter-spacing:.5px;'
+      + (last ? 'background:' + GREEN + ';color:#ffffff;' : 'color:' + GREEN + ';border:1px solid ' + BORDER + ';border-right:0;') + '">' + esc_(r[0]) + '</td>'
+      + '<td width="45%" style="padding:9px 12px;text-align:right;border:1px solid ' + BORDER + ';font-size:' + (last ? '16px' : '13.5px') + ';font-weight:bold;'
+      + (last ? 'color:' + GREEN + ';' : '') + '">' + esc_(r[1]) + '</td></tr>';
+  }).join('');
+  return '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:16px;"><tr><td width="45%"></td><td width="55%">'
+    + '<table width="100%" cellpadding="0" cellspacing="0" border="0">' + body + '</table></td></tr></table>';
+}
+
+function pageShell_(title, metaCells, inner, footerNote) {
+  return '<div style="max-width:720px;margin:0 auto;padding:14px 10px;font-family:Arial,Helvetica,sans-serif;color:#14201a;background:#ffffff;">'
+    + masthead_(title)
+    + metaBar_(metaCells)
     + inner
-    + '<div style="height:2px;background:' + GREEN + ';margin:22px 0 10px;"></div>'
-    + '<div style="text-align:center;color:' + GREEN2 + ';font-weight:bold;">' + COMPANY_NAME + '</div>'
-    + '<div style="text-align:center;color:#5a665f;font-size:12px;">' + COMPANY_TAGLINE + ' · ' + COMPANY_PHONE + ' · ' + COMPANY_EMAIL + '</div>'
+    + '<div style="background:' + GREEN + ';color:#ffffff;font-style:italic;font-size:12.5px;text-align:center;padding:11px 14px;margin-top:22px;">' + esc_(footerNote) + '</div>'
     + '</div>';
 }
 
-function billToBlock_(j) {
-  var addr = [properAddress_(j.address), [j.city, j.zip].filter(Boolean).join(', ')].filter(Boolean);
-  return '<div style="font-weight:bold;font-size:15px;">' + esc_(displayName_(j)) + '</div>'
-    + (j.phone ? '<div style="font-size:13px;">' + esc_(j.phone) + '</div>' : '')
-    + (j.email ? '<div style="font-size:13px;">' + esc_(j.email) + '</div>' : '')
-    + addr.map(function (a) { return '<div style="font-size:13px;">' + esc_(a) + '</div>'; }).join('');
+// Document number: stable, short, derived from the job id. "WCF-1A2B3C4D".
+function docNum_(j) { return 'WCF-' + String(j.id || '').replace(/-/g, '').slice(0, 8).toUpperCase(); }
+function cityLine_(j) {
+  var cs = [j.city, j.state || 'AL'].filter(Boolean).join(', ');
+  return [cs, j.zip].filter(Boolean).join(' ');
 }
-
 function scopeBullets_(job) {
-  var text = job.scope_notes || (job.services || []).join(', ') || 'Tree service as discussed.';
+  var text = job.scope_notes || (job.services || []).join(', ') || 'Work as discussed.';
   return text.split(/[\n;]+/).map(function (p) { return p.trim(); }).filter(Boolean);
 }
-
-/** Estimate / quote — matches the emailed estimate. */
-function quoteHtml_(j) {
-  var bullets = scopeBullets_(j).map(function (b) {
-    return '<tr><td style="width:18px;color:' + LIME + ';font-size:16px;vertical-align:top;">•</td><td style="padding-bottom:8px;">' + esc_(b) + '</td></tr>';
-  }).join('');
-  var svc = (j.services || []).join(', ') || 'Tree service';
-  var inner =
-    '<table width="100%" cellpadding="0" cellspacing="0"><tr>'
-    + '<td width="55%" style="vertical-align:top;background:' + GRAYBOX + ';border-radius:10px;padding:14px;">'
-    + '<div style="font-size:12px;font-weight:bold;color:' + GREEN2 + ';letter-spacing:.5px;">BILL TO</div><div style="margin-top:6px;">' + billToBlock_(j) + '</div></td>'
-    + '<td width="4%"></td>'
-    + '<td width="41%" style="vertical-align:top;background:' + GREEN + ';border-radius:10px;padding:16px;color:#fff;">'
-    + '<div style="font-size:12px;font-weight:bold;letter-spacing:.5px;">TOTAL ESTIMATE</div>'
-    + '<div style="font-size:30px;font-weight:bold;margin-top:6px;">' + money_(j.estimate_amount) + '</div></td>'
-    + '</tr></table>'
-    + '<div style="font-size:15px;font-weight:bold;color:' + GREEN + ';margin:22px 0 4px;">SCOPE OF WORK</div>'
-    + '<div style="height:2px;background:' + LIME + ';margin-bottom:12px;"></div>'
-    + '<table cellpadding="0" cellspacing="0">' + bullets + '</table>'
-    + '<table width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px;">'
-    + '<tr style="background:' + GREENBOX + ';"><td style="padding:10px 12px;font-size:12px;font-weight:bold;color:' + GREEN2 + ';">SERVICE</td>'
-    + '<td style="padding:10px 12px;font-size:12px;font-weight:bold;color:' + GREEN2 + ';text-align:right;">AMOUNT</td></tr>'
-    + '<tr><td style="padding:12px;border-bottom:1px solid ' + LINE + ';">' + esc_(svc) + '</td>'
-    + '<td style="padding:12px;border-bottom:1px solid ' + LINE + ';text-align:right;font-weight:bold;">' + money_(j.estimate_amount) + '</td></tr>'
-    + '<tr><td style="padding:12px;text-align:right;font-weight:bold;color:' + GREEN + ';">TOTAL</td>'
-    + '<td style="padding:12px;text-align:right;font-weight:bold;color:' + GREEN + ';font-size:16px;">' + money_(j.estimate_amount) + '</td></tr></table>'
-    + (j.lead_time ? '<div style="margin-top:16px;background:' + GREENBOX + ';border-radius:10px;padding:12px;"><b style="color:' + GREEN2 + ';">Estimated timing:</b> ' + esc_(j.lead_time) + '</div>' : '')
-    + '<div style="margin-top:16px;background:' + GREENBOX + ';border-radius:10px;padding:14px;font-size:13px;">'
-    + '<div style="font-weight:bold;color:' + GREEN2 + ';">SERVICE NOTE</div>'
-    + '<div style="margin-top:6px;">This is an estimate for the work described above, based on the site as we found it. Rock, buried debris, utilities, or wet conditions can change the scope — if we run into something that does, we will talk it through with you before going further. Repairs to existing concrete, driveway, landscaping, or other property are not included. If Wolf Creek Farms causes property damage during the work, we will be responsible for repair or replacement.</div></div>';
-  return pageShell_('ESTIMATE', 'Quoted ' + longDate_(j.quote_pdf_at || j.updated_at), inner);
+function svcLine_(j) {
+  var svc = (j.services || []).join(', ') || 'Land work';
+  if (j.acres) svc += ' — ' + j.acres + ' acres';
+  return svc;
 }
 
-/** Completed-job summary — every field on one page. */
+// ---- Documents -------------------------------------------------------------
+
+/** Estimate / quote — mirrors the emailed estimate. */
+function quoteHtml_(j) {
+  var inner =
+    sectionTitle_('CUSTOMER INFORMATION')
+    + fieldGrid_([
+      ['CUSTOMER NAME', displayName_(j)],
+      ['EMAIL', j.email],
+      ['JOB ADDRESS', properAddress_(j.address)],
+      ['PHONE', j.phone],
+      ['CITY, STATE, ZIP', cityLine_(j)],
+      ['ESTIMATED START', j.lead_time],
+    ])
+    + sectionTitle_('SCOPE OF WORK / NOTES')
+    + scopeBox_(scopeBullets_(j))
+    + sectionTitle_('ESTIMATE DETAILS')
+    + itemsTable_([[svcLine_(j), money_(j.estimate_amount)]])
+    + totals_([['SUBTOTAL', money_(j.estimate_amount)], ['TOTAL', money_(j.estimate_amount)]]);
+
+  return pageShell_('ESTIMATE', [
+    ['ESTIMATE #', docNum_(j)],
+    ['DATE', longDate_(j.quote_pdf_at || j.updated_at)],
+    ['STATUS', cap_(j.status).replace(/_/g, ' ')],
+  ], inner, 'We appreciate the opportunity to provide an estimate of services for you. We look forward to working with you soon.');
+}
+
+/** Completed-job summary — the internal record, so it also carries the numbers
+ *  the customer never sees (hours, profit, quote-vs-actual). */
 function summaryHtml_(j) {
   var estAmt = num_(j.estimate_amount), finalCost = num_(j.final_cost), profit = num_(j.profit);
   var estHrs = num_(j.estimated_hours), actHrs = num_(j.actual_hours);
   var costVar = (estAmt != null && finalCost != null) ? finalCost - estAmt : null;
   var hrVar = (estHrs != null && actHrs != null) ? Math.round((actHrs - estHrs) * 10) / 10 : null;
   var margin = (profit != null && finalCost) ? Math.round((profit / finalCost) * 100) : null;
+  var paid = Number(j.amount_paid) || 0;
+
+  var total = Number(finalCost != null ? finalCost : (estAmt || 0));
+  var totalRows = [['SUBTOTAL', money_(total)]];
+  if (j.paid) {
+    totalRows.push(['PAID IN FULL', money_(total)]);
+  } else {
+    if (paid > 0) totalRows.push(['COLLECTED', money_(paid)]);
+    totalRows.push(['BALANCE DUE', money_(Math.max(total - paid, 0))]);
+  }
 
   var inner =
-    // Customer + headline financials
-    '<table width="100%" cellpadding="0" cellspacing="0"><tr>'
-    + '<td width="55%" style="vertical-align:top;background:' + GRAYBOX + ';border-radius:10px;padding:14px;">'
-    + '<div style="font-size:12px;font-weight:bold;color:' + GREEN2 + ';letter-spacing:.5px;">CUSTOMER</div><div style="margin-top:6px;">' + billToBlock_(j) + '</div></td>'
-    + '<td width="4%"></td>'
-    + '<td width="41%" style="vertical-align:top;background:' + GREEN + ';border-radius:10px;padding:16px;color:#fff;">'
-    + '<div style="font-size:12px;font-weight:bold;letter-spacing:.5px;">FINAL COST</div>'
-    + '<div style="font-size:30px;font-weight:bold;margin-top:6px;">' + money_(finalCost != null ? finalCost : estAmt) + '</div>'
-    + (profit != null ? '<div style="font-size:13px;margin-top:6px;opacity:.9;">Profit ' + money_(profit) + (margin != null ? ' · ' + margin + '% margin' : '') + '</div>' : '')
-    + '</td></tr></table>'
-
-    // Work performed
-    + section_('WORK PERFORMED')
+    sectionTitle_('CUSTOMER INFORMATION')
+    + fieldGrid_([
+      ['CUSTOMER NAME', displayName_(j)],
+      ['EMAIL', j.email],
+      ['JOB ADDRESS', properAddress_(j.address)],
+      ['PHONE', j.phone],
+      ['CITY, STATE, ZIP', cityLine_(j)],
+      ['WORK COMPLETED', longDate_(j.completed_at)],
+    ])
+    + sectionTitle_('WORK PERFORMED')
+    + scopeBox_(scopeBullets_(j))
+    + sectionTitle_('JOB DETAILS')
     + kvTable_([
-      ['Work performed', arr_(j.services)],
+      ['Work', arr_(j.services)],
       ['Acres', j.acres != null ? String(j.acres) : '—'],
       ['Site conditions', arr_(j.site_conditions)],
-      ['Scope of work', j.scope_notes || '—'],
-      ['Job notes', j.job_notes || '—'],
-    ])
-
-    // Schedule
-    + section_('SCHEDULE')
-    + kvTable_([
+      ['Priority', cap_(j.priority)],
       ['Estimate visit', dateTime_(j.appointment_date, j.appointment_time)],
       ['Work date', dateTime_(j.scheduled_date, j.scheduled_time)],
-      ['Priority', cap_(j.priority)],
+      ['Job notes', j.job_notes || '—'],
     ])
-
-    // Quote vs actual
-    + section_('QUOTE vs ACTUAL')
-    + '<table width="100%" cellpadding="0" cellspacing="0" style="margin-top:2px;">'
-    + '<tr style="background:' + GREENBOX + ';">'
+    + sectionTitle_('QUOTE vs ACTUAL')
+    + '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:2px;">'
+    + '<tr style="background:' + GREEN + ';">'
     + th_('') + th_('QUOTED', 'right') + th_('ACTUAL', 'right') + th_('DIFF', 'right') + '</tr>'
     + moneyRow_('Amount', estAmt, finalCost, costVar)
     + hoursRow_('Hours', estHrs, actHrs, hrVar, j.hours_result)
     + '</table>'
-    + (j.quote_variance_notes ? '<div style="margin-top:12px;background:' + GREENBOX + ';border-radius:10px;padding:12px;font-size:13px;"><b style="color:' + GREEN2 + ';">Discrepancy notes:</b> ' + esc_(j.quote_variance_notes) + '</div>' : '');
+    + (profit != null
+      ? '<div style="margin-top:10px;border:1px solid ' + BORDER + ';padding:10px;font-size:13px;"><b style="color:' + GREEN + ';">Profit:</b> '
+        + esc_(money_(profit)) + (margin != null ? ' · ' + margin + '% margin' : '') + '</div>'
+      : '')
+    + (j.quote_variance_notes
+      ? '<div style="margin-top:8px;border:1px solid ' + BORDER + ';padding:10px;font-size:13px;"><b style="color:' + GREEN + ';">Discrepancy notes:</b> ' + esc_(j.quote_variance_notes) + '</div>'
+      : '')
+    + sectionTitle_('BILLING')
+    + itemsTable_([[svcLine_(j), money_(finalCost != null ? finalCost : estAmt)]])
+    + totals_(totalRows);
 
-  return pageShell_('JOB SUMMARY', 'Completed ' + longDate_(j.summary_pdf_at || j.updated_at), inner);
+  return pageShell_('JOB SUMMARY', [
+    ['JOB #', docNum_(j)],
+    ['COMPLETED', longDate_(j.completed_at)],
+    ['STATUS', j.paid ? 'Paid in full' : 'Awaiting payment'],
+  ], inner, 'Internal job record — ' + COMPANY_NAME + '.');
 }
 
-// ---- template helpers ----
-function section_(t) {
-  return '<div style="font-size:15px;font-weight:bold;color:' + GREEN + ';margin:20px 0 4px;">' + esc_(t) + '</div>'
-    + '<div style="height:2px;background:' + LIME + ';margin-bottom:8px;"></div>';
-}
+// ---- template helpers ------------------------------------------------------
+function section_(t) { return sectionTitle_(t); }
 function kvTable_(rows) {
   var body = rows.map(function (r) {
-    return '<tr><td style="width:150px;vertical-align:top;padding:7px 10px 7px 0;color:' + GREEN2 + ';font-weight:bold;font-size:13px;">' + esc_(r[0]) + '</td>'
-      + '<td style="vertical-align:top;padding:7px 0;border-bottom:1px solid ' + LINE + ';font-size:13px;">' + esc_(r[1]) + '</td></tr>';
+    return '<tr><td width="30%" style="padding:8px 10px;border:1px solid ' + BORDER + ';border-top:0;font-size:11px;font-weight:bold;color:' + GREEN + ';letter-spacing:.4px;vertical-align:top;">' + esc_(String(r[0]).toUpperCase()) + '</td>'
+      + '<td style="padding:8px 10px;border:1px solid ' + BORDER + ';border-top:0;border-left:0;font-size:13.5px;">' + esc_(r[1]) + '</td></tr>';
   }).join('');
-  return '<table width="100%" cellpadding="0" cellspacing="0">' + body + '</table>';
+  return '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid ' + BORDER + ';">' + body + '</table>';
 }
-function th_(t, align) { return '<td style="padding:9px 12px;font-size:12px;font-weight:bold;color:' + GREEN2 + ';text-align:' + (align || 'left') + ';">' + esc_(t) + '</td>'; }
+function th_(t, align) { return '<td style="padding:8px 10px;font-size:11px;font-weight:bold;color:#ffffff;letter-spacing:.5px;text-align:' + (align || 'left') + ';">' + esc_(t) + '</td>'; }
+function td_(t, align) { return '<td style="padding:9px 10px;border:1px solid ' + BORDER + ';border-top:0;text-align:' + (align || 'left') + ';font-size:13.5px;">' + esc_(t) + '</td>'; }
 function moneyRow_(label, a, b, diff) {
-  // Match the app: came in UNDER the quote = green (good), OVER = red.
-  return '<tr><td style="padding:10px 12px;border-bottom:1px solid ' + LINE + ';font-weight:bold;">' + esc_(label) + '</td>'
-    + td_(money_(a), 'right') + td_(money_(b), 'right')
-    + '<td style="padding:10px 12px;border-bottom:1px solid ' + LINE + ';text-align:right;font-weight:bold;color:' + (diff > 0 ? '#a13333' : diff < 0 ? '#1e7d34' : GREEN2) + ';">'
-    + (diff == null ? '—' : (diff > 0 ? '+' : '') + money_(diff)) + '</td></tr>';
+  return '<tr>' + td_(label) + td_(a != null ? money_(a) : '—', 'right') + td_(b != null ? money_(b) : '—', 'right')
+    + td_(diff != null ? (diff >= 0 ? '+' : '') + money_(diff) : '—', 'right') + '</tr>';
 }
 function hoursRow_(label, a, b, diff, result) {
-  var note = result ? ' (' + cap_(String(result).replace('_', ' ')) + ')' : '';
-  return '<tr><td style="padding:10px 12px;border-bottom:1px solid ' + LINE + ';font-weight:bold;">' + esc_(label) + '</td>'
-    + td_(a != null ? a + ' h' : '—', 'right') + td_(b != null ? b + ' h' : '—', 'right')
-    + '<td style="padding:10px 12px;border-bottom:1px solid ' + LINE + ';text-align:right;font-weight:bold;color:' + (diff > 0 ? '#a13333' : diff < 0 ? '#1e7d34' : GREEN2) + ';">'
-    + (diff == null ? '—' : (diff > 0 ? '+' : '') + diff + ' h' + note) + '</td></tr>';
+  var d = diff != null ? (diff >= 0 ? '+' : '') + diff + ' h' : '—';
+  if (result) d += ' (' + cap_(result.replace('_', ' ')) + ')';
+  return '<tr>' + td_(label) + td_(a != null ? a + ' h' : '—', 'right') + td_(b != null ? b + ' h' : '—', 'right') + td_(d, 'right') + '</tr>';
 }
-function td_(t, align) { return '<td style="padding:10px 12px;border-bottom:1px solid ' + LINE + ';text-align:' + (align || 'left') + ';">' + esc_(t) + '</td>'; }
 
 /** Combine many items into one document, each on its own page. */
 function binderHtml_(title, items, renderFn) {
-  var cover = '<div style="max-width:720px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;text-align:center;padding:120px 0;">'
-    + '<img src="' + LOGO_URL + '" height="90" style="display:block;margin:0 auto 20px;">'
-    + '<div style="font-size:34px;font-weight:bold;color:' + GREEN + ';">' + COMPANY_NAME + '</div>'
-    + '<div style="height:3px;width:180px;background:' + LIME + ';margin:14px auto;"></div>'
-    + '<div style="font-size:22px;font-weight:bold;color:' + GREEN2 + ';">' + esc_(title) + '</div>'
-    + '<div style="font-size:15px;color:#5a665f;margin-top:10px;">' + items.length + (items.length === 1 ? ' record' : ' records') + '</div>'
+  var cover = '<div style="max-width:720px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;text-align:center;padding:150px 0;">'
+    + '<img src="' + LOGO_URL + '" width="240" style="display:block;margin:0 auto 26px;max-width:240px;height:auto;border:0;">'
+    + '<div style="font-size:26px;font-weight:bold;color:' + GREEN + ';letter-spacing:1px;">' + esc_(title) + '</div>'
+    + '<div style="height:3px;width:180px;background:' + GREEN + ';margin:16px auto;"></div>'
+    + '<div style="font-size:15px;color:#5a665f;">' + items.length + (items.length === 1 ? ' record' : ' records') + '</div>'
     + '</div><div style="page-break-after:always;"></div>';
   var pages = items.map(function (j, i) {
     var brk = i < items.length - 1 ? '<div style="page-break-after:always;"></div>' : '';

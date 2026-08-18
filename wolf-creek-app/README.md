@@ -47,9 +47,19 @@ Three emails go out automatically as a job moves along, sent by
 
 | Trigger | Email |
 | --- | --- |
-| **Quote & send estimate** on a lead | **Estimate** — scope, total, lead time |
-| Job marked **Completed** | **Invoice** — work performed, final price, remit-to |
-| Job marked **Paid in full** | **Thank-you** — with a Google review link |
+| **Quote & send estimate** on a lead | **Estimate** — scope, total, good-until date, terms |
+| Job marked **Completed** | **Invoice** — work performed, deposit credited, total due, remit-to |
+| Job marked **Paid in full** | **Receipt** — paid in full, plus the thank-you and review link |
+
+All three are laid out to match Wolf Creek's printed estimate form: oversized title
+with the logo, the contact block, a green meta bar, boxed customer fields, a scope
+block, a line-item table, and a stacked totals column with the headline figure called
+out in green. They're built as nested tables with inline styles, which is the only
+layout that renders the same in Gmail, Apple Mail, and Outlook — so no flexbox, no
+grid, no SVG, and no background watermark.
+
+Every document carries a number derived from the job id (`WCF-7F3A1C92`) — stable,
+unique, and needing no counter.
 
 Each one is confirmed in the app before it queues, so an email never goes out by
 surprise, and each is marked `sent` so it can never double-send. A job with no email
@@ -73,9 +83,9 @@ iPhone, open the site → **Share → Add to Home Screen**.
 
 1. Sign in to [script.google.com](https://script.google.com) **as russ@wolfcreeklands.com**.
 2. New project → paste in [`email-sender.gs`](email-sender.gs) → Save.
-3. Check `REMIT_ADDRESS` (blank by default — fill it in to print a mailing address on
-   invoices) and `REVIEW_URL` (currently a Google search; swap in the real
-   `g.page/r/…` review link from the Google Business Profile).
+3. Check `REVIEW_URL` — currently a Google search; swap in the real `g.page/r/…`
+   review link from the Google Business Profile. Company details, the mailing address,
+   and `ESTIMATE_VALID_DAYS` (how long a quote stands, default 30) are set near the top.
 4. Run `installTrigger` → approve the Gmail + external-request prompts. ("Google hasn't
    verified this app" is expected — it's your own script. Advanced → Go to project.)
 
@@ -118,6 +128,9 @@ Carried over from the A&O app but deliberately left out:
 | **Rain flag** | Not relevant to this work. |
 | **Lead parsing / Gmail import** | Russ enters estimates by hand. `gmail-lead-import.gs` and `parse.js` were not carried over — easy to add back later if lead emails start arriving. |
 | **Monthly metrics PDF** | It was built from road time, equipment hours, and per-tree figures — all of which are gone. The Quotes and Completed Jobs binders are unaffected. |
+| **QTY / UNIT PRICE columns** | The printed form has them; the app prices a job as a whole rather than by unit, so the line-item table is DESCRIPTION and AMOUNT. Ask if you want real per-unit line items — it needs a new table and a line-item editor in the app. |
+| **Billing address, preferred contact, best time to contact** | Intake fields on the paper form. The app doesn't collect them, and they mean nothing on an outbound document. |
+| **DISCOUNT / TAX rows** | Not tracked. `DEPOSIT PAID` is, and appears on the invoice whenever a partial payment has been recorded. |
 
 The database columns for the Drive PDF links are kept, so the archive script works
 without a schema change.
