@@ -15,3 +15,5 @@ private/
 .DS_Store
 # logs
 npm-debug.log*
+# Supabase CLI scratch
+supabase/.temp/
