@@ -108,8 +108,8 @@ export const HOURS_RESULTS = [
 // ---- Expenses tab (IRS record-keeping) ------------------------------------
 // The standard mileage rate Russ deducts, in dollars per mile. The IRS resets
 // this every January — update it here and the mileage log recalculates.
-export const MILEAGE_RATE = 0.70;
-export const MILEAGE_RATE_YEAR = '2025';
+export const MILEAGE_RATE = 0.76;
+export const MILEAGE_RATE_YEAR = '2026';
 
 // Business expense buckets for the monthly expense report.
 export const EXPENSE_CATEGORIES = [
