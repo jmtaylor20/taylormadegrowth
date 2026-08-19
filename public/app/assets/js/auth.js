@@ -18,6 +18,18 @@
 import { sb } from './db.js';
 import { el, clear } from './ui.js';
 
+// Length of the emailed code. This is a per-project Supabase setting
+// (Authentication → Providers → Email → Email OTP Length), NOT a fixed 6 — this
+// project issues 8. Verified against a real sign-in email rather than assumed;
+// a field capped at the wrong length silently makes sign-in impossible.
+//
+// Only the autosubmit convenience depends on the exact value. Manual submit
+// accepts anything from MIN_CODE_LENGTH up, so if the project setting changes
+// the worst case is having to press the button, not being locked out.
+const CODE_LENGTH = 8;
+const MIN_CODE_LENGTH = 6;
+const MAX_CODE_LENGTH = 10;
+
 // ---- Session ---------------------------------------------------------------
 
 export async function getSession() {
@@ -149,7 +161,8 @@ export function renderSignIn(mount, onSuccess, onCancel) {
 
     const code = el('input.auth-input.auth-code', {
       type: 'text', inputmode: 'numeric', autocomplete: 'one-time-code',
-      placeholder: '000000', maxlength: '6', autocapitalize: 'off',
+      placeholder: '0'.repeat(CODE_LENGTH), maxlength: String(MAX_CODE_LENGTH),
+      autocapitalize: 'off',
     });
     const go = el('button.auth-btn', { type: 'button', text: 'Sign in' });
 
@@ -160,7 +173,7 @@ export function renderSignIn(mount, onSuccess, onCancel) {
     const submit = async (ev) => {
       ev?.preventDefault();
       const token = code.value.trim();
-      if (token.length < 6) return;
+      if (token.length < MIN_CODE_LENGTH) return;
       go.disabled = true; go.textContent = 'Checking…';
       try {
         await verifyCode(email, token);
@@ -176,8 +189,15 @@ export function renderSignIn(mount, onSuccess, onCancel) {
 
     go.onclick = submit;
     form.onsubmit = submit;
-    // Autosubmit once six digits are in — matches the PIN pad's feel.
-    code.oninput = () => { if (code.value.trim().length === 6) submit(); };
+    code.oninput = () => {
+      // Digits only: pasting from a mail client drags in stray whitespace, and
+      // on iOS the one-time-code autofill can bring a trailing space.
+      const digits = code.value.replace(/\D/g, '').slice(0, MAX_CODE_LENGTH);
+      if (digits !== code.value) code.value = digits;
+      // Autosubmit at the expected length — matches the PIN pad's feel, and
+      // fires on iOS autofill.
+      if (digits.length === CODE_LENGTH) submit();
+    };
   }
 
   action.onclick = requestCode;

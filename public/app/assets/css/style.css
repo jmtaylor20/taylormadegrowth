@@ -85,7 +85,7 @@ body.locked { background: radial-gradient(120% 120% at 50% 0%, #16305a 0%, var(-
 .auth-input::placeholder { color: #6f88ad; }
 .auth-input:focus { outline: none; border-color: var(--gold); background: rgba(255,255,255,.08); }
 /* A six-digit code is easier to check at a glance when the digits line up. */
-.auth-code { font-size: 1.6rem; letter-spacing: .38em; text-indent: .38em; font-variant-numeric: tabular-nums; }
+.auth-code { font-size: 1.3rem; letter-spacing: .26em; text-indent: .26em; font-variant-numeric: tabular-nums; }
 .auth-btn {
   width: 100%; padding: 14px 16px; border-radius: 14px; border: 0;
   background: var(--gold); color: var(--navy-dark); font-size: 1rem; font-weight: 600;
