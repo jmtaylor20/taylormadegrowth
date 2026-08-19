@@ -6,11 +6,20 @@ across every client.
 
 This is **schema and row-level security only**. No UI, no routes, no components.
 
-## Applying it
+## Applied 2026-08-19
 
-Nothing here has been applied to the live project. The migrations are in
-`supabase/migrations/`, named the same way the existing applied migrations are
-(`YYYYMMDDHHMMSS_snake_case`), and go on in filename order:
+Live on `buubrapkkqyalecwbhkh`: 12 tables, 3 views, 25 policies, the private
+`onboarding` bucket, and the seeded question library — 14 sections, 56 fields
+(4 repeating groups, 21 group children), 15 platforms, 3 templates.
+
+Verified from outside afterwards: `npm run db:test-anon` reports **46 locked, 0
+exposed**, with none of it reachable without a session.
+
+The test-client fixture (`db/seed_onboarding_test_clients.sql`) was **not**
+applied — it exists for the local suite, not production.
+
+The migrations are in `supabase/migrations/`, named the way the existing ones
+are (`YYYYMMDDHHMMSS_snake_case`), and go on in filename order:
 
 | Migration | What it does |
 | --- | --- |
@@ -21,9 +30,18 @@ Nothing here has been applied to the live project. The migrations are in
 | `…140400_onboarding_storage` | The `onboarding` bucket and its path-scoped policies |
 | `…140500_lock_down_legacy_authenticated_policies` | Narrows the existing tables' `authenticated` access to staff — **read the note below** |
 
-Then the seeds: `db/seed_onboarding_library.sql` (the questions — safe and
-intended for production), and `db/seed_onboarding_test_clients.sql` (two fixture
-clients, marked `[test]`, for the isolation test — not for production).
+Then the seed: `db/seed_onboarding_library.sql` (the questions — safe and
+intended for production, already applied). `db/seed_onboarding_test_clients.sql`
+is two fixture clients marked `[test]` for the isolation suite, and must not be
+applied to production.
+
+### What does not exist yet
+
+The schema holds this; nothing renders it. There is no client portal and no
+staff screen for creating an engagement or assigning sections, so onboarding is
+still run by PDF until that is built. Assignment lives in
+`onboarding_engagement_sections.assigned_contact_id` / `due_date` / `status`,
+and a trigger already refuses a contact who does not work at that client.
 
 ## Read this before applying the last migration
 

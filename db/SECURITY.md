@@ -210,10 +210,9 @@ gateway or PostgREST setting changing what is exposed, a bucket flipped public
 in the dashboard, or an RPC becoming callable. Those regress this posture
 without a single policy changing.
 
-Current result: **30 locked, 0 exposed.** Sixteen onboarding objects report
-"not present yet" — they cannot leak because they do not exist on production
-yet, and the probe starts covering them for real the moment those migrations
-are applied.
+Current result: **46 locked, 0 exposed, 0 not-present.** The sixteen onboarding
+objects that once reported "not present yet" went live on 2026-08-19 and are now
+covered for real.
 
 Table and view lists are discovered by parsing the SQL, not hardcoded, so a
 table added later is probed automatically. A list maintained by hand is a list
