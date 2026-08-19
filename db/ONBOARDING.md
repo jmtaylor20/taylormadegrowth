@@ -219,6 +219,30 @@ therefore optional on insert even when it is `NOT NULL` with no default — that
 is how `engagement_id` stays out of the way on the three tables that denormalize
 it.
 
+## The sandbox, applied to production 2026-08-19
+
+Two fake clients live in the production CRM so the portal can be clicked through
+from a phone: **Sandbox Millwork Co.** (Growth Partner, 14 sections) and
+**Ridgeline Sandbox Roofing** (Website Build, 5). Their contacts are plus-aliases
+of the owner's address, so both deliver to one inbox and neither is the staff
+address:
+
+| Sign in as | You are | Distinctive figure |
+| --- | --- | --- |
+| `josh+sandbox1@taylormadegrowth.com` | Sandbox Millwork, owner | revenue 1,840,000 |
+| `josh+sandbox1b@taylormadegrowth.com` | Sandbox Millwork, shop lead | — |
+| `josh+sandbox2@taylormadegrowth.com` | Ridgeline, owner | revenue 612,500 |
+
+Answer something as one, then sign in as the other and go looking for it. That is
+the isolation guarantee felt rather than read. Everything else is left blank on
+purpose — a sandbox you cannot fill in is not much of a sandbox.
+
+Both clients appear in the ops app's client list, marked `[sandbox]` in notes.
+**Run `db/teardown_portal_sandbox.sql` before onboarding a real client**, so
+nobody ever sees a fake company next to a real one. It clears the storage objects
+first (they live in another schema and do not cascade), then deletes the clients,
+and reports zero on every row.
+
 ## The portal
 
 `public/portal/` is the client-facing half of this: sign in by emailed code,
