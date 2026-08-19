@@ -30,25 +30,33 @@
 // ── Config ────────────────────────────────────────────────────────────────
 var SUPABASE_URL = 'https://buubrapkkqyalecwbhkh.supabase.co';
 
-// The Supabase SECRET key — "service_role" under its old name. It is read from
-// Script Properties, never written here: this file lives in a public repo, and
-// a secret key bypasses Row Level Security completely.
+// ── Supabase credential ───────────────────────────────────────────────────
+// This is a GOOGLE ADS SCRIPT, not an Apps Script project. The Ads Scripts
+// runtime has no PropertiesService, so there is nowhere outside the script body
+// to keep a credential — the key has to live in this constant.
 //
-// Apps Script runs on Google's servers, not in a browser, so a secret key is
-// the correct credential here rather than a workaround. The publishable key
-// this used to carry stops working once the anon policies are dropped.
+// Which means: fill it in inside the Google Ads UI, and NEVER commit the real
+// value to this file. The repo copy stays a placeholder forever.
 //
-// Set it once: Project Settings → Script properties → add
-//   SUPABASE_SECRET_KEY = <Supabase → Project Settings → API Keys → Secret key "default">
+// Use a SECOND secret key named "ads-sync", not the "default" one the document
+// pipeline uses. Both bypass row-level security completely, but a separate key
+// can be rotated on its own — and unlike Script Properties, anyone with access
+// to the Google Ads manager account can read this one.
+//
+//   Supabase → Project Settings → API Keys → Create new secret key → "ads-sync"
+//
+// The publishable key this used to carry stops working once the anon policies
+// are dropped, which is why it changed.
+var SUPABASE_SECRET_KEY = 'PASTE_ADS_SYNC_SECRET_KEY_HERE';
+
 function supabaseKey_() {
-  var k = PropertiesService.getScriptProperties().getProperty('SUPABASE_SECRET_KEY');
-  if (!k) {
+  if (!SUPABASE_SECRET_KEY || SUPABASE_SECRET_KEY.indexOf('PASTE_') === 0) {
     throw new Error(
-      'SUPABASE_SECRET_KEY is not set. Add it under Project Settings → Script properties. ' +
-      'Copy the value from Supabase → Project Settings → API Keys → Secret key (named "default").'
+      'SUPABASE_SECRET_KEY is still the placeholder. Edit this script in Google Ads and paste ' +
+      'the secret key named "ads-sync" from Supabase - Project Settings - API Keys.'
     );
   }
-  return k;
+  return SUPABASE_SECRET_KEY;
 }
 var MONTHS_BACK  = 3; // how many complete prior months to (re)sync each run
 

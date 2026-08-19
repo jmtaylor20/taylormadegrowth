@@ -47,12 +47,22 @@ manually anytime, or change `everyMinutes(10)` in `installTrigger`.
 - Emails send **from your Gmail** (the account that owns the script), with
   replies going to `REPLY_TO`. Gmail's daily send limit applies (plenty for
   this).
-- These scripts authenticate with the Supabase **secret key** (called
-  `service_role` under its old name), read from **Project Settings → Script
-  properties → `SUPABASE_SECRET_KEY`**. It is never written into the script
-  files — they live in a public repo, and a secret key bypasses Row Level
-  Security entirely. Apps Script runs on Google's servers rather than in a
-  browser, so a secret key is the correct credential here.
+- These two scripts run on **different platforms**, and that changes how each
+  holds its credential:
+  - **`tmg-doc-pipeline.gs`** is an Apps Script project. It reads the Supabase
+    **secret key** (called `service_role` under its old name) from
+    **Project Settings → Script properties → `SUPABASE_SECRET_KEY`**. Nothing
+    is written into the file.
+  - **`ads-metrics-sync.gs`** is a **Google Ads Script**, pasted into the Ads
+    manager account under Tools → Bulk actions → Scripts. That runtime has no
+    `PropertiesService`, so its key has to sit in a constant in the script body.
+    Paste it in the Google Ads UI and leave the repo copy as a placeholder.
+    Give it its own secret key named `ads-sync` rather than sharing `default`,
+    so it can be rotated alone — anyone with Ads manager access can read it.
+- Both run on Google's servers rather than in a browser, so a secret key is the
+  correct credential in each rather than a workaround. Never commit either
+  value: this repo is public and a secret key bypasses row-level security
+  entirely.
 - Send it on the `apikey` header only. Secret keys are not JWTs, so Supabase
   rejects them in an `Authorization: Bearer` header — the publishable key these
   scripts used to carry tolerated both.
