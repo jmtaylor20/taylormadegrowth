@@ -11,7 +11,7 @@ work before the old door closes.
 | --- | --- | --- |
 | 1 | Audit | Done — inventory below |
 | 2 | Staff auth alongside the PIN, additive | Code done; needs two dashboard settings + a deploy |
-| 3 | Drop anon, delete the PIN | Built and tested; **not yet applied** — see below |
+| 3 | Drop anon, delete the PIN | **Applied 2026-08-19** and verified against production |
 | 4 | Regression test proving anon is dead | Folded into the main suite; HTTP-level test still to come |
 
 Two items from Stage 3 were pulled forward because they carried no risk of
@@ -156,7 +156,40 @@ Neither can be set from a migration.
    to the redirect allowlist. Only needed for the link half; the code works
    without it.
 
-## Stage 3 — built, not yet applied
+## Stage 3 — applied 2026-08-19
+
+Verified from outside, with the publishable key and no session — the same probe
+that returned the whole business that morning:
+
+```
+clients              HTTP 401  permission denied for table clients
+invoices             HTTP 401  permission denied for table invoices
+payments             HTTP 401  permission denied for table payments
+expenses             HTTP 401  permission denied for table expenses
+time_entries         HTTP 401  permission denied for table time_entries
+… every table, plus client_contacts, staff_users, automation_accounts
+POST   clients       HTTP 401
+DELETE clients       HTTP 401
+```
+
+And the legitimate paths, each impersonated against production:
+
+| Identity | Reaches | Does not reach |
+| --- | --- | --- |
+| Staff (Josh) | clients 11, invoices 2, payments 9, time_entries 74, tasks 52 | — |
+| Automation `crm_documents` | clients 11, invoices 2, proposals, reports | payments 0, ad_metrics 0 |
+| Automation `ad_metrics` | ad_metrics 15 | clients 0, invoices 0 |
+
+### One residue worth knowing about
+
+Three `ALTER DEFAULT PRIVILEGES` entries granting anon survive, because they
+belong to `supabase_admin` and `postgres` is not a member — the migration warns
+rather than failing. Verified harmless with a canary table: a table created as
+`postgres`, which is how migrations and the dashboard create them, grants
+`authenticated, postgres, service_role` and gives anon nothing. The survivors
+only apply to tables created by Supabase's own internal machinery.
+
+## How it was built
 
 `20260819150000_stage3_close_anon` drops every `anon` policy across `public` and
 `storage`, revokes anon's table, sequence and function grants, and clears the

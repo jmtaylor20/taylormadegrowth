@@ -64,6 +64,15 @@ revoke all on all functions in schema public from anon;
 --
 -- A role we lack rights over is reported rather than raised: better a loud
 -- warning naming the gap than a migration that refuses to finish.
+--
+-- On Supabase this is not hypothetical. Three entries belong to
+-- `supabase_admin`, which `postgres` is not a member of, so they survive this
+-- migration. Verified harmless: a table created as `postgres` — which is how
+-- migrations and the dashboard create them — is granted to authenticated,
+-- postgres and service_role, and to anon not at all. The surviving defaults
+-- only apply to tables created BY supabase_admin, which is Supabase's own
+-- internal machinery, not ours. Confirmed with a canary table against
+-- production rather than assumed.
 do $$
 declare r record;
 begin
