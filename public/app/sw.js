@@ -2,7 +2,7 @@
 // Network-first for same-origin app files (so pushes go live on next launch),
 // with a cached shell as offline fallback. Supabase/CDN requests always hit
 // the network. Bump CACHE to force a refresh.
-const CACHE = 'tmg-ops-v37';
+const CACHE = 'tmg-ops-v38';
 const SHELL = [
   './',
   './index.html',
@@ -10,6 +10,7 @@ const SHELL = [
   './assets/css/style.css',
   './assets/vendor/supabase.js',
   './assets/js/app.js',
+  './assets/js/auth.js',
 ];
 
 self.addEventListener('install', (e) => {

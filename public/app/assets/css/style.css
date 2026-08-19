@@ -70,6 +70,34 @@ body.locked { background: radial-gradient(120% 120% at 50% 0%, #16305a 0%, var(-
 }
 .pin-key:active { background: var(--gold); color: var(--navy-dark); transform: scale(.96); }
 .shake { animation: shake .4s; }
+
+/* ---- Staff sign-in (email code) ------------------------------------------
+   Shares the lock screen's frame and palette so signing in reads as the same
+   door, not a bolted-on one. */
+.auth-note { color: #9fb2cc; font-size: .85rem; line-height: 1.45; margin: 0 0 18px; }
+.auth-note.is-error { color: #f0a9a9; }
+.auth-form { display: flex; flex-direction: column; gap: 12px; }
+.auth-input {
+  width: 100%; padding: 14px 16px; border-radius: 14px;
+  border: 1px solid #2c4d7d; background: rgba(255,255,255,.05);
+  color: #fff; font-size: 1rem; text-align: center;
+}
+.auth-input::placeholder { color: #6f88ad; }
+.auth-input:focus { outline: none; border-color: var(--gold); background: rgba(255,255,255,.08); }
+/* A six-digit code is easier to check at a glance when the digits line up. */
+.auth-code { font-size: 1.3rem; letter-spacing: .26em; text-indent: .26em; font-variant-numeric: tabular-nums; }
+.auth-btn {
+  width: 100%; padding: 14px 16px; border-radius: 14px; border: 0;
+  background: var(--gold); color: var(--navy-dark); font-size: 1rem; font-weight: 600;
+  transition: .12s;
+}
+.auth-btn:active { transform: scale(.98); }
+.auth-btn:disabled { opacity: .6; }
+.auth-link {
+  margin-top: 22px; background: none; border: 0; color: #8ea1bd;
+  font-size: .85rem; text-decoration: underline; text-underline-offset: 3px;
+}
+.auth-link:hover { color: #fff; }
 @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
 
 /* ---- App layout ---------------------------------------------------------- */
@@ -131,6 +159,7 @@ body.locked { background: radial-gradient(120% 120% at 50% 0%, #16305a 0%, var(-
   .side-link.on { background: rgba(212,175,55,.14); color: #fff; }
   .side-link.on .ic { color: var(--gold); }
   .side-foot { margin-top: auto; padding-top: 12px; }
+  .side-user { padding: 0 12px 8px; color: #6f88ad; font-size: .74rem; overflow: hidden; text-overflow: ellipsis; }
   .side-logout { display: flex; align-items: center; gap: 10px; padding: 10px 12px; color: #8ea1bd; font-size: .85rem; border-radius: 10px; width: 100%; background: none; border: 0; text-align: left; }
   .side-logout:hover { background: rgba(255,255,255,.06); color: #fff; }
   .tabbar { display: none; }

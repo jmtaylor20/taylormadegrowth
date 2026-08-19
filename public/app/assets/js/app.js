@@ -1,6 +1,12 @@
-// Entry point: PIN lock → responsive shell (sidebar / bottom tabs) → hash router.
+// Entry point: sign-in → responsive shell (sidebar / bottom tabs) → hash router.
+//
+// Two doors right now, on purpose. Staff sign-in (Supabase Auth, emailed code)
+// is the real one. The PIN is the old one, kept working only until sign-in has
+// been verified on a real device — it is client-side theatre and Stage 3
+// deletes it rather than keeping it as a second layer.
 import { APP_PIN, FEATURES } from './config.js';
 import { CONFIGURED } from './db.js';
+import { renderSignIn, resolveAccess, signOut, getSession } from './auth.js';
 import { el, clear, iconSvg, fmtElapsedMs } from './ui.js';
 import { renderClients } from './clients.js';
 import { renderLeads } from './leads.js';
@@ -88,9 +94,20 @@ function buildShell() {
     el('div.side-brand', {}, [el('img.side-logo', { src: './assets/img/logo-wordmark.png', alt: 'TaylorMade Brands' })]),
   ]);
   NAV.forEach((n) => sidebar.append(navLink(n, 'side-link')));
-  sidebar.append(el('div.side-foot', {}, [
-    el('button.side-logout', { onclick: lock, html: `<span class="ic">${iconSvg('logout', 18)}</span> Lock app` }),
-  ]));
+  const foot = el('div.side-foot');
+  if (signedInAs) {
+    foot.append(el('div.side-user', { text: signedInAs }));
+    foot.append(el('button.side-logout', {
+      onclick: endSession,
+      html: `<span class="ic">${iconSvg('logout', 18)}</span> Sign out`,
+    }));
+  } else {
+    foot.append(el('button.side-logout', {
+      onclick: lock,
+      html: `<span class="ic">${iconSvg('logout', 18)}</span> Lock app`,
+    }));
+  }
+  sidebar.append(foot);
 
   // Main
   mainEl = el('main.main');
@@ -116,7 +133,7 @@ function tabLink(n) {
     html: `<span class="tab-ic">${navGlyph(n, 24)}</span><span>${n.label}</span>`,
   });
 }
-const BUILD = 'v37';
+const BUILD = 'v38';
 function moreTab() {
   const overflow = NAV.filter((n) => !n.primary);
   const tab = el('a.tab.tab-more', {
@@ -201,11 +218,29 @@ function registerSW() {
     .catch(() => {});
 }
 
-// ---- PIN lock -------------------------------------------------------------
+// ---- Access ---------------------------------------------------------------
+// Set once a staff session is confirmed; drives the sidebar's sign-out control.
+let signedInAs = null;
+
 function lock() {
   try { localStorage.removeItem('tmg_unlocked'); } catch {}
   location.hash = '';
   showLock();
+}
+
+async function endSession() {
+  await signOut();
+  signedInAs = null;
+  lock();
+}
+
+// Swap the lock screen for the email sign-in panel and back.
+function showSignInScreen() {
+  document.body.classList.add('locked');
+  clear(root);
+  const shell = el('div.lock');
+  root.append(shell);
+  renderSignIn(shell, () => boot(), () => showLock());
 }
 
 function showLock() {
@@ -230,11 +265,43 @@ function showLock() {
     pad.append(el('button.pin-key', { type: 'button', text: k, onclick: () => (k === '⌫' ? (entry = entry.slice(0, -1), paint()) : press(k)) }));
   });
   paint();
-  wrap.append(brand, tag, title, dots, pad);
+  const signIn = el('button.auth-link', {
+    type: 'button', text: 'Sign in with email', onclick: showSignInScreen,
+  });
+  wrap.append(brand, tag, title, dots, pad, signIn);
   const shell = el('div.lock', {}, [wrap]);
   root.append(shell);
 }
 
-// Always start locked — the PIN is required on every launch.
+// Start by asking whether there is already a staff session. A signed-in staff
+// member goes straight in; anyone else — including a session that is not on
+// the staff list, which resolveAccess() signs out — gets the lock screen.
+//
+// The old `tmg_unlocked` flag is cleared unconditionally: it is a leftover from
+// a persisted-unlock experiment, and leaving it readable invites someone to
+// wire it back up.
 try { localStorage.removeItem('tmg_unlocked'); } catch {}
-showLock();
+
+(async function start() {
+  let access = { state: 'anonymous' };
+  try {
+    access = await resolveAccess();
+  } catch (err) {
+    // A failed access check must not strand the app on a blank screen: fall
+    // through to the lock, which still works.
+    console.warn('access check failed:', err);
+  }
+
+  if (access.state === 'staff') {
+    signedInAs = access.email;
+    boot();
+    return;
+  }
+
+  showLock();
+
+  if (access.state === 'unauthorized') {
+    const title = document.querySelector('.lock-title');
+    if (title) title.textContent = 'That account is not on the staff list';
+  }
+})();
