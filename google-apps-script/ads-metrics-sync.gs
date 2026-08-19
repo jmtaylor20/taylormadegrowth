@@ -9,9 +9,12 @@
  * matched by the Google Ads ID saved on each client.
  *
  * No developer token, no OAuth, no Google Cloud project. Ads Scripts run with
- * your account's own access. The only credential below is the Supabase
- * publishable (anon) key — the same one already shipped in the web app, and
- * safe to expose (the database is guarded by row-level security).
+ * your account's own access.
+ *
+ * For Supabase it signs in as its own user and uses the resulting JWT. It holds
+ * no key with authority: the publishable key below is only the project
+ * identifier and is meant to be public. See the credential note further down
+ * for why a secret key cannot be used here, and what bounds this identity.
  *
  * ── ONE-TIME SETUP ───────────────────────────────────────────────────────
  *  1. Sign in to your MANAGER account at ads.google.com (550-756-8191).
@@ -23,6 +26,8 @@
  *     the last 3 months.
  *  6. Click Schedule → set it to run MONTHLY, on the 1st, early morning
  *     (e.g. 3–4 AM). That's it — reports fill themselves from then on.
+ *  7. Fill in AUTOMATION_PASSWORD below, in the Google Ads UI. Never commit it:
+ *     the repo copy of this file stays a placeholder.
  *
  * To pull fresh numbers on demand, just open the script and hit Run.
  * ------------------------------------------------------------------------- */
@@ -32,6 +37,54 @@ var SUPABASE_URL = 'https://buubrapkkqyalecwbhkh.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_h-KXdNNW7Tc_BFut25s_sQ_ypIidBJB';
 var MONTHS_BACK  = 3; // how many complete prior months to (re)sync each run
 
+// ── Automation sign-in ────────────────────────────────────────────────────
+// This script has its own Supabase Auth user and exchanges a password for a
+// normal user JWT on each run. It does NOT carry a secret key, and cannot:
+// Supabase rejects those with 401 matched on the User-Agent header, and this
+// runtime sends a Mozilla/5.0 agent it will not let you override.
+//
+// The publishable key above still travels on `apikey` — that is the project
+// identifier and is meant to be public. Authority comes from the JWT.
+//
+// The password sits in this file because Google Ads Scripts have no
+// PropertiesService: there is nowhere else to put it, and anyone with access to
+// the Ads manager account can read it. That is precisely why this identity is
+// scoped in public.automation_accounts to `ad_metrics` and nothing else — the
+// worst a leak buys is the ability to write ad statistics. It cannot read a
+// client, an invoice, or a payment.
+//
+// Fill the password in inside the Google Ads UI. Leave the repo copy as the
+// placeholder — this file is in a public repository.
+var AUTOMATION_EMAIL = 'josh+ads-automation@taylormadegrowth.com';
+var AUTOMATION_PASSWORD = 'PASTE_ADS_AUTOMATION_PASSWORD_HERE';
+
+var TOKEN_CACHE_ = null;   // one sign-in per execution
+
+function accessToken_() {
+  if (TOKEN_CACHE_) return TOKEN_CACHE_;
+  if (!AUTOMATION_PASSWORD || AUTOMATION_PASSWORD.indexOf('PASTE_') === 0) {
+    throw new Error(
+      'AUTOMATION_PASSWORD is still the placeholder. Edit this script in Google Ads and paste the ' +
+      'password set on the ' + AUTOMATION_EMAIL + ' user in Supabase - Authentication - Users.'
+    );
+  }
+  var res = UrlFetchApp.fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { 'apikey': SUPABASE_KEY },
+    payload: JSON.stringify({ email: AUTOMATION_EMAIL, password: AUTOMATION_PASSWORD }),
+    muteHttpExceptions: true
+  });
+  if (res.getResponseCode() >= 300) {
+    throw new Error('Automation sign-in failed: ' + res.getResponseCode() + ' ' + res.getContentText());
+  }
+  var tok = JSON.parse(res.getContentText()).access_token;
+  if (!tok) throw new Error('Automation sign-in returned no access token.');
+  TOKEN_CACHE_ = tok;
+  return tok;
+}
+
+// ── Reporting window ──────────────────────────────────────────────────────
 var MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -98,8 +151,10 @@ function upsert_(rows) {
     method: 'post',
     contentType: 'application/json',
     headers: {
+      // Publishable key identifies the project; the bearer token carries the
+      // authority — here, the ad_metrics-scoped automation user's JWT.
       'apikey': SUPABASE_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Authorization': 'Bearer ' + accessToken_(),
       'Prefer': 'resolution=merge-duplicates,return=minimal'
     },
     payload: JSON.stringify(rows),

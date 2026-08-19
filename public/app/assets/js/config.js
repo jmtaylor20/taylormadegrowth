@@ -12,16 +12,23 @@
 //
 //   mode      'owner'      = the full app (everything on)
 //             'contractor' = a contractor's private copy (admin bits stripped)
+//   auth      'supabase'   = real sign-in required; every request carries a
+//                            staff JWT and the database enforces the rest
+//             'pin'        = the old client-side PIN. Deters nothing; it is
+//                            kept ONLY for contractor copies whose Supabase
+//                            projects have not been migrated to real auth yet.
+//                            Remove it from a profile the moment its project
+//                            has staff_users and is_staff().
 //   features  per-surface switches read across the app (see FEATURES below)
 //   keepPct / agencyPct   contractor's take vs. TaylorMade's cut (contractor mode)
 const PROFILES = {
   // Josh — the full TaylorMade Brands operating system.
   owner: {
     mode: 'owner',
+    auth: 'supabase',
     brand: 'TaylorMade Brands',
     supabaseUrl: 'https://buubrapkkqyalecwbhkh.supabase.co',
     supabaseKey: 'sb_publishable_h-KXdNNW7Tc_BFut25s_sQ_ypIidBJB',
-    pin: '4280',
     owner: 'Josh',
     team: ['Josh', 'Wyatt', 'Tony', 'Cole'],
     features: {
@@ -42,6 +49,13 @@ const PROFILES = {
   // everything he collects goes to TaylorMade (he keeps 75%).
   tony: {
     mode: 'contractor',
+    // PENDING: Tony's Supabase project still runs the old permissive posture —
+    // anon has full read/write and his publishable key is in this public repo,
+    // exactly the exposure the owner project carried before 2026-08-19. Until
+    // that project gets client_contacts / staff_users / is_staff() and he can
+    // sign in, this copy has nothing to sign in WITH, so the PIN stays. It is
+    // not security; it is a placeholder for security. See db/SECURITY.md.
+    auth: 'pin',
     brand: 'TaylorMade Brands',
     contractor: 'Tony',
     host: 'tony',
@@ -96,10 +110,15 @@ export const CONTRACTOR_DBS = Object.values(PROFILES)
 export const SUPABASE_URL = PROFILE.supabaseUrl;
 export const SUPABASE_KEY = PROFILE.supabaseKey;
 
-// Light access gate. NOTE: the PIN lives in the client, so it deters casual
-// access rather than being real security. Swap for Supabase logins when you
-// want a true lock-down (the database is already RLS-ready).
-export const APP_PIN = PROFILE.pin;
+// How this profile gets in. 'supabase' means a real session is required and
+// there is no other door; 'pin' is the legacy client-side gate, still present
+// only for contractor copies whose projects have not been migrated.
+export const AUTH_MODE = PROFILE.auth || 'pin';
+
+// Only ever set on a profile still using AUTH_MODE 'pin'. The PIN lives in the
+// browser next to the key it supposedly protects, so it deters a curious
+// passer-by and nothing else.
+export const APP_PIN = PROFILE.pin || null;
 
 // ---- Team (task assignment) ----------------------------------------------
 export const OWNER = PROFILE.owner;

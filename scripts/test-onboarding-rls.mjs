@@ -85,6 +85,9 @@ const MIGRATIONS = [
   '20260818140300_onboarding_rls.sql',
   '20260818140400_onboarding_storage.sql',
   '20260818140500_lock_down_legacy_authenticated_policies.sql',
+  '20260819130000_automation_accounts.sql',
+  '20260819140000_automation_scope_policies.sql',
+  '20260819150000_stage3_close_anon.sql',
 ];
 
 let dbSeq = 0;
@@ -165,6 +168,36 @@ const NEGATIVE_CONTROLS = [
     name: 'contact-scoped section read widened to using (true)',
     sql: `alter policy onboarding_engagement_sections_contact_read
             on public.onboarding_engagement_sections using (true);`,
+  },
+  {
+    // The scope boundary between the two script identities. Widening either
+    // side hands one automation account the other's reach.
+    name: 'ad_metrics automation read widened to using (true)',
+    sql: `alter policy ad_metrics_automation_select on public.ad_metrics using (true);`,
+  },
+  {
+    name: 'clients automation read widened to using (true)',
+    sql: `alter policy clients_automation_select on public.clients using (true);`,
+  },
+  {
+    // The whole point of stage 3. If someone re-adds a permissive anon policy
+    // months from now, this is what has to notice.
+    name: 'a permissive anon policy is restored on clients',
+    sql: `grant select on public.clients to anon;
+          create policy clients_anon_all on public.clients
+            for all to anon using (true) with check (true);`,
+  },
+  {
+    // Policies are not the only surface: the grant alone is enough to matter,
+    // because the next permissive policy added would then take effect.
+    name: 'anon table grants are restored without any policy',
+    sql: `grant select, insert, update, delete on all tables in schema public to anon;`,
+  },
+  {
+    name: 'automation_has_scope() returns true for everything',
+    sql: `create or replace function public.automation_has_scope(want text) returns boolean
+            language sql stable security definer set search_path = public, auth, pg_temp
+            as $fn$ select auth.uid() is not null $fn$;`,
   },
 ];
 

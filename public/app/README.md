@@ -8,23 +8,32 @@ by the main site at **taylormadegrowth.com/app**.
 ## Open it
 
 - URL: `https://taylormadegrowth.com/app`
-- PIN: **1225** (change in `assets/js/config.js` → `APP_PIN`)
+- Sign in with your email. Supabase sends an 8-digit code; there is no password
+  and no PIN. Your address has to be in `public.staff_users` — a valid session
+  that is not on that list reads nothing.
 - On your phone: open the URL in Safari/Chrome → Share → **Add to Home Screen**.
   It installs like a native app (icon, full screen, offline shell).
 
-> The PIN is a light gate that lives in the browser — it deters casual access,
-> it is not hard security. When you want real per-user logins (needed before a
-> client-facing dashboard), we swap it for Supabase Auth; the database is
-> already RLS-ready.
+> The gate is the database, not this app. `anon` holds no policy and no grant on
+> any table, so the publishable key in this page's source is worth nothing on
+> its own — that is the point of it being safe to publish. Signing out, or a
+> session that stops refreshing, drops you straight back to the sign-in screen
+> rather than leaving the app rendering over queries that return nothing.
+>
+> **Contractor copies are the exception.** They still use the old client-side
+> PIN, because their Supabase projects have not been migrated to real auth and
+> so have nothing to sign in with. That PIN protects nothing. See
+> `../../db/SECURITY.md`.
 
 ## What's where
 
 | Area | File |
 | --- | --- |
-| Config: keys, PIN, team, dropdown option lists | `assets/js/config.js` |
+| Config: keys, auth mode, team, dropdown option lists | `assets/js/config.js` |
 | Supabase data layer (CRUD) | `assets/js/db.js` |
 | Shared UI toolkit (buttons, forms, sheet, icons) | `assets/js/ui.js` |
-| Shell: PIN, nav, router | `assets/js/app.js` |
+| Shell: sign-in gate, nav, router | `assets/js/app.js` |
+| Staff auth (email code, session, staff check) | `assets/js/auth.js` |
 | Screens | `assets/js/{dashboard,pipeline,clients,projects,tasks,invoices,content,proposals,renewals}.js` |
 | Client detail hub | `assets/js/client-detail.js` |
 | Monthly report generator | `assets/js/report.js` |

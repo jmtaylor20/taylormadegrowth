@@ -13,13 +13,8 @@ insert into storage.buckets (id, name, public)
 values ('onboarding', 'onboarding', false)
 on conflict (id) do nothing;
 
--- The PIN-gated ops app reads and writes as anon, same as everywhere else.
-drop policy if exists onboarding_objects_anon_all on storage.objects;
-create policy onboarding_objects_anon_all on storage.objects
-  for all to anon
-  using (bucket_id = 'onboarding')
-  with check (bucket_id = 'onboarding');
-
+-- No anon policy: an unauthenticated caller cannot read, list, or write an
+-- object in this bucket.
 drop policy if exists onboarding_objects_staff_all on storage.objects;
 create policy onboarding_objects_staff_all on storage.objects
   for all to authenticated

@@ -4,7 +4,7 @@
 // there is a way in while this is being verified. Stage 3 deletes the PIN and
 // makes `requireSession()` the only door.
 //
-// Why a 6-digit code rather than a magic link, given both are signInWithOtp:
+// Why an emailed code rather than a magic link, given both are signInWithOtp:
 // this app is installed to the home screen as a PWA. A link tapped in Mail
 // opens in Safari, so the session Supabase creates lands in Safari's storage —
 // not the PWA's. The user would sign in successfully and still be locked out
@@ -26,6 +26,10 @@ import { el, clear } from './ui.js';
 // Only the autosubmit convenience depends on the exact value. Manual submit
 // accepts anything from MIN_CODE_LENGTH up, so if the project setting changes
 // the worst case is having to press the button, not being locked out.
+// Everything the user sees about length — the prompt copy, the placeholder,
+// the field cap, the autosubmit — derives from CODE_LENGTH. Change it in one
+// place. The first cut hardcoded 6 in the copy and the field while the project
+// issued 8, which is exactly the drift this prevents.
 const CODE_LENGTH = 8;
 const MIN_CODE_LENGTH = 6;
 const MAX_CODE_LENGTH = 10;
@@ -61,6 +65,20 @@ async function bindIdentity() {
 
 export async function signOut() {
   await sb.auth.signOut();
+}
+
+/**
+ * Call `onLost` the moment the session goes away — signed out in another tab,
+ * or a refresh token that no longer refreshes.
+ *
+ * Without this the app keeps rendering while every query quietly returns
+ * nothing, which looks exactly like a client having no data. An app that lies
+ * about being signed in is worse than one that asks you to sign in again.
+ */
+export function onSessionLost(onLost) {
+  sb.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) onLost(event);
+  });
 }
 
 // ---- Sign-in ---------------------------------------------------------------
@@ -127,13 +145,18 @@ export function renderSignIn(mount, onSuccess, onCancel) {
   let email = '';
 
   const title = el('h1.lock-title', { text: 'Sign in' });
-  const note = el('p.auth-note', { text: 'We’ll email you a 6-digit code.' });
+  const note = el('p.auth-note', { text: `We’ll email you a sign-in code — ${CODE_LENGTH} digits.` });
   const field = el('input.auth-input', {
     type: 'email', inputmode: 'email', autocomplete: 'email',
     placeholder: 'you@taylormadegrowth.com', autocapitalize: 'off',
   });
   const action = el('button.auth-btn', { type: 'button', text: 'Email me a code' });
-  const back = el('button.auth-link', { type: 'button', text: 'Use PIN instead', onclick: onCancel });
+  // Only offered where a PIN still exists to fall back to — contractor copies
+  // whose projects have not been migrated. On the owner app this is the only
+  // door, and offering a way out of it would be offering a dead end.
+  const back = onCancel
+    ? el('button.auth-link', { type: 'button', text: 'Use PIN instead', onclick: onCancel })
+    : null;
   const form = el('form.auth-form', {}, [field, action]);
 
   const fail = (msg) => { note.textContent = msg; note.classList.add('is-error'); };
@@ -178,7 +201,9 @@ export function renderSignIn(mount, onSuccess, onCancel) {
       try {
         await verifyCode(email, token);
         const access = await resolveAccess();
-        if (access.state === 'staff') return onSuccess();
+        // Hand the email back so the caller can label the session without
+        // re-querying: the shell is built immediately after this returns.
+        if (access.state === 'staff') return onSuccess(access.email);
         fail('That account is not on the staff list.');
         go.disabled = false; go.textContent = 'Sign in';
       } catch (err) {
@@ -207,7 +232,7 @@ export function renderSignIn(mount, onSuccess, onCancel) {
     el('img.lock-logo', { src: './assets/img/logo-mark.png', alt: 'TaylorMade Brands' }),
     el('div.lock-tag', { text: 'TaylorMade Brands — Operating System' }),
     title, note, form, back,
-  ]);
+  ].filter(Boolean));
   mount.append(wrap);
   field.focus();
 }

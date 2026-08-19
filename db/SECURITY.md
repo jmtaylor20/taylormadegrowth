@@ -11,8 +11,8 @@ work before the old door closes.
 | --- | --- | --- |
 | 1 | Audit | Done — inventory below |
 | 2 | Staff auth alongside the PIN, additive | Code done; needs two dashboard settings + a deploy |
-| 3 | Drop anon, delete the PIN | Not started — gated on Stage 2 being verified |
-| 4 | Regression test proving anon is dead | Not started |
+| 3 | Drop anon, delete the PIN | Built and tested; **not yet applied** — see below |
+| 4 | Regression test proving anon is dead | Folded into the main suite; HTTP-level test still to come |
 
 Two items from Stage 3 were pulled forward because they carried no risk of
 lockout. See "Already applied".
@@ -156,9 +156,44 @@ Neither can be set from a migration.
    to the redirect allowlist. Only needed for the link half; the code works
    without it.
 
-## Stage 3 — not started
+## Stage 3 — built, not yet applied
 
-Gated on Stage 2 being verified on a real device.
+`20260819150000_stage3_close_anon` drops every `anon` policy across `public` and
+`storage`, revokes anon's table, sequence and function grants, and clears the
+`ALTER DEFAULT PRIVILEGES` entries that were handing anon full DML on every
+*future* table. Grantor roles are read out of `pg_default_acl` rather than
+guessed — a hardcoded list missed the role that actually held the grant and
+reported success while a table created afterwards was still born open.
+
+The result is stronger than "returns zero rows": with the grant gone as well as
+the policy, anon is refused at the privilege layer and never reaches RLS.
+
+**Apply order matters.** The app must be signing in as staff *before* this
+lands, or the CRM goes dark. Deploy first, confirm sign-in, then apply.
+
+```sh
+node scripts/test-stage3-anon-rollback.mjs   # forward, back, forward again
+npm run db:test-rls                          # the full suite under stage 3
+```
+
+Rollback: `supabase/rollback/20260819150000_stage3_close_anon.rollback.sql`.
+It re-opens the entire database to anyone holding the publishable key. It exists
+so this is not a one-way door on a live system, not as a resting state.
+
+### The PIN
+
+Removed from the owner profile. Auth is now a per-profile property in
+`config.js`: `auth: 'supabase'` requires a real session and offers no other
+door, `auth: 'pin'` is the legacy gate.
+
+Contractor copies keep `auth: 'pin'`, because their Supabase projects have not
+been migrated and have nothing to sign in with. That is a placeholder for
+security, not security — and their exposure is real: Tony's publishable key is
+in this public repo and his project still grants `anon` full read/write, exactly
+what the owner project carried before 2026-08-19. Migrating his project is the
+only thing that removes the PIN from this codebase entirely.
+
+### Still open
 
 - Drop every `anon` policy on every application table.
 - Revoke table grants from `anon`, and fix `ALTER DEFAULT PRIVILEGES` so new
@@ -181,9 +216,48 @@ are dropped:
   `invoices`, `reports`, `clients`. This is invoice and proposal emailing and
   the Drive archive. It also reaches Tony's project with his anon key.
 
-Apps Script is server-side, so the service-role key in Script Properties is the
-correct credential there, not a workaround. That move has to land before Stage 3,
-not after.
+Apps Script looks like the obvious place for a server-side key. It is not, and
+this was tried and reverted:
+
+- Supabase rejects secret keys with 401 "Forbidden use of secret API key in
+  browser", matched on the **User-Agent header**.
+- Apps Script and Google Ads Scripts send
+  `Mozilla/5.0 (compatible; Google-Apps-Script; ...)` and **strip any attempt to
+  override User-Agent**. Google has had that feature request open for years.
+
+So a secret key can never work from either script. **Resolved by giving each
+script its own identity** (`20260819130000_automation_accounts`): it signs in as
+a dedicated Supabase Auth user and uses the resulting JWT, the same
+`authenticated` role a person gets, with the publishable key alongside it as the
+project identifier.
+
+Authority moved from the credential to the identity.
+`public.automation_accounts.scopes` decides what each may reach, so a leaked
+script password buys exactly its scopes:
+
+| Script | Identity | Scope |
+| --- | --- | --- |
+| `tmg-doc-pipeline.gs` | `josh+docs-automation@` | `crm_documents` — proposals, invoices, reports, clients |
+| `ads-metrics-sync.gs` | `josh+ads-automation@` | `ad_metrics` alone |
+
+That split matters because the Google Ads Script cannot hide its password — that
+runtime has no `PropertiesService`, so it lives in the script body where anyone
+with Ads manager access can read it. Scoping it to `ad_metrics` is what makes
+that acceptable rather than alarming.
+
+The isolation suite carries an automation persona: eighteen assertions that a
+script identity reads no client, invoice, payment, engagement, or storage
+object, and cannot widen its own scopes or make itself staff.
+
+**Stage 3 must add the scope checks** to the policies it writes — otherwise the
+scripts lose access along with `anon`:
+
+```sql
+-- proposals, invoices, reports, clients
+using (public.is_staff() or public.automation_has_scope('crm_documents'))
+-- ad_metrics
+using (public.is_staff() or public.automation_has_scope('ad_metrics'))
+```
 
 ## MFA
 
