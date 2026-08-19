@@ -1,12 +1,17 @@
 // Entry point: sign-in → responsive shell (sidebar / bottom tabs) → hash router.
 //
-// Two doors right now, on purpose. Staff sign-in (Supabase Auth, emailed code)
-// is the real one. The PIN is the old one, kept working only until sign-in has
-// been verified on a real device — it is client-side theatre and Stage 3
-// deletes it rather than keeping it as a second layer.
-import { APP_PIN, FEATURES } from './config.js';
+// How you get in depends on the profile's AUTH_MODE:
+//
+//   'supabase'  a real staff session, and nothing else. The database grants
+//               `anon` no policy and no grant, so an unsigned-in app cannot
+//               read a single row — the gate is the database, not this file.
+//   'pin'       the legacy client-side PIN, still present only for contractor
+//               copies whose Supabase projects have not been migrated. It
+//               protects nothing; it stands in for protection until they have
+//               real auth. See config.js.
+import { APP_PIN, AUTH_MODE, FEATURES } from './config.js';
 import { CONFIGURED } from './db.js';
-import { renderSignIn, resolveAccess, signOut, getSession } from './auth.js';
+import { renderSignIn, resolveAccess, signOut, onSessionLost } from './auth.js';
 import { el, clear, iconSvg, fmtElapsedMs } from './ui.js';
 import { renderClients } from './clients.js';
 import { renderLeads } from './leads.js';
@@ -133,7 +138,7 @@ function tabLink(n) {
     html: `<span class="tab-ic">${navGlyph(n, 24)}</span><span>${n.label}</span>`,
   });
 }
-const BUILD = 'v38';
+const BUILD = 'v39';
 function moreTab() {
   const overflow = NAV.filter((n) => !n.primary);
   const tab = el('a.tab.tab-more', {
@@ -152,6 +157,19 @@ function toggleMore(items) {
     html: `<span class="ic">${iconSvg(n.icon, 18)}</span> ${n.label}`,
     onclick: () => setTimeout(() => pop.remove(), 0),
   })));
+
+  // Sign out lives here as well as in the sidebar, because the sidebar is
+  // desktop-only. With the PIN gone this is the only way to end a session on a
+  // phone, and a session you cannot end is a session you cannot hand back.
+  pop.append(el('a.more-signout', {
+    href: 'javascript:void 0',
+    html: `<span class="ic">${iconSvg('logout', 18)}</span> ${signedInAs ? 'Sign out' : 'Lock app'}`,
+    onclick: (e) => {
+      e.preventDefault();
+      pop.remove();
+      if (signedInAs) endSession(); else lock();
+    },
+  }));
   const probe = document.createElement('div');
   probe.style.cssText = 'position:fixed;visibility:hidden;height:env(safe-area-inset-top);width:env(safe-area-inset-bottom)';
   document.body.appendChild(probe);
@@ -240,7 +258,11 @@ function showSignInScreen() {
   clear(root);
   const shell = el('div.lock');
   root.append(shell);
-  renderSignIn(shell, (email) => { signedInAs = email; boot(); }, () => showLock());
+  renderSignIn(
+    shell,
+    (email) => { signedInAs = email; boot(); },
+    AUTH_MODE === 'pin' ? () => showLock() : null,
+  );
 }
 
 function showLock() {
@@ -265,10 +287,7 @@ function showLock() {
     pad.append(el('button.pin-key', { type: 'button', text: k, onclick: () => (k === '⌫' ? (entry = entry.slice(0, -1), paint()) : press(k)) }));
   });
   paint();
-  const signIn = el('button.auth-link', {
-    type: 'button', text: 'Sign in with email', onclick: showSignInScreen,
-  });
-  wrap.append(brand, tag, title, dots, pad, signIn);
+  wrap.append(brand, tag, title, dots, pad);
   const shell = el('div.lock', {}, [wrap]);
   root.append(shell);
 }
@@ -283,12 +302,21 @@ function showLock() {
 try { localStorage.removeItem('tmg_unlocked'); } catch {}
 
 (async function start() {
+  if (AUTH_MODE === 'pin') {
+    // Contractor copy against an unmigrated project: nothing to sign in with.
+    showLock();
+    return;
+  }
+
+  // Losing the session must take the app back to the door rather than leaving
+  // it rendering over queries that now return nothing.
+  onSessionLost(() => { signedInAs = null; showSignInScreen(); });
+
   let access = { state: 'anonymous' };
   try {
     access = await resolveAccess();
   } catch (err) {
-    // A failed access check must not strand the app on a blank screen: fall
-    // through to the lock, which still works.
+    // A failed check must not strand the app on a blank screen — show the door.
     console.warn('access check failed:', err);
   }
 
@@ -298,7 +326,7 @@ try { localStorage.removeItem('tmg_unlocked'); } catch {}
     return;
   }
 
-  showLock();
+  showSignInScreen();
 
   if (access.state === 'unauthorized') {
     const title = document.querySelector('.lock-title');

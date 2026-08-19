@@ -98,6 +98,10 @@ body.locked { background: radial-gradient(120% 120% at 50% 0%, #16305a 0%, var(-
   font-size: .85rem; text-decoration: underline; text-underline-offset: 3px;
 }
 .auth-link:hover { color: #fff; }
+
+/* Sign out sits at the foot of the mobile "More" sheet, separated so it is not
+   mistaken for another destination. */
+.more-signout { border-top: 1px solid rgba(255,255,255,.08); margin-top: 4px; padding-top: 10px; color: #8ea1bd; }
 @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
 
 /* ---- App layout ---------------------------------------------------------- */

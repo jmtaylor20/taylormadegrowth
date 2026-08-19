@@ -67,6 +67,20 @@ export async function signOut() {
   await sb.auth.signOut();
 }
 
+/**
+ * Call `onLost` the moment the session goes away — signed out in another tab,
+ * or a refresh token that no longer refreshes.
+ *
+ * Without this the app keeps rendering while every query quietly returns
+ * nothing, which looks exactly like a client having no data. An app that lies
+ * about being signed in is worse than one that asks you to sign in again.
+ */
+export function onSessionLost(onLost) {
+  sb.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) onLost(event);
+  });
+}
+
 // ---- Sign-in ---------------------------------------------------------------
 
 export async function sendCode(email) {
@@ -137,7 +151,12 @@ export function renderSignIn(mount, onSuccess, onCancel) {
     placeholder: 'you@taylormadegrowth.com', autocapitalize: 'off',
   });
   const action = el('button.auth-btn', { type: 'button', text: 'Email me a code' });
-  const back = el('button.auth-link', { type: 'button', text: 'Use PIN instead', onclick: onCancel });
+  // Only offered where a PIN still exists to fall back to — contractor copies
+  // whose projects have not been migrated. On the owner app this is the only
+  // door, and offering a way out of it would be offering a dead end.
+  const back = onCancel
+    ? el('button.auth-link', { type: 'button', text: 'Use PIN instead', onclick: onCancel })
+    : null;
   const form = el('form.auth-form', {}, [field, action]);
 
   const fail = (msg) => { note.textContent = msg; note.classList.add('is-error'); };
@@ -213,7 +232,7 @@ export function renderSignIn(mount, onSuccess, onCancel) {
     el('img.lock-logo', { src: './assets/img/logo-mark.png', alt: 'TaylorMade Brands' }),
     el('div.lock-tag', { text: 'TaylorMade Brands — Operating System' }),
     title, note, form, back,
-  ]);
+  ].filter(Boolean));
   mount.append(wrap);
   field.focus();
 }

@@ -11,8 +11,8 @@ work before the old door closes.
 | --- | --- | --- |
 | 1 | Audit | Done — inventory below |
 | 2 | Staff auth alongside the PIN, additive | Code done; needs two dashboard settings + a deploy |
-| 3 | Drop anon, delete the PIN | Not started — gated on Stage 2 being verified |
-| 4 | Regression test proving anon is dead | Not started |
+| 3 | Drop anon, delete the PIN | Built and tested; **not yet applied** — see below |
+| 4 | Regression test proving anon is dead | Folded into the main suite; HTTP-level test still to come |
 
 Two items from Stage 3 were pulled forward because they carried no risk of
 lockout. See "Already applied".
@@ -156,9 +156,44 @@ Neither can be set from a migration.
    to the redirect allowlist. Only needed for the link half; the code works
    without it.
 
-## Stage 3 — not started
+## Stage 3 — built, not yet applied
 
-Gated on Stage 2 being verified on a real device.
+`20260819150000_stage3_close_anon` drops every `anon` policy across `public` and
+`storage`, revokes anon's table, sequence and function grants, and clears the
+`ALTER DEFAULT PRIVILEGES` entries that were handing anon full DML on every
+*future* table. Grantor roles are read out of `pg_default_acl` rather than
+guessed — a hardcoded list missed the role that actually held the grant and
+reported success while a table created afterwards was still born open.
+
+The result is stronger than "returns zero rows": with the grant gone as well as
+the policy, anon is refused at the privilege layer and never reaches RLS.
+
+**Apply order matters.** The app must be signing in as staff *before* this
+lands, or the CRM goes dark. Deploy first, confirm sign-in, then apply.
+
+```sh
+node scripts/test-stage3-anon-rollback.mjs   # forward, back, forward again
+npm run db:test-rls                          # the full suite under stage 3
+```
+
+Rollback: `supabase/rollback/20260819150000_stage3_close_anon.rollback.sql`.
+It re-opens the entire database to anyone holding the publishable key. It exists
+so this is not a one-way door on a live system, not as a resting state.
+
+### The PIN
+
+Removed from the owner profile. Auth is now a per-profile property in
+`config.js`: `auth: 'supabase'` requires a real session and offers no other
+door, `auth: 'pin'` is the legacy gate.
+
+Contractor copies keep `auth: 'pin'`, because their Supabase projects have not
+been migrated and have nothing to sign in with. That is a placeholder for
+security, not security — and their exposure is real: Tony's publishable key is
+in this public repo and his project still grants `anon` full read/write, exactly
+what the owner project carried before 2026-08-19. Migrating his project is the
+only thing that removes the PIN from this codebase entirely.
+
+### Still open
 
 - Drop every `anon` policy on every application table.
 - Revoke table grants from `anon`, and fix `ALTER DEFAULT PRIVILEGES` so new
