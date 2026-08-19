@@ -6,9 +6,9 @@
 -- client-side. Every guarantee below is enforced by Postgres.
 --
 -- Three callers exist:
---   anon           the PIN-gated ops app (publishable key, no auth session).
---                  Full access, matching the existing posture of every other
---                  table in this database. See the lockdown migration.
+--   anon           nothing. It holds no policy and no grant on any table here.
+--                  An unauthenticated caller with the publishable key reads
+--                  nothing and writes nothing.
 --   authenticated  either TaylorMade staff (is_staff()) or a client contact
 --                  who came through a magic link. A contact sees exactly their
 --                  own client's rows and nothing else.
@@ -44,7 +44,7 @@ grant execute on function public.onboarding_engagement_ids() to authenticated, s
 -- ---------------------------------------------------------------------------
 -- Supabase grants these by default; spelled out here so the schema is
 -- self-contained and so a local rebuild behaves identically to production.
-grant usage on schema public to anon, authenticated, service_role;
+grant usage on schema public to authenticated, service_role;
 
 do $$
 declare t text;
@@ -58,7 +58,7 @@ begin
     'onboarding_response_rows','onboarding_responses',
     'onboarding_access_grants','onboarding_assets'
   ] loop
-    execute format('grant select, insert, update, delete on public.%I to anon, authenticated, service_role;', t);
+    execute format('grant select, insert, update, delete on public.%I to authenticated, service_role;', t);
   end loop;
 end $$;
 
@@ -67,8 +67,8 @@ end $$;
 -- ---------------------------------------------------------------------------
 -- Readable by any authenticated user — a client needs the questions in order
 -- to answer them, and there is nothing tenant-specific in a question. Writable
--- only by staff (and by the PIN app as anon), because the library is shared:
--- one client editing a field definition would change it for everyone.
+-- only by staff, because the library is shared: one client editing a field
+-- definition would change it for everyone.
 do $$
 declare t text;
 begin
@@ -78,9 +78,6 @@ begin
     'onboarding_templates','onboarding_template_sections'
   ] loop
     execute format('alter table public.%I enable row level security;', t);
-
-    execute format('drop policy if exists %I on public.%I;', t || '_anon_all', t);
-    execute format('create policy %I on public.%I for all to anon using (true) with check (true);', t || '_anon_all', t);
 
     execute format('drop policy if exists %I on public.%I;', t || '_auth_read', t);
     execute format('create policy %I on public.%I for select to authenticated using (true);', t || '_auth_read', t);
@@ -102,7 +99,7 @@ alter table public.onboarding_responses           enable row level security;
 alter table public.onboarding_access_grants       enable row level security;
 alter table public.onboarding_assets              enable row level security;
 
--- anon (the PIN-gated ops app) and staff: unrestricted, as everywhere else.
+-- Staff reach everything here; nobody else does without an explicit policy.
 do $$
 declare t text;
 begin
@@ -111,9 +108,6 @@ begin
     'onboarding_response_rows','onboarding_responses',
     'onboarding_access_grants','onboarding_assets'
   ] loop
-    execute format('drop policy if exists %I on public.%I;', t || '_anon_all', t);
-    execute format('create policy %I on public.%I for all to anon using (true) with check (true);', t || '_anon_all', t);
-
     execute format('drop policy if exists %I on public.%I;', t || '_staff_all', t);
     execute format($f$create policy %I on public.%I for all to authenticated
                      using ((select public.is_staff())) with check ((select public.is_staff()));$f$,
@@ -211,12 +205,6 @@ with (security_barrier = true) as
     and (
       (select public.is_staff())
       or e.id in (select public.onboarding_engagement_ids())
-      -- The PIN-gated ops app reads as anon, which has full access to the
-      -- underlying tables anyway. Keyed on the request role rather than on a
-      -- null auth.uid(): a session that somehow reached the authenticated role
-      -- without a sub claim should fall through to the checks above, not land
-      -- in the anon branch and get every engagement id.
-      or (select current_user) = 'anon'
     );
 
 comment on view public.onboarding_engagement_platforms is
@@ -262,6 +250,6 @@ with (security_invoker = true) as
 comment on view public.onboarding_section_progress is
   'Per-section completion. Counts unknown and not_applicable as answered, because they are deliberate answers rather than blanks.';
 
-grant select on public.onboarding_my_client            to anon, authenticated, service_role;
-grant select on public.onboarding_engagement_platforms to anon, authenticated, service_role;
-grant select on public.onboarding_section_progress     to anon, authenticated, service_role;
+grant select on public.onboarding_my_client            to authenticated, service_role;
+grant select on public.onboarding_engagement_platforms to authenticated, service_role;
+grant select on public.onboarding_section_progress     to authenticated, service_role;

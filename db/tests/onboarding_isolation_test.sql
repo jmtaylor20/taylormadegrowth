@@ -209,21 +209,73 @@ begin
 end $$;
 
 -- ===========================================================================
--- Persona: anon — the PIN-gated ops app must be untouched
+-- Persona: anon — the publishable key, and nothing else
 -- ===========================================================================
+-- This is the assertion the whole exercise was for. The publishable key is
+-- served in page source and committed to a public repo; anyone has it. Holding
+-- it must be worth nothing.
+--
+-- Each table is probed inside its own exception block because the refusal is a
+-- raised error, not an empty result: with the grant revoked as well as the
+-- policies, anon is stopped at the privilege layer and never reaches RLS. That
+-- is a stronger outcome than zero rows, and worth asserting as itself — a test
+-- that only checked for emptiness would also pass against a table that was
+-- merely policy-filtered but still granted.
 set role anon;
-do $$ begin
-  perform set_config('request.jwt.claims', '', false);
+do $$
+declare
+  t text;
+  n bigint;
+  refused boolean;
+begin
+  foreach t in array array[
+    'clients','invoices','payments','expenses','time_entries','tasks','proposals',
+    'reports','trips','contractors','app_settings','ad_metrics',
+    'client_contacts','staff_users','automation_accounts',
+    'onboarding_engagements','onboarding_responses','onboarding_assets',
+    'onboarding_access_grants','onboarding_sections','onboarding_fields'
+  ] loop
+    refused := false;
+    begin
+      execute format('select count(*) from public.%I', t) into n;
+    exception
+      when insufficient_privilege then refused := true;
+      when others then refused := true;
+    end;
+    perform test.record('anon', format('cannot reach public.%s', t), refused);
+  end loop;
 
-  perform test.expect('anon', 'still reads the CRM (ops app unbroken)',
-    (select count(*) from public.clients where notes like '%[test]%'), 2);
-  perform test.expect('anon', 'still reads both engagements',
-    (select count(*) from public.onboarding_engagements), 2);
-  perform test.expect('anon', 'still reads all onboarding responses',
-    (select count(*) from public.onboarding_responses),
-    (current_setting('test.cedar_responses')::bigint + current_setting('test.harbor_responses')::bigint));
-  perform test.expect('anon', 'still reads storage objects',
-    (select count(*) from storage.objects where bucket_id = 'onboarding'), 3);
+  -- Writes, not just reads.
+  refused := false;
+  begin
+    execute 'insert into public.clients (business_name) values (''anon injection'')';
+  exception when others then refused := true;
+  end;
+  perform test.record('anon', 'cannot INSERT into public.clients', refused);
+
+  refused := false;
+  begin
+    execute 'delete from public.clients';
+  exception when others then refused := true;
+  end;
+  perform test.record('anon', 'cannot DELETE from public.clients', refused);
+
+  -- The views are a separate grant surface from their base tables.
+  refused := false;
+  begin
+    execute 'select count(*) from public.onboarding_my_client' into n;
+  exception when others then refused := true;
+  end;
+  perform test.record('anon', 'cannot read the onboarding_my_client view', refused);
+
+  -- Storage objects are reached through their own schema, not public.
+  refused := false;
+  begin
+    execute 'select count(*) from storage.objects where bucket_id = ''onboarding''' into n;
+    if n > 0 then refused := false; else refused := true; end if;
+  exception when others then refused := true;
+  end;
+  perform test.record('anon', 'cannot list storage objects', refused);
 end $$;
 
 reset role;
