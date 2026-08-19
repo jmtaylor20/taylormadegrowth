@@ -72,7 +72,8 @@ grant execute on function test.expect_num(text,text,numeric,numeric) to anon, au
 delete from auth.users where email in (
   'ruth@cedarandpine.test','marcus@cedarandpine.test',
   'dana@harborlane.test','owen@harborlane.test',
-  'stranger@example.test','staff@taylormadegrowth.test','automation@example.test'
+  'stranger@example.test','staff@taylormadegrowth.test',
+  'automation@example.test','automation-docs@example.test'
 );
 
 insert into auth.users (email, email_confirmed_at) values
@@ -82,16 +83,27 @@ insert into auth.users (email, email_confirmed_at) values
   ('owen@harborlane.test',        now()),
   ('stranger@example.test',       now()),
   ('staff@taylormadegrowth.test', now()),
-  ('automation@example.test',     now());
+  ('automation@example.test',     now()),
+  ('automation-docs@example.test', now());
 
 delete from public.staff_users where email = 'staff@taylormadegrowth.test';
 insert into public.staff_users (email, name) values ('staff@taylormadegrowth.test', 'TaylorMade Staff');
 
 -- A machine identity, scoped the way the Google Ads script's will be: it may
 -- reach ad_metrics and nothing else.
-delete from public.automation_accounts where email = 'automation@example.test';
-insert into public.automation_accounts (label, email, scopes)
-values ('Test automation', 'automation@example.test', array['ad_metrics']);
+delete from public.automation_accounts
+ where email in ('automation@example.test','automation-docs@example.test');
+insert into public.automation_accounts (label, email, scopes) values
+  ('Test ads automation',  'automation@example.test',      array['ad_metrics']),
+  ('Test docs automation', 'automation-docs@example.test', array['crm_documents']);
+
+-- Something for each identity to reach, so "can read its own scope" is a real
+-- assertion rather than one that passes on an empty table.
+insert into public.ad_metrics (customer_id, period_month, clicks, impressions)
+values ('999-000-0001', date '2026-07-01', 10, 100)
+on conflict (customer_id, period_month) do nothing;
+insert into public.invoices (number, description, amount, status)
+values ('INV-TEST-1', 'automation boundary fixture [test]', 100, 'draft');
 
 -- ===========================================================================
 -- Fixtures: ids and expected counts, stashed in session GUCs
@@ -105,6 +117,7 @@ do $$ begin
   perform set_config('test.jwt_stranger', format('{"sub":"%s","role":"authenticated"}', id), false) from auth.users where email = 'stranger@example.test';
   perform set_config('test.jwt_staff',    format('{"sub":"%s","role":"authenticated"}', id), false) from auth.users where email = 'staff@taylormadegrowth.test';
   perform set_config('test.jwt_automation', format('{"sub":"%s","role":"authenticated"}', id), false) from auth.users where email = 'automation@example.test';
+  perform set_config('test.jwt_automation_docs', format('{"sub":"%s","role":"authenticated"}', id), false) from auth.users where email = 'automation-docs@example.test';
 
   perform set_config('test.cedar_client',  c.id::text, false) from public.clients c where c.business_name = 'Cedar & Pine Millwork';
   perform set_config('test.harbor_client', c.id::text, false) from public.clients c where c.business_name = 'Harbor Lane Roofing';
@@ -616,6 +629,12 @@ do $$ begin
     (select count(*) from public.onboarding_client_ids()), 0);
 
   -- A script identity must be worth nothing against client data.
+  -- The point of the identity: it reaches its own scope. A suite that only ever
+  -- asserts zeroes would pass just as happily against a script that is silently
+  -- doing nothing — which is precisely how this was missed the first time.
+  perform test.record('automation', 'CAN read ad_metrics, the scope it holds',
+    (select count(*) > 0 from public.ad_metrics));
+
   perform test.expect('automation', 'sees no engagements',      (select count(*) from public.onboarding_engagements), 0);
   perform test.expect('automation', 'sees no responses',        (select count(*) from public.onboarding_responses), 0);
   perform test.expect('automation', 'sees no repeating rows',   (select count(*) from public.onboarding_response_rows), 0);
@@ -626,6 +645,9 @@ do $$ begin
   perform test.expect('automation', 'sees no client contacts',  (select count(*) from public.client_contacts), 0);
   perform test.expect('automation', 'cannot read the CRM',      (select count(*) from public.clients), 0);
   perform test.expect('automation', 'cannot read invoices',     (select count(*) from public.invoices), 0);
+  perform test.expect('automation', 'cannot read proposals',    (select count(*) from public.proposals), 0);
+  perform test.expect('automation', 'cannot read reports',      (select count(*) from public.reports), 0);
+  perform test.expect('automation', 'cannot read expenses',     (select count(*) from public.expenses), 0);
   perform test.expect('automation', 'cannot read payments',     (select count(*) from public.payments), 0);
   perform test.expect('automation', 'cannot read the staff table', (select count(*) from public.staff_users), 0);
   -- Nor should it be able to read, or grant itself, other scopes.
@@ -653,6 +675,58 @@ begin
     blocked := true;
   end;
   perform test.record('automation', 'cannot make itself staff', blocked);
+end $$;
+reset role;
+
+-- ===========================================================================
+-- Persona: Automation (documents) — the doc pipeline's identity
+-- ===========================================================================
+-- Holds crm_documents. It must reach the four tables it actually works on and
+-- stop dead at everything else — notably payments, expenses, time_entries and
+-- the whole onboarding schema, none of which it has any business seeing.
+set role authenticated;
+do $$ begin
+  perform set_config('request.jwt.claims', current_setting('test.jwt_automation_docs'), false);
+  perform public.bind_auth_identity();
+
+  perform test.record('automation-docs', 'holds crm_documents',
+    (select public.automation_has_scope('crm_documents')));
+  perform test.record('automation-docs', 'does NOT hold ad_metrics',
+    (select not public.automation_has_scope('ad_metrics')));
+  perform test.record('automation-docs', 'is not staff', (select not public.is_staff()));
+
+  -- Reaches what it works on.
+  perform test.record('automation-docs', 'CAN read clients',   (select count(*) > 0 from public.clients));
+  perform test.record('automation-docs', 'CAN read invoices',  (select count(*) > 0 from public.invoices));
+
+  -- And stops there.
+  perform test.expect('automation-docs', 'cannot read ad_metrics',   (select count(*) from public.ad_metrics), 0);
+  perform test.expect('automation-docs', 'cannot read payments',     (select count(*) from public.payments), 0);
+  perform test.expect('automation-docs', 'cannot read expenses',     (select count(*) from public.expenses), 0);
+  perform test.expect('automation-docs', 'cannot read time_entries', (select count(*) from public.time_entries), 0);
+  perform test.expect('automation-docs', 'cannot read onboarding responses',
+    (select count(*) from public.onboarding_responses), 0);
+  perform test.expect('automation-docs', 'cannot read client contacts',
+    (select count(*) from public.client_contacts), 0);
+end $$;
+
+do $$
+declare blocked boolean := false; n int;
+begin
+  -- It writes status back to clients, but must not be able to remove one.
+  begin
+    delete from public.clients where notes like '%[test]%';
+    get diagnostics n = row_count;
+    if n = 0 then blocked := true; end if;
+  exception when others then
+    blocked := true;
+  end;
+  perform test.record('automation-docs', 'cannot DELETE a client', blocked);
+
+  -- Updating a client's send status is the whole job, so that must work.
+  update public.clients set welcome_status = 'queued' where notes like '%[test]%';
+  get diagnostics n = row_count;
+  perform test.record('automation-docs', 'CAN update a client''s status', n > 0, format('rows=%s', n));
 end $$;
 reset role;
 

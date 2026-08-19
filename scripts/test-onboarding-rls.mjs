@@ -86,6 +86,7 @@ const MIGRATIONS = [
   '20260818140400_onboarding_storage.sql',
   '20260818140500_lock_down_legacy_authenticated_policies.sql',
   '20260819130000_automation_accounts.sql',
+  '20260819140000_automation_scope_policies.sql',
 ];
 
 let dbSeq = 0;
@@ -166,6 +167,22 @@ const NEGATIVE_CONTROLS = [
     name: 'contact-scoped section read widened to using (true)',
     sql: `alter policy onboarding_engagement_sections_contact_read
             on public.onboarding_engagement_sections using (true);`,
+  },
+  {
+    // The scope boundary between the two script identities. Widening either
+    // side hands one automation account the other's reach.
+    name: 'ad_metrics automation read widened to using (true)',
+    sql: `alter policy ad_metrics_automation_select on public.ad_metrics using (true);`,
+  },
+  {
+    name: 'clients automation read widened to using (true)',
+    sql: `alter policy clients_automation_select on public.clients using (true);`,
+  },
+  {
+    name: 'automation_has_scope() returns true for everything',
+    sql: `create or replace function public.automation_has_scope(want text) returns boolean
+            language sql stable security definer set search_path = public, auth, pg_temp
+            as $fn$ select auth.uid() is not null $fn$;`,
   },
 ];
 
