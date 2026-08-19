@@ -47,7 +47,17 @@ manually anytime, or change `everyMinutes(10)` in `installTrigger`.
 - Emails send **from your Gmail** (the account that owns the script), with
   replies going to `REPLY_TO`. Gmail's daily send limit applies (plenty for
   this).
-- The `SUPABASE_KEY` here is the same browser-safe publishable key the app
-  uses; it only allows the operations the app already allows.
+- These scripts authenticate with the Supabase **secret key** (called
+  `service_role` under its old name), read from **Project Settings → Script
+  properties → `SUPABASE_SECRET_KEY`**. It is never written into the script
+  files — they live in a public repo, and a secret key bypasses Row Level
+  Security entirely. Apps Script runs on Google's servers rather than in a
+  browser, so a secret key is the correct credential here.
+- Send it on the `apikey` header only. Secret keys are not JWTs, so Supabase
+  rejects them in an `Authorization: Bearer` header — the publishable key these
+  scripts used to carry tolerated both.
+- The contractor entries in `CONTRACTOR_SOURCES` still use each contractor's
+  publishable key. Those are separate projects with their own RLS posture and
+  have not been audited; switch them when they get the same treatment.
 - If something fails, the app shows **Send failed / Save failed** and the error
   is stored on the record — re-tap the button to retry.

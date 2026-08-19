@@ -29,7 +29,27 @@
 
 // ── Config ────────────────────────────────────────────────────────────────
 var SUPABASE_URL = 'https://buubrapkkqyalecwbhkh.supabase.co';
-var SUPABASE_KEY = 'sb_publishable_h-KXdNNW7Tc_BFut25s_sQ_ypIidBJB';
+
+// The Supabase SECRET key — "service_role" under its old name. It is read from
+// Script Properties, never written here: this file lives in a public repo, and
+// a secret key bypasses Row Level Security completely.
+//
+// Apps Script runs on Google's servers, not in a browser, so a secret key is
+// the correct credential here rather than a workaround. The publishable key
+// this used to carry stops working once the anon policies are dropped.
+//
+// Set it once: Project Settings → Script properties → add
+//   SUPABASE_SECRET_KEY = <Supabase → Project Settings → API Keys → Secret key "default">
+function supabaseKey_() {
+  var k = PropertiesService.getScriptProperties().getProperty('SUPABASE_SECRET_KEY');
+  if (!k) {
+    throw new Error(
+      'SUPABASE_SECRET_KEY is not set. Add it under Project Settings → Script properties. ' +
+      'Copy the value from Supabase → Project Settings → API Keys → Secret key (named "default").'
+    );
+  }
+  return k;
+}
 var MONTHS_BACK  = 3; // how many complete prior months to (re)sync each run
 
 var MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -98,8 +118,10 @@ function upsert_(rows) {
     method: 'post',
     contentType: 'application/json',
     headers: {
-      'apikey': SUPABASE_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      // Secret keys are not JWTs, so Supabase rejects them in an
+      // `Authorization: Bearer` header — they go on `apikey` alone. The old
+      // publishable key tolerated both, which is why this used to send two.
+      'apikey': supabaseKey_(),
       'Prefer': 'resolution=merge-duplicates,return=minimal'
     },
     payload: JSON.stringify(rows),
