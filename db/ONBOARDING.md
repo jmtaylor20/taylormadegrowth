@@ -98,6 +98,27 @@ a platform onto a client's list — an activated section, a service on the clien
 record, or always. `onboarding_engagement_platforms` does the derivation. A
 website-only client is never shown a Google Ads row.
 
+### The `onboarding_my_client` view is deliberately not `security_invoker`
+
+It is a `security_barrier` definer view carrying its own `WHERE` clause, which
+means that clause is the only thing between a contact and every client row. That
+is a fair thing to be nervous about, so it was tested rather than argued:
+
+| | Rows a contact sees through the view |
+| --- | --- |
+| As built (barrier + explicit predicate) | 1 — their own client |
+| Switched to `security_invoker = true` | **0 — the view breaks** |
+
+`security_invoker` fails because contacts hold no policy on `public.clients` at
+all. Making it work would mean granting them one — and RLS is row-level, not
+column-level, so `mrr`, `cole_pct` and `notes` would come back with it. The
+seven-column view is the tighter of the two.
+
+What protects it, then, is the column list and the predicate, so both are
+asserted: the suite checks the view names no financial or internal column, that
+each contact sees exactly their own client through it and no other, and a
+negative control removes the predicate and requires the suite to go red.
+
 ### No column can hold a secret
 
 Access is tracked as *whether TaylorMade has delegated access*, never as the
@@ -105,7 +126,16 @@ credential. There is no password, key, token, or secret column anywhere in this
 schema, and the isolation suite asserts that structurally so one cannot be added
 quietly. Every free-text column additionally carries a `CHECK` against
 credential-shaped text (`public.looks_like_secret`). That is a tripwire, not a
-filter — real validation belongs in the portal.
+filter — it will miss plenty, and that is fine; it exists to catch the obvious
+case and to signal intent.
+
+Because it is a CHECK constraint, a client who types a password into a notes
+field would otherwise see `violates check constraint "..._secret_check"`, which
+tells them nothing and looks like a crash. `db-errors.js` turns it into an
+explanation — naming the field, and saying why we neither want the credential
+nor keep it — and `db.js` runs every error through it, so every existing
+`catch (e) { toast(e.message) }` gets the better wording without changing.
+`npm run test:db-errors` covers the mapping.
 
 ## Row-level security
 
