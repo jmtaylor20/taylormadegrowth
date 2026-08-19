@@ -8,12 +8,12 @@
 import { BUILD, BRAND } from './config.js';
 import { el, clear, toast } from './ui.js';
 import { resolveAccess, renderSignIn, signOut, onSessionLost } from './auth.js';
-import { myClient, myEngagements, meAsContact, sectionById } from './db.js';
+import { myClient, myEngagements, meAsContact, myContact, sectionById } from './db.js';
 import { renderSections } from './sections.js';
 import { renderSection } from './section.js';
 
 const root = document.getElementById('root');
-const state = { client: null, contact: null, engagement: null, engagements: [] };
+const state = { client: null, contact: null, contacts: [], engagement: null, engagements: [] };
 
 boot();
 
@@ -36,11 +36,12 @@ async function start(access) {
   root.append(el('div.boot', {}, [el('div.spinner')]));
 
   try {
-    const [client, engagements, contact] = await Promise.all([
-      myClient(), myEngagements(), meAsContact(access.email),
+    const [client, engagements, contact, contacts] = await Promise.all([
+      myClient(), myEngagements(), meAsContact(access.email), myContact(),
     ]);
     state.client = client;
     state.contact = contact;
+    state.contacts = contacts;
     state.engagements = engagements;
     // One live engagement is the normal case. If a client somehow has two, the
     // most recent non-archived one is the one they were just invited to.
@@ -112,6 +113,7 @@ async function route() {
     return mountPage((page) => renderSection(page, {
       row,
       contactId: state.contact?.id || null,
+      contacts: state.contacts,
       onBack: () => { location.hash = '/'; },
       onChanged: () => {},
     }));
@@ -119,6 +121,7 @@ async function route() {
 
   return mountPage((page) => renderSections(page, {
     engagement: state.engagement,
+    contactId: state.contact?.id || null,
     onOpen: (row) => { location.hash = '/s/' + row.id; },
   }));
 }

@@ -194,11 +194,83 @@ body.signed-out { background: radial-gradient(120% 120% at 50% 0%, #16305a 0%, v
 }
 .q-err.show { display: block; }
 
+/* ---- Ownership ------------------------------------------------------------ */
+.list-note { color: var(--muted); font-size: .82rem; margin: -4px 0 10px; }
+.meta.mine { color: var(--navy); font-weight: 700; }
+.meta.theirs { color: var(--muted); }
+/* A section that is yours gets a gold edge — findable at arm's length, in a
+   list of fourteen, without reading a word. */
+.card.is-mine { border-left: 3px solid var(--gold); }
+
+/* ---- Files ----------------------------------------------------------------- */
+.files-wrap { display: flex; flex-direction: column; gap: 10px; }
+.files { display: flex; flex-direction: column; gap: 8px; }
+.files-empty { color: var(--muted); font-size: .85rem; margin: 0; }
+.files-input { display: none; }
+.files-pick {
+  align-self: flex-start; border: 1px dashed #cbd5e1; background: none; color: var(--navy);
+  border-radius: 10px; padding: 11px 16px; font-size: .92rem; font-weight: 600;
+}
+.files-pick:disabled { opacity: .6; }
+.files-note { color: var(--red); font-size: .84rem; margin: 0; }
+.file {
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #fbfcfe;
+}
+.file-icon { font-size: 1.1rem; }
+.file-main { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
+.file-name {
+  background: none; border: 0; padding: 0; color: var(--navy); font-weight: 600; font-size: .9rem;
+  text-align: left; text-decoration: underline; max-width: 100%;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.file-meta { color: var(--muted); font-size: .76rem; }
+.file-remove {
+  background: none; border: 0; color: var(--muted); font-size: .8rem; padding: 6px 4px; text-decoration: underline;
+}
+.file-remove:disabled { opacity: .6; }
+
 .q-soon {
   background: var(--gray-bg); color: var(--muted); font-size: .87rem;
   border-radius: 10px; padding: 12px 14px;
 }
-.q-group .q-soon { margin-top: 12px; }
+.q-group /* ---- Ownership ------------------------------------------------------------ */
+.list-note { color: var(--muted); font-size: .82rem; margin: -4px 0 10px; }
+.meta.mine { color: var(--navy); font-weight: 700; }
+.meta.theirs { color: var(--muted); }
+/* A section that is yours gets a gold edge — findable at arm's length, in a
+   list of fourteen, without reading a word. */
+.card.is-mine { border-left: 3px solid var(--gold); }
+
+/* ---- Files ----------------------------------------------------------------- */
+.files-wrap { display: flex; flex-direction: column; gap: 10px; }
+.files { display: flex; flex-direction: column; gap: 8px; }
+.files-empty { color: var(--muted); font-size: .85rem; margin: 0; }
+.files-input { display: none; }
+.files-pick {
+  align-self: flex-start; border: 1px dashed #cbd5e1; background: none; color: var(--navy);
+  border-radius: 10px; padding: 11px 16px; font-size: .92rem; font-weight: 600;
+}
+.files-pick:disabled { opacity: .6; }
+.files-note { color: var(--red); font-size: .84rem; margin: 0; }
+.file {
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #fbfcfe;
+}
+.file-icon { font-size: 1.1rem; }
+.file-main { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
+.file-name {
+  background: none; border: 0; padding: 0; color: var(--navy); font-weight: 600; font-size: .9rem;
+  text-align: left; text-decoration: underline; max-width: 100%;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.file-meta { color: var(--muted); font-size: .76rem; }
+.file-remove {
+  background: none; border: 0; color: var(--muted); font-size: .8rem; padding: 6px 4px; text-decoration: underline;
+}
+.file-remove:disabled { opacity: .6; }
+
+.q-soon { margin-top: 12px; }
 
 .section-foot { margin-top: 28px; text-align: center; }
 .foot-note { color: var(--muted); font-size: .84rem; margin: 0 0 12px; }

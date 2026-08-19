@@ -39,10 +39,27 @@
     then(resolve, reject) { return post({ op: 'query', q: this.q }).then(resolve, reject); }
   }
 
+  // Storage, as far as the portal can tell.
+  //
+  // The bytes are not kept: what is under test here is the tenant boundary,
+  // which lives in the object's PATH, and that is a row in storage.objects
+  // governed by the same policies the real bucket uses. So an upload becomes an
+  // insert of that row as the signed-in contact, and a path under somebody
+  // else's engagement is refused by Postgres exactly as it would be by Storage.
+  const storage = (bucket) => ({
+    upload: (path, file, opts) => post({
+      op: 'storage', fn: 'upload', bucket, path,
+      meta: { size: file?.size ?? 0, mimetype: opts?.contentType || file?.type || null },
+    }),
+    remove: (paths) => post({ op: 'storage', fn: 'remove', bucket, paths }),
+    createSignedUrl: async (path) => ({ data: { signedUrl: '/__signed/' + path }, error: null }),
+  });
+
   window.supabase = {
     createClient() {
       return {
         from: (table) => new Query(table),
+        storage: { from: storage },
         rpc: (fn, args) => post({ op: 'rpc', fn, args: args || {} }),
         auth: {
           getSession: async () => ({ data: { session: window.__PORTAL_TEST__.session }, error: null }),

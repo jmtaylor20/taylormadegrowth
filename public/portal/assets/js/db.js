@@ -8,7 +8,7 @@
 // would already be red.
 
 import { SUPABASE_URL, SUPABASE_KEY } from './config.js';
-import { humanize } from './errors.js';
+import { humanize, humanizeStorage } from './errors.js';
 
 const { createClient } = window.supabase;
 export const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -150,4 +150,77 @@ export async function saveResponse({ id, engagementSectionId, fieldId, status, v
 
 export async function deleteResponse(id) {
   return unwrap(await sb.from('onboarding_responses').delete().eq('id', id));
+}
+
+// ---- Files -----------------------------------------------------------------
+// Bytes live in Supabase Storage; the row describing them lives here. The first
+// path segment is the engagement id, and that IS the tenant boundary inside the
+// bucket — the storage policy scopes on it and the assets trigger enforces the
+// same prefix, so the two cannot drift apart.
+
+const BUCKET = 'onboarding';
+
+export async function assetsFor(engagementSectionId) {
+  return unwrap(await sb.from('onboarding_assets')
+    .select('id,field_id,row_id,storage_path,file_name,mime_type,byte_size,kind,caption,created_at')
+    .eq('engagement_section_id', engagementSectionId).order('created_at')) || [];
+}
+
+/** Keep a filename recognisable to the person who uploaded it, and harmless as a path. */
+function safeName(name) {
+  return String(name || 'file')
+    .replace(/[\\/]/g, '-')
+    .replace(/[^a-zA-Z0-9._-]/g, '-')
+    .replace(/-+/g, '-')
+    .slice(-80) || 'file';
+}
+
+/** What kind of thing this is, guessed from the question rather than the file. */
+function assetKind(field, file) {
+  const key = field?.field_key || '';
+  if (/logo/.test(key)) return 'logo';
+  if (/brand/.test(key)) return 'brand';
+  if (/photo|portfolio|gallery|image/.test(key)) return 'photo';
+  if ((file?.type || '').startsWith('image/')) return 'photo';
+  return 'document';
+}
+
+export async function uploadAsset({ engagementId, sectionKey, engagementSectionId, field, file, contactId }) {
+  const path = `${engagementId}/${sectionKey}/${crypto.randomUUID()}-${safeName(file.name)}`;
+
+  const up = await sb.storage.from(BUCKET)
+    .upload(path, file, { contentType: file.type || undefined, upsert: false });
+  if (up.error) throw humanizeStorage(up.error);
+
+  try {
+    return unwrap(await sb.from('onboarding_assets').insert({
+      engagement_section_id: engagementSectionId,
+      field_id: field?.id || null,
+      storage_path: path,
+      file_name: file.name,
+      mime_type: file.type || null,
+      byte_size: file.size,
+      kind: assetKind(field, file),
+      uploaded_by_contact_id: contactId || null,
+    }).select().single());
+  } catch (err) {
+    // The bytes are already in the bucket. If the row describing them is
+    // refused, take them back out — an object nothing points at is invisible to
+    // every screen we have and would sit there forever.
+    await sb.storage.from(BUCKET).remove([path]).catch(() => {});
+    throw err;
+  }
+}
+
+export async function deleteAsset(asset) {
+  const rm = await sb.storage.from(BUCKET).remove([asset.storage_path]);
+  if (rm.error) throw humanizeStorage(rm.error);
+  return unwrap(await sb.from('onboarding_assets').delete().eq('id', asset.id));
+}
+
+/** A short-lived link, so a client can check they uploaded the right file. */
+export async function assetPreviewUrl(asset, seconds = 300) {
+  const { data, error } = await sb.storage.from(BUCKET).createSignedUrl(asset.storage_path, seconds);
+  if (error) throw humanizeStorage(error);
+  return data?.signedUrl || null;
 }

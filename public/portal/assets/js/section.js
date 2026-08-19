@@ -10,16 +10,19 @@
 // happen to have been created in.
 
 import { el, clear, spinner, debounce, toast, dueLabel } from './ui.js';
-import { fieldsFor, responsesFor, saveResponse, deleteResponse, markSectionStatus } from './db.js';
+import { fieldsFor, responsesFor, saveResponse, deleteResponse, markSectionStatus,
+         assetsFor, uploadAsset, deleteAsset, assetPreviewUrl } from './db.js';
 import { renderField } from './fields.js';
 
-export async function renderSection(mount, { row, contactId, onBack, onChanged }) {
+export async function renderSection(mount, { row, contactId, contacts, onBack, onChanged }) {
   clear(mount);
   mount.append(spinner('Loading questions…'));
 
-  let fields, responses;
+  let fields, responses, assets;
   try {
-    [fields, responses] = await Promise.all([fieldsFor(row.section_key), responsesFor(row.id)]);
+    [fields, responses, assets] = await Promise.all([
+      fieldsFor(row.section_key), responsesFor(row.id), assetsFor(row.id),
+    ]);
   } catch (err) {
     clear(mount);
     mount.append(backBar(onBack), el('div.empty', {}, [
@@ -42,10 +45,17 @@ export async function renderSection(mount, { row, contactId, onBack, onChanged }
   mount.append(backBar(onBack));
 
   const due = dueLabel(row.due_date);
+  // Who owns this one, said plainly. A client with three people in the portal
+  // needs to know at a glance whether they are looking at their own work or
+  // somebody else's — the overview says the same thing, and they must agree.
+  const owner = assignmentLabel(row, contactId, contacts);
   mount.append(el('header.page-head', {}, [
     el('h1.page-title', { text: row.section.title }),
     row.section.intro ? el('p.page-sub', { text: row.section.intro }) : null,
-    due ? el('span.meta.' + due.tone, { text: due.text }) : null,
+    el('div.card-meta', {}, [
+      owner ? el('span.meta.' + owner.tone, { text: owner.text }) : null,
+      due ? el('span.meta.' + due.tone, { text: due.text }) : null,
+    ].filter(Boolean)),
   ].filter(Boolean)));
 
   mount.append(el('p.q-note', {
@@ -58,9 +68,15 @@ export async function renderSection(mount, { row, contactId, onBack, onChanged }
   const scalars = fields.filter((f) => f.field_kind === 'scalar');
   const groups = fields.filter((f) => f.field_kind === 'repeating_group');
 
+  const byFieldAssets = (fieldId) => (assets || []).filter((a) => a.field_id === fieldId && !a.row_id);
+
   for (const field of scalars) {
     const stored = byField.get(field.id) || null;
-    const view = renderField(field, stored, makeSaver(field, stored, row, contactId, () => view, onChanged));
+    const view = renderField(
+      field, stored,
+      makeSaver(field, stored, row, contactId, () => view, onChanged),
+      field.field_type === 'file_upload' ? fileHandlers(field, row, contactId, onChanged, byFieldAssets(field.id)) : null,
+    );
     list.append(view.node);
   }
 
@@ -161,6 +177,39 @@ function makeSaver(field, stored, row, contactId, getView, onChanged) {
   return (payload) => {
     (TYPED.has(field.field_type) && payload.status === 'answered' ? slow : run)(payload);
   };
+}
+
+/**
+ * The three things a file control needs from the outside world.
+ *
+ * Kept here rather than in fields.js so that file continues to hold no database
+ * access of its own — it renders a question and reports what happened, and
+ * every write in the portal goes through db.js.
+ */
+function fileHandlers(field, row, contactId, onChanged, assets) {
+  return {
+    assets,
+    onUpload: async (file) => {
+      const asset = await uploadAsset({
+        engagementId: row.engagement_id,
+        sectionKey: row.section_key,
+        engagementSectionId: row.id,
+        field, file, contactId,
+      });
+      onChanged?.();
+      return asset;
+    },
+    onRemove: async (asset) => { await deleteAsset(asset); onChanged?.(); },
+    onPreview: (asset) => assetPreviewUrl(asset),
+  };
+}
+
+/** "Yours" when it is, the person's name when it is not, nothing when unassigned. */
+export function assignmentLabel(row, contactId, contacts) {
+  if (!row.assigned_contact_id) return null;
+  if (contactId && row.assigned_contact_id === contactId) return { text: 'Yours to answer', tone: 'mine' };
+  const name = (contacts || []).find((c) => c.id === row.assigned_contact_id)?.name;
+  return { text: name ? `For ${name}` : 'Assigned to a colleague', tone: 'theirs' };
 }
 
 function backBar(onBack) {
