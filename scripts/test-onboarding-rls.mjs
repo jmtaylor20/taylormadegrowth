@@ -134,13 +134,27 @@ const NEGATIVE_CONTROLS = [
     sql: `alter policy onboarding_responses_contact_all on public.onboarding_responses using (true);`,
   },
   {
-    // Targets access grants rather than responses on purpose: the responses
-    // validate trigger blocks a cross-tenant insert before RLS is consulted,
-    // so widening WITH CHECK there proves nothing. Access grants have no such
-    // trigger on the insert path, so this isolates the policy clause itself.
     name: 'access grant write policy widened to with check (true)',
     sql: `alter policy onboarding_access_grants_contact_all
             on public.onboarding_access_grants with check (true);`,
+  },
+  {
+    // The one that matters most: responses hold the financial answers. The
+    // validate trigger runs as owner and judges shape only, so this clause is
+    // the sole thing refusing a cross-tenant write. If widening it does not
+    // turn the suite red, nothing is testing the guard on the sensitive table.
+    name: 'RESPONSE write policy widened to with check (true)',
+    sql: `alter policy onboarding_responses_contact_all
+            on public.onboarding_responses with check (true);`,
+  },
+  {
+    // onboarding_my_client is a definer view: its own WHERE clause is the only
+    // thing between a contact and every client row.
+    name: "onboarding_my_client's scoping predicate removed",
+    sql: `create or replace view public.onboarding_my_client
+            with (security_barrier = true) as
+            select c.id, c.business_name, c.city, c.state, c.website, c.logo_url, c.brand_color
+            from public.clients c;`,
   },
   {
     name: 'legacy clients_auth_all policy restored (the pre-lockdown state)',

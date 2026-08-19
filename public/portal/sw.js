@@ -1,8 +1,10 @@
-// TaylorMade Growth Ops — service worker.
-// Network-first for same-origin app files (so pushes go live on next launch),
-// with a cached shell as offline fallback. Supabase/CDN requests always hit
-// the network. Bump CACHE to force a refresh.
-const CACHE = 'tmg-ops-v40';
+// Client onboarding portal — service worker.
+//
+// Network-first for our own files so a push goes live on next launch, with the
+// cached shell as the offline fallback. Supabase requests are never touched:
+// answers and sessions must not be served from a cache. Bump CACHE to force a
+// refresh.
+const CACHE = 'tmg-portal-v1';
 const SHELL = [
   './',
   './index.html',
@@ -10,8 +12,6 @@ const SHELL = [
   './assets/css/style.css',
   './assets/vendor/supabase.js',
   './assets/js/app.js',
-  './assets/js/auth.js',
-  './assets/js/db-errors.js',
 ];
 
 self.addEventListener('install', (e) => {
@@ -30,7 +30,6 @@ self.addEventListener('fetch', (e) => {
   const req = e.request;
   const url = new URL(req.url);
   if (req.method !== 'GET') return;
-  // Only manage our own origin; let Supabase + CDN go straight to network.
   if (url.origin !== self.location.origin) return;
 
   e.respondWith(

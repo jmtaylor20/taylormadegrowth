@@ -50,11 +50,14 @@ const PROFILES = {
   tony: {
     mode: 'contractor',
     // PENDING: Tony's Supabase project still runs the old permissive posture —
-    // anon has full read/write and his publishable key is in this public repo,
-    // exactly the exposure the owner project carried before 2026-08-19. Until
-    // that project gets client_contacts / staff_users / is_staff() and he can
-    // sign in, this copy has nothing to sign in WITH, so the PIN stays. It is
-    // not security; it is a placeholder for security. See db/SECURITY.md.
+    // anon has full read/write and his publishable key is in this public repo.
+    // Deferred on 2026-08-19 because that database is currently EMPTY, so the
+    // hole is real but there is nothing behind it yet.
+    //
+    // That makes this a dated decision, not a permanent one. It expires the
+    // moment he puts a client in there. Until his project gets client_contacts
+    // / staff_users / is_staff() he has nothing to sign in WITH, so the PIN
+    // stays — not as security, but as a placeholder for it. See db/SECURITY.md.
     auth: 'pin',
     brand: 'TaylorMade Brands',
     contractor: 'Tony',

@@ -3,6 +3,7 @@
 // The Supabase client is loaded via a classic <script> in index.html (vendored
 // locally at assets/vendor/supabase.js) and exposed as window.supabase.
 import { SUPABASE_URL, SUPABASE_KEY, FEATURES } from './config.js';
+import { humanizeDbError } from './db-errors.js';
 
 const { createClient } = window.supabase;
 export const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -21,22 +22,22 @@ function table(name) {
       if (opts.order) q = q.order(opts.order.col, { ascending: opts.order.asc ?? true, nullsFirst: false });
       else q = q.order('created_at', { ascending: false });
       const { data, error } = await q;
-      if (error) throw error;
+      if (error) throw humanizeDbError(error);
       return data || [];
     },
     async create(row) {
       const { data, error } = await sb.from(name).insert(row).select().single();
-      if (error) throw error;
+      if (error) throw humanizeDbError(error);
       return data;
     },
     async update(id, patch) {
       const { data, error } = await sb.from(name).update(patch).eq('id', id).select().single();
-      if (error) throw error;
+      if (error) throw humanizeDbError(error);
       return data;
     },
     async remove(id) {
       const { error } = await sb.from(name).delete().eq('id', id);
-      if (error) throw error;
+      if (error) throw humanizeDbError(error);
     },
   };
 }
@@ -65,7 +66,7 @@ export async function getSetting(id, dflt = {}) {
   // Direct query (no generic list ordering) — app_settings has no created_at,
   // which the default table sort assumes, so read it explicitly.
   const { data, error } = await sb.from('app_settings').select('data').eq('id', id).limit(1);
-  if (error) throw error;
+  if (error) throw humanizeDbError(error);
   return (data && data[0] && data[0].data) || dflt;
 }
 export async function setSetting(id, data) {
@@ -78,7 +79,7 @@ export async function setSetting(id, data) {
 // The single currently-running timer (a time entry with no minutes yet), if any.
 export async function runningTimer() {
   const { data, error } = await sb.from('time_entries').select('*').is('minutes', null).not('started_at', 'is', null).order('started_at', { ascending: false }).limit(1);
-  if (error) throw error;
+  if (error) throw humanizeDbError(error);
   return (data || [])[0] || null;
 }
 // Start a timer for a client (optionally tied to a task). Stops any other one.

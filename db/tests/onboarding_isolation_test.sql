@@ -160,6 +160,22 @@ do $$ begin
    order by f.position
    limit 1;
 
+  -- A field that genuinely belongs to a section activated on Harbor Lane's
+  -- engagement AND that Harbor Lane has not answered. An insert naming these is
+  -- structurally perfect and belongs to the wrong tenant — the only case where
+  -- the policy's WITH CHECK is the sole thing standing in the way.
+  perform set_config('test.harbor_unanswered_field', f.id::text, false)
+    from public.onboarding_fields f
+   where f.section_key = 'business_brand'
+     and f.field_kind = 'scalar'
+     and f.field_type not in ('file_upload')
+     and not exists (
+       select 1 from public.onboarding_responses r
+        where r.field_id = f.id
+          and r.engagement_id = current_setting('test.harbor_engagement')::uuid)
+   order by f.position
+   limit 1;
+
   perform set_config('test.harbor_response', r.id::text, false)
     from public.onboarding_responses r
     join public.onboarding_fields f on f.id = r.field_id
@@ -421,6 +437,20 @@ do $$ begin
     (select count(*) from public.onboarding_my_client), 1);
   perform test.record('ruth', 'onboarding_my_client names Cedar & Pine',
     (select bool_and(business_name = 'Cedar & Pine Millwork') from public.onboarding_my_client));
+  -- The view is a SECURITY BARRIER definer view, not security_invoker, and that
+  -- is deliberate: contacts hold no policy on public.clients, so an invoker
+  -- view would return nothing, and making it work would mean granting them a
+  -- row policy there — row-level, not column-level, so mrr, cole_pct and notes
+  -- would come with it. The view's own column list is the protection, so assert
+  -- the column list.
+  perform test.expect('ruth', 'onboarding_my_client exposes no financial or internal column',
+    (select count(*) from information_schema.columns
+      where table_schema = 'public' and table_name = 'onboarding_my_client'
+        and column_name in ('mrr','build_fee','cole_pct','notes','rating','ads_budget',
+                            'follow_up_note','package_name','build_fee_paid')), 0);
+  perform test.expect('ruth', 'and reaches the base table through nothing else',
+    (select count(*) from public.clients), 0);
+
   perform test.expect('ruth', 'progress view is scoped to her sections',
     (select count(*) from public.onboarding_section_progress), current_setting('test.cedar_sections')::bigint);
   perform test.expect('ruth', 'derived platform list is scoped to her engagement',
@@ -494,14 +524,33 @@ begin
   end;
   perform test.record('ruth', 'cannot activate a section on her own engagement', blocked);
 
-  -- The insert above is refused by onboarding_responses_validate() before RLS
-  -- even weighs in: that trigger runs as the caller, so the other tenant's
-  -- section is invisible to it too. Useful defense in depth, but it means that
-  -- assertion does not on its own prove the policy's WITH CHECK works.
+  -- The insert above names a real section belonging to another tenant, with a
+  -- real field of that section that the tenant has not answered. The validate
+  -- trigger runs as owner and is satisfied: the shape is perfect. Nothing is
+  -- left to refuse it except the policy's WITH CHECK.
   --
-  -- Access grants have no such trigger on this path, so here the WITH CHECK
-  -- clause is the only thing standing in the way. This is the assertion that
-  -- proves the write half of the policy is real.
+  -- If this ever passes, a client contact can write into another client's
+  -- financial baseline. It is the single most important write assertion here.
+  blocked := false;
+  begin
+    insert into public.onboarding_responses (engagement_section_id, field_id, status, value_text)
+    values (current_setting('test.harbor_section')::uuid,
+            current_setting('test.harbor_unanswered_field')::uuid,
+            'answered', 'written by the wrong tenant');
+  exception when others then
+    blocked := true;
+  end;
+  perform test.record('ruth',
+    'INSERT into Harbor Lane''s section is refused by RLS WITH CHECK, with the trigger satisfied',
+    blocked);
+
+  -- Belt and braces: nothing landed.
+  perform test.expect('ruth', 'no row was created in Harbor Lane''s engagement',
+    (select count(*) from public.onboarding_responses
+      where field_id = current_setting('test.harbor_unanswered_field')::uuid), 0);
+
+  -- Access grants have no validating trigger on the insert path at all, so the
+  -- WITH CHECK is unambiguously the only guard there too.
   blocked := false;
   begin
     insert into public.onboarding_access_grants (engagement_id, platform_key, access_method)
@@ -607,6 +656,10 @@ do $$ begin
       where client_id = current_setting('test.cedar_client')::uuid), 0);
   perform test.expect('dana', 'cannot read the CRM',
     (select count(*) from public.clients), 0);
+  perform test.expect('dana', 'onboarding_my_client shows her client and no other',
+    (select count(*) from public.onboarding_my_client), 1);
+  perform test.record('dana', 'onboarding_my_client does not name Cedar & Pine',
+    (select bool_and(business_name = 'Harbor Lane Roofing') from public.onboarding_my_client));
 
   -- Scope derivation: Harbor Lane bought a website, not ads. Google Ads must not
   -- appear on their platform list at all.

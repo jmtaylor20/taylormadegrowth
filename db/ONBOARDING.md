@@ -6,11 +6,20 @@ across every client.
 
 This is **schema and row-level security only**. No UI, no routes, no components.
 
-## Applying it
+## Applied 2026-08-19
 
-Nothing here has been applied to the live project. The migrations are in
-`supabase/migrations/`, named the same way the existing applied migrations are
-(`YYYYMMDDHHMMSS_snake_case`), and go on in filename order:
+Live on `buubrapkkqyalecwbhkh`: 12 tables, 3 views, 25 policies, the private
+`onboarding` bucket, and the seeded question library — 14 sections, 56 fields
+(4 repeating groups, 21 group children), 15 platforms, 3 templates.
+
+Verified from outside afterwards: `npm run db:test-anon` reports **46 locked, 0
+exposed**, with none of it reachable without a session.
+
+The test-client fixture (`db/seed_onboarding_test_clients.sql`) was **not**
+applied — it exists for the local suite, not production.
+
+The migrations are in `supabase/migrations/`, named the way the existing ones
+are (`YYYYMMDDHHMMSS_snake_case`), and go on in filename order:
 
 | Migration | What it does |
 | --- | --- |
@@ -21,9 +30,18 @@ Nothing here has been applied to the live project. The migrations are in
 | `…140400_onboarding_storage` | The `onboarding` bucket and its path-scoped policies |
 | `…140500_lock_down_legacy_authenticated_policies` | Narrows the existing tables' `authenticated` access to staff — **read the note below** |
 
-Then the seeds: `db/seed_onboarding_library.sql` (the questions — safe and
-intended for production), and `db/seed_onboarding_test_clients.sql` (two fixture
-clients, marked `[test]`, for the isolation test — not for production).
+Then the seed: `db/seed_onboarding_library.sql` (the questions — safe and
+intended for production, already applied). `db/seed_onboarding_test_clients.sql`
+is two fixture clients marked `[test]` for the isolation suite, and must not be
+applied to production.
+
+### What does not exist yet
+
+The schema holds this; nothing renders it. There is no client portal and no
+staff screen for creating an engagement or assigning sections, so onboarding is
+still run by PDF until that is built. Assignment lives in
+`onboarding_engagement_sections.assigned_contact_id` / `due_date` / `status`,
+and a trigger already refuses a contact who does not work at that client.
 
 ## Read this before applying the last migration
 
@@ -98,6 +116,27 @@ a platform onto a client's list — an activated section, a service on the clien
 record, or always. `onboarding_engagement_platforms` does the derivation. A
 website-only client is never shown a Google Ads row.
 
+### The `onboarding_my_client` view is deliberately not `security_invoker`
+
+It is a `security_barrier` definer view carrying its own `WHERE` clause, which
+means that clause is the only thing between a contact and every client row. That
+is a fair thing to be nervous about, so it was tested rather than argued:
+
+| | Rows a contact sees through the view |
+| --- | --- |
+| As built (barrier + explicit predicate) | 1 — their own client |
+| Switched to `security_invoker = true` | **0 — the view breaks** |
+
+`security_invoker` fails because contacts hold no policy on `public.clients` at
+all. Making it work would mean granting them one — and RLS is row-level, not
+column-level, so `mrr`, `cole_pct` and `notes` would come back with it. The
+seven-column view is the tighter of the two.
+
+What protects it, then, is the column list and the predicate, so both are
+asserted: the suite checks the view names no financial or internal column, that
+each contact sees exactly their own client through it and no other, and a
+negative control removes the predicate and requires the suite to go red.
+
 ### No column can hold a secret
 
 Access is tracked as *whether TaylorMade has delegated access*, never as the
@@ -105,7 +144,16 @@ credential. There is no password, key, token, or secret column anywhere in this
 schema, and the isolation suite asserts that structurally so one cannot be added
 quietly. Every free-text column additionally carries a `CHECK` against
 credential-shaped text (`public.looks_like_secret`). That is a tripwire, not a
-filter — real validation belongs in the portal.
+filter — it will miss plenty, and that is fine; it exists to catch the obvious
+case and to signal intent.
+
+Because it is a CHECK constraint, a client who types a password into a notes
+field would otherwise see `violates check constraint "..._secret_check"`, which
+tells them nothing and looks like a crash. `db-errors.js` turns it into an
+explanation — naming the field, and saying why we neither want the credential
+nor keep it — and `db.js` runs every error through it, so every existing
+`catch (e) { toast(e.message) }` gets the better wording without changing.
+`npm run test:db-errors` covers the mapping.
 
 ## Row-level security
 
@@ -171,7 +219,52 @@ therefore optional on insert even when it is `NOT NULL` with no default — that
 is how `engagement_id` stays out of the way on the three tables that denormalize
 it.
 
+## The sandbox, applied to production 2026-08-19
+
+Two fake clients live in the production CRM so the portal can be clicked through
+from a phone: **Sandbox Millwork Co.** (Growth Partner, 14 sections) and
+**Ridgeline Sandbox Roofing** (Website Build, 5). Their contacts are plus-aliases
+of the owner's address, so both deliver to one inbox and neither is the staff
+address:
+
+| Sign in as | You are | Distinctive figure |
+| --- | --- | --- |
+| `josh+sandbox1@taylormadegrowth.com` | Sandbox Millwork, owner | revenue 1,840,000 |
+| `josh+sandbox1b@taylormadegrowth.com` | Sandbox Millwork, shop lead | — |
+| `josh+sandbox2@taylormadegrowth.com` | Ridgeline, owner | revenue 612,500 |
+
+Answer something as one, then sign in as the other and go looking for it. That is
+the isolation guarantee felt rather than read. Everything else is left blank on
+purpose — a sandbox you cannot fill in is not much of a sandbox.
+
+Both clients appear in the ops app's client list, marked `[sandbox]` in notes.
+**Run `db/teardown_portal_sandbox.sql` before onboarding a real client**, so
+nobody ever sees a fake company next to a real one. It clears the storage objects
+first (they live in another schema and do not cascade), then deletes the clients,
+and reports zero on every row.
+
+## The portal
+
+`public/portal/` is the client-facing half of this: sign in by emailed code,
+see your activated sections, answer them. Phases 1 and 2 are built — the
+overview and every scalar field type, with "I don't know" and "Doesn't apply"
+beside each question. See `public/portal/README.md`.
+
+```sh
+npm run test:portal          # the portal, in a real browser, against a real database
+```
+
+That test loads the portal's own files in headless Chromium and runs every query
+as the signed-in contact against a throwaway cluster, so it checks the two things
+SQL assertions cannot: that the page renders the right questions, and that a
+section link forwarded to someone at another client does not open. It carries its
+own negative control — widen the section-scope policy and the forwarded link is
+required to start working.
+
 ## Not in this pass
 
-No UI, no conditional field logic or branching, no email sending, no e-signature,
-and no changes to existing ops tables beyond the RLS lockdown described above.
+Repeating groups, file upload, and access grants are not in the portal yet
+(phases 3–5); the schema already carries all three and the portal names them in
+place rather than hiding them. Still nothing here does conditional field logic or
+branching, email sending, or e-signature, and nothing changes in the existing ops
+tables beyond the RLS lockdown described above.

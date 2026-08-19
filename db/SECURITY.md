@@ -11,8 +11,8 @@ work before the old door closes.
 | --- | --- | --- |
 | 1 | Audit | Done — inventory below |
 | 2 | Staff auth alongside the PIN, additive | Code done; needs two dashboard settings + a deploy |
-| 3 | Drop anon, delete the PIN | Built and tested; **not yet applied** — see below |
-| 4 | Regression test proving anon is dead | Folded into the main suite; HTTP-level test still to come |
+| 3 | Drop anon, delete the PIN | **Applied 2026-08-19** and verified against production |
+| 4 | Regression test proving anon is dead | **Done** — `npm run db:test-anon` |
 
 Two items from Stage 3 were pulled forward because they carried no risk of
 lockout. See "Already applied".
@@ -156,7 +156,84 @@ Neither can be set from a migration.
    to the redirect allowlist. Only needed for the link half; the code works
    without it.
 
-## Stage 3 — built, not yet applied
+## Stage 3 — applied 2026-08-19
+
+Verified from outside, with the publishable key and no session — the same probe
+that returned the whole business that morning:
+
+```
+clients              HTTP 401  permission denied for table clients
+invoices             HTTP 401  permission denied for table invoices
+payments             HTTP 401  permission denied for table payments
+expenses             HTTP 401  permission denied for table expenses
+time_entries         HTTP 401  permission denied for table time_entries
+… every table, plus client_contacts, staff_users, automation_accounts
+POST   clients       HTTP 401
+DELETE clients       HTTP 401
+```
+
+And the legitimate paths, each impersonated against production:
+
+| Identity | Reaches | Does not reach |
+| --- | --- | --- |
+| Staff (Josh) | clients 11, invoices 2, payments 9, time_entries 74, tasks 52 | — |
+| Automation `crm_documents` | clients 11, invoices 2, proposals, reports | payments 0, ad_metrics 0 |
+| Automation `ad_metrics` | ad_metrics 15 | clients 0, invoices 0 |
+
+### One residue worth knowing about
+
+Three `ALTER DEFAULT PRIVILEGES` entries granting anon survive, because they
+belong to `supabase_admin` and `postgres` is not a member — the migration warns
+rather than failing. Verified harmless with a canary table: a table created as
+`postgres`, which is how migrations and the dashboard create them, grants
+`authenticated, postgres, service_role` and gives anon nothing. The survivors
+only apply to tables created by Supabase's own internal machinery.
+
+## Stage 4 — proving it stays dead
+
+```sh
+npm run db:test-anon        # probes production over HTTP
+npm run db:test-anon -- --url https://other.supabase.co --key sb_publishable_...
+```
+
+`scripts/test-anon-lockout.mjs` probes the live project as a stranger would:
+every table and view, reads and writes, the RPC surface, storage buckets and
+objects, and the PostgREST OpenAPI document. It reads the URL and key out of
+`public/app/assets/js/config.js`, so it tests exactly the credential that ships
+in page source rather than a copy that can drift.
+
+Deliberately **not** a database test. `db/tests/onboarding_isolation_test.sql`
+already asserts the same boundary inside Postgres and runs on every
+`npm run db:test-rls` — but a test living inside the database can only see what
+the database sees. It would not notice the legacy JWT keys being re-enabled, a
+gateway or PostgREST setting changing what is exposed, a bucket flipped public
+in the dashboard, or an RPC becoming callable. Those regress this posture
+without a single policy changing.
+
+Current result: **46 locked, 0 exposed, 0 not-present.** The sixteen onboarding
+objects that once reported "not present yet" went live on 2026-08-19 and are now
+covered for real.
+
+Table and view lists are discovered by parsing the SQL, not hardcoded, so a
+table added later is probed automatically. A list maintained by hand is a list
+that silently stops being complete.
+
+### It was watched failing
+
+A green test that has never gone red proves nothing. `public.meetings` (zero
+rows, so nothing to expose) was deliberately granted to anon with a permissive
+policy; the probe reported `OPEN read meetings — HTTP 200`, named it as a
+regression, and exited non-zero. The grant and policy were removed immediately
+and the probe returned to 30 locked, 0 exposed.
+
+### Known soft spot
+
+The two storage checks currently pass vacuously: there are no buckets yet, so an
+empty list is indistinguishable from a refusal. The classification handles the
+populated case correctly, but that assertion only becomes meaningful once the
+`onboarding` bucket exists.
+
+## How it was built
 
 `20260819150000_stage3_close_anon` drops every `anon` policy across `public` and
 `storage`, revokes anon's table, sequence and function grants, and clears the
@@ -188,10 +265,19 @@ door, `auth: 'pin'` is the legacy gate.
 
 Contractor copies keep `auth: 'pin'`, because their Supabase projects have not
 been migrated and have nothing to sign in with. That is a placeholder for
-security, not security — and their exposure is real: Tony's publishable key is
-in this public repo and his project still grants `anon` full read/write, exactly
-what the owner project carried before 2026-08-19. Migrating his project is the
-only thing that removes the PIN from this codebase entirely.
+security, not security.
+
+**Tony's project — deferred 2026-08-19, with a condition.** His publishable key
+is in this public repo and his project still grants `anon` full read/write, the
+same posture the owner project carried that morning. The difference, and the
+reason it was deferred rather than fixed: *his database is empty*. The door is
+open onto an empty room.
+
+That is a decision with an expiry date, not a permanent one. It stops being true
+the first time he onboards a client. The trigger to revisit is his first real
+row, not a date — and the work is the same shape as this document describes:
+audit, staff auth, drop anon, delete the PIN from that profile. Doing so is also
+the only thing that removes PIN code from this codebase entirely.
 
 ### Still open
 

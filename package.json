@@ -10,6 +10,9 @@
     "preview": "astro preview",
     "astro": "astro",
     "db:test-rls": "node scripts/test-onboarding-rls.mjs",
+    "db:test-anon": "node scripts/test-anon-lockout.mjs",
+    "test:portal": "node scripts/test-portal-flow.mjs",
+    "test:db-errors": "node scripts/test-db-errors.mjs",
     "db:types": "node scripts/gen-db-types.mjs",
     "family:seal": "node scripts/seal-vault.mjs"
   },
