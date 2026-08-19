@@ -266,10 +266,19 @@ door, `auth: 'pin'` is the legacy gate.
 
 Contractor copies keep `auth: 'pin'`, because their Supabase projects have not
 been migrated and have nothing to sign in with. That is a placeholder for
-security, not security — and their exposure is real: Tony's publishable key is
-in this public repo and his project still grants `anon` full read/write, exactly
-what the owner project carried before 2026-08-19. Migrating his project is the
-only thing that removes the PIN from this codebase entirely.
+security, not security.
+
+**Tony's project — deferred 2026-08-19, with a condition.** His publishable key
+is in this public repo and his project still grants `anon` full read/write, the
+same posture the owner project carried that morning. The difference, and the
+reason it was deferred rather than fixed: *his database is empty*. The door is
+open onto an empty room.
+
+That is a decision with an expiry date, not a permanent one. It stops being true
+the first time he onboards a client. The trigger to revisit is his first real
+row, not a date — and the work is the same shape as this document describes:
+audit, staff auth, drop anon, delete the PIN from that profile. Doing so is also
+the only thing that removes PIN code from this codebase entirely.
 
 ### Still open
 
