@@ -27,37 +27,34 @@
  * To pull fresh numbers on demand, just open the script and hit Run.
  * ------------------------------------------------------------------------- */
 
+//
+// ---------------------------------------------------------------------------
+// CREDENTIAL NOTE — why this still uses the publishable key
+// ---------------------------------------------------------------------------
+// A Supabase SECRET key cannot be used from here, and the reason is worth
+// recording so nobody tries it again:
+//
+//   * Supabase rejects secret keys with 401 "Forbidden use of secret API key
+//     in browser", matched on the User-Agent header.
+//   * Apps Script and Google Ads Scripts send
+//     "Mozilla/5.0 (compatible; Google-Apps-Script; ...)" and strip any
+//     attempt to override User-Agent. Google has had that request open for
+//     years, so it is not going to change.
+//
+// So this keeps working today only because `anon` still has policies. Dropping
+// them (stage 3 in db/SECURITY.md) breaks these scripts unless one of these
+// lands first:
+//
+//   a) a dedicated automation user signing in with Supabase Auth, so the
+//      script carries a normal user JWT rather than a key, or
+//   b) a Supabase Edge Function fronting the tables these scripts touch —
+//      /functions/v1/ skips the gateway's key checks entirely, or
+//   c) the legacy JWT-based service_role key, which predates the browser
+//      check but is on the deprecation path.
+// ---------------------------------------------------------------------------
 // ── Config ────────────────────────────────────────────────────────────────
 var SUPABASE_URL = 'https://buubrapkkqyalecwbhkh.supabase.co';
-
-// ── Supabase credential ───────────────────────────────────────────────────
-// This is a GOOGLE ADS SCRIPT, not an Apps Script project. The Ads Scripts
-// runtime has no PropertiesService, so there is nowhere outside the script body
-// to keep a credential — the key has to live in this constant.
-//
-// Which means: fill it in inside the Google Ads UI, and NEVER commit the real
-// value to this file. The repo copy stays a placeholder forever.
-//
-// Use a SECOND secret key named "ads-sync", not the "default" one the document
-// pipeline uses. Both bypass row-level security completely, but a separate key
-// can be rotated on its own — and unlike Script Properties, anyone with access
-// to the Google Ads manager account can read this one.
-//
-//   Supabase → Project Settings → API Keys → Create new secret key → "ads-sync"
-//
-// The publishable key this used to carry stops working once the anon policies
-// are dropped, which is why it changed.
-var SUPABASE_SECRET_KEY = 'PASTE_ADS_SYNC_SECRET_KEY_HERE';
-
-function supabaseKey_() {
-  if (!SUPABASE_SECRET_KEY || SUPABASE_SECRET_KEY.indexOf('PASTE_') === 0) {
-    throw new Error(
-      'SUPABASE_SECRET_KEY is still the placeholder. Edit this script in Google Ads and paste ' +
-      'the secret key named "ads-sync" from Supabase - Project Settings - API Keys.'
-    );
-  }
-  return SUPABASE_SECRET_KEY;
-}
+var SUPABASE_KEY = 'sb_publishable_h-KXdNNW7Tc_BFut25s_sQ_ypIidBJB';
 var MONTHS_BACK  = 3; // how many complete prior months to (re)sync each run
 
 var MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -126,10 +123,8 @@ function upsert_(rows) {
     method: 'post',
     contentType: 'application/json',
     headers: {
-      // Secret keys are not JWTs, so Supabase rejects them in an
-      // `Authorization: Bearer` header — they go on `apikey` alone. The old
-      // publishable key tolerated both, which is why this used to send two.
-      'apikey': supabaseKey_(),
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
       'Prefer': 'resolution=merge-duplicates,return=minimal'
     },
     payload: JSON.stringify(rows),

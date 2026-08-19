@@ -181,9 +181,27 @@ are dropped:
   `invoices`, `reports`, `clients`. This is invoice and proposal emailing and
   the Drive archive. It also reaches Tony's project with his anon key.
 
-Apps Script is server-side, so the service-role key in Script Properties is the
-correct credential there, not a workaround. That move has to land before Stage 3,
-not after.
+Apps Script looks like the obvious place for a server-side key. It is not, and
+this was tried and reverted:
+
+- Supabase rejects secret keys with 401 "Forbidden use of secret API key in
+  browser", matched on the **User-Agent header**.
+- Apps Script and Google Ads Scripts send
+  `Mozilla/5.0 (compatible; Google-Apps-Script; ...)` and **strip any attempt to
+  override User-Agent**. Google has had that feature request open for years.
+
+So a secret key can never work from either script. One of these has to land
+before Stage 3 drops the anon policies:
+
+| Option | Shape | Trade-off |
+| --- | --- | --- |
+| **Automation user** | A dedicated Supabase Auth user in `staff_users`; the script signs in per run and carries a normal user JWT | Fits everything already built, no key in the script, RLS decides the blast radius. Most work. |
+| **Edge Function** | A narrow endpoint fronting only the tables these scripts touch; `/functions/v1/` skips the gateway's key checks | Smallest blast radius. New component to maintain. |
+| **Legacy `service_role` JWT** | The pre-rename key, which predates the browser check | Works in minutes. On the deprecation path and rotates poorly. |
+
+Whichever is chosen, the Google Ads Script still cannot hide its credential —
+that runtime has no `PropertiesService` — so it should get its own identity with
+access to `ad_metrics` alone, not a shared one.
 
 ## MFA
 

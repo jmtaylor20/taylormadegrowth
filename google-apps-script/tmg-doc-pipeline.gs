@@ -18,12 +18,36 @@
  * ------------------------------------------------------------------------
  */
 
+//
+// ---------------------------------------------------------------------------
+// CREDENTIAL NOTE — why this still uses the publishable key
+// ---------------------------------------------------------------------------
+// A Supabase SECRET key cannot be used from here, and the reason is worth
+// recording so nobody tries it again:
+//
+//   * Supabase rejects secret keys with 401 "Forbidden use of secret API key
+//     in browser", matched on the User-Agent header.
+//   * Apps Script and Google Ads Scripts send
+//     "Mozilla/5.0 (compatible; Google-Apps-Script; ...)" and strip any
+//     attempt to override User-Agent. Google has had that request open for
+//     years, so it is not going to change.
+//
+// So this keeps working today only because `anon` still has policies. Dropping
+// them (stage 3 in db/SECURITY.md) breaks these scripts unless one of these
+// lands first:
+//
+//   a) a dedicated automation user signing in with Supabase Auth, so the
+//      script carries a normal user JWT rather than a key, or
+//   b) a Supabase Edge Function fronting the tables these scripts touch —
+//      /functions/v1/ skips the gateway's key checks entirely, or
+//   c) the legacy JWT-based service_role key, which predates the browser
+//      check but is on the deprecation path.
+// ---------------------------------------------------------------------------
 // ==== CONFIG ================================================================
 var CONFIG = {
   SUPABASE_URL: 'https://buubrapkkqyalecwbhkh.supabase.co',
-  // No key here on purpose — see supabaseKey_() below. This script now
-  // authenticates with the SECRET key, which must never be committed.
-
+  // Publishable (anon) key — browser-safe, same key the app uses.
+  SUPABASE_KEY: 'sb_publishable_h-KXdNNW7Tc_BFut25s_sQ_ypIidBJB',
   // "TaylorMade Brands — Client Documents" in your Drive.
   DRIVE_FOLDER_ID: '16xWJ-y8zEJtX6X16m7ZXQDTjGej6Moko',
   PER_CLIENT_SUBFOLDERS: true,   // file each client's docs in their own subfolder
@@ -42,12 +66,6 @@ var CONFIG = {
   // create are only emailed AFTER you approve them in your app's Approvals tab
   // (which sets approval_status='approved' and queues the send). This script
   // then emails those from YOUR Gmail, exactly like your own proposals.
-  //
-  // NOTE: these still use each contractor's PUBLISHABLE key. Their projects are
-  // separate databases with their own RLS posture, none of which has been
-  // audited or locked down yet. Switching them to secret keys is a decision
-  // about those projects, not this one — do it when they get the same
-  // treatment, not before.
   CONTRACTOR_SOURCES: [
     { name: 'Tony', url: 'https://obweziktfdhdswtwzzmh.supabase.co', key: 'sb_publishable_JTKaZ1V3rU0nUiCk6OgVeQ_BaRJ2weB' },
   ],
@@ -55,34 +73,7 @@ var CONFIG = {
 
 // The Supabase project the DB helpers currently point at. Defaults to your own
 // project; processContractorProposals_ swaps it per contractor and restores it.
-var ACTIVE = { url: CONFIG.SUPABASE_URL, key: null };
-
-// The Supabase SECRET key — "service_role" under its old name. Read from Script
-// Properties, never written here: this file lives in a public repo, and a
-// secret key bypasses Row Level Security completely.
-//
-// Apps Script runs on Google's servers, not in a browser, so a secret key is
-// the correct credential rather than a workaround. The publishable key this
-// used to carry stops working once the anon policies are dropped.
-//
-// Set it once: Project Settings → Script properties → add
-//   SUPABASE_SECRET_KEY = <Supabase → Project Settings → API Keys → Secret key "default">
-function supabaseKey_() {
-  var k = PropertiesService.getScriptProperties().getProperty('SUPABASE_SECRET_KEY');
-  if (!k) {
-    throw new Error(
-      'SUPABASE_SECRET_KEY is not set. Add it under Project Settings → Script properties. ' +
-      'Copy the value from Supabase → Project Settings → API Keys → Secret key (named "default").'
-    );
-  }
-  return k;
-}
-
-// Resolved lazily so a missing key fails loudly at the first database call
-// rather than breaking every function in the file at load time.
-function activeKey_() {
-  return ACTIVE.key || supabaseKey_();
-}
+var ACTIVE = { url: CONFIG.SUPABASE_URL, key: CONFIG.SUPABASE_KEY };
 
 // ==== ENTRY POINTS =========================================================
 
@@ -123,7 +114,7 @@ function processContractorProposals_() {
     } catch (err2) {
       Logger.log('Contractor source ' + src.name + ' failed: ' + err2);
     } finally {
-      ACTIVE = { url: CONFIG.SUPABASE_URL, key: null };
+      ACTIVE = { url: CONFIG.SUPABASE_URL, key: CONFIG.SUPABASE_KEY };
     }
   }
 }
@@ -312,10 +303,7 @@ function targetFolder_(clientName) {
 // ==== SUPABASE REST ========================================================
 
 function authHeaders_() {
-  // Secret keys are not JWTs, so Supabase rejects them in an
-  // `Authorization: Bearer` header — they go on `apikey` alone. The old
-  // publishable key tolerated both, which is why this used to send two.
-  return { apikey: activeKey_() };
+  return { apikey: ACTIVE.key, Authorization: 'Bearer ' + ACTIVE.key };
 }
 function sbGet_(path) {
   var res = UrlFetchApp.fetch(ACTIVE.url + '/rest/v1/' + path, {
