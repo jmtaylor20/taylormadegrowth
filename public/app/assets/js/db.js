@@ -60,6 +60,14 @@ export const Contractors = table('contractors');
 export const AdMetrics  = table('ad_metrics');
 export const Settings   = table('app_settings');
 
+// Client onboarding. The library tables are definitions shared by every client;
+// the engagement tables are one client's copy of them.
+export const Contacts        = table('client_contacts');
+export const OnbSections     = table('onboarding_sections');
+export const OnbTemplates    = table('onboarding_templates');
+export const OnbEngagements  = table('onboarding_engagements');
+export const OnbEngSections  = table('onboarding_engagement_sections');
+
 // App-wide settings (single-row key/value). getSetting returns the stored
 // `data` object (or a default); setSetting upserts it.
 export async function getSetting(id, dflt = {}) {

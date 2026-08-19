@@ -388,3 +388,59 @@ body.locked { background: radial-gradient(120% 120% at 50% 0%, #16305a 0%, var(-
   .overlay { display: block; }
   .sheet { max-width: none; box-shadow: none; max-height: none; }
 }
+
+/* ==========================================================================
+   Onboarding — the staff side of the client portal
+   ========================================================================== */
+/* Spacing utilities the older pages already ask for by name. */
+.mb-8 { margin-bottom: 8px; }
+.mt-16 { margin-top: 16px; }
+
+/* A text button that sits inline with a heading. Reads as a link, behaves as
+   a button, because it does something rather than going somewhere. */
+.linkish {
+  background: none; border: 0; padding: 0; font: inherit; font-size: .85rem;
+  color: var(--navy); font-weight: 600; text-decoration: underline; cursor: pointer;
+}
+.back-link {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--muted); font-size: .85rem; font-weight: 600; margin-bottom: 6px;
+}
+.back-link svg { width: 16px; height: 16px; }
+
+.cards-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 720px) { .cards-grid { grid-template-columns: 1fr 1fr; } }
+
+.onb-card { display: block; padding: 16px; }
+.onb-card-top { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.onb-card-title { flex: 1; font-size: 1.02rem; font-family: var(--head); font-weight: 700; margin: 0; }
+.onb-card-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 10px; color: var(--muted); font-size: .8rem; }
+
+.onb-bar { height: 7px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.onb-bar.thin { height: 5px; }
+.onb-bar-fill { height: 100%; background: var(--gold); border-radius: 999px; transition: width .3s; }
+
+.onb-head-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: -6px 0 4px; }
+
+/* A switched-off section stays legible — it is a choice you can see, not a
+   disabled control you have to squint at. */
+.onb-sec { align-items: flex-start; }
+.onb-sec.is-off .row-title { color: var(--muted); }
+.onb-sec.is-off .row-sub { opacity: .6; }
+.onb-sec-toggle { display: flex; align-items: center; padding-top: 2px; }
+.onb-sec-body { margin-top: 10px; }
+.onb-sec-controls { display: flex; flex-wrap: wrap; gap: 10px; }
+.onb-mini { display: flex; flex-direction: column; gap: 3px; min-width: 150px; flex: 1; }
+.onb-mini > span { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 700; }
+.onb-mini .input { padding: 8px 10px; font-size: .88rem; }
+.onb-sec-prog { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.onb-sec-prog .onb-bar { flex: 1; }
+
+.onb-send { display: flex; gap: 8px; flex-shrink: 0; }
+.onb-preview { margin-top: 14px; }
+.onb-preview summary { cursor: pointer; color: var(--navy); font-size: .85rem; font-weight: 600; }
+.onb-preview-text {
+  white-space: pre-wrap; font-family: var(--font); font-size: .85rem; line-height: 1.55;
+  background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  padding: 14px; margin-top: 10px; color: var(--ink);
+}
