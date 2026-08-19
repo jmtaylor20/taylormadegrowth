@@ -12,7 +12,7 @@ work before the old door closes.
 | 1 | Audit | Done — inventory below |
 | 2 | Staff auth alongside the PIN, additive | Code done; needs two dashboard settings + a deploy |
 | 3 | Drop anon, delete the PIN | **Applied 2026-08-19** and verified against production |
-| 4 | Regression test proving anon is dead | Folded into the main suite; HTTP-level test still to come |
+| 4 | Regression test proving anon is dead | **Done** — `npm run db:test-anon` |
 
 Two items from Stage 3 were pulled forward because they carried no risk of
 lockout. See "Already applied".
@@ -188,6 +188,51 @@ rather than failing. Verified harmless with a canary table: a table created as
 `postgres`, which is how migrations and the dashboard create them, grants
 `authenticated, postgres, service_role` and gives anon nothing. The survivors
 only apply to tables created by Supabase's own internal machinery.
+
+## Stage 4 — proving it stays dead
+
+```sh
+npm run db:test-anon        # probes production over HTTP
+npm run db:test-anon -- --url https://other.supabase.co --key sb_publishable_...
+```
+
+`scripts/test-anon-lockout.mjs` probes the live project as a stranger would:
+every table and view, reads and writes, the RPC surface, storage buckets and
+objects, and the PostgREST OpenAPI document. It reads the URL and key out of
+`public/app/assets/js/config.js`, so it tests exactly the credential that ships
+in page source rather than a copy that can drift.
+
+Deliberately **not** a database test. `db/tests/onboarding_isolation_test.sql`
+already asserts the same boundary inside Postgres and runs on every
+`npm run db:test-rls` — but a test living inside the database can only see what
+the database sees. It would not notice the legacy JWT keys being re-enabled, a
+gateway or PostgREST setting changing what is exposed, a bucket flipped public
+in the dashboard, or an RPC becoming callable. Those regress this posture
+without a single policy changing.
+
+Current result: **30 locked, 0 exposed.** Sixteen onboarding objects report
+"not present yet" — they cannot leak because they do not exist on production
+yet, and the probe starts covering them for real the moment those migrations
+are applied.
+
+Table and view lists are discovered by parsing the SQL, not hardcoded, so a
+table added later is probed automatically. A list maintained by hand is a list
+that silently stops being complete.
+
+### It was watched failing
+
+A green test that has never gone red proves nothing. `public.meetings` (zero
+rows, so nothing to expose) was deliberately granted to anon with a permissive
+policy; the probe reported `OPEN read meetings — HTTP 200`, named it as a
+regression, and exited non-zero. The grant and policy were removed immediately
+and the probe returned to 30 locked, 0 exposed.
+
+### Known soft spot
+
+The two storage checks currently pass vacuously: there are no buckets yet, so an
+empty list is indistinguishable from a refusal. The classification handles the
+populated case correctly, but that assertion only becomes meaningful once the
+`onboarding` bucket exists.
 
 ## How it was built
 
