@@ -219,7 +219,28 @@ therefore optional on insert even when it is `NOT NULL` with no default — that
 is how `engagement_id` stays out of the way on the three tables that denormalize
 it.
 
+## The portal
+
+`public/portal/` is the client-facing half of this: sign in by emailed code,
+see your activated sections, answer them. Phases 1 and 2 are built — the
+overview and every scalar field type, with "I don't know" and "Doesn't apply"
+beside each question. See `public/portal/README.md`.
+
+```sh
+npm run test:portal          # the portal, in a real browser, against a real database
+```
+
+That test loads the portal's own files in headless Chromium and runs every query
+as the signed-in contact against a throwaway cluster, so it checks the two things
+SQL assertions cannot: that the page renders the right questions, and that a
+section link forwarded to someone at another client does not open. It carries its
+own negative control — widen the section-scope policy and the forwarded link is
+required to start working.
+
 ## Not in this pass
 
-No UI, no conditional field logic or branching, no email sending, no e-signature,
-and no changes to existing ops tables beyond the RLS lockdown described above.
+Repeating groups, file upload, and access grants are not in the portal yet
+(phases 3–5); the schema already carries all three and the portal names them in
+place rather than hiding them. Still nothing here does conditional field logic or
+branching, email sending, or e-signature, and nothing changes in the existing ops
+tables beyond the RLS lockdown described above.

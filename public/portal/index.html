@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Client Onboarding — TaylorMade Brands</title>
+  <meta name="description" content="Secure onboarding portal for TaylorMade Brands clients.">
+  <meta name="theme-color" content="#13294b">
+  <!-- Nothing here should ever surface in a search result. -->
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/img/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Onboarding">
+  <link rel="icon" type="image/png" sizes="192x192" href="./assets/img/icon-192.png">
+  <link rel="stylesheet" href="./assets/css/style.css">
+</head>
+<body class="signed-out">
+  <div id="root"></div>
+  <!-- Supabase client, vendored locally so the portal does not depend on a
+       third-party CDN being reachable when a client opens it. -->
+  <script src="./assets/vendor/supabase.js"></script>
+  <script type="module" src="./assets/js/app.js"></script>
+</body>
+</html>
