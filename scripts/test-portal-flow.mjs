@@ -16,7 +16,7 @@
 //   node scripts/test-portal-flow.mjs --headed   (keeps the browser visible logs)
 
 import { execFileSync, spawn } from 'node:child_process';
-import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs';
+import { mkdtempSync, rmSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname, extname, normalize } from 'node:path';
@@ -39,6 +39,7 @@ const { chromium } = require(join(globalRoot, 'playwright'));
 const base = mkdtempSync(join(tmpdir(), 'tmb-portal-'));
 const PGDATA = join(base, 'data');
 const SOCKET = join(base, 'sock');
+const SCRATCH = base;
 let pg = null, http = null, browser = null;
 let DB = null;
 
@@ -92,7 +93,7 @@ function buildDatabase() {
   // because onboarding_client_ids() only matches a confirmed address.
   psql(['-c', `
     insert into auth.users (email, email_confirmed_at)
-    values ('ruth@cedarandpine.test', now()), ('dana@harborlane.test', now())
+    values ('ruth@cedarandpine.test', now()), ('marcus@cedarandpine.test', now()), ('dana@harborlane.test', now())
     on conflict (email) do update set email_confirmed_at = now();
   `]);
 
@@ -219,6 +220,35 @@ function handleRpc(session, fn, args) {
     `select '<<<' || coalesce((select json_agg(t.v)::text from (select public.${f}(${argSql}) as v) t), 'null') || '>>>'`);
 }
 
+function handleStorage(session, body) {
+  const bucket = String(body.bucket || '');
+  if (body.fn === 'upload') {
+    const r = asContact(session, `with w as (
+        insert into storage.objects (bucket_id, name, owner, metadata)
+        values (${lit(bucket)}, ${lit(body.path)}, null, ${lit(body.meta || {})})
+        returning id, name
+      ), j as (select json_agg(t)::text as s from (select * from w) t)
+      select '<<<' || coalesce(j.s, 'null') || '>>>' from j`);
+    if (r.error) return { data: null, error: { message: r.error.message, statusCode: statusFor(r.error.code) } };
+    return { data: { path: body.path }, error: null };
+  }
+  if (body.fn === 'remove') {
+    const names = (body.paths || []).map(lit).join(', ');
+    const r = asContact(session, `with w as (
+        delete from storage.objects
+         where bucket_id = ${lit(bucket)} and name in (${names || 'null'}) returning name
+      ), j as (select json_agg(t)::text as s from (select * from w) t)
+      select '<<<' || coalesce(j.s, 'null') || '>>>' from j`);
+    if (r.error) return { data: null, error: { message: r.error.message, statusCode: statusFor(r.error.code) } };
+    return { data: r.data || [], error: null };
+  }
+  return { data: null, error: { message: 'unsupported storage call ' + body.fn, statusCode: 400 } };
+}
+
+// Storage reports an RLS refusal as HTTP 403, not a SQLSTATE, so the shim has to
+// translate — otherwise humanizeStorage() would never see the shape it handles.
+const statusFor = (code) => (code === '42501' ? 403 : 400);
+
 // ---- Static server ----------------------------------------------------------
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
@@ -232,9 +262,9 @@ function startHttp() {
         const body = JSON.parse(Buffer.concat(chunks).toString());
         let out;
         try {
-          out = body.op === 'rpc'
-            ? handleRpc(body.session, body.fn, body.args)
-            : handleQuery(body.session, body.q);
+          out = body.op === 'rpc' ? handleRpc(body.session, body.fn, body.args)
+              : body.op === 'storage' ? handleStorage(body.session, body)
+              : handleQuery(body.session, body.q);
         } catch (err) {
           out = { data: null, error: { code: 'XX000', message: err.message } };
         }
@@ -460,6 +490,64 @@ async function main() {
     sql(`select count(*) from public.onboarding_responses where engagement_section_id = '${brand.id}' and field_id = '${secretField.id}'`) === '0',
     brandRow(secretField.id));
 
+  // ---- Files --------------------------------------------------------------
+  const logoField = JSON.parse(sql(`
+    select json_build_object('id', id, 'key', field_key)
+      from public.onboarding_fields
+     where section_key = 'business_brand' and field_type = 'file_upload' and active
+       and parent_field_id is null
+     order by position limit 1`));
+  const engagementId = sql(`select engagement_id from public.onboarding_engagement_sections where id = '${brand.id}'`);
+
+  // A name nothing else uses. The seed already puts assets on this very field,
+  // and matching on the field alone would let a seeded row stand in for the
+  // upload — which is a pass that proves nothing.
+  const UPLOAD_NAME = 'portal-flow-upload.svg';
+  const upload = join(SCRATCH, UPLOAD_NAME);
+  writeFileSync(upload, '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"></svg>');
+
+  const uploaded = (col = 'storage_path') => sql(`
+    select coalesce(${col}::text, '') from public.onboarding_assets
+     where engagement_section_id = '${brand.id}' and field_id = '${logoField.id}'
+       and file_name = '${UPLOAD_NAME}'`);
+
+  await page.setInputFiles(`.q[data-field="${logoField.key}"] .files-input`, upload);
+  check('a logo file uploads and is recorded against the question',
+    await waitFor(() => uploaded() !== ''), uploaded() || '(no asset row)');
+  check('the file is stored under the engagement, which is the tenant boundary in the bucket',
+    uploaded().startsWith(engagementId + '/business_brand/'), uploaded());
+  check('the object itself exists in the bucket, not just the row describing it',
+    sql(`select count(*) from storage.objects where bucket_id = 'onboarding' and name = '${uploaded()}'`) === '1');
+  check('the upload is attributed to the contact who made it',
+    sql(`select ct.name from public.onboarding_assets a join public.client_contacts ct on ct.id = a.uploaded_by_contact_id
+          where a.engagement_section_id = '${brand.id}' and a.file_name = '${UPLOAD_NAME}'`) === 'Ruth Calder',
+    sql(`select coalesce(uploaded_by_contact_id::text,'null') from public.onboarding_assets where file_name = '${UPLOAD_NAME}'`));
+  check('the file appears in the question it was uploaded to',
+    (await page.textContent(`.q[data-field="${logoField.key}"] .files`)).includes(UPLOAD_NAME));
+
+  // The path prefix is the only thing standing between two clients' files. Try
+  // to write outside it — the way a doctored request would — and require Postgres
+  // to refuse, not the page.
+  const danaEngagement = sql(`
+    select e.id from public.onboarding_engagements e join public.clients c on c.id = e.client_id
+     where c.business_name = 'Harbor Lane Roofing'`);
+  const smuggled = await page.evaluate(async (path) => {
+    const r = await window.supabase.createClient().storage.from('onboarding')
+      .upload(path, { size: 4, type: 'image/png', name: 'x.png' }, {});
+    return { ok: !r.error, message: r.error?.message || '' };
+  }, `${danaEngagement}/business_brand/smuggled.png`);
+  check("a file aimed at another client's prefix is refused by the database",
+    !smuggled.ok, smuggled.message || 'the upload succeeded');
+  check('and nothing of it is left in the bucket',
+    sql(`select count(*) from storage.objects where name like '${danaEngagement}/%smuggled%'`) === '0');
+
+  const storedPath = uploaded();
+  await page.click(`.q[data-field="${logoField.key}"] .file:has-text("${UPLOAD_NAME}") .file-remove`);
+  check('removing a file takes away the row describing it',
+    await waitFor(() => uploaded() === ''), uploaded());
+  check('and the object itself, not just the row',
+    sql(`select count(*) from storage.objects where bucket_id = 'onboarding' and name = '${storedPath}'`) === '0');
+
   // ---- Isolation, through the interface ----------------------------------
   // Dana is Harbor Lane. Handing her the URL of Cedar & Pine's section is the
   // realistic attack: a forwarded link. She must land on her own list instead.
@@ -525,6 +613,62 @@ async function main() {
   await page2.waitForSelector('.card, .empty', { timeout: 15000 });
   check('and restoring the policy shuts it again',
     (await page2.evaluate(() => location.hash)) === '#/' && !(await shown(page2)).includes('425000'));
+
+  // ---- "Which of these are mine?" -----------------------------------------
+  // Marcus is the shop lead on the same engagement Ruth owns. On a fourteen
+  // section list, the first thing he needs is his four — so the overview groups
+  // by owner, and his own sections have to be findable without reading a word.
+  const marcus = sessionFor('marcus@cedarandpine.test');
+  const page3 = await ctx.newPage();
+  await page3.addInitScript((s) => { window.__PORTAL_TEST__ = { session: s }; }, marcus);
+  await page3.goto(origin + '/index.html', { waitUntil: 'load' });
+  await page3.waitForSelector('.card', { timeout: 15000 });
+
+  const heads = await page3.$$eval('.list-head', (n) => n.map((x) => x.textContent));
+  check('the overview groups sections by who owns them', heads.includes('Yours to answer'), heads.join(' | '));
+
+  const wantMine = Number(sql(`
+    select count(*) from public.onboarding_engagement_sections es
+      join public.client_contacts ct on ct.id = es.assigned_contact_id
+      join public.onboarding_engagements e on e.id = es.engagement_id
+      join public.clients c on c.id = e.client_id
+     where ct.email = 'marcus@cedarandpine.test' and es.active
+       and es.status not in ('submitted','accepted','waived')
+       and c.business_name = 'Cedar & Pine Millwork'`));
+  const gotMine = await page3.evaluate(() => {
+    const heads = [...document.querySelectorAll('.list-head')];
+    const h = heads.find((x) => x.textContent === 'Yours to answer');
+    let n = h?.nextElementSibling;
+    while (n && !n.classList.contains('cards')) n = n.nextElementSibling;
+    return n ? n.querySelectorAll('.card').length : 0;
+  });
+  check('his group holds exactly the sections assigned to him', gotMine === wantMine,
+    `grouped ${gotMine}, assigned ${wantMine}`);
+
+  const mineMarked = await page3.evaluate(() => {
+    const heads = [...document.querySelectorAll('.list-head')];
+    const h = heads.find((x) => x.textContent === 'Yours to answer');
+    let n = h?.nextElementSibling;
+    while (n && !n.classList.contains('cards')) n = n.nextElementSibling;
+    return [...(n?.querySelectorAll('.card') || [])].every((c) => c.classList.contains('is-mine'));
+  });
+  check('and every card in it is marked as his', mineMarked);
+
+  check("a colleague's section still says whose it is, rather than nothing",
+    (await page3.content()).includes('For Ruth Calder'));
+
+  check('the summary leads with his own count, not the engagement total',
+    /assigned to you/.test(await page3.textContent('.page-sub')),
+    await page3.textContent('.page-sub'));
+
+  await shot(page3, '6-shop-lead');
+
+  // Opening one of his own says so too, so the two screens cannot disagree.
+  await page3.click('.card.is-mine');
+  await page3.waitForSelector('.q, .empty', { timeout: 15000 });
+  check('the section page agrees about who owns it',
+    (await page3.textContent('.page-head')).includes('Yours to answer'),
+    await page3.textContent('.page-head'));
 
   check('no uncaught errors in the page', consoleErrors.length === 0, consoleErrors.join('\n      '));
 

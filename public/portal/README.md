@@ -10,21 +10,29 @@ It is a separate app from the ops CRM, not a section of it. Nothing under
 nothing there either — that is `is_staff()` in the policies, not a routing
 decision.
 
-## What phases 1 and 2 cover
+## What's built
 
 * Sign-in by emailed code, resolved as a **client contact** via
   `onboarding_client_ids()`.
-* The engagement overview: every activated section with its status, assignee,
-  due date and honest completion count.
+* The engagement overview, **grouped by who owns each section** — yours,
+  anyone's, waiting on a colleague, done. On a fourteen-section list the first
+  question anybody has is "which of these are mine", and a single list sorted by
+  position makes that something you work out card by card.
 * One section at a time: every scalar field type, autosaved as you go.
 * **"I don't know"** and **"Doesn't apply"** beside every question, saved as
   real answers with no value — which is the whole reason the schema stores a
   status per response.
+* **File upload.** Bytes go to a private bucket under
+  `<engagement_id>/<section_key>/<uuid>-<name>`; the row describing them goes to
+  `onboarding_assets`. That first path segment is the tenant boundary, enforced
+  on both sides. If the metadata row is refused after the bytes land, the bytes
+  are taken back out — an object nothing points at is invisible to every screen
+  we have and would sit there forever.
 
-Still to come: repeating groups (phase 3), file upload (4), access grants (5),
-and staff-side engagement creation and assignment (6). The portal names each of
-those in place rather than hiding them, so a client who was told to expect a
-lead-history table can see it is coming.
+Still to come: repeating groups (phase 3), access grants (5), and staff-side
+engagement creation and assignment (6). The portal names each of those in place
+rather than hiding them, so a client who was told to expect a lead-history table
+can see it is coming.
 
 ## Files
 
@@ -56,7 +64,7 @@ and requiring the link to start working.
 ## Proving it
 
 ```sh
-npm run test:portal                    # 27 assertions
+npm run test:portal                    # 42 assertions
 npm run test:portal -- --shots ./shots # …and save what each screen looks like
 ```
 
@@ -66,6 +74,16 @@ the vendored Supabase bundle is swapped, for a shim that runs each query as the
 signed-in contact — `set local role authenticated` with their claims — so the
 rows the page renders are the rows RLS actually allows. GoTrue is the one piece
 faked; there is no local email service to send a code to.
+
+## Sign-in codes are rate limited
+
+Supabase's built-in mailer allows only a handful of messages an hour, per
+project, and is explicitly not meant for production. Three people signing in to
+the same engagement in one sitting can exhaust it. The portal says so plainly
+when it happens — "we've sent as many codes as we're allowed to for the moment"
+rather than something that reads as "your email is wrong" — but the real fix is
+custom SMTP under Authentication → Emails in the Supabase dashboard, which also
+lets the hourly limit be raised.
 
 ## Bumping the service worker
 

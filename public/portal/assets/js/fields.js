@@ -10,7 +10,7 @@
 // the section, which is responsible for persisting it. Nothing here talks to
 // the database.
 
-import { el } from './ui.js';
+import { el, clear } from './ui.js';
 
 // Which typed column each field type writes into. Mirrors
 // onboarding_responses_validate() in the database — if these ever disagree, the
@@ -42,7 +42,7 @@ const INPUT_MODE = { number: 'decimal', currency: 'decimal', phone: 'tel', email
  * onChange({ status, value }) — value is already shaped for the typed column,
  * e.g. { value_number: 38.5 }. status is 'answered' | 'unknown' | 'not_applicable'.
  */
-export function renderField(field, response, onChange) {
+export function renderField(field, response, onChange, files) {
   const stored = readStored(field, response);
   let status = stored.status;
   let value = stored.value;
@@ -60,7 +60,7 @@ export function renderField(field, response, onChange) {
 
   const emit = () => onChange({ status, value: shape(field, value) });
 
-  const control = buildControl(field, () => value, (v) => {
+  const control = buildControl(field, () => value, files, (v) => {
     value = v;
     // Typing into a field is an answer; it clears any Unknown mark.
     status = 'answered';
@@ -134,7 +134,7 @@ function shape(field, value) {
 
 // ---- Controls ---------------------------------------------------------------
 
-function buildControl(field, get, set) {
+function buildControl(field, get, files, set) {
   const t = field.field_type;
 
   if (t === 'long_text') {
@@ -189,11 +189,7 @@ function buildControl(field, get, set) {
     return { node: n, set: paint, disable: (d) => btns.forEach(({ b }) => { b.disabled = d; }) };
   }
 
-  if (t === 'file_upload') {
-    // Phase 4. Say so rather than rendering a control that does nothing.
-    const n = el('div.q-soon', { text: 'File uploads are coming shortly — we\'ll email you when this section can take them.' });
-    return { node: n, set: () => {}, disable: () => {} };
-  }
+  if (t === 'file_upload') return buildFileControl(field, files);
 
   // Everything else is a single-line input, differing only in keyboard and prefix.
   const n = el('input.q-input', {
@@ -213,3 +209,107 @@ function buildControl(field, get, set) {
     : n;
   return { node, set: (v) => { n.value = v ?? ''; }, disable: (d) => { n.disabled = d; } };
 }
+
+// ---- File upload ------------------------------------------------------------
+// The one control that owns state the section cannot re-render from a response
+// row, so it keeps its own list and is handed callbacks rather than reaching for
+// the database itself.
+//
+// `files` is { assets, onUpload(file) -> asset, onRemove(asset), onPreview(asset) }.
+
+function buildFileControl(field, files) {
+  const list = el('div.files');
+  const input = el('input.files-input', {
+    type: 'file',
+    multiple: true,
+    id: 'f-' + field.id,
+    // A logo question should open the photo picker, not the whole filesystem.
+    accept: /logo|photo|portfolio|image|brand/.test(field.field_key) ? 'image/*,.svg,.pdf,.ai,.eps' : undefined,
+  });
+  const pick = el('button.files-pick', { type: 'button', text: 'Choose files', onclick: () => input.click() });
+  const note = el('p.files-note', { text: '' });
+  const node = el('div.files-wrap', {}, [list, pick, input, note]);
+
+  let assets = (files?.assets || []).slice();
+  let busy = false;
+
+  function paint() {
+    clear(list);
+    if (!assets.length) {
+      list.append(el('p.files-empty', { text: 'Nothing uploaded yet.' }));
+      return;
+    }
+    for (const a of assets) list.append(row(a));
+  }
+
+  function row(asset) {
+    const name = el('button.file-name', {
+      type: 'button', text: asset.file_name,
+      title: 'Open a preview',
+      onclick: async () => {
+        try {
+          const url = await files.onPreview(asset);
+          if (url) window.open(url, '_blank', 'noopener');
+        } catch { note.textContent = 'That preview link did not open. The file is still saved.'; }
+      },
+    });
+    const remove = el('button.file-remove', {
+      type: 'button', text: 'Remove', 'aria-label': `Remove ${asset.file_name}`,
+      onclick: async () => {
+        remove.disabled = true; remove.textContent = 'Removing…';
+        try {
+          await files.onRemove(asset);
+          assets = assets.filter((x) => x.id !== asset.id);
+          paint();
+        } catch (err) {
+          remove.disabled = false; remove.textContent = 'Remove';
+          note.textContent = err.message || 'That did not delete. Try again in a moment.';
+        }
+      },
+    });
+    return el('div.file', {}, [
+      el('span.file-icon', { text: iconFor(asset) }),
+      el('div.file-main', {}, [name, el('span.file-meta', { text: sizeOf(asset.byte_size) })]),
+      remove,
+    ]);
+  }
+
+  input.onchange = async () => {
+    const chosen = Array.from(input.files || []);
+    input.value = '';
+    if (!chosen.length || busy) return;
+    busy = true; pick.disabled = true;
+    for (const [i, file] of chosen.entries()) {
+      pick.textContent = chosen.length > 1 ? `Uploading ${i + 1} of ${chosen.length}…` : 'Uploading…';
+      note.textContent = '';
+      try {
+        const asset = await files.onUpload(file);
+        if (asset) { assets.push(asset); paint(); }
+      } catch (err) {
+        note.textContent = err.message || `${file.name} did not upload.`;
+      }
+    }
+    busy = false; pick.disabled = false; pick.textContent = 'Choose files';
+  };
+
+  paint();
+  return {
+    node,
+    set: () => {},
+    disable: (d) => { pick.disabled = d || busy; },
+  };
+}
+
+const sizeOf = (bytes) => {
+  if (bytes == null) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / 1048576).toFixed(1)} MB`;
+};
+
+const iconFor = (asset) => {
+  const t = asset.mime_type || '';
+  if (t.startsWith('image/')) return '🖼';
+  if (t.includes('pdf')) return '📄';
+  return '📎';
+};

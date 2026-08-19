@@ -246,9 +246,10 @@ and reports zero on every row.
 ## The portal
 
 `public/portal/` is the client-facing half of this: sign in by emailed code,
-see your activated sections, answer them. Phases 1 and 2 are built — the
-overview and every scalar field type, with "I don't know" and "Doesn't apply"
-beside each question. See `public/portal/README.md`.
+see your activated sections, answer them. Built so far: the overview grouped by
+who owns each section, every scalar field type with "I don't know" and "Doesn't
+apply" beside each question, and file upload into the private bucket. See
+`public/portal/README.md`.
 
 ```sh
 npm run test:portal          # the portal, in a real browser, against a real database
@@ -263,8 +264,8 @@ required to start working.
 
 ## Not in this pass
 
-Repeating groups, file upload, and access grants are not in the portal yet
-(phases 3–5); the schema already carries all three and the portal names them in
-place rather than hiding them. Still nothing here does conditional field logic or
+Repeating groups and access grants are not in the portal yet (phases 3 and 5);
+the schema already carries both and the portal names them in place rather than
+hiding them. Still nothing here does conditional field logic or
 branching, email sending, or e-signature, and nothing changes in the existing ops
 tables beyond the RLS lockdown described above.

@@ -13,6 +13,7 @@
 import { sb } from './db.js';
 import { CODE_LENGTH, MIN_CODE_LENGTH, MAX_CODE_LENGTH } from './config.js';
 import { el, clear } from './ui.js';
+import { humanize } from './errors.js';
 
 export async function getSession() {
   const { data, error } = await sb.auth.getSession();
@@ -37,7 +38,9 @@ export async function sendCode(email) {
     email: String(email).trim().toLowerCase(),
     options: { shouldCreateUser: true, emailRedirectTo: location.origin + '/portal/' },
   });
-  if (error) throw error;
+  // A rate-limit refusal here is the common one, and it reads as "your email is
+  // wrong" unless we say otherwise.
+  if (error) throw humanize(error);
 }
 
 export async function verifyCode(email, token) {
