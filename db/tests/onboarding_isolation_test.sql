@@ -72,7 +72,7 @@ grant execute on function test.expect_num(text,text,numeric,numeric) to anon, au
 delete from auth.users where email in (
   'ruth@cedarandpine.test','marcus@cedarandpine.test',
   'dana@harborlane.test','owen@harborlane.test',
-  'stranger@example.test','staff@taylormadegrowth.test'
+  'stranger@example.test','staff@taylormadegrowth.test','automation@example.test'
 );
 
 insert into auth.users (email, email_confirmed_at) values
@@ -81,10 +81,17 @@ insert into auth.users (email, email_confirmed_at) values
   ('dana@harborlane.test',        now()),
   ('owen@harborlane.test',        now()),
   ('stranger@example.test',       now()),
-  ('staff@taylormadegrowth.test', now());
+  ('staff@taylormadegrowth.test', now()),
+  ('automation@example.test',     now());
 
 delete from public.staff_users where email = 'staff@taylormadegrowth.test';
 insert into public.staff_users (email, name) values ('staff@taylormadegrowth.test', 'TaylorMade Staff');
+
+-- A machine identity, scoped the way the Google Ads script's will be: it may
+-- reach ad_metrics and nothing else.
+delete from public.automation_accounts where email = 'automation@example.test';
+insert into public.automation_accounts (label, email, scopes)
+values ('Test automation', 'automation@example.test', array['ad_metrics']);
 
 -- ===========================================================================
 -- Fixtures: ids and expected counts, stashed in session GUCs
@@ -97,6 +104,7 @@ do $$ begin
   perform set_config('test.jwt_dana',     format('{"sub":"%s","role":"authenticated"}', id), false) from auth.users where email = 'dana@harborlane.test';
   perform set_config('test.jwt_stranger', format('{"sub":"%s","role":"authenticated"}', id), false) from auth.users where email = 'stranger@example.test';
   perform set_config('test.jwt_staff',    format('{"sub":"%s","role":"authenticated"}', id), false) from auth.users where email = 'staff@taylormadegrowth.test';
+  perform set_config('test.jwt_automation', format('{"sub":"%s","role":"authenticated"}', id), false) from auth.users where email = 'automation@example.test';
 
   perform set_config('test.cedar_client',  c.id::text, false) from public.clients c where c.business_name = 'Cedar & Pine Millwork';
   perform set_config('test.harbor_client', c.id::text, false) from public.clients c where c.business_name = 'Harbor Lane Roofing';
@@ -583,6 +591,69 @@ do $$ begin
     (select count(*) > 0 from public.onboarding_sections));
 end $$;
 
+reset role;
+
+-- ===========================================================================
+-- Persona: Automation — a script's machine identity
+-- ===========================================================================
+-- The Google scripts sign in as these. The Ads script in particular cannot hide
+-- its password — that runtime has no PropertiesService — so what it can reach
+-- has to be bounded by the identity rather than by the credential. These
+-- assertions are what makes "scoped to ad_metrics alone" a fact rather than an
+-- intention.
+set role authenticated;
+do $$ begin
+  perform set_config('request.jwt.claims', current_setting('test.jwt_automation'), false);
+
+  perform public.bind_auth_identity();
+
+  perform test.record('automation', 'holds the scope it was granted',
+    (select public.automation_has_scope('ad_metrics')));
+  perform test.record('automation', 'does NOT hold a scope it was not granted',
+    (select not public.automation_has_scope('crm_documents')));
+  perform test.record('automation', 'is not staff', (select not public.is_staff()));
+  perform test.expect('automation', 'resolves to no client',
+    (select count(*) from public.onboarding_client_ids()), 0);
+
+  -- A script identity must be worth nothing against client data.
+  perform test.expect('automation', 'sees no engagements',      (select count(*) from public.onboarding_engagements), 0);
+  perform test.expect('automation', 'sees no responses',        (select count(*) from public.onboarding_responses), 0);
+  perform test.expect('automation', 'sees no repeating rows',   (select count(*) from public.onboarding_response_rows), 0);
+  perform test.expect('automation', 'sees no assets',           (select count(*) from public.onboarding_assets), 0);
+  perform test.expect('automation', 'sees no access grants',    (select count(*) from public.onboarding_access_grants), 0);
+  perform test.expect('automation', 'sees no storage objects',
+    (select count(*) from storage.objects where bucket_id = 'onboarding'), 0);
+  perform test.expect('automation', 'sees no client contacts',  (select count(*) from public.client_contacts), 0);
+  perform test.expect('automation', 'cannot read the CRM',      (select count(*) from public.clients), 0);
+  perform test.expect('automation', 'cannot read invoices',     (select count(*) from public.invoices), 0);
+  perform test.expect('automation', 'cannot read payments',     (select count(*) from public.payments), 0);
+  perform test.expect('automation', 'cannot read the staff table', (select count(*) from public.staff_users), 0);
+  -- Nor should it be able to read, or grant itself, other scopes.
+  perform test.expect('automation', 'cannot read the automation table itself',
+    (select count(*) from public.automation_accounts), 0);
+end $$;
+
+do $$
+declare blocked boolean := false;
+begin
+  -- The obvious privilege escalation: hand yourself another scope.
+  begin
+    update public.automation_accounts set scopes = array['ad_metrics','crm_documents']
+     where email = 'automation@example.test';
+    if not found then blocked := true; end if;
+  exception when others then
+    blocked := true;
+  end;
+  perform test.record('automation', 'cannot widen its own scopes', blocked);
+
+  blocked := false;
+  begin
+    insert into public.staff_users (email, name) values ('automation@example.test', 'sneaky');
+  exception when others then
+    blocked := true;
+  end;
+  perform test.record('automation', 'cannot make itself staff', blocked);
+end $$;
 reset role;
 
 -- ===========================================================================

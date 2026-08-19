@@ -85,6 +85,7 @@ const MIGRATIONS = [
   '20260818140300_onboarding_rls.sql',
   '20260818140400_onboarding_storage.sql',
   '20260818140500_lock_down_legacy_authenticated_policies.sql',
+  '20260819130000_automation_accounts.sql',
 ];
 
 let dbSeq = 0;

@@ -73,7 +73,52 @@ var CONFIG = {
 
 // The Supabase project the DB helpers currently point at. Defaults to your own
 // project; processContractorProposals_ swaps it per contractor and restores it.
-var ACTIVE = { url: CONFIG.SUPABASE_URL, key: CONFIG.SUPABASE_KEY };
+// `own` marks our own project, which authenticates as the automation user.
+// Contractor projects still run the old permissive posture and have no
+// automation identity, so they authenticate with their publishable key alone.
+var ACTIVE = { url: CONFIG.SUPABASE_URL, key: CONFIG.SUPABASE_KEY, own: true };
+// ==== AUTOMATION SIGN-IN ====================================================
+// This script has its own Supabase Auth user and exchanges a password for a
+// normal user JWT on each run. It does NOT carry a secret key, and cannot:
+// Supabase rejects those with 401 matched on the User-Agent header, and Apps
+// Script sends a Mozilla/5.0 agent it will not let you override.
+//
+// The publishable key still travels on `apikey` — that is the project
+// identifier, and it is meant to be public. Authority comes from the JWT.
+//
+// What this identity may reach is decided by public.automation_accounts and its
+// `scopes`, not by the credential. A leaked password gets exactly those scopes.
+//
+// Set the password once: Project Settings -> Script properties ->
+//   SUPABASE_AUTOMATION_PASSWORD = <the password you set on the user below>
+var AUTOMATION_EMAIL = 'josh+docs-automation@taylormadegrowth.com';
+
+var TOKEN_CACHE_ = null;   // one sign-in per execution; tokens outlive a run
+
+function accessToken_() {
+  if (TOKEN_CACHE_) return TOKEN_CACHE_;
+  var pw = PropertiesService.getScriptProperties().getProperty('SUPABASE_AUTOMATION_PASSWORD');
+  if (!pw) {
+    throw new Error(
+      'SUPABASE_AUTOMATION_PASSWORD is not set. Add it under Project Settings -> Script properties, ' +
+      'using the password set on the ' + AUTOMATION_EMAIL + ' user in Supabase -> Authentication -> Users.'
+    );
+  }
+  var res = UrlFetchApp.fetch(CONFIG.SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { apikey: CONFIG.SUPABASE_KEY },
+    payload: JSON.stringify({ email: AUTOMATION_EMAIL, password: pw }),
+    muteHttpExceptions: true,
+  });
+  if (res.getResponseCode() >= 300) {
+    throw new Error('Automation sign-in failed: ' + res.getResponseCode() + ' ' + res.getContentText());
+  }
+  var tok = JSON.parse(res.getContentText()).access_token;
+  if (!tok) throw new Error('Automation sign-in returned no access token.');
+  TOKEN_CACHE_ = tok;
+  return tok;
+}
 
 // ==== ENTRY POINTS =========================================================
 
@@ -95,7 +140,7 @@ function processContractorProposals_() {
   var sources = CONFIG.CONTRACTOR_SOURCES || [];
   for (var s = 0; s < sources.length; s++) {
     var src = sources[s];
-    ACTIVE = { url: src.url, key: src.key };
+    ACTIVE = { url: src.url, key: src.key, own: false };
     try {
       var rows = sbGet_('proposals?approval_status=eq.approved&or=(send_status.eq.queued,drive_status.eq.queued)&select=*');
       for (var i = 0; i < rows.length; i++) {
@@ -114,7 +159,7 @@ function processContractorProposals_() {
     } catch (err2) {
       Logger.log('Contractor source ' + src.name + ' failed: ' + err2);
     } finally {
-      ACTIVE = { url: CONFIG.SUPABASE_URL, key: CONFIG.SUPABASE_KEY };
+      ACTIVE = { url: CONFIG.SUPABASE_URL, key: CONFIG.SUPABASE_KEY, own: true };
     }
   }
 }
@@ -303,7 +348,12 @@ function targetFolder_(clientName) {
 // ==== SUPABASE REST ========================================================
 
 function authHeaders_() {
-  return { apikey: ACTIVE.key, Authorization: 'Bearer ' + ACTIVE.key };
+  // The publishable key identifies the project; the bearer token carries the
+  // authority. On our own project that is the automation user's JWT.
+  return {
+    apikey: ACTIVE.key,
+    Authorization: 'Bearer ' + (ACTIVE.own ? accessToken_() : ACTIVE.key),
+  };
 }
 function sbGet_(path) {
   var res = UrlFetchApp.fetch(ACTIVE.url + '/rest/v1/' + path, {
