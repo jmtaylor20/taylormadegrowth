@@ -43,6 +43,30 @@ comment on function public.looks_like_secret(text) is
   'Tripwire for credential-shaped text. Used in CHECK constraints so no onboarding free-text column silently accepts a pasted secret.';
 
 -- ---------------------------------------------------------------------------
+-- A note on the validate triggers below
+-- ---------------------------------------------------------------------------
+-- They are all SECURITY DEFINER, and that is a deliberate separation: these
+-- triggers judge SHAPE — does this field belong to this section, does this row
+-- belong to this group, does this path sit under this engagement — and nothing
+-- else. Authorisation is RLS's job alone.
+--
+-- Running them as the caller instead is tempting and quietly wrong. The lookups
+-- would then be filtered by the caller's own visibility, so an attempt to write
+-- into another tenant's section would fail inside the trigger with "does not
+-- exist" before RLS was ever consulted. That looks like defence in depth and is
+-- really a mask: it makes the policy's WITH CHECK unreachable, and therefore
+-- untestable, on the one table holding the sensitive answers. A guard you
+-- cannot exercise is a guard you cannot trust.
+--
+-- With validation running as owner, a cross-tenant insert passes the shape
+-- check and is refused by the policy — which is exactly the path the isolation
+-- suite now exercises. The trigger still refuses genuinely malformed input for
+-- everyone, staff included.
+--
+-- search_path is pinned on every one of them, as it must be on any SECURITY
+-- DEFINER function.
+
+-- ---------------------------------------------------------------------------
 -- Engagements
 -- ---------------------------------------------------------------------------
 -- Hangs off the existing public.clients record — the master CRM row is still
@@ -124,7 +148,8 @@ create trigger onboarding_engagement_sections_touch before update on public.onbo
 -- A section can only be assigned to someone who works at that client, and a
 -- vertical section can only be activated on an engagement in that vertical.
 -- Both are cross-row rules, so they need a trigger.
-create or replace function public.onboarding_engagement_sections_validate() returns trigger as $$
+create or replace function public.onboarding_engagement_sections_validate() returns trigger
+security definer set search_path = public, pg_temp as $$
 declare
   v_client_id uuid;
   v_vertical text;
@@ -191,7 +216,8 @@ drop trigger if exists onboarding_response_rows_touch on public.onboarding_respo
 create trigger onboarding_response_rows_touch before update on public.onboarding_response_rows
   for each row execute function public.touch_updated_at();
 
-create or replace function public.onboarding_response_rows_validate() returns trigger as $$
+create or replace function public.onboarding_response_rows_validate() returns trigger
+security definer set search_path = public, pg_temp as $$
 declare
   v_section_key text;
   v_engagement_id uuid;
@@ -293,7 +319,8 @@ create trigger onboarding_responses_touch before update on public.onboarding_res
 -- answer sits on a row of the right group, and the value lands in the column
 -- its field type says it should. Without this last part the typed columns are
 -- a suggestion, and cross-client queries quietly miss rows.
-create or replace function public.onboarding_responses_validate() returns trigger as $$
+create or replace function public.onboarding_responses_validate() returns trigger
+security definer set search_path = public, pg_temp as $$
 declare
   fld record;
   es  record;
@@ -454,7 +481,8 @@ create trigger onboarding_access_grants_touch before update on public.onboarding
   for each row execute function public.touch_updated_at();
 
 -- A grant's holder must work at the engagement's client.
-create or replace function public.onboarding_access_grants_validate() returns trigger as $$
+create or replace function public.onboarding_access_grants_validate() returns trigger
+security definer set search_path = public, pg_temp as $$
 declare
   v_client_id uuid;
 begin
@@ -528,7 +556,8 @@ drop trigger if exists onboarding_assets_touch on public.onboarding_assets;
 create trigger onboarding_assets_touch before update on public.onboarding_assets
   for each row execute function public.touch_updated_at();
 
-create or replace function public.onboarding_assets_validate() returns trigger as $$
+create or replace function public.onboarding_assets_validate() returns trigger
+security definer set search_path = public, pg_temp as $$
 declare
   es record;
 begin
