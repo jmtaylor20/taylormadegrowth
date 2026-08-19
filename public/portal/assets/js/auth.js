@@ -84,7 +84,11 @@ export async function resolveAccess() {
 // ---- Sign-in screen --------------------------------------------------------
 
 export function renderSignIn(mount, onSuccess) {
-  let email = '';
+  // The invitation links here with ?email=theirs, so somebody on a phone taps a
+  // link and taps a button rather than typing an address into a strange page.
+  // It is their own address and it grants nothing: the code still has to arrive
+  // in their inbox before anything happens.
+  let email = new URLSearchParams(location.search).get('email') || '';
 
   const title = el('h1.gate-title', { text: 'Welcome' });
   const note = el('p.gate-note', {
@@ -93,6 +97,7 @@ export function renderSignIn(mount, onSuccess) {
   const field = el('input.gate-input', {
     type: 'email', inputmode: 'email', autocomplete: 'email',
     placeholder: 'you@yourbusiness.com', autocapitalize: 'off',
+    value: email,
   });
   const action = el('button.gate-btn', { type: 'button', text: 'Email me a code' });
   const form = el('form.gate-form', {}, [field, action]);
@@ -171,5 +176,7 @@ export function renderSignIn(mount, onSuccess) {
     el('div.gate-tag', { text: 'Client Onboarding' }),
     title, note, form, help,
   ]));
-  field.focus();
+  // A prefilled address means the button is the next thing to press, not the
+  // field. Focusing the field there would pop a keyboard over the button.
+  if (email) action.focus(); else field.focus();
 }

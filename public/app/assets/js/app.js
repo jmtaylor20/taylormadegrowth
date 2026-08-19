@@ -21,6 +21,7 @@ import { renderProposals } from './proposals.js';
 import { renderReports } from './reports.js';
 import { renderTracker } from './tracker.js';
 import { renderApprovals } from './approvals.js';
+import { renderOnboarding } from './onboarding.js';
 import { openClient } from './client-detail.js';
 
 const root = document.getElementById('root');
@@ -33,6 +34,7 @@ export const NAV = [
   { id: 'tasks',      label: 'Tasks',     icon: 'tasks',    render: renderTasks,      primary: true },
   { id: 'financials', label: 'Money',     icon: 'wallet',   render: renderFinancials, primary: true },
   { id: 'proposals',  label: 'Proposals', icon: 'proposal', render: renderProposals },
+  { id: 'onboarding', label: 'Onboarding', icon: 'send',     render: renderOnboarding },
   { id: 'reports',    label: 'Reports',   icon: 'report',   render: renderReports },
   { id: 'tracker',    label: 'Tracker',   icon: 'car',      render: renderTracker },
 ];
@@ -71,7 +73,9 @@ async function route() {
   if (!CONFIGURED) mainEl.append(configBanner());
   mainEl.scrollTop = 0;
   try {
-    await item.render(mainEl);
+    // Second segment of the hash, for pages that have a detail view of their
+    // own (#/onboarding/<engagement id>). Pages that don't simply ignore it.
+    await item.render(mainEl, arg);
   } catch (e) {
     console.error(e);
     mainEl.append(el('div.banner', { html: `<b>Couldn't load.</b> ${escapeHtml(e.message || e)}` }));
@@ -138,7 +142,7 @@ function tabLink(n) {
     html: `<span class="tab-ic">${navGlyph(n, 24)}</span><span>${n.label}</span>`,
   });
 }
-const BUILD = 'v40';
+const BUILD = 'v41';
 function moreTab() {
   const overflow = NAV.filter((n) => !n.primary);
   const tab = el('a.tab.tab-more', {

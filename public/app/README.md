@@ -36,9 +36,42 @@ by the main site at **taylormadegrowth.com/app**.
 | Staff auth (email code, session, staff check) | `assets/js/auth.js` |
 | Screens | `assets/js/{dashboard,pipeline,clients,projects,tasks,invoices,content,proposals,renewals}.js` |
 | Client detail hub | `assets/js/client-detail.js` |
+| Client onboarding (More → Onboarding) | `assets/js/onboarding.js` |
 | Monthly report generator | `assets/js/report.js` |
 | Database schema (reference) | `../../db/schema.sql` |
 | Demo/starter data (reference) | `../../db/seed.sql` |
+
+## Onboarding a client
+
+**More → Onboarding.** Start an engagement, decide which sections the client is
+actually asked, hand each one to a named person, and send the invitation — the
+whole job on one screen. What you set there is exactly what they see at
+`taylormadegrowth.com/portal/`.
+
+Two things worth knowing:
+
+- **Switching a section off does not delete anything.** If they already answered
+  it, the answers stay. Switch it back on and it is all still there.
+- **Three ways to send**, one message per person, each counting their own
+  sections. *Send* goes straight from the app through the
+  `send-onboarding-invite` Edge Function; *Mail app* opens the same message in
+  your own mail client, so it comes from your address and lands in your Sent;
+  *Copy* hands you the text. If Resend is not set up yet, *Send* says so and
+  points at *Mail app* — nothing is blocked.
+- **There is no password to send anybody.** The portal signs people in with a
+  one-time code that Supabase emails when they press the button, and it expires
+  within the hour. The invitation says where to go; the code follows when they
+  ask for it, which is why a forwarded invitation gives nobody anything.
+
+`db/GO-LIVE.md` is the fuller runbook, including the one-time Supabase setup —
+custom SMTP above all, because the built-in mailer allows only a handful of
+sign-in codes an hour for the whole project.
+
+`npm run test:onboarding-admin` drives that screen in a real browser against a
+throwaway database, and checks the consequences rather than the clicks: that
+switching a section off keeps the answers, that assignment is what the client's
+portal then shows, and that each invitation carries the address that actually
+signs that person in.
 
 ## Everyday tuning (no code)
 

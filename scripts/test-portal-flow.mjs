@@ -15,311 +15,30 @@
 //   node scripts/test-portal-flow.mjs
 //   node scripts/test-portal-flow.mjs --headed   (keeps the browser visible logs)
 
-import { execFileSync, spawn } from 'node:child_process';
-import { mkdtempSync, rmSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { createServer } from 'node:http';
-import { tmpdir } from 'node:os';
-import { join, resolve, dirname, extname, normalize } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { createRequire } from 'node:module';
+import { writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import {
+  startPostgres, buildDatabase, startHttp, launchBrowser, sessionFor, shutdown,
+  sql, shown, waitFor, reporter, SCRATCH_DIR, ROOT, psqlRaw as psql,
+} from './lib/app-harness.mjs';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 // --shots <dir> saves what each stage actually looks like. Useful for eyeballing
 // copy and spacing without standing the whole thing up by hand.
 const SHOTS = (() => { const i = process.argv.indexOf('--shots'); return i > 0 ? process.argv[i + 1] : null; })();
-const PGBIN = '/usr/lib/postgresql/16/bin';
-const PG_UID = 1000, PG_GID = 1000;
 const PORTAL = join(ROOT, 'public/portal');
-
-const require = createRequire(import.meta.url);
-// playwright lives in the global prefix here, not in a package.json.
-const globalRoot = execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim();
-const { chromium } = require(join(globalRoot, 'playwright'));
-
-const base = mkdtempSync(join(tmpdir(), 'tmb-portal-'));
-const PGDATA = join(base, 'data');
-const SOCKET = join(base, 'sock');
-const SCRATCH = base;
-let pg = null, http = null, browser = null;
-let DB = null;
-
-const run = (cmd, args, opts = {}) => execFileSync(cmd, args, { encoding: 'utf8', stdio: 'pipe', ...opts });
-const asPg = (cmd, args, opts = {}) =>
-  run('setpriv', ['--reuid', String(PG_UID), '--regid', String(PG_GID), '--clear-groups', cmd, ...args], opts);
-
-function psql(args, opts = {}) {
-  return asPg(join(PGBIN, 'psql'), ['-h', SOCKET, '-U', 'pgtest', '-d', DB || 'postgres', '-v', 'ON_ERROR_STOP=1', '-X', '-q', ...args], opts);
-}
-
-function startPostgres() {
-  run('mkdir', ['-p', PGDATA, SOCKET]);
-  run('chown', ['-R', `${PG_UID}:${PG_GID}`, base]);
-  run('chmod', ['700', PGDATA]);
-  asPg(join(PGBIN, 'initdb'), ['-D', PGDATA, '-U', 'pgtest', '--auth=trust', '--encoding=UTF8', '--no-sync']);
-  pg = spawn('setpriv', [
-    '--reuid', String(PG_UID), '--regid', String(PG_GID), '--clear-groups',
-    join(PGBIN, 'postgres'), '-D', PGDATA, '-k', SOCKET, '-c', 'listen_addresses=', '-c', 'fsync=off',
-  ], { stdio: 'ignore' });
-  for (let i = 0; i < 100; i++) {
-    try { asPg(join(PGBIN, 'pg_isready'), ['-h', SOCKET, '-U', 'pgtest', '-q']); return; }
-    catch { execFileSync('sh', ['-c', 'sleep 0.2']); }
-  }
-  throw new Error('postgres did not become ready');
-}
-
-const MIGRATIONS = [
-  '20260818140000_client_contacts_and_staff.sql',
-  '20260818140100_onboarding_section_library.sql',
-  '20260818140200_onboarding_engagements.sql',
-  '20260818140300_onboarding_rls.sql',
-  '20260818140400_onboarding_storage.sql',
-  '20260818140500_lock_down_legacy_authenticated_policies.sql',
-  '20260819130000_automation_accounts.sql',
-  '20260819140000_automation_scope_policies.sql',
-  '20260819150000_stage3_close_anon.sql',
-];
-
-function buildDatabase() {
-  asPg(join(PGBIN, 'createdb'), ['-h', SOCKET, '-U', 'pgtest', 'tmb_portal']);
-  DB = 'tmb_portal';
-  psql(['-f', join(ROOT, 'db/tests/supabase_shim.sql')]);
-  psql(['-f', join(ROOT, 'supabase/schema.sql')]);
-  psql(['-c', 'grant all on all tables in schema public to anon, authenticated, service_role;']);
-  for (const m of MIGRATIONS) psql(['-f', join(ROOT, 'supabase/migrations', m)]);
-  psql(['-f', join(ROOT, 'db/seed_onboarding_library.sql')]);
-  psql(['-f', join(ROOT, 'db/seed_onboarding_test_clients.sql')]);
-
-  // Auth users for the two contacts the browser will sign in as. Confirmed,
-  // because onboarding_client_ids() only matches a confirmed address.
-  psql(['-c', `
-    insert into auth.users (email, email_confirmed_at)
-    values ('ruth@cedarandpine.test', now()), ('marcus@cedarandpine.test', now()), ('dana@harborlane.test', now())
-    on conflict (email) do update set email_confirmed_at = now();
-  `]);
-
-  VOID_FNS = new Set(psql(['-t', '-A', '-c', `
-    select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-     where n.nspname = 'public' and p.prorettype = 'void'::regtype`]).trim().split('\n').filter(Boolean));
-}
-
-// ---- SQL as the signed-in contact -------------------------------------------
-
-const lit = (v) => {
-  if (v === null || v === undefined) return 'null';
-  if (typeof v === 'number') return Number.isFinite(v) ? String(v) : 'null';
-  if (typeof v === 'boolean') return v ? 'true' : 'false';
-  if (Array.isArray(v) || typeof v === 'object') return `'${JSON.stringify(v).replace(/'/g, "''")}'::jsonb`;
-  return `'${String(v).replace(/'/g, "''")}'`;
-};
-const ident = (s) => {
-  if (!/^[a-z_][a-z0-9_]*$/.test(String(s))) throw new Error(`unsafe identifier: ${s}`);
-  return s;
-};
-
-/** Run one statement as a contact, and hand back rows or a PostgREST-shaped error. */
-function asContact(session, sql) {
-  const claims = session
-    ? JSON.stringify({ sub: session.user.id, role: 'authenticated', email: session.user.email })
-    : JSON.stringify({ role: 'anon' });
-  const role = session ? 'authenticated' : 'anon';
-  const script = [
-    `\\set VERBOSITY verbose`,
-    `begin;`,
-    `select set_config('request.jwt.claims', ${lit(claims)}, true);`,
-    `set local role ${role};`,
-    // The marker is appended by the statement itself rather than wrapped around
-    // it: a data-modifying CTE has to stay at the top level, so it cannot be
-    // pushed into a subquery.
-    `${sql};`,
-    `commit;`,
-  ].join('\n');
-  try {
-    const out = psql(['-t', '-A', '-f', '-'], { input: script });
-    const m = /<<<([\s\S]*)>>>/.exec(out);
-    return { data: m ? JSON.parse(m[1]) : null, error: null };
-  } catch (err) {
-    const text = `${err.stdout || ''}${err.stderr || ''}`;
-    // psql prefixes the line with `psql:<stdin>:6: `, so this cannot anchor to ^.
-    const m = /ERROR:\s+([0-9A-Z]{5}):\s*(.*)/.exec(text);
-    return { data: null, error: { code: m ? m[1] : 'XX000', message: m ? m[2].trim() : text.trim() } };
-  }
-}
-
-const WHERE = (filters) => {
-  if (!filters.length) return '';
-  const parts = filters.map(([op, col, val]) => {
-    const c = ident(col);
-    if (op === 'is') return `${c} is ${val === null ? 'null' : lit(val)}`;
-    if (op === 'ilike') return `${c} ilike ${lit(val)}`;
-    return `${c} = ${lit(val)}`;
-  });
-  return ' where ' + parts.join(' and ');
-};
-
-/** Translate the shim's query descriptor into SQL. A deliberately small subset. */
-function toSql(q) {
-  const table = ident(q.table);
-  const cols = q.columns === '*' ? '*' : q.columns.split(',').map((c) => ident(c.trim())).join(', ');
-  const where = WHERE(q.filters);
-
-  // Every shape ends the same way: one row, one column, the rows as JSON
-  // wrapped in markers the harness can find in psql's output.
-  const emit = (inner) => `select '<<<' || coalesce((select json_agg(t)::text from (${inner}) t), 'null') || '>>>'`;
-  const emitCte = (cte, inner) => `with ${cte}, j as (select json_agg(t)::text as s from (${inner}) t)
-            select '<<<' || coalesce(j.s, 'null') || '>>>' from j`;
-
-  if (q.action === 'select') {
-    const order = q.order.length ? ' order by ' + q.order.map(([c, d]) => `${ident(c)} ${d}`).join(', ') : '';
-    const limit = q.limit ? ` limit ${Number(q.limit)}` : '';
-    return emit(`select ${cols} from public.${table}${where}${order}${limit}`);
-  }
-  if (q.action === 'insert') {
-    const keys = Object.keys(q.payload).map(ident);
-    const vals = keys.map((k) => lit(q.payload[k]));
-    return emitCte(`w as (insert into public.${table} (${keys.join(', ')}) values (${vals.join(', ')}) returning *)`,
-                   `select ${cols} from w`);
-  }
-  if (q.action === 'update') {
-    const sets = Object.keys(q.payload).map((k) => `${ident(k)} = ${lit(q.payload[k])}`);
-    return emitCte(`w as (update public.${table} set ${sets.join(', ')}${where} returning *)`,
-                   `select ${cols} from w`);
-  }
-  if (q.action === 'delete') {
-    return emitCte(`w as (delete from public.${table}${where} returning *)`, `select * from w`);
-  }
-  throw new Error('unknown action ' + q.action);
-}
-
-function handleQuery(session, q) {
-  const { data, error } = asContact(session, toSql(q));
-  if (error) return { data: null, error };
-  const rows = data || [];
-  if (q.single) {
-    // PostgREST's .single() is an error when the row count is not exactly one —
-    // which is how a write blocked by RLS surfaces to the page.
-    if (rows.length !== 1) {
-      return { data: null, error: { code: 'PGRST116', message: 'JSON object requested, multiple (or no) rows returned' } };
-    }
-    return { data: rows[0], error: null };
-  }
-  return { data: rows, error: null };
-}
-
-// json_agg has nothing to aggregate over a void return, so those are called for
-// their effect and answered with null — which is what the client library does too.
-let VOID_FNS = new Set();
-
-function handleRpc(session, fn, args) {
-  const f = ident(fn);
-  const argSql = Object.entries(args || {}).map(([k, v]) => `${ident(k)} => ${lit(v)}`).join(', ');
-  if (VOID_FNS.has(f)) {
-    const r = asContact(session, `select '<<<' || 'null' || '>>>' from (select public.${f}(${argSql})) x`);
-    return { data: null, error: r.error };
-  }
-  return asContact(session,
-    `select '<<<' || coalesce((select json_agg(t.v)::text from (select public.${f}(${argSql}) as v) t), 'null') || '>>>'`);
-}
-
-function handleStorage(session, body) {
-  const bucket = String(body.bucket || '');
-  if (body.fn === 'upload') {
-    const r = asContact(session, `with w as (
-        insert into storage.objects (bucket_id, name, owner, metadata)
-        values (${lit(bucket)}, ${lit(body.path)}, null, ${lit(body.meta || {})})
-        returning id, name
-      ), j as (select json_agg(t)::text as s from (select * from w) t)
-      select '<<<' || coalesce(j.s, 'null') || '>>>' from j`);
-    if (r.error) return { data: null, error: { message: r.error.message, statusCode: statusFor(r.error.code) } };
-    return { data: { path: body.path }, error: null };
-  }
-  if (body.fn === 'remove') {
-    const names = (body.paths || []).map(lit).join(', ');
-    const r = asContact(session, `with w as (
-        delete from storage.objects
-         where bucket_id = ${lit(bucket)} and name in (${names || 'null'}) returning name
-      ), j as (select json_agg(t)::text as s from (select * from w) t)
-      select '<<<' || coalesce(j.s, 'null') || '>>>' from j`);
-    if (r.error) return { data: null, error: { message: r.error.message, statusCode: statusFor(r.error.code) } };
-    return { data: r.data || [], error: null };
-  }
-  return { data: null, error: { message: 'unsupported storage call ' + body.fn, statusCode: 400 } };
-}
-
-// Storage reports an RLS refusal as HTTP 403, not a SQLSTATE, so the shim has to
-// translate — otherwise humanizeStorage() would never see the shape it handles.
-const statusFor = (code) => (code === '42501' ? 403 : 400);
-
-// ---- Static server ----------------------------------------------------------
-
-const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
-
-function startHttp() {
-  return new Promise((done) => {
-    http = createServer(async (req, res) => {
-      if (req.method === 'POST' && req.url === '/__pg') {
-        const chunks = [];
-        for await (const c of req) chunks.push(c);
-        const body = JSON.parse(Buffer.concat(chunks).toString());
-        let out;
-        try {
-          out = body.op === 'rpc' ? handleRpc(body.session, body.fn, body.args)
-              : body.op === 'storage' ? handleStorage(body.session, body)
-              : handleQuery(body.session, body.q);
-        } catch (err) {
-          out = { data: null, error: { code: 'XX000', message: err.message } };
-        }
-        res.writeHead(200, { 'content-type': 'application/json' });
-        return res.end(JSON.stringify(out));
-      }
-
-      // The one file that is swapped: the vendored Supabase bundle.
-      if (req.url.endsWith('/assets/vendor/supabase.js')) {
-        res.writeHead(200, { 'content-type': 'text/javascript' });
-        return res.end(readFileSync(join(ROOT, 'scripts/portal-test-shim.js')));
-      }
-
-      const rel = normalize(decodeURIComponent(req.url.split('?')[0])).replace(/^(\.\.[/\\])+/, '');
-      const file = join(PORTAL, rel === '/' ? 'index.html' : rel);
-      if (!file.startsWith(PORTAL) || !existsSync(file)) { res.writeHead(404); return res.end('not found'); }
-      res.writeHead(200, { 'content-type': MIME[extname(file)] || 'application/octet-stream' });
-      res.end(readFileSync(file));
-    });
-    http.listen(0, '127.0.0.1', () => done(`http://127.0.0.1:${http.address().port}`));
-  });
-}
+const { check, report } = reporter();
+let browser = null;
 
 // ---- Assertions -------------------------------------------------------------
 
-const results = [];
-const check = (name, passed, detail = '') => {
-  results.push({ name, passed, detail });
-  console.log(`  ${passed ? '\x1b[32m✓\x1b[0m' : '\x1b[31m✗\x1b[0m'} ${name}${passed || !detail ? '' : `\n      ${detail}`}`);
-};
 
-/** Read the database directly, as owner, to verify what the page actually wrote. */
-const sql = (q) => psql(['-t', '-A', '-c', q]).trim();
-
-/**
- * Everything the page is showing, markup AND form values.
- *
- * page.content() alone is not enough: an input's value is set as a property, so
- * a leaked answer sitting in a text box would not appear in the serialised HTML
- * and a "nothing leaked" assertion would pass without looking at it.
- */
-const shown = async (pg) =>
-  (await pg.content()) + '\n' + (await pg.$$eval('input, textarea', (ns) => ns.map((n) => n.value).join('\n')));
-
-function authUser(email) {
-  return sql(`select id from auth.users where email = '${email}'`);
-}
-const sessionFor = (email) => ({ user: { id: authUser(email), email } });
 
 async function main() {
   console.log('\nPortal flow — real browser, real database\n');
   startPostgres();
-  buildDatabase();
-  const origin = await startHttp();
-  browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox'] });
+  buildDatabase({ authEmails: ['ruth@cedarandpine.test', 'marcus@cedarandpine.test', 'dana@harborlane.test'] });
+  const origin = await startHttp(PORTAL);
+  browser = await launchBrowser();
 
   const ctx = await browser.newContext({ viewport: { width: 420, height: 900 } });
   const page = await ctx.newPage();
@@ -339,6 +58,17 @@ async function main() {
   const gateNote = await page.textContent('.gate-note');
   check('signed out lands on the sign-in screen', await page.isVisible('.gate-input'));
   check('sign-in copy names the real code length (8)', /8 digits/.test(gateNote), gateNote);
+
+  // The invitation links here with the address already in it, so somebody on a
+  // phone taps a link and then a button rather than typing an address into a
+  // page they have never seen.
+  await page.goto(origin + '/index.html?email=ruth%40cedarandpine.test', { waitUntil: 'load' });
+  await page.waitForSelector('.gate-input', { timeout: 10000 });
+  check('an invitation link arrives with the address filled in',
+    (await page.inputValue('.gate-input')) === 'ruth@cedarandpine.test',
+    await page.inputValue('.gate-input'));
+  check('and it is still only a prefill — nothing is signed in by the link alone',
+    await page.isVisible('.gate-btn') && !(await page.isVisible('.card')));
 
   // ---- Ruth: Cedar & Pine ------------------------------------------------
   const ruth = sessionFor('ruth@cedarandpine.test');
@@ -503,7 +233,7 @@ async function main() {
   // and matching on the field alone would let a seeded row stand in for the
   // upload — which is a pass that proves nothing.
   const UPLOAD_NAME = 'portal-flow-upload.svg';
-  const upload = join(SCRATCH, UPLOAD_NAME);
+  const upload = join(SCRATCH_DIR(), UPLOAD_NAME);
   writeFileSync(upload, '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"></svg>');
 
   const uploaded = (col = 'storage_path') => sql(`
@@ -672,29 +402,13 @@ async function main() {
 
   check('no uncaught errors in the page', consoleErrors.length === 0, consoleErrors.join('\n      '));
 
-  // ---- Report ------------------------------------------------------------
-  const failed = results.filter((r) => !r.passed);
-  console.log(`\n${results.length - failed.length}/${results.length} passed\n`);
-  if (failed.length) {
-    console.log('FAILED:');
-    for (const f of failed) console.log(`  ✗ ${f.name}${f.detail ? `  — ${f.detail}` : ''}`);
-    process.exitCode = 1;
-  }
+  report();
 }
 
 async function shot(pg, name) {
   if (SHOTS) await pg.screenshot({ path: join(SHOTS, `${name}.png`), fullPage: true });
 }
 
-/** Poll a predicate for up to ~5s. Autosave is debounced; the database is the judge. */
-async function waitFor(fn, ms = 6000) {
-  const stop = Date.now() + ms;
-  for (;;) {
-    try { if (fn()) return true; } catch { /* keep waiting */ }
-    if (Date.now() > stop) return false;
-    await new Promise((r) => setTimeout(r, 150));
-  }
-}
 
 try {
   await main();
@@ -703,7 +417,5 @@ try {
   process.exitCode = 1;
 } finally {
   await browser?.close().catch(() => {});
-  http?.close();
-  if (pg) { pg.kill('SIGQUIT'); }
-  try { rmSync(base, { recursive: true, force: true }); } catch {}
+  shutdown();
 }

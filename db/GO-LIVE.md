@@ -5,21 +5,41 @@ the per-client part takes about five minutes.
 
 ## Before the first client — do this once
 
-### 1. Custom SMTP (do not skip this one)
+### 1. Resend, once — it covers both emails
 
-Supabase's built-in mailer allows only a handful of messages per hour for the
-whole project and is explicitly not meant for production. Three people signing
-in to one engagement in the same sitting will exhaust it, and they will read the
-failure as "my email is wrong" and stop. It happened in the sandbox on the third
-address.
+Two different emails go to a client, and both need this.
 
-Set it up under **Authentication → Emails → SMTP Settings** in the Supabase
-dashboard. Resend's free tier is 3,000 messages a month and takes about ten
-minutes, most of which is a DNS record on `taylormadegrowth.com`. Once custom
-SMTP is on, raise the hourly rate limit under **Authentication → Rate Limits** —
-it stays low until you do.
+**The invitation** — "here's your portal" — is sent by the ops app through the
+`send-onboarding-invite` Edge Function. **The sign-in code** is sent by Supabase
+Auth when they press the button. One Resend account serves both.
 
-### 2. Check the sign-in email reads like a client email
+1. Create the account and **verify `taylormadegrowth.com`** — a few DNS records.
+   Until the domain is verified Resend will only deliver to your own address, so
+   this is the step that actually blocks a real client.
+2. Supabase dashboard → **Edge Functions → Secrets** → add `RESEND_API_KEY`.
+   Optionally `INVITE_FROM` (defaults to
+   `TaylorMade Brands <onboarding@taylormadegrowth.com>`) and `INVITE_REPLY_TO`
+   (defaults to josh@).
+3. Then do the SMTP half below, which is the same key in a different box.
+
+Until the key is set, **Send** in the app says so and points at **Mail app**,
+which opens the same message in your own mail client. Nothing is blocked; it is
+just one more step.
+
+### 2. Custom SMTP (do not skip this one)
+
+This is the sign-in codes, and it is the half most likely to break a real
+onboarding. Supabase's built-in mailer allows only a handful of messages per
+hour for the whole project and is explicitly not meant for production. Three
+people signing in to one engagement in the same sitting will exhaust it, and
+they will read the failure as "my email is wrong" and stop. That happened in the
+sandbox on the third address.
+
+**Authentication → Emails → SMTP Settings**, using the Resend credentials from
+step 1. Then raise the hourly limit under **Authentication → Rate Limits** — it
+stays low until custom SMTP is on.
+
+### 3. Check the sign-in email reads like a client email
 
 One Supabase project sends for both the staff app and the client portal, so
 there is one template and a client will read it. Under **Authentication →
@@ -29,7 +49,7 @@ admin. The template must contain `{{ .Token }}`, which is what makes it send a
 code rather than a link; the portal signs people in with a code on purpose, so a
 link would break it.
 
-### 3. Confirm new sign-ups are allowed
+### 4. Confirm new sign-ups are allowed
 
 A new contact has no auth user until the first time they ask for a code, so
 **Authentication → Sign In / Providers → Allow new users to sign up** has to be
@@ -37,7 +57,7 @@ on. It is what lets a stranger's address become a session — which grants them
 nothing, because `onboarding_client_ids()` returns empty for anyone who is not
 on a client's contact list, and the portal signs them straight back out.
 
-### 4. Clear the sandbox
+### 5. Clear the sandbox
 
 `db/teardown_portal_sandbox.sql`. Read its header first: it cannot delete
 uploaded files, because Supabase refuses to let SQL touch `storage.objects` at
@@ -45,17 +65,90 @@ all. It lists them instead, and they come out through the dashboard's
 **Storage → onboarding** browser. Take the files out first — once the asset rows
 are gone, nothing names the objects any more.
 
-## For each client
+## For each client — from the ops app
+
+**More → Onboarding.** The whole job is on that one screen.
 
 ### 1. The client must exist in the CRM
 
-Add them in the ops app first if they are not there. `db/onboard_client.sql`
-matches on `business_name` exactly and refuses if it cannot find them.
+Add them under Clients first. The onboarding screen only offers clients who do
+not already have a live engagement — two open engagements for one client is
+confusion, not a feature.
 
-### 2. Run `db/onboard_client.sql`
+### 2. Start onboarding
 
-Three blocks to edit at the top: who it is for, who their people are, and who
-answers what. Paste the whole file into the Supabase SQL editor and run it.
+Pick the client, a starting set of sections, and a due date. The starting set is
+a starting point, not a cage: every section is a switch on the next screen.
+
+| Starting set | Sections | For |
+| --- | --- | --- |
+| Website Build | 4 | a site, nothing else |
+| Website + Ads | 8 | site plus ad management |
+| Growth Partner | 13 | the full engagement, including the money questions |
+
+Set the industry module only for a trade we have one written for — today that is
+millwork, which adds Signature Specification. It is not the client's industry;
+it is whether we have a module for it. Modules for other trades are not offered,
+because the database refuses them and an option that always errors is worse than
+no option.
+
+### 3. Add their people
+
+Name, email, title, role. **The email is the whole thing** — it is what the code
+gets sent to and what the database matches them on when they sign in.
+
+Adding someone hands them the sections their role usually answers, and says how
+many it moved. Owner takes the money questions; operations takes capacity and
+the day-to-day ones. Change any of them on the section rows.
+
+### 4. Decide what they actually get asked
+
+Switch off anything that does not apply. A website build has no business being
+asked about gross margin, and leaving a section out is a normal thing to do.
+
+Switching a section off **does not delete anything**. If they already answered
+it, the answers stay; switch it back on and it is all still there.
+
+Each section that is on can carry its own assignee and its own due date.
+
+### 5. Send the invitation
+
+**Send invitation** writes one message per person, each counting their own
+sections, and gives you three ways out:
+
+* **Send** — goes straight from the app, through the Edge Function. One tap.
+* **Mail app** — opens the same message in your own mail client, so it comes
+  from your address and sits in your Sent. Use this if Resend is not set up yet.
+* **Copy** — the text, to paste wherever.
+
+The link in the message carries their address, so the portal opens with it
+already filled in and there is nothing to type on a phone. That is a prefill and
+nothing more: the sign-in code still has to arrive in their inbox.
+
+**There is no password to send them.** Nobody has one — not them, not you. The
+portal signs people in with a one-time code that Supabase emails when they press
+the button, and it expires within the hour. So the invitation tells them where to
+go; the code follows when they ask for it. That is why a forwarded invitation
+gives nobody anything.
+
+The message warns them off putting passwords in. Keep that paragraph: the
+database refuses anything that looks like a credential, and a client who has been
+told reads the refusal as care rather than a malfunction.
+
+Sending marks the engagement invited and records when.
+
+### 6. Watch it come in
+
+The Onboarding list shows each client's progress. Open one to see which sections
+are done, who owns each, and how much of each is answered. `unknown` and
+`not applicable` count as answered — they are deliberate answers, and a section
+full of them tells you more than a blank one does.
+
+## The same thing, in SQL
+
+`db/onboard_client.sql` does what the screen does, for when the screen is not
+handy or something needs doing in bulk. Three blocks to edit at the top, run the
+whole file in the Supabase SQL editor.
 
 It refuses rather than half-creating an engagement: a placeholder left in, a
 misspelled client name, an unknown template, two primary contacts, or a client
@@ -63,46 +156,9 @@ who already has a live engagement all come back as a sentence saying which.
 `npm run test:onboard` exercises every one of those refusals against a throwaway
 database.
 
-Choosing the template: adding sections later is one insert, so start smaller if
-you are unsure.
+## Reading the answers, in SQL
 
-| Template | Sections | For |
-| --- | --- | --- |
-| `website_build` | 4 | a site, nothing else |
-| `website_ads` | 8 | site plus ad management |
-| `growth_partner` | 13 | the full engagement, including the money questions |
-
-Set `vertical` to `millwork` only for a millwork shop — it switches on the
-Signature Specification module. `null` for everybody else. It is not the
-client's industry; it is whether we have a module written for it.
-
-### 3. Send the invitation
-
-The script prints each person's name, the address they sign in with, and how
-many sections are theirs. Nothing emails them automatically — that is deliberate
-for now, because the first message a client gets about this should come from you.
-
-Something like:
-
-> Hi [name] — before we start, there's a short set of questions to work through.
-> It's at **taylormadegrowth.com/portal/** — enter this email address and it'll
-> send you a code, no password to set up. You can add it to your phone's home
-> screen if that's easier.
->
-> [N] sections are marked for you, and the rest anyone at [company] can answer.
-> It doesn't have to be done in one sitting; it saves as you go.
->
-> One thing: don't put any passwords or logins in there. The form will refuse
-> them anyway. We only ever record whether we have access to something, never
-> the credential itself — we'll sort access out on a call.
-
-That last paragraph matters. The database refuses anything that looks like a
-credential, and a client who has been warned reads the refusal as care rather
-than a malfunction.
-
-### 4. Watch it come in
-
-There is no staff-side screen yet (phase 6). To see where things stand:
+The screen shows progress; these read the answers themselves.
 
 ```sql
 select c.business_name, s.title, p.status, p.percent_complete,
@@ -135,10 +191,11 @@ select f.field_key, f.label, r.status,
 `unknown` and `not_applicable` come back with no value on purpose. They are
 answers, and a section full of them tells you more than a blank one does.
 
-## Adding a section to a live engagement
+## Adding a section to a live engagement, in SQL
 
-An ordinary insert. No migration, no redeploy — the client sees it next time
-they open the portal.
+Ordinarily this is one switch on the Onboarding screen. As SQL it is an ordinary
+insert — no migration, no redeploy, and the client sees it next time they open
+the portal.
 
 ```sql
 insert into public.onboarding_engagement_sections (engagement_id, section_key, position)
@@ -149,7 +206,7 @@ select e.id, 'financial_baseline', 900
 on conflict (engagement_id, section_key) do nothing;
 ```
 
-## Adding a person mid-engagement
+## Adding a person mid-engagement, in SQL
 
 ```sql
 insert into public.client_contacts (client_id, name, email, title, role)
@@ -157,8 +214,8 @@ select c.id, 'Their Name', 'them@theirbusiness.com', 'Bookkeeper', 'finance'
   from public.clients c where c.business_name = 'THE CLIENT';
 ```
 
-They can sign in as soon as the row exists. Nothing else needs doing — the
-database matches them on their confirmed email address.
+Also one button on the Onboarding screen. Either way they can sign in as soon as
+the row exists: the database matches them on their confirmed email address.
 
 ## What is not built yet
 
@@ -168,4 +225,3 @@ database matches them on their confirmed email address.
 * **Access grants** (phase 5). The Website & Digital Access section collects the
   questions around access, but the per-platform grant tracker is not in the
   portal yet.
-* **The staff screen** (phase 6). Hence this file.
