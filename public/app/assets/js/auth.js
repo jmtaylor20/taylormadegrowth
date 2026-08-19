@@ -178,7 +178,9 @@ export function renderSignIn(mount, onSuccess, onCancel) {
       try {
         await verifyCode(email, token);
         const access = await resolveAccess();
-        if (access.state === 'staff') return onSuccess();
+        // Hand the email back so the caller can label the session without
+        // re-querying: the shell is built immediately after this returns.
+        if (access.state === 'staff') return onSuccess(access.email);
         fail('That account is not on the staff list.');
         go.disabled = false; go.textContent = 'Sign in';
       } catch (err) {

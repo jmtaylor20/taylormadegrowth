@@ -240,7 +240,7 @@ function showSignInScreen() {
   clear(root);
   const shell = el('div.lock');
   root.append(shell);
-  renderSignIn(shell, () => boot(), () => showLock());
+  renderSignIn(shell, (email) => { signedInAs = email; boot(); }, () => showLock());
 }
 
 function showLock() {
