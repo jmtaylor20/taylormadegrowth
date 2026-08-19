@@ -32,34 +32,10 @@
  * To pull fresh numbers on demand, just open the script and hit Run.
  * ------------------------------------------------------------------------- */
 
-//
-// ---------------------------------------------------------------------------
-// CREDENTIAL NOTE — why this still uses the publishable key
-// ---------------------------------------------------------------------------
-// A Supabase SECRET key cannot be used from here, and the reason is worth
-// recording so nobody tries it again:
-//
-//   * Supabase rejects secret keys with 401 "Forbidden use of secret API key
-//     in browser", matched on the User-Agent header.
-//   * Apps Script and Google Ads Scripts send
-//     "Mozilla/5.0 (compatible; Google-Apps-Script; ...)" and strip any
-//     attempt to override User-Agent. Google has had that request open for
-//     years, so it is not going to change.
-//
-// So this keeps working today only because `anon` still has policies. Dropping
-// them (stage 3 in db/SECURITY.md) breaks these scripts unless one of these
-// lands first:
-//
-//   a) a dedicated automation user signing in with Supabase Auth, so the
-//      script carries a normal user JWT rather than a key, or
-//   b) a Supabase Edge Function fronting the tables these scripts touch —
-//      /functions/v1/ skips the gateway's key checks entirely, or
-//   c) the legacy JWT-based service_role key, which predates the browser
-//      check but is on the deprecation path.
-// ---------------------------------------------------------------------------
 // ── Config ────────────────────────────────────────────────────────────────
 var SUPABASE_URL = 'https://buubrapkkqyalecwbhkh.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_h-KXdNNW7Tc_BFut25s_sQ_ypIidBJB';
+var MONTHS_BACK  = 3; // how many complete prior months to (re)sync each run
 
 // ── Automation sign-in ────────────────────────────────────────────────────
 // This script has its own Supabase Auth user and exchanges a password for a
@@ -107,8 +83,8 @@ function accessToken_() {
   TOKEN_CACHE_ = tok;
   return tok;
 }
-var MONTHS_BACK  = 3; // how many complete prior months to (re)sync each run
 
+// ── Reporting window ──────────────────────────────────────────────────────
 var MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'];
 
