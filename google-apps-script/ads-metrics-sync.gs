@@ -9,9 +9,12 @@
  * matched by the Google Ads ID saved on each client.
  *
  * No developer token, no OAuth, no Google Cloud project. Ads Scripts run with
- * your account's own access. The only credential below is the Supabase
- * publishable (anon) key — the same one already shipped in the web app, and
- * safe to expose (the database is guarded by row-level security).
+ * your account's own access.
+ *
+ * For Supabase it signs in as its own user and uses the resulting JWT. It holds
+ * no key with authority: the publishable key below is only the project
+ * identifier and is meant to be public. See the credential note further down
+ * for why a secret key cannot be used here, and what bounds this identity.
  *
  * ── ONE-TIME SETUP ───────────────────────────────────────────────────────
  *  1. Sign in to your MANAGER account at ads.google.com (550-756-8191).
@@ -23,6 +26,8 @@
  *     the last 3 months.
  *  6. Click Schedule → set it to run MONTHLY, on the 1st, early morning
  *     (e.g. 3–4 AM). That's it — reports fill themselves from then on.
+ *  7. Fill in AUTOMATION_PASSWORD below, in the Google Ads UI. Never commit it:
+ *     the repo copy of this file stays a placeholder.
  *
  * To pull fresh numbers on demand, just open the script and hit Run.
  * ------------------------------------------------------------------------- */
