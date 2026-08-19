@@ -219,6 +219,14 @@ therefore optional on insert even when it is `NOT NULL` with no default — that
 is how `engagement_id` stays out of the way on the three tables that denormalize
 it.
 
+## Going live
+
+`db/GO-LIVE.md` is the runbook: what to set up once (custom SMTP above all),
+what to do per client, and how to read progress until the staff screen exists.
+`db/onboard_client.sql` is the file you edit and run to create an engagement;
+`npm run test:onboard` proves its guardrails against a throwaway database before
+it ever touches production.
+
 ## The sandbox, applied to production 2026-08-19
 
 Two fake clients live in the production CRM so the portal can be clicked through
@@ -237,11 +245,15 @@ Answer something as one, then sign in as the other and go looking for it. That i
 the isolation guarantee felt rather than read. Everything else is left blank on
 purpose — a sandbox you cannot fill in is not much of a sandbox.
 
-Both clients appear in the ops app's client list, marked `[sandbox]` in notes.
-**Run `db/teardown_portal_sandbox.sql` before onboarding a real client**, so
-nobody ever sees a fake company next to a real one. It clears the storage objects
-first (they live in another schema and do not cascade), then deletes the clients,
-and reports zero on every row.
+**Cleared 2026-08-19**, ahead of the first real client. `db/teardown_portal_sandbox.sql`
+is the file that does it, and it is still the one to run if the sandbox is ever
+seeded again.
+
+One thing that file cannot do: delete uploaded files. Supabase refuses SQL
+deletes on `storage.objects` outright — `storage.protect_delete()` raises 42501,
+deliberately, so nobody orphans a bucket by hand. So it lists them instead and
+they come out through the Storage API. Take the files out before running it;
+once the asset rows are gone, nothing names the objects any more.
 
 ## The portal
 
