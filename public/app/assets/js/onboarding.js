@@ -601,9 +601,12 @@ export function inviteText(contact, state) {
     '',
     `Before we get started, there's a short set of questions to work through. It's at:`,
     '',
-    PORTAL_URL,
+    // Their own address, carried in the link so the portal has it filled in and
+    // there is nothing to type on a phone. It grants nothing on its own — the
+    // code still has to arrive in their inbox.
+    `${PORTAL_URL}?email=${encodeURIComponent(contact.email)}`,
     '',
-    `Enter ${contact.email} and it'll email you a sign-in code — there's no password to set up. If it's easier, you can add it to your phone's home screen and it behaves like an app.`,
+    `Open that and press the button — it'll email you a sign-in code. There's no password to set up. If it's easier, you can add it to your phone's home screen and it behaves like an app.`,
     '',
     whose + (due ? ` We're aiming to have it back by ${due}.` : ''),
     '',
@@ -637,18 +640,42 @@ function openInvite(state, onSent) {
   }
 
   body.append(el('p.field-hint', {
-    text: 'Opens your mail app with the message ready. It sends from your own address, so their reply comes back to you.',
+    text: 'Send goes straight from the app. Mail app opens the same message in your own mail client instead — '
+        + 'use that one if you want it in your Sent, or if sending has not been set up yet.',
   }));
 
   const rows = el('div.rows.card');
   contacts.forEach((c) => {
     const { subject, body: text } = inviteText(c, state);
     const mine = sections.filter((s) => s.active && s.assigned_contact_id === c.id).length;
+    const status = el('span.field-hint.onb-sent');
 
-    rows.append(el('div.row', {}, [
+    const sendBtn = el('button.btn.btn-primary.btn-sm', {
+      type: 'button', text: 'Send',
+      onclick: async () => {
+        sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
+        const result = await sendInvite(state, c, subject, text);
+        sendBtn.disabled = false;
+        if (result.sent) {
+          sendBtn.textContent = 'Sent';
+          status.textContent = 'Sent to ' + c.email;
+          toast('Sent to ' + c.email);
+          onSent?.();
+          return;
+        }
+        sendBtn.textContent = 'Send';
+        status.textContent = result.message;
+        // Not configured is not a failure to hide — it means the mail service
+        // is not wired up yet, and the mail-app route beside this still works.
+        toast(result.message, 'warn');
+      },
+    });
+
+    rows.append(el('div.row.onb-invite-row', {}, [
       el('div.row-main', {}, [
         el('div.row-title', { text: c.name }),
         el('div.row-sub', { text: `${c.email} · ${mine ? `${mine} section${mine === 1 ? '' : 's'}` : 'no sections of their own'}` }),
+        status,
       ]),
       el('div.onb-send', {}, [
         el('button.btn.btn-ghost.btn-sm', {
@@ -660,11 +687,13 @@ function openInvite(state, onSent) {
             } catch { toast('Could not copy — open it instead.', 'warn'); }
           },
         }),
-        el('a.btn.btn-primary.btn-sm', {
-          text: 'Email',
+        el('a.btn.btn-ghost.btn-sm', {
+          text: 'Mail app',
+          title: 'Open this in your own mail client instead',
           href: `mailto:${encodeURIComponent(c.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`,
           onclick: () => markInvited(state, onSent),
         }),
+        sendBtn,
       ]),
     ]));
   });
@@ -681,6 +710,65 @@ function openInvite(state, onSent) {
     wide: true,
     actions: [{ label: 'Done', tone: 'ghost', onClick: () => { closeSheet(); onSent?.(); } }],
   });
+}
+
+/**
+ * Send it from the app.
+ *
+ * The function is handed the engagement, the contact, and the text — never an
+ * address. It resolves who gets the mail itself, from the contact id, and
+ * refuses a contact who is not on that engagement. So this cannot be turned into
+ * a way to mail somebody who is not already a client of ours.
+ *
+ * Every failure comes back as a sentence rather than a status code, because the
+ * one that will actually happen — the sending domain not verified yet — is two
+ * minutes of work for somebody who is told which domain, and unfixable for
+ * somebody told "failed".
+ */
+async function sendInvite(state, contact, subject, text) {
+  try {
+    const { data, error } = await sb.functions.invoke('send-onboarding-invite', {
+      body: {
+        engagement_id: state.engagement.id,
+        contact_id: contact.id,
+        subject,
+        body: text,
+      },
+    });
+
+    if (error) {
+      // supabase-js puts the function's own JSON body on the error's response.
+      let detail = {};
+      try { detail = await error.context?.json?.() || {}; } catch { /* not JSON */ }
+      return { sent: false, message: sendFailureMessage(detail, error) };
+    }
+    if (data?.sent) {
+      await markInvited(state);
+      return { sent: true };
+    }
+    return { sent: false, message: sendFailureMessage(data || {}) };
+  } catch (err) {
+    return { sent: false, message: 'Could not reach the sending service. Use “Mail app” instead.' };
+  }
+}
+
+function sendFailureMessage(detail, error) {
+  switch (detail.error) {
+    case 'not_configured':
+      return 'Sending from the app is not set up yet — add RESEND_API_KEY in Supabase. Use “Mail app” for now.';
+    case 'not_staff':
+      return 'That session is not on the staff list.';
+    case 'contact_not_on_engagement':
+      return 'That person is not on this client. Reload and try again.';
+    case 'contact_has_no_portal_access':
+      return 'That person is marked as having no portal access.';
+    case 'send_failed':
+      return /domain/i.test(detail.detail || '')
+        ? 'The mail service will not send from that address yet — the sending domain still needs verifying in Resend.'
+        : 'The mail service refused it. Use “Mail app” instead.';
+    default:
+      return error?.message || 'That did not send. Use “Mail app” instead.';
+  }
 }
 
 /** Record that it went out. Best effort — a failure here must not eat the email. */

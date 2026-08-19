@@ -206,7 +206,7 @@ async function main() {
   await page.waitForSelector('.onb-send', { timeout: 10000 });
   await shot(page, 'admin-4-invite');
 
-  const mailto = await page.getAttribute('.onb-send a.btn-primary', 'href');
+  const mailto = await page.getAttribute('.rows .row:nth-child(1) .onb-send a', 'href');
   const decoded = decodeURIComponent(mailto || '');
   check('the invitation goes to the address that actually signs them in',
     decoded.startsWith('mailto:ruth@cedarandpine.test?'), (mailto || '').slice(0, 80));
@@ -217,7 +217,7 @@ async function main() {
     /\d+ sections? (is|are) marked for you/.test(decoded), decoded.slice(0, 500));
 
   const marcusInvite = decodeURIComponent(
-    await page.getAttribute('.rows .row:nth-child(2) a.btn-primary', 'href') || '');
+    await page.getAttribute('.rows .row:nth-child(2) .onb-send a', 'href') || '');
   check("each person's invitation is addressed to them, not to the primary contact",
     marcusInvite.startsWith('mailto:marcus@cedarandpine.test?'), marcusInvite.slice(0, 80));
   // The count in each message has to be that person's own, checked against the
@@ -236,12 +236,44 @@ async function main() {
     `ruth says ${claimed(decoded)} / has ${actual('ruth@cedarandpine.test')}, ` +
     `marcus says ${claimed(marcusInvite)} / has ${actual('marcus@cedarandpine.test')}`);
 
-  await page.click('.onb-send a.btn-primary');
+  // ---- Sending from the app ----------------------------------------------
+  await page.click('.rows .row:nth-child(1) .onb-send .btn-primary');
+  const call = await waitFor(() => true) && (await page.evaluate(() => window.__FN_CALLS__ || []))[0];
+  check('the Send button calls the invite function', !!call && call.name === 'send-onboarding-invite',
+    JSON.stringify(call || null).slice(0, 200));
+  check('it names the contact rather than an address, so the recipient is resolved server-side',
+    !!call && call.body.contact_id === sql(`select id from public.client_contacts where email = 'ruth@cedarandpine.test'`)
+      && !JSON.stringify(call.body).includes('"to"') && !JSON.stringify(call.body).includes('"email"'),
+    JSON.stringify(call?.body || {}).slice(0, 300));
+  check('and carries the engagement it belongs to',
+    !!call && call.body.engagement_id === engagement());
+  check('the message it sends is the one shown in the sheet',
+    !!call && call.body.body.includes('taylormadegrowth.com/portal/?email=')
+      && /don't put any passwords/i.test(call.body.body));
   check('sending records that the client was invited',
     await waitFor(() => sql(`select status from public.onboarding_engagements limit 1`) === 'invited'),
     sql(`select status from public.onboarding_engagements limit 1`));
   check('and when it went out',
     sql(`select (invited_at is not null)::text from public.onboarding_engagements limit 1`) === 'true');
+
+  // The failure that will actually happen is "the key is not set yet", and it
+  // has to read as a next step rather than as a broken button.
+  await page.evaluate(() => {
+    window.__PORTAL_TEST__.functions = {
+      'send-onboarding-invite': () => ({
+        data: null,
+        error: { message: 'Edge Function returned a non-2xx status code',
+                 context: { json: async () => ({ error: 'not_configured' }) } },
+      }),
+    };
+  });
+  await page.click('.rows .row:nth-child(2) .onb-send .btn-primary');
+  const failText = await page.waitForSelector('.toast.show', { timeout: 8000 })
+    .then((h) => h.textContent()).catch(() => '(no toast)');
+  check('an unconfigured mail service says what to do about it, and points at the mail app',
+    /RESEND_API_KEY/.test(failText) && /Mail app/.test(failText), failText);
+  check('and the mail-app route is still there to fall back on',
+    (await page.getAttribute('.rows .row:nth-child(2) .onb-send a', 'href') || '').startsWith('mailto:'));
 
   // ---- Does the client see what was set here? -----------------------------
   // The two screens have to agree, or this one is just a form that writes to a

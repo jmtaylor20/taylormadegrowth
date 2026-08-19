@@ -5,21 +5,41 @@ the per-client part takes about five minutes.
 
 ## Before the first client — do this once
 
-### 1. Custom SMTP (do not skip this one)
+### 1. Resend, once — it covers both emails
 
-Supabase's built-in mailer allows only a handful of messages per hour for the
-whole project and is explicitly not meant for production. Three people signing
-in to one engagement in the same sitting will exhaust it, and they will read the
-failure as "my email is wrong" and stop. It happened in the sandbox on the third
-address.
+Two different emails go to a client, and both need this.
 
-Set it up under **Authentication → Emails → SMTP Settings** in the Supabase
-dashboard. Resend's free tier is 3,000 messages a month and takes about ten
-minutes, most of which is a DNS record on `taylormadegrowth.com`. Once custom
-SMTP is on, raise the hourly rate limit under **Authentication → Rate Limits** —
-it stays low until you do.
+**The invitation** — "here's your portal" — is sent by the ops app through the
+`send-onboarding-invite` Edge Function. **The sign-in code** is sent by Supabase
+Auth when they press the button. One Resend account serves both.
 
-### 2. Check the sign-in email reads like a client email
+1. Create the account and **verify `taylormadegrowth.com`** — a few DNS records.
+   Until the domain is verified Resend will only deliver to your own address, so
+   this is the step that actually blocks a real client.
+2. Supabase dashboard → **Edge Functions → Secrets** → add `RESEND_API_KEY`.
+   Optionally `INVITE_FROM` (defaults to
+   `TaylorMade Brands <onboarding@taylormadegrowth.com>`) and `INVITE_REPLY_TO`
+   (defaults to josh@).
+3. Then do the SMTP half below, which is the same key in a different box.
+
+Until the key is set, **Send** in the app says so and points at **Mail app**,
+which opens the same message in your own mail client. Nothing is blocked; it is
+just one more step.
+
+### 2. Custom SMTP (do not skip this one)
+
+This is the sign-in codes, and it is the half most likely to break a real
+onboarding. Supabase's built-in mailer allows only a handful of messages per
+hour for the whole project and is explicitly not meant for production. Three
+people signing in to one engagement in the same sitting will exhaust it, and
+they will read the failure as "my email is wrong" and stop. That happened in the
+sandbox on the third address.
+
+**Authentication → Emails → SMTP Settings**, using the Resend credentials from
+step 1. Then raise the hourly limit under **Authentication → Rate Limits** — it
+stays low until custom SMTP is on.
+
+### 3. Check the sign-in email reads like a client email
 
 One Supabase project sends for both the staff app and the client portal, so
 there is one template and a client will read it. Under **Authentication →
@@ -29,7 +49,7 @@ admin. The template must contain `{{ .Token }}`, which is what makes it send a
 code rather than a link; the portal signs people in with a code on purpose, so a
 link would break it.
 
-### 3. Confirm new sign-ups are allowed
+### 4. Confirm new sign-ups are allowed
 
 A new contact has no auth user until the first time they ask for a code, so
 **Authentication → Sign In / Providers → Allow new users to sign up** has to be
@@ -37,7 +57,7 @@ on. It is what lets a stranger's address become a session — which grants them
 nothing, because `onboarding_client_ids()` returns empty for anyone who is not
 on a client's contact list, and the portal signs them straight back out.
 
-### 4. Clear the sandbox
+### 5. Clear the sandbox
 
 `db/teardown_portal_sandbox.sql`. Read its header first: it cannot delete
 uploaded files, because Supabase refuses to let SQL touch `storage.objects` at
@@ -93,10 +113,23 @@ Each section that is on can carry its own assignee and its own due date.
 
 ### 5. Send the invitation
 
-**Send invitation** opens your mail app with the message written, one per
-person, each counting their own sections. It sends from your address, so their
-reply comes back to you and it sits in your Sent where you can find it. There is
-a Copy button if you would rather paste it somewhere else.
+**Send invitation** writes one message per person, each counting their own
+sections, and gives you three ways out:
+
+* **Send** — goes straight from the app, through the Edge Function. One tap.
+* **Mail app** — opens the same message in your own mail client, so it comes
+  from your address and sits in your Sent. Use this if Resend is not set up yet.
+* **Copy** — the text, to paste wherever.
+
+The link in the message carries their address, so the portal opens with it
+already filled in and there is nothing to type on a phone. That is a prefill and
+nothing more: the sign-in code still has to arrive in their inbox.
+
+**There is no password to send them.** Nobody has one — not them, not you. The
+portal signs people in with a one-time code that Supabase emails when they press
+the button, and it expires within the hour. So the invitation tells them where to
+go; the code follows when they ask for it. That is why a forwarded invitation
+gives nobody anything.
 
 The message warns them off putting passwords in. Keep that paragraph: the
 database refuses anything that looks like a credential, and a client who has been

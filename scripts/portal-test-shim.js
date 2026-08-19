@@ -55,11 +55,27 @@
     createSignedUrl: async (path) => ({ data: { signedUrl: '/__signed/' + path }, error: null }),
   });
 
+  // Edge Functions are not run locally. The call is recorded so a test can
+  // assert what would have been sent — the address it resolves to, and the body
+  // it carries — and answered with whatever window.__PORTAL_TEST__.functions
+  // says. That covers both halves of what matters: the happy path, and how the
+  // app behaves when sending is not configured yet.
+  window.__FN_CALLS__ = [];
+  const functions = {
+    invoke: async (name, opts) => {
+      window.__FN_CALLS__.push({ name, body: opts?.body });
+      const canned = (window.__PORTAL_TEST__.functions || {})[name];
+      if (typeof canned === 'function') return canned(opts?.body);
+      return canned || { data: { sent: true }, error: null };
+    },
+  };
+
   window.supabase = {
     createClient() {
       return {
         from: (table) => new Query(table),
         storage: { from: storage },
+        functions,
         rpc: (fn, args) => post({ op: 'rpc', fn, args: args || {} }),
         auth: {
           getSession: async () => ({ data: { session: window.__PORTAL_TEST__.session }, error: null }),

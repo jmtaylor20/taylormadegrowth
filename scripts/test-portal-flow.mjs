@@ -59,6 +59,17 @@ async function main() {
   check('signed out lands on the sign-in screen', await page.isVisible('.gate-input'));
   check('sign-in copy names the real code length (8)', /8 digits/.test(gateNote), gateNote);
 
+  // The invitation links here with the address already in it, so somebody on a
+  // phone taps a link and then a button rather than typing an address into a
+  // page they have never seen.
+  await page.goto(origin + '/index.html?email=ruth%40cedarandpine.test', { waitUntil: 'load' });
+  await page.waitForSelector('.gate-input', { timeout: 10000 });
+  check('an invitation link arrives with the address filled in',
+    (await page.inputValue('.gate-input')) === 'ruth@cedarandpine.test',
+    await page.inputValue('.gate-input'));
+  check('and it is still only a prefill — nothing is signed in by the link alone',
+    await page.isVisible('.gate-btn') && !(await page.isVisible('.card')));
+
   // ---- Ruth: Cedar & Pine ------------------------------------------------
   const ruth = sessionFor('ruth@cedarandpine.test');
   await goto(ruth);

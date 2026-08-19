@@ -52,9 +52,16 @@ Two things worth knowing:
 
 - **Switching a section off does not delete anything.** If they already answered
   it, the answers stay. Switch it back on and it is all still there.
-- **Sending opens your own mail app**, one message per person, each counting
-  their own sections. It goes from your address, so their reply comes back to
-  you and it sits in your Sent. Nothing is sent behind your back.
+- **Three ways to send**, one message per person, each counting their own
+  sections. *Send* goes straight from the app through the
+  `send-onboarding-invite` Edge Function; *Mail app* opens the same message in
+  your own mail client, so it comes from your address and lands in your Sent;
+  *Copy* hands you the text. If Resend is not set up yet, *Send* says so and
+  points at *Mail app* — nothing is blocked.
+- **There is no password to send anybody.** The portal signs people in with a
+  one-time code that Supabase emails when they press the button, and it expires
+  within the hour. The invitation says where to go; the code follows when they
+  ask for it, which is why a forwarded invitation gives nobody anything.
 
 `db/GO-LIVE.md` is the fuller runbook, including the one-time Supabase setup —
 custom SMTP above all, because the built-in mailer allows only a handful of
