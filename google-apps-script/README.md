@@ -47,7 +47,29 @@ manually anytime, or change `everyMinutes(10)` in `installTrigger`.
 - Emails send **from your Gmail** (the account that owns the script), with
   replies going to `REPLY_TO`. Gmail's daily send limit applies (plenty for
   this).
-- The `SUPABASE_KEY` here is the same browser-safe publishable key the app
-  uses; it only allows the operations the app already allows.
+- **Neither script carries a Supabase key with any authority.** Each signs in as
+  its own Supabase Auth user and uses the resulting JWT, exactly as a person's
+  session does. The publishable key still travels on `apikey` — that is the
+  project identifier and is meant to be public.
+- A *secret* key cannot be used here at all: Supabase rejects those with 401
+  matched on the User-Agent header, and both runtimes send a
+  `Mozilla/5.0 (compatible; Google-Apps-Script; ...)` agent they will not let
+  you override. Don't try it — it was tried and reverted.
+- What each identity may reach is set in `public.automation_accounts.scopes`,
+  not by the credential. The document pipeline holds `crm_documents`; the Ads
+  sync holds `ad_metrics` alone.
+- The two scripts run on **different platforms**, which decides where each keeps
+  its password:
+  - **`tmg-doc-pipeline.gs`** is an Apps Script project. Its password lives in
+    **Project Settings → Script properties → `SUPABASE_AUTOMATION_PASSWORD`**,
+    never in the file.
+  - **`ads-metrics-sync.gs`** is a **Google Ads Script**, pasted into the Ads
+    manager account under Tools → Bulk actions → Scripts. That runtime has no
+    `PropertiesService`, so its password sits in a constant in the script body
+    where anyone with Ads manager access can read it. That is exactly why its
+    identity is scoped to `ad_metrics` alone — the worst a leak buys is the
+    ability to write ad statistics.
+- Fill passwords in through the Google UI and leave the repo copies as
+  placeholders. This repository is public.
 - If something fails, the app shows **Send failed / Save failed** and the error
   is stored on the record — re-tap the button to retry.

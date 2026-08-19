@@ -190,18 +190,39 @@ this was tried and reverted:
   `Mozilla/5.0 (compatible; Google-Apps-Script; ...)` and **strip any attempt to
   override User-Agent**. Google has had that feature request open for years.
 
-So a secret key can never work from either script. One of these has to land
-before Stage 3 drops the anon policies:
+So a secret key can never work from either script. **Resolved by giving each
+script its own identity** (`20260819130000_automation_accounts`): it signs in as
+a dedicated Supabase Auth user and uses the resulting JWT, the same
+`authenticated` role a person gets, with the publishable key alongside it as the
+project identifier.
 
-| Option | Shape | Trade-off |
+Authority moved from the credential to the identity.
+`public.automation_accounts.scopes` decides what each may reach, so a leaked
+script password buys exactly its scopes:
+
+| Script | Identity | Scope |
 | --- | --- | --- |
-| **Automation user** | A dedicated Supabase Auth user in `staff_users`; the script signs in per run and carries a normal user JWT | Fits everything already built, no key in the script, RLS decides the blast radius. Most work. |
-| **Edge Function** | A narrow endpoint fronting only the tables these scripts touch; `/functions/v1/` skips the gateway's key checks | Smallest blast radius. New component to maintain. |
-| **Legacy `service_role` JWT** | The pre-rename key, which predates the browser check | Works in minutes. On the deprecation path and rotates poorly. |
+| `tmg-doc-pipeline.gs` | `josh+docs-automation@` | `crm_documents` — proposals, invoices, reports, clients |
+| `ads-metrics-sync.gs` | `josh+ads-automation@` | `ad_metrics` alone |
 
-Whichever is chosen, the Google Ads Script still cannot hide its credential —
-that runtime has no `PropertiesService` — so it should get its own identity with
-access to `ad_metrics` alone, not a shared one.
+That split matters because the Google Ads Script cannot hide its password — that
+runtime has no `PropertiesService`, so it lives in the script body where anyone
+with Ads manager access can read it. Scoping it to `ad_metrics` is what makes
+that acceptable rather than alarming.
+
+The isolation suite carries an automation persona: eighteen assertions that a
+script identity reads no client, invoice, payment, engagement, or storage
+object, and cannot widen its own scopes or make itself staff.
+
+**Stage 3 must add the scope checks** to the policies it writes — otherwise the
+scripts lose access along with `anon`:
+
+```sql
+-- proposals, invoices, reports, clients
+using (public.is_staff() or public.automation_has_scope('crm_documents'))
+-- ad_metrics
+using (public.is_staff() or public.automation_has_scope('ad_metrics'))
+```
 
 ## MFA
 
