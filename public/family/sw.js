@@ -2,7 +2,7 @@
 // first unlock, and after that the browser's own encrypted copy in
 // localStorage is the source of truth.
 
-const CACHE = 'tfm-v8';
+const CACHE = 'tfm-v9';
 const SHELL = [
   './',
   './index.html',
@@ -18,6 +18,7 @@ const SHELL = [
   './assets/js/pages/paydays.js',
   './assets/js/pages/checkin.js',
   './assets/js/pages/windfall.js',
+  './assets/js/pages/reconcile.js',
   './assets/js/pages/debt.js',
   './assets/js/pages/goals.js',
   './assets/js/pages/scenarios.js',

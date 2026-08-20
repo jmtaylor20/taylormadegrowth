@@ -941,3 +941,140 @@ export function goalPace(goal, from = today()) {
   const months = Math.max(1, monthsBetween(from, goal.targetDate) + 1);
   return { months, perMonth: Math.max(0, goal.target - goal.saved) / months };
 }
+
+// ---- Reconciliation --------------------------------------------------------
+//
+// Everyday spending runs off the business now, so the two checking accounts
+// carry bills and nothing else — which makes them the most predictable thing
+// here. Every charge, every date and both paychecks are known, so the app can
+// say what a balance ought to be today and the only input worth asking for is
+// what it actually is.
+//
+// The gap between the two is the number that matters. It is nearly always one
+// of two things: a bill that has not cleared yet, or a bill that cost more than
+// the figure on file. Naming which turns a monthly re-typing chore into a
+// weekly correction that leaves the model truer than it found it.
+
+const daysInMonth = (d) => new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+
+const isoOf = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+export const daysBetween = (from, to) =>
+  Math.round((parseDay(to) - parseDay(from)) / 86400000);
+
+// Every scheduled movement on an account between two dates — exclusive of the
+// start, whose balance is already known, and inclusive of the end.
+export function accountEvents(state, accountId, from, to) {
+  const incomes = forAccount(state.income, accountId).filter((i) => !i.excludeFromPlan);
+  const bills = recurringFor(state, accountId);
+  const events = [];
+
+  // Charges known to be outstanding from a previous reconcile. A bill you
+  // confirmed had not cleared yet still has to come out of the balance, and its
+  // day of the month has already gone by.
+  for (const p of (state.pending ?? [])) {
+    if (p.account !== accountId) continue;
+    if (p.on > to) continue;
+    events.push({ kind: 'out', on: p.on, id: p.billId ?? p.id, name: p.name, amount: p.amount, late: true });
+  }
+
+  const end = parseDay(to);
+  const cur = parseDay(from);
+  cur.setDate(cur.getDate() + 1);
+
+  for (let guard = 0; cur <= end && guard < 800; guard += 1) {
+    const dim = daysInMonth(cur);
+    const dom = cur.getDate();
+    const on = isoOf(cur);
+    // A bill dated the 31st still comes out of a thirty-day month.
+    const lands = (day) => day === dom || (day > dim && dom === dim);
+
+    for (const i of incomes) {
+      if (incomeDays(i).some(lands)) events.push({ kind: 'in', on, id: i.id, name: i.name, amount: i.amount });
+    }
+    for (const b of bills) {
+      if (lands(b.day ?? 0)) {
+        events.push({ kind: 'out', on, id: b.id, name: b.name, amount: b.amount, variable: !!b.variable });
+      }
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  return events.sort((a, b) => a.on.localeCompare(b.on));
+}
+
+// What the balance should read on a given day, walking forward from the last
+// figure that was actually confirmed.
+export function expectedBalance(state, accountId, to = today()) {
+  const account = state.accounts.find((x) => x.id === accountId);
+  if (!account) return null;
+  const from = account.balanceAsOf ?? today();
+  const opening = account.balance ?? 0;
+  const events = accountEvents(state, accountId, from, to);
+  const inflow = events.filter((e) => e.kind === 'in').reduce((s, e) => s + e.amount, 0);
+  const outflow = events.filter((e) => e.kind === 'out').reduce((s, e) => s + e.amount, 0);
+  return {
+    account, from, to, opening, events, inflow, outflow,
+    days: Math.max(0, daysBetween(from, to)),
+    balance: opening + inflow - outflow,
+  };
+}
+
+// Candidate explanations for a difference, best first. Nothing here is applied
+// on its own — each one is an offer the user accepts or ignores.
+export function explainGap(exp, gap, tolerance = 2) {
+  const near = (a, b) => Math.abs(a - b) <= Math.max(tolerance, b * 0.02);
+  const outs = exp.events.filter((e) => e.kind === 'out');
+  const ins = exp.events.filter((e) => e.kind === 'in');
+  const found = [];
+
+  if (gap > 0) {
+    // More money than expected: something was subtracted that has not happened.
+    for (const e of outs) {
+      if (near(gap, e.amount)) found.push({ type: 'late', events: [e], amount: e.amount, rank: 0 });
+    }
+    for (let i = 0; i < outs.length; i += 1) {
+      for (let j = i + 1; j < outs.length; j += 1) {
+        if (near(gap, outs[i].amount + outs[j].amount)) {
+          found.push({ type: 'late', events: [outs[i], outs[j]], amount: outs[i].amount + outs[j].amount, rank: 1 });
+        }
+      }
+    }
+  } else if (gap < 0) {
+    // Less money than expected: a payment landed late, or a bill cost more.
+    for (const e of ins) {
+      if (near(-gap, e.amount)) found.push({ type: 'shortIncome', events: [e], amount: e.amount, rank: 0 });
+    }
+    for (const e of outs) {
+      if (e.late) continue;
+      const actual = e.amount - gap;
+      // A bill doubling is not drift, it is a different explanation entirely.
+      if (actual > e.amount * 2.5) continue;
+      found.push({
+        type: 'drift', events: [e], amount: actual, billId: e.id,
+        rank: e.variable ? 1 : 2 + Math.abs(gap) / (e.amount || 1),
+      });
+    }
+  }
+
+  // A stable identity, because the caller rebuilds this list on every keystroke
+  // and needs to know which one is still the chosen one. Object identity would
+  // quietly lose the selection on the next repaint.
+  for (const f of found) f.key = `${f.type}:${f.events.map((e) => e.id).join('+')}:${f.amount.toFixed(2)}`;
+  return found.sort((a, b) => a.rank - b.rank).slice(0, 5);
+}
+
+// How close the model has been running. This is the only honest answer to
+// "can I trust the number on the front page".
+export function reconcileAccuracy(state) {
+  const all = (state.reconciliations ?? []).filter((r) => typeof r.gap === 'number');
+  if (!all.length) return null;
+  const recent = all.slice(-6);
+  return {
+    count: all.length,
+    last: all.at(-1),
+    averageMiss: recent.reduce((s, r) => s + Math.abs(r.gap), 0) / recent.length,
+    daysSince: daysBetween(all.at(-1).date, today()),
+  };
+}

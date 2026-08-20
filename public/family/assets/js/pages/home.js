@@ -3,6 +3,7 @@
 import { el, money, signed, stat, section, splitBar, legend, bar, ord, longDate } from '../ui.js';
 import { checkInCard, envelopeCard } from './checkin.js';
 import { windfallCard } from './windfall.js';
+import { reconcileCard, reconcileHistory } from './reconcile.js';
 import {
   household, monthlyIncome, recurringTotals, leftover, byCategory,
   debtTotals, attackable, unknownDebts, simulate, goalSummary,
@@ -66,8 +67,17 @@ export default function home(state) {
   }
 
   wrap.append(section('Keeping it honest'));
+  // Reconciling comes first: it is the cheap weekly one, and every other number
+  // on this page is only as true as the balances it starts from.
+  wrap.append(reconcileCard(state));
   wrap.append(checkInCard(state));
   wrap.append(envelopeCard(state));
+
+  const history = reconcileHistory(state);
+  if (history) {
+    wrap.append(section('How close the forecast has been'));
+    wrap.append(history);
+  }
 
   if ((state.windfalls ?? []).some((w) => !w.applied)) {
     wrap.append(section('Money coming in'));

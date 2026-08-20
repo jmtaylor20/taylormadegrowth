@@ -87,6 +87,8 @@ async function applyUpdate(shipped) {
     checkIns: state.checkIns,
     allocations: state.allocations,
     payments: state.payments,
+    reconciliations: state.reconciliations,
+    pending: state.pending,
     windfalls: state.windfalls,
     settings: { ...shipped.settings, ...state.settings },
     recurring: shipped.recurring.map((r) => {
@@ -181,6 +183,8 @@ function migrate() {
   state.windfalls ??= [];
   state.allocations ??= [];
   state.payments ??= [];
+  state.reconciliations ??= [];
+  state.pending ??= [];
   state.settings ??= {};
   state.settings.monthlySpending ??= 0;
   state.settings.monthlyToGoals ??= 0;

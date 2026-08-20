@@ -54,13 +54,36 @@ passphrase using the steps above.
 
 | Tab | What it answers |
 | --- | --- |
-| **Home** | Are we okay this month? Household totals, what is committed before the next paycheck, and idle cash that could be swept. |
+| **Home** | Are we okay this month? Household totals, what is committed before the next paycheck, idle cash that could be swept, and the weekly reconcile against the real balances. |
 | **Josh** | Regions account: dashboard, recurring bills by date or category, bill calendar, and what is due before the next paycheck. |
 | **Laci** | Same for the Wells Fargo account. |
 | **Paydays** | The timing problem. Splits the month into pay periods, shows which stretch is carrying more than its paycheck, and names the specific due dates to move. |
 | **Debt** | Allocate money you have on hand, record a payment against any account, and read the five-year path: which debt the money points at, for how long, and what falls when. |
 | **Goals** | Trips, the monthly rate you set toward them, and which dates that rate will not reach. A goal can be open-ended instead of dated. |
 | **What if** | The business draw as the one variable: split it between everyday spending and debt and watch the payoff date move, with or without the mortgage. |
+
+## Reconciling
+
+Everyday spending runs off the business now, so the two checking accounts carry
+bills and nothing else — which makes them the most predictable thing in here.
+Every charge, every date and both paychecks are known, so the app can say what
+each balance ought to read today. The only thing it cannot know is what the bank
+actually says, so that is all it asks for: two numbers, about once a week.
+
+The gap is the useful part, and it is nearly always one of two things:
+
+| Gap | Usually means | What accepting it does |
+| --- | --- | --- |
+| More than expected | A bill hasn't cleared yet | Carries that charge forward so the next forecast still expects it |
+| Less than expected | A bill cost more than the figure on file | Rewrites that bill's amount and keeps the old one in its history |
+
+A single exact match on a timing gap is pre-selected, because it is nearly
+always right and harmless if it isn't. A bill rewrite is never pre-selected —
+that one changes the model permanently and should be deliberate.
+
+Each reconcile is kept, so the Home tab can show how close the forecasts have
+actually been running. That average miss is the only honest answer to whether
+the numbers on the front page can be trusted.
 
 ## Keeping it current
 
