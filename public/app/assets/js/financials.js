@@ -10,6 +10,7 @@ import {
 } from './ui.js';
 import { openInvoiceForm } from './invoices.js';
 import { openPaymentForm } from './client-detail.js';
+import { openExpenseForm } from './tracker.js';
 import { queueDoc, docBadges } from './docs.js';
 
 const nameFor = (list, id) => (list.find((c) => c.id === id) || {}).business_name || '—';
@@ -21,6 +22,7 @@ export async function renderFinancials(root) {
   const actions = el('div.toolbar', {}, [
     FEATURES.invoicing ? primaryBtn('New invoice', async () => openInvoiceForm({}, refreshAfter, null, await clients()), 'plus') : null,
     el('button.btn.btn-gold', { html: `${iconSvg('plus', 16)} Record payment`, onclick: async () => openPickClientThenPayment(await clients(), refreshAfter) }),
+    el('button.btn.btn-ghost', { html: `${iconSvg('money', 16)} Add expense`, onclick: async () => openExpenseForm({}, refreshAfter, await clients()) }),
     FEATURES.invoicing ? el('button.btn.btn-ghost', { html: `${iconSvg('renew', 16)} Generate monthly`, title: 'Create this month’s retainer invoices', onclick: generateMonthly }) : null,
     FEATURES.splitDeposit ? el('button.btn.btn-ghost', { html: `${iconSvg('wallet', 16)} Split deposit`, title: 'Allocate an incoming payment across your buckets', onclick: async () => openSplitDeposit(await clients()) }) : null,
   ]);
@@ -30,7 +32,7 @@ export async function renderFinancials(root) {
   root.append(summary);
 
   const seg = el('div.segmented.mt-16');
-  const segTabs = [...(FEATURES.invoicing ? [['invoices', 'Invoices']] : []), ['payments', 'Payments'], ['clients', 'By client'],
+  const segTabs = [...(FEATURES.invoicing ? [['invoices', 'Invoices']] : []), ['payments', 'Payments'], ['expenses', 'Expenses'], ['clients', 'By client'],
     ...(FEATURES.contractorsTab ? [['contractors', 'Contractors']] : []), ['taxes', 'Taxes']];
   segTabs.forEach(([k, l]) =>
     seg.append(el('button.seg' + (state.view === k ? '.on' : ''), { text: l, dataset: { v: k }, onclick: () => { state.view = k; seg.querySelectorAll('.seg').forEach((s) => s.classList.toggle('on', s.dataset.v === k)); refresh(); } })));
@@ -132,6 +134,7 @@ export async function renderFinancials(root) {
 
     if (state.view === 'invoices') viewInvoices();
     else if (state.view === 'payments') viewPayments();
+    else if (state.view === 'expenses') viewExpenses();
     else if (state.view === 'taxes') viewTaxes();
     else if (state.view === 'contractors' && FEATURES.contractorsTab) viewContractors();
     else viewByClient();
@@ -371,6 +374,41 @@ export async function renderFinancials(root) {
         el('div.row-sub', {}, [badge(labelOf(PAYMENT_KIND, p.kind), 'green'), p.paid_on ? fmtDate(p.paid_on) : '', p.method || '', p.note || '']),
       ]),
       el('button.icon-btn', { html: iconSvg('trash', 16), onclick: async () => { if (await confirmDialog('Delete this payment?')) { await Payments.remove(p.id); refreshAfter(); } } }),
+    ])));
+    wrap.append(rows);
+  }
+
+  // Expense tracker: add / edit / delete business expenses, month + year totals.
+  function viewExpenses() {
+    const yr = String(new Date().getFullYear());
+    const inYr = (d) => (d || '').slice(0, 4) === yr;
+    const moTotal = expenses.filter((e) => e.expense_date && sameMonth(e.expense_date)).reduce((s, e) => s + n(e.amount), 0);
+    const yrTotal = expenses.filter((e) => inYr(e.expense_date)).reduce((s, e) => s + n(e.amount), 0);
+    wrap.append(el('div.section-title', {}, [
+      el('h3', { text: 'Expenses' }),
+      el('button.btn.btn-gold.btn-sm', { html: `${iconSvg('plus', 14)} Add expense`, onclick: () => openExpenseForm({}, refreshAfter, list) }),
+    ]));
+    wrap.append(el('div.grid.grid-3', {}, [
+      el('div.stat.stat-gold', {}, [el('div.stat-value', { text: money(moTotal) }), el('div.stat-label', { text: 'This month' })]),
+      el('div.stat', {}, [el('div.stat-value', { text: money(yrTotal) }), el('div.stat-label', { text: yr + ' total' })]),
+      el('div.stat', {}, [el('div.stat-value', { text: String(expenses.length) }), el('div.stat-label', { text: 'Logged' })]),
+    ]));
+    if (!expenses.length) { wrap.append(emptyState('No expenses yet. Tap Add expense.', 'money')); return; }
+    const rows = el('div.rows.card');
+    expenses.slice().sort((a, b) => String(b.expense_date || '').localeCompare(String(a.expense_date || ''))).forEach((e) => rows.append(el('div.row', {}, [
+      el('div.row-main', { style: 'cursor:pointer', onclick: () => openExpenseForm(e, refreshAfter, list) }, [
+        el('div.row-title', { text: e.vendor || e.category || 'Expense' }),
+        el('div.row-sub', {}, [
+          e.category ? badge(e.category, 'gray') : null,
+          e.expense_date ? el('span', { text: fmtDate(e.expense_date) }) : null,
+          e.client_id ? el('span.muted', { text: nameFor(list, e.client_id) }) : null,
+          e.notes ? el('span', { text: e.notes }) : null,
+        ]),
+      ]),
+      el('div.row-right', {}, [
+        el('span.row-amount', { text: money(e.amount) }),
+        el('button.icon-btn', { title: 'Delete', html: iconSvg('trash', 16), onclick: async () => { if (await confirmDialog('Delete this expense?')) { await Expenses.remove(e.id); refreshAfter(); } } }),
+      ]),
     ])));
     wrap.append(rows);
   }
