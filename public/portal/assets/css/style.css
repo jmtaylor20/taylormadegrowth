@@ -87,6 +87,19 @@ body.signed-out { background: radial-gradient(120% 120% at 50% 0%, #16305a 0%, v
   border-radius: 999px; padding: 8px 13px; font-size: .8rem;
 }
 .main { flex: 1; }
+
+/* Shown only when a client has more than one set of questions open — an old
+   onboarding and a new discovery, say. One of them must never hide the other. */
+.switcher {
+  display: flex; gap: 8px; overflow-x: auto; padding: 10px 16px 2px;
+  background: var(--navy-dark); scrollbar-width: none;
+}
+.switcher::-webkit-scrollbar { display: none; }
+.switch {
+  white-space: nowrap; border: 1px solid #2c4d7d; background: rgba(255,255,255,.06);
+  color: #9fb2cc; border-radius: 999px; padding: 7px 14px; font-size: .82rem;
+}
+.switch.on { background: var(--gold); border-color: var(--gold); color: var(--navy-dark); font-weight: 700; }
 .page { max-width: 720px; margin: 0 auto; padding: 20px 16px 40px; }
 .foot {
   max-width: 720px; margin: 0 auto; width: 100%;

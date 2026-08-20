@@ -255,6 +255,29 @@ deliberately, so nobody orphans a bucket by hand. So it lists them instead and
 they come out through the Storage API. Take the files out before running it;
 once the asset rows are gone, nothing names the objects any more.
 
+## The app build discovery
+
+`db/seed_app_build_library.sql` is the App Discovery Checklist — the two-page
+paper form in `db/reference/App_Discovery_Checklist.pdf` — as seven portal
+sections plus an `app_build` template. Same seven numbered blocks as the paper,
+so a client who has seen the PDF knows where they are, and the same natural
+assignment boundaries: the owner answers the money and the priorities, whoever
+runs the crew answers the field questions.
+
+Two deliberate differences from the paper:
+
+* **Nothing is asked twice.** Business name, owner, years in business, employee
+  count, phone and email are already `business_brand`, which the template turns
+  on. The app sections start at "what do you sell".
+* **The N / L marks become two lists per section**, not per line — what they
+  need on day one, per group, then one optional "anything above that can wait".
+  Sixty tri-state rows is a form nobody finishes on a phone.
+
+Applying it also rewrites `growth_partner` to name its sections explicitly. It
+was defined as "every non-vertical section", which quietly means "every section
+anybody ever adds" — without the rewrite, every growth-partner client would have
+been handed an app-build discovery. Same thirteen sections before and after.
+
 ## The portal
 
 `public/portal/` is the client-facing half of this: sign in by emailed code,

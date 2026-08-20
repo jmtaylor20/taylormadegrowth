@@ -42,10 +42,13 @@ async function start(access) {
     state.client = client;
     state.contact = contact;
     state.contacts = contacts;
-    state.engagements = engagements;
-    // One live engagement is the normal case. If a client somehow has two, the
-    // most recent non-archived one is the one they were just invited to.
-    state.engagement = engagements.find((e) => e.status !== 'archived') || engagements[0] || null;
+    // One live engagement is the normal case, and the newest is the one they
+    // were just invited to. But a client who finished onboarding months ago and
+    // has now been sent a second set of questions has two, and the old one must
+    // not silently hide the new one — or the other way round. So more than one
+    // gets a switcher rather than a guess.
+    state.engagements = engagements.filter((e) => e.status !== 'archived');
+    state.engagement = state.engagements[0] || engagements[0] || null;
   } catch (err) {
     clear(root);
     root.append(chrome(el('div.empty', {}, [
@@ -73,12 +76,24 @@ function chrome(content) {
       ]),
       el('button.top-out', { type: 'button', text: 'Sign out', onclick: async () => { await signOut(); location.reload(); } }),
     ]),
+    engagementSwitcher(),
     el('main.main', {}, [content]),
     el('footer.foot', {}, [
       el('span', { text: `Questions? Reply to your invitation email or write to ${BRAND.replyTo}.` }),
       el('span.build', { text: BUILD }),
     ]),
   ]);
+}
+
+/** Only appears when there is genuinely more than one thing to work on. */
+function engagementSwitcher() {
+  if (state.engagements.length < 2) return null;
+  return el('div.switcher', {}, state.engagements.map((e) =>
+    el('button.switch' + (e.id === state.engagement?.id ? '.on' : ''), {
+      type: 'button',
+      text: e.title || 'Onboarding',
+      onclick: () => { state.engagement = e; location.hash = '/'; route(); },
+    })));
 }
 
 function mountPage(builder) {

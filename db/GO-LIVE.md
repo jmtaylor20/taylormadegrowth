@@ -85,6 +85,10 @@ a starting point, not a cage: every section is a switch on the next screen.
 | Website Build | 4 | a site, nothing else |
 | Website + Ads | 8 | site plus ad management |
 | Growth Partner | 13 | the full engagement, including the money questions |
+| Custom App Build | 11 | a client getting software built — the App Discovery Checklist |
+
+Custom App Build only appears once `db/seed_app_build_library.sql` has been run
+against the database. See `db/ONBOARDING.md`.
 
 Set the industry module only for a trade we have one written for — today that is
 millwork, which adds Signature Specification. It is not the client's industry;
@@ -137,12 +141,58 @@ told reads the refusal as care rather than a malfunction.
 
 Sending marks the engagement invited and records when.
 
-### 6. Watch it come in
+### 6. Read what comes back
 
-The Onboarding list shows each client's progress. Open one to see which sections
-are done, who owns each, and how much of each is answered. `unknown` and
-`not applicable` count as answered — they are deliberate answers, and a section
-full of them tells you more than a blank one does.
+The Onboarding list shows each client's progress. Open one and every switched-on
+section carries a **Read N answers** link — that is the answers themselves, in
+the order they were asked, with who gave them.
+
+Three things stay distinct there, because they mean three different things:
+
+| On screen | What it means |
+| --- | --- |
+| The answer | They answered it |
+| *They don't know* | A deliberate answer. Finished work. |
+| *Doesn't apply to them* | Also a deliberate answer. Finished work. |
+| **Not answered yet** | The only one worth chasing |
+
+**Copy all** puts the whole section on the clipboard as plain text, for pasting
+into a brief or a proposal. Uploaded files open through a link that expires in
+five minutes.
+
+`unknown` and `not_applicable` count toward the completion percentage, because
+they are answers. A section full of them tells you more than a blank one does.
+
+### Turning it into a brief
+
+**Brief**, next to Settings on an engagement. Two buttons, two jobs:
+
+- **Copy for Claude Code** — the whole engagement as markdown, every answer
+  still attached to the question that produced it, with a **Still unanswered**
+  list at the end and an instruction not to invent those. That list is the point:
+  a brief that quietly omits its gaps invites whatever reads it to fill them
+  with something plausible, which is the expensive failure here.
+- **Print / Save PDF** — the same content, printable, for sending back to the
+  client or filing. A worse input to anything automated, because getting the
+  text out again means parsing it back.
+
+### Sending an existing client something new
+
+An engagement is not only for new clients. To send somebody who onboarded months
+ago a fresh set of questions — an app discovery, say:
+
+1. Their previous engagement has to be **complete** or **archived** first. Open
+   it, **Settings**, set the status. A client with something still in flight is
+   not offered, because two open at once is confusion. **A client who has never
+   onboarded through the portal at all needs none of this** — they have no
+   engagement, so they are already in the list.
+2. **Start onboarding** → pick them (they are labelled *has answered before*) →
+   pick the closest template.
+3. Switch off everything they should not be asked again. For an app discovery
+   that usually means leaving only the seven `app_*` sections on.
+
+Their old engagement and every answer in it stay exactly where they are. If both
+end up open at once, the portal shows them a switcher rather than hiding one.
 
 ## The same thing, in SQL
 

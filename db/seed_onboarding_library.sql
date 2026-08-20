@@ -4,12 +4,16 @@
 -- app, in the SQL editor, or by re-running this file — never by a deploy.
 -- Re-runnable: every insert upserts on its natural key.
 --
--- Coverage note: business_brand, digital_access, financial_baseline and
--- lead_history are filled in properly, because between them they exercise
--- every mechanism in the schema — scalars of each type, checklists, file
--- uploads, and repeating groups. professional_network and portfolio get their
--- repeating groups defined because those shapes were specified. The remaining
--- sections are stubs: title and intro copy only, ready to fill in.
+-- Coverage note: the two core sections a client opens first —
+-- engagement_details and communication_decisions — are written out in full,
+-- because an empty section is the worst thing to put in front of somebody on
+-- their first visit. business_brand, digital_access, financial_baseline and
+-- lead_history are filled in too, and between them they exercise every
+-- mechanism in the schema — scalars of each type, checklists, file uploads, and
+-- repeating groups. professional_network and portfolio get their repeating
+-- groups defined because those shapes were specified. customer_data,
+-- sales_process, marketing_boundaries, job_economics, capacity and
+-- signature_spec are still stubs: title and intro copy only, ready to fill in.
 
 begin;
 
@@ -75,6 +79,85 @@ insert into public.onboarding_sections (key, title, tier, vertical, position, in
 on conflict (key) do update set
   title = excluded.title, tier = excluded.tier, vertical = excluded.vertical,
   position = excluded.position, intro = excluded.intro, description = excluded.description;
+
+-- ---------------------------------------------------------------------------
+-- Fields — engagement_details
+-- ---------------------------------------------------------------------------
+-- The first section anybody opens, so it sets the tone for the whole thing:
+-- short, plain, and about them rather than about us. It runs on every template,
+-- so nothing here may assume a website, an ad account, or a build.
+--
+-- The questions that earn their place are the ones whose absence costs money
+-- later — what they think they are buying, who can actually say yes, and what
+-- went wrong the last time somebody did this for them.
+insert into public.onboarding_fields
+  (section_key, field_key, label, field_type, required, position, help_text, options, unit) values
+  ('engagement_details','engagement_details.what_we_are_building','In your own words, what are we doing for you?','long_text',true,10,
+   'However you would explain it to a friend. If your version and ours differ, we would much rather find that out now.','[]'::jsonb,null),
+  ('engagement_details','engagement_details.why_now','Why now? What changed?','long_text',false,20,
+   'Something usually prompts this — a busy season coming, a competitor, a system that finally broke.','[]'::jsonb,null),
+  ('engagement_details','engagement_details.success_looks_like','Six months from now, what has to be true for this to have been worth it?','long_text',true,30,
+   'Be specific if you can. "More leads" is harder to aim at than "the phone rings twice a week from Google".','[]'::jsonb,null),
+
+  ('engagement_details','engagement_details.decision_maker','Who has the final say?','short_text',true,100,
+   'One name. Everything ends up waiting on this person, so it helps to know who they are.','[]'::jsonb,null),
+  ('engagement_details','engagement_details.others_involved','Who else needs to weigh in, and on what?','long_text',false,110,
+   'A spouse, a partner, an office manager, a board. Better to know now than to find out at approval.','[]'::jsonb,null),
+
+  ('engagement_details','engagement_details.target_date','Is there a date this needs to be done by?','date',false,200,
+   'Leave it blank if there genuinely is not one.','[]'::jsonb,null),
+  ('engagement_details','engagement_details.date_driver','What is driving that date?','short_text',false,210,
+   'A show, a season, a lease, a launch. A real reason changes what we build first.','[]'::jsonb,null),
+
+  ('engagement_details','engagement_details.worked_with_someone_before','Have you hired someone for this kind of work before?','boolean',false,300,null,'[]'::jsonb,null),
+  ('engagement_details','engagement_details.previous_experience','If so, how did it go?','long_text',false,310,
+   'The bad ones are more useful to us than the good ones. We would rather not repeat somebody else''s mistake.','[]'::jsonb,null),
+
+  ('engagement_details','engagement_details.constraints','Anything that could get in the way?','long_text',false,400,
+   'Busy season, staff changes, someone who hates change, a system you are stuck with. Not a complaint — just the terrain.','[]'::jsonb,null)
+on conflict (field_key) do update set
+  section_key = excluded.section_key, label = excluded.label, field_type = excluded.field_type,
+  required = excluded.required, position = excluded.position, help_text = excluded.help_text,
+  options = excluded.options, unit = excluded.unit;
+
+-- ---------------------------------------------------------------------------
+-- Fields — communication_decisions
+-- ---------------------------------------------------------------------------
+-- Almost every engagement that goes badly goes badly here first: somebody
+-- waiting on an approval that nobody knew they owned, or an update sent to a
+-- channel the client does not read. Cheap to ask, expensive to guess.
+insert into public.onboarding_fields
+  (section_key, field_key, label, field_type, required, position, help_text, options, unit) values
+  ('communication_decisions','communication_decisions.best_channel','How do you want us to reach you?','select',true,10,
+   'The one you actually read, not the one you feel you should say.',
+   '[{"value":"email","label":"Email"},{"value":"text","label":"Text message"},{"value":"phone","label":"Phone call"},{"value":"whatever","label":"Whichever is fastest at the time"}]'::jsonb,null),
+  ('communication_decisions','communication_decisions.reach_notes','When are you easiest to reach?','short_text',false,20,
+   'Early mornings, after five, never on Fridays — whatever is true.','[]'::jsonb,null),
+  ('communication_decisions','communication_decisions.response_expectation','How quickly do you normally get back to things?','select',false,30,
+   'This sets our expectations, not yours. Knowing you are on a roof all day is useful.',
+   '[{"value":"same_day","label":"Same day, usually"},{"value":"couple_days","label":"Within a couple of days"},{"value":"week","label":"A week is realistic"},{"value":"chase_me","label":"Honestly, chase me"}]'::jsonb,null),
+
+  ('communication_decisions','communication_decisions.checkin_cadence','How often do you want to hear from us?','select',true,100,null,
+   '[{"value":"weekly","label":"Weekly"},{"value":"biweekly","label":"Every couple of weeks"},{"value":"monthly","label":"Monthly"},{"value":"as_needed","label":"Only when there is something to decide"}]'::jsonb,null),
+  ('communication_decisions','communication_decisions.checkin_format','In what form?','select',false,110,null,
+   '[{"value":"call","label":"A short call"},{"value":"written","label":"A written update I can read whenever"},{"value":"either","label":"Whichever suits the week"}]'::jsonb,null),
+  ('communication_decisions','communication_decisions.bad_news','How do you want to hear it when something slips or goes wrong?','long_text',false,120,
+   'We would rather tell you early and plainly. Tell us how you want that delivered.','[]'::jsonb,null),
+
+  ('communication_decisions','communication_decisions.who_approves','Who signs off before something goes live?','short_text',true,200,
+   'Can be the same person as the decision maker, or not.','[]'::jsonb,null),
+  ('communication_decisions','communication_decisions.approval_speed','Realistically, how long does an approval take?','select',false,210,
+   'An honest answer here is what stops a build stalling with nobody quite sure why.',
+   '[{"value":"same_day","label":"Same day"},{"value":"few_days","label":"A few days"},{"value":"depends","label":"It depends who is around"},{"value":"slow","label":"Longer than either of us would like"}]'::jsonb,null),
+  ('communication_decisions','communication_decisions.copy_in','Anyone else who should be copied in?','long_text',false,220,
+   'Names and email addresses. A bookkeeper, an office manager, a business partner.','[]'::jsonb,null),
+
+  ('communication_decisions','communication_decisions.ask_first','Anything we should never do without checking with you first?','long_text',false,300,
+   'Publishing a page, replying to a review, changing a phone number, emailing your customers — that kind of thing.','[]'::jsonb,null)
+on conflict (field_key) do update set
+  section_key = excluded.section_key, label = excluded.label, field_type = excluded.field_type,
+  required = excluded.required, position = excluded.position, help_text = excluded.help_text,
+  options = excluded.options, unit = excluded.unit;
 
 -- ---------------------------------------------------------------------------
 -- Fields — business_brand (scalars of most types + file uploads)

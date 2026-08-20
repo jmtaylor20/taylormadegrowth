@@ -48,10 +48,23 @@ actually asked, hand each one to a named person, and send the invitation — the
 whole job on one screen. What you set there is exactly what they see at
 `taylormadegrowth.com/portal/`.
 
-Two things worth knowing:
+Worth knowing:
 
 - **Switching a section off does not delete anything.** If they already answered
   it, the answers stay. Switch it back on and it is all still there.
+- **Read N answers** on each section is where the replies live. A blank, an
+  "I don't know" and a "doesn't apply" stay three different things there — only
+  the blank is worth chasing. *Copy all* takes a section as plain text for a
+  brief or a proposal, and uploaded files open through a short-lived link.
+- **Any client can be sent this, onboarded or not.** A client who has never used
+  the portal is already in the list. One who has been through it needs their old
+  engagement set to complete or archived first, then start another and switch off
+  whatever they should not be asked twice. Old answers are untouched either way.
+  The first person you add is filled in from their client record.
+- **Brief** turns a finished engagement into one document. *Copy for Claude Code*
+  gives markdown with every answer still attached to its question and a
+  **Still unanswered** list that says not to invent those; *Print / Save PDF*
+  gives the same thing to send back or file.
 - **Three ways to send**, one message per person, each counting their own
   sections. *Send* goes straight from the app through the
   `send-onboarding-invite` Edge Function; *Mail app* opens the same message in

@@ -4,7 +4,7 @@
 // cached shell as the offline fallback. Supabase requests are never touched:
 // answers and sessions must not be served from a cache. Bump CACHE to force a
 // refresh.
-const CACHE = 'tmg-portal-v2';
+const CACHE = 'tmg-portal-v3';
 const SHELL = [
   './',
   './index.html',

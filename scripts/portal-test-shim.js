@@ -32,6 +32,7 @@
     delete() { this.q.action = 'delete'; return this; }
     eq(col, val) { this.q.filters.push(['eq', col, val]); return this; }
     is(col, val) { this.q.filters.push(['is', col, val]); return this; }
+    in(col, vals) { this.q.filters.push(['in', col, vals]); return this; }
     ilike(col, val) { this.q.filters.push(['ilike', col, val]); return this; }
     order(col, opts) { this.q.order.push([col, opts?.ascending === false ? 'desc' : 'asc']); return this; }
     limit(n) { this.q.limit = n; return this; }
