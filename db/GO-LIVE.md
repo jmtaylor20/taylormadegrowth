@@ -141,12 +141,43 @@ told reads the refusal as care rather than a malfunction.
 
 Sending marks the engagement invited and records when.
 
-### 6. Watch it come in
+### 6. Read what comes back
 
-The Onboarding list shows each client's progress. Open one to see which sections
-are done, who owns each, and how much of each is answered. `unknown` and
-`not applicable` count as answered — they are deliberate answers, and a section
-full of them tells you more than a blank one does.
+The Onboarding list shows each client's progress. Open one and every switched-on
+section carries a **Read N answers** link — that is the answers themselves, in
+the order they were asked, with who gave them.
+
+Three things stay distinct there, because they mean three different things:
+
+| On screen | What it means |
+| --- | --- |
+| The answer | They answered it |
+| *They don't know* | A deliberate answer. Finished work. |
+| *Doesn't apply to them* | Also a deliberate answer. Finished work. |
+| **Not answered yet** | The only one worth chasing |
+
+**Copy all** puts the whole section on the clipboard as plain text, for pasting
+into a brief or a proposal. Uploaded files open through a link that expires in
+five minutes.
+
+`unknown` and `not_applicable` count toward the completion percentage, because
+they are answers. A section full of them tells you more than a blank one does.
+
+### Sending an existing client something new
+
+An engagement is not only for new clients. To send somebody who onboarded months
+ago a fresh set of questions — an app discovery, say:
+
+1. Their previous engagement has to be **complete** or **archived** first. Open
+   it, **Settings**, set the status. A client with something still in flight is
+   not offered, because two open at once is confusion.
+2. **Start onboarding** → pick them (they are labelled *has answered before*) →
+   pick the closest template.
+3. Switch off everything they should not be asked again. For an app discovery
+   that usually means leaving only the seven `app_*` sections on.
+
+Their old engagement and every answer in it stay exactly where they are. If both
+end up open at once, the portal shows them a switcher rather than hiding one.
 
 ## The same thing, in SQL
 

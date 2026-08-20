@@ -444,3 +444,20 @@ body.locked { background: radial-gradient(120% 120% at 50% 0%, #16305a 0%, var(-
   background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm);
   padding: 14px; margin-top: 10px; color: var(--ink);
 }
+
+/* ---- Reading the answers -------------------------------------------------- */
+/* A blank, an "I don't know" and a "doesn't apply" are three different things
+   in the data, so they read as three different things here. Only the blank is
+   worth chasing. */
+.onb-answers .row { align-items: flex-start; }
+.onb-a-q { font-size: .82rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.onb-a-v { margin-top: 5px; color: var(--ink); font-size: .95rem; white-space: pre-wrap; }
+.onb-a-flag { margin-top: 5px; color: var(--gray); font-size: .92rem; font-style: italic; }
+.onb-a-blank { margin-top: 5px; color: var(--amber); font-size: .92rem; }
+.onb-a-by { margin-top: 4px; color: var(--muted); font-size: .74rem; }
+.onb-a-files { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 5px; }
+.onb-a-file {
+  background: none; border: 0; padding: 0; color: var(--navy); font: inherit; font-size: .92rem;
+  text-decoration: underline; text-align: left; cursor: pointer;
+}
+.linkish:disabled { color: var(--muted); text-decoration: none; cursor: default; }

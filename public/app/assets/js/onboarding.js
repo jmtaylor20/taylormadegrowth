@@ -154,21 +154,28 @@ async function openStart(onDone) {
     OnbEngagements.list(), OnbSections.list({ order: { col: 'position', asc: true } }),
   ]);
 
-  // A client with a live engagement is not offered again: two open engagements
-  // for one client is confusion, not a feature.
-  const taken = new Set(engagements.filter((e) => e.status !== 'archived').map((e) => e.client_id));
+  // A client with an engagement still IN FLIGHT is not offered again — two open
+  // ones is confusion, not a feature. A finished one is different: sending an
+  // existing client a fresh set of questions, months later, is the normal way
+  // this gets used. Their old answers stay exactly where they are.
+  const OPEN = ['draft', 'invited', 'in_progress', 'submitted'];
+  const busy = new Set(engagements.filter((e) => OPEN.includes(e.status)).map((e) => e.client_id));
+  const returning = new Set(engagements.map((e) => e.client_id));
   const available = clients
-    .filter((c) => !taken.has(c.id))
+    .filter((c) => !busy.has(c.id))
     .sort((a, b) => (a.business_name || '').localeCompare(b.business_name || ''));
 
   if (!available.length) {
-    toast('Every client already has an onboarding open.', 'warn');
+    toast('Every client already has something open.', 'warn');
     return;
   }
 
   const verticals = [...new Set(library.filter((s) => s.tier === 'vertical').map((s) => s.vertical))];
   const body = el('div.form-grid');
-  const clientSel = selectInput('client_id', available.map((c) => ({ key: c.id, label: c.business_name })));
+  const clientSel = selectInput('client_id', available.map((c) => ({
+    key: c.id,
+    label: c.business_name + (returning.has(c.id) ? ' — has answered before' : ''),
+  })));
   const tplSel = selectInput('template_key',
     templates.filter((t) => t.active).map((t) => ({ key: t.key, label: t.title })), 'website_build');
   const vertSel = selectInput('vertical',
@@ -178,7 +185,8 @@ async function openStart(onDone) {
   body.append(
     field('Client', clientSel),
     field('Starting sections', tplSel,
-      'A starting point, not a cage — you switch individual sections on and off on the next screen.'),
+      'A starting point, not a cage — you switch individual sections on and off on the next screen. ' +
+      'To send an existing client one thing only, pick the closest template and switch the rest off.'),
     field('Industry module', vertSel,
       'Only set this if we have a module written for their trade. It adds the extra section for it.'),
     field('Due date', dueInp, 'Shown to the client, and used for every section unless you change one.'),
@@ -390,10 +398,16 @@ async function renderEngagement(root, id) {
       ]));
 
       if (prog && prog.field_count) {
-        const pct = Math.round((100 * Math.min(prog.response_count, prog.field_count)) / prog.field_count);
+        const done = Math.min(prog.response_count, prog.field_count);
+        const pct = Math.round((100 * done) / prog.field_count);
         body.append(el('div.onb-sec-prog', {}, [
           el('div.onb-bar.thin', {}, [el('div.onb-bar-fill', { style: `width:${pct}%` })]),
-          el('span.field-hint', { text: `${Math.min(prog.response_count, prog.field_count)} of ${prog.field_count} answered` }),
+          el('button.linkish', {
+            type: 'button',
+            text: done ? `Read ${done} answer${done === 1 ? '' : 's'}` : 'Nothing answered yet',
+            disabled: !done,
+            onclick: () => openAnswers(state, { ...row, title: lib.title }),
+          }),
         ]));
       }
 
@@ -447,6 +461,148 @@ async function setSectionActive(state, lib, on) {
     due_date: state.engagement.due_date,
     assigned_contact_id: assignee?.id || null,
   });
+}
+
+// ---------------------------------------------------------------------------
+// Reading what came back
+// ---------------------------------------------------------------------------
+/**
+ * One section's answers, as the client gave them.
+ *
+ * The whole point of the schema is that a blank, an "I don't know" and a
+ * "doesn't apply" are three different things, so this shows them as three
+ * different things. A question nobody has touched is the only one worth
+ * chasing; the other two are finished work.
+ */
+async function openAnswers(state, row) {
+  const body = el('div');
+  body.append(el('p.field-hint', { text: 'Loading…' }));
+  openSheet({ title: row.title || 'Answers', body, wide: true, actions: [
+    { label: 'Copy all', tone: 'ghost', onClick: () => copyAnswers(body) },
+    { label: 'Close', tone: 'ghost', onClick: () => closeSheet() },
+  ] });
+
+  let fields, responses, rows, assets;
+  try {
+    [fields, responses, rows, assets] = await Promise.all([
+      sb.from('onboarding_fields')
+        .select('id,field_key,label,field_type,field_kind,options,unit,position,parent_field_id')
+        .eq('section_key', row.section_key).eq('active', true).order('position').then(unwrap),
+      sb.from('onboarding_responses')
+        .select('field_id,row_id,status,value_text,value_number,value_boolean,value_date,value_json,answered_by_contact_id,updated_by_contact_id,updated_at')
+        .eq('engagement_section_id', row.id).then(unwrap),
+      sb.from('onboarding_response_rows')
+        .select('id,group_field_id,position').eq('engagement_section_id', row.id).order('position').then(unwrap),
+      sb.from('onboarding_assets')
+        .select('id,field_id,row_id,storage_path,file_name,byte_size,mime_type')
+        .eq('engagement_section_id', row.id).order('created_at').then(unwrap),
+    ]);
+  } catch (err) {
+    clear(body);
+    body.append(el('div.banner', { html: `<b>Couldn't load.</b> ${err.message || err}` }));
+    return;
+  }
+
+  clear(body);
+  const byId = Object.fromEntries(fields.map((f) => [f.id, f]));
+  const answerOf = (fieldId, rowId = null) =>
+    responses.find((r) => r.field_id === fieldId && (r.row_id || null) === rowId);
+  const nameOf = (id) => (state.contacts.find((c) => c.id === id) || {}).name;
+
+  const answered = responses.filter((r) => !r.row_id).length;
+  const top = fields.filter((f) => !f.parent_field_id);
+  body.append(el('p.field-hint.mb-8', {
+    text: `${answered} of ${top.length} answered.` +
+      (answered ? ` Last change ${fmtDate(responses.map((r) => r.updated_at).sort().pop())}.` : ''),
+  }));
+
+  const list = el('div.rows.card.onb-answers');
+  for (const f of top) {
+    if (f.field_kind === 'repeating_group') { list.append(groupBlock(f)); continue; }
+    list.append(answerRow(f, answerOf(f.id), assets.filter((a) => a.field_id === f.id && !a.row_id)));
+  }
+  body.append(list);
+
+  function answerRow(field, resp, files) {
+    return el('div.row.onb-answer', {}, [
+      el('div.row-main', {}, [
+        el('div.onb-a-q', { text: field.label }),
+        renderValue(field, resp, files),
+        resp && (resp.updated_by_contact_id || resp.answered_by_contact_id)
+          ? el('div.onb-a-by', { text: nameOf(resp.updated_by_contact_id || resp.answered_by_contact_id) || '' })
+          : null,
+      ].filter(Boolean)),
+    ]);
+  }
+
+  function renderValue(field, resp, files) {
+    if (field.field_type === 'file_upload') {
+      if (!files.length) return el('div.onb-a-blank', { text: resp ? statusWord(resp.status) : 'Nothing uploaded' });
+      return el('div.onb-a-files', {}, files.map((a) => el('button.onb-a-file', {
+        type: 'button', text: `${a.file_name} (${fileSize(a.byte_size)})`,
+        onclick: async () => {
+          try {
+            const { data, error } = await sb.storage.from('onboarding').createSignedUrl(a.storage_path, 300);
+            if (error) throw error;
+            window.open(data.signedUrl, '_blank', 'noopener');
+          } catch (err) { toast(err.message || 'Could not open that file.', 'warn'); }
+        },
+      })));
+    }
+    if (!resp) return el('div.onb-a-blank', { text: 'Not answered yet' });
+    if (resp.status !== 'answered') return el('div.onb-a-flag', { text: statusWord(resp.status) });
+    return el('div.onb-a-v', { text: formatValue(field, resp) });
+  }
+
+  function groupBlock(group) {
+    const kids = fields.filter((f) => f.parent_field_id === group.id);
+    const myRows = rows.filter((r) => r.group_field_id === group.id);
+    const wrap = el('div.row.onb-answer', {}, [el('div.row-main', {}, [el('div.onb-a-q', { text: group.label })])]);
+    const main = wrap.querySelector('.row-main');
+    if (!myRows.length) { main.append(el('div.onb-a-blank', { text: 'No rows added' })); return wrap; }
+    myRows.forEach((r, i) => {
+      const line = kids
+        .map((k) => { const a = answerOf(k.id, r.id); return a ? `${k.label}: ${a.status === 'answered' ? formatValue(k, a) : statusWord(a.status)}` : null; })
+        .filter(Boolean).join(' · ');
+      main.append(el('div.onb-a-v', { text: `${i + 1}. ${line || '—'}` }));
+    });
+    return wrap;
+  }
+}
+
+const statusWord = (status) =>
+  status === 'unknown' ? "They don't know" : status === 'not_applicable' ? "Doesn't apply to them" : 'Not answered yet';
+
+function formatValue(field, r) {
+  if (r.value_text != null) return r.value_text;
+  if (r.value_boolean != null) return r.value_boolean ? 'Yes' : 'No';
+  if (r.value_date != null) return fmtDate(r.value_date);
+  if (r.value_number != null) {
+    const n = Number(r.value_number).toLocaleString('en-US');
+    if (field.unit === 'USD') return '$' + n;
+    return field.unit ? `${n} ${field.unit}` : n;
+  }
+  if (r.value_json != null) {
+    const arr = Array.isArray(r.value_json) ? r.value_json : [];
+    const labels = arr.map((v) => (field.options || []).find((o) => o.value === v)?.label || v);
+    return labels.join(', ') || '—';
+  }
+  return '—';
+}
+
+const fileSize = (b) => (b == null ? '' : b < 1024 ? b + ' B' : b < 1048576 ? Math.round(b / 1024) + ' KB' : (b / 1048576).toFixed(1) + ' MB');
+
+/** Plain text of what is on screen, for pasting into a brief or a proposal. */
+function copyAnswers(body) {
+  const lines = [];
+  body.querySelectorAll('.onb-answer').forEach((n) => {
+    const q = n.querySelector('.onb-a-q')?.textContent || '';
+    const vals = [...n.querySelectorAll('.onb-a-v, .onb-a-flag, .onb-a-blank, .onb-a-file')].map((v) => v.textContent);
+    lines.push(q, ...vals.map((v) => '    ' + v), '');
+  });
+  navigator.clipboard.writeText(lines.join('\n'))
+    .then(() => toast('Answers copied'))
+    .catch(() => toast('Could not copy.', 'warn'));
 }
 
 // ---------------------------------------------------------------------------

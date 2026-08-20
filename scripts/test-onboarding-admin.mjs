@@ -300,6 +300,77 @@ async function main() {
     }) || []).includes('Capacity'));
   await shot(client, 'admin-5-client-view');
 
+  // ---- Reading what came back ---------------------------------------------
+  // The three statuses have to stay three different things on screen. A blank
+  // is the only one worth chasing; "they don't know" and "doesn't apply" are
+  // finished work, and showing them the same way would send Josh chasing
+  // answers he already has.
+  const fin = sql(`select id from public.onboarding_engagement_sections where section_key = 'financial_baseline'`);
+  psql(['-c', `
+    delete from public.onboarding_responses where engagement_section_id = '${fin}';
+    insert into public.onboarding_responses (engagement_section_id, field_id, status, value_number)
+      select '${fin}', id, 'answered', 1840000 from public.onboarding_fields where field_key = 'financial_baseline.annual_revenue';
+    insert into public.onboarding_responses (engagement_section_id, field_id, status)
+      select '${fin}', id, 'unknown' from public.onboarding_fields where field_key = 'financial_baseline.gross_margin';
+    insert into public.onboarding_responses (engagement_section_id, field_id, status)
+      select '${fin}', id, 'not_applicable' from public.onboarding_fields where field_key = 'financial_baseline.owner_comp';
+  `]);
+
+  await page.goto(origin + '/index.html#/onboarding/' + engagement(), { waitUntil: 'load' });
+  await page.waitForSelector('.onb-sec', { timeout: 20000 });
+  const finRow2 = `.onb-sec:has(.row-title:text-is("Financial Baseline"))`;
+  await page.click(`${finRow2} .linkish`);
+  await page.waitForSelector('.onb-answers', { timeout: 15000 });
+  const sheet = await page.textContent('.onb-answers');
+
+  check('an answer reads back with its unit, not as a raw number',
+    sheet.includes('$1,840,000'), sheet.slice(0, 300));
+  check('"I don\'t know" reads as a deliberate answer, not a blank',
+    /don't know/i.test(sheet), sheet.slice(0, 300));
+  check('"doesn\'t apply" is shown as its own thing',
+    /doesn't apply/i.test(sheet), sheet.slice(0, 300));
+  check('a question nobody has touched is called out separately',
+    /not answered yet/i.test(sheet), sheet.slice(0, 300));
+  check('the three are not collapsed into one another',
+    new Set([/\$1,840,000/.test(sheet), /don't know/i.test(sheet),
+             /doesn't apply/i.test(sheet), /not answered yet/i.test(sheet)]).size === 1);
+  await shot(page, 'admin-6-answers');
+
+  const shownCount = await page.$$eval('.onb-answer', (n) => n.length);
+  const fieldCount = Number(sql(`select count(*) from public.onboarding_fields
+     where section_key = 'financial_baseline' and active and parent_field_id is null`));
+  check('every question in the section is listed, answered or not',
+    shownCount === fieldCount, `${shownCount} shown, ${fieldCount} in the section`);
+
+  await page.click('.sheet-foot .btn-ghost:has-text("Close")');
+
+  // ---- A client who has been through this before ---------------------------
+  // Sending an existing client a fresh set of questions months later is the
+  // normal way this gets used. Their old answers are untouched.
+  await page.click('.back-link');
+  await page.waitForSelector('.page-title', { timeout: 15000 });
+  await page.click('.page-head .btn-primary');
+  await page.waitForSelector('.sheet', { timeout: 10000 });
+  const offeredWhileOpen = await page.$$eval('select[name="client_id"] option', (o) => o.map((x) => x.textContent));
+  check('a client with something still open is not offered again',
+    !offeredWhileOpen.some((t) => t.startsWith('Cedar & Pine Millwork')), offeredWhileOpen.join(' | '));
+  await page.click('.sheet-foot .btn-ghost');
+
+  psql(['-c', `update public.onboarding_engagements set status = 'complete';`]);
+  await page.goto(origin + '/index.html#/onboarding', { waitUntil: 'load' });
+  await page.waitForSelector('.page-title', { timeout: 15000 });
+  await page.click('.page-head .btn-primary');
+  await page.waitForSelector('.sheet', { timeout: 10000 });
+  const offeredAfter = await page.$$eval('select[name="client_id"] option', (o) => o.map((x) => x.textContent));
+  check('once it is complete, the same client can be sent a second set',
+    offeredAfter.some((t) => t.startsWith('Cedar & Pine Millwork')), offeredAfter.join(' | '));
+  check('and is labelled as somebody who has answered before',
+    offeredAfter.some((t) => t.includes('Cedar & Pine Millwork — has answered before')), offeredAfter.join(' | '));
+  await page.click('.sheet-foot .btn-ghost');
+
+  check('the first engagement and its answers are still there',
+    sql(`select count(*) from public.onboarding_responses where engagement_section_id = '${fin}'`) === '3');
+
   check('no uncaught errors in the app', errors.length === 0, errors.join('\n      '));
   report();
 }
