@@ -163,9 +163,12 @@ on conflict (field_key) do update set
 -- ---------------------------------------------------------------------------
 -- Fields — app_modules
 -- ---------------------------------------------------------------------------
--- Each group is asked twice against the same option list: what they need on
--- day one, and what can wait. That is the checklist's N/L marks, in a shape a
--- thumb can answer.
+-- Each group asks what is needed on day one; one list at the end of the section
+-- catches everything that can wait. That is the checklist's N/L marks in a shape
+-- a thumb can answer — asking each group twice, back to back, put the same
+-- options on screen again immediately underneath themselves and read as a bug.
+-- The end-of-section list is a superset of every day-one option, so nothing can
+-- be needed-now but impossible to defer.
 insert into public.onboarding_fields
   (section_key, field_key, label, field_type, required, position, help_text, options, unit) values
   ('app_modules','app_modules.leads_now','Leads & customers — needed from day one','multi_select',true,10,null,
