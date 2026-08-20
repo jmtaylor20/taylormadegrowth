@@ -85,6 +85,10 @@ a starting point, not a cage: every section is a switch on the next screen.
 | Website Build | 4 | a site, nothing else |
 | Website + Ads | 8 | site plus ad management |
 | Growth Partner | 13 | the full engagement, including the money questions |
+| Custom App Build | 11 | a client getting software built — the App Discovery Checklist |
+
+Custom App Build only appears once `db/seed_app_build_library.sql` has been run
+against the database. See `db/ONBOARDING.md`.
 
 Set the industry module only for a trade we have one written for — today that is
 millwork, which adds Signature Specification. It is not the client's industry;
