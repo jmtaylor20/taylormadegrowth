@@ -107,6 +107,20 @@ async function main() {
     (await page.textContent('.banner')).includes('Nobody can sign in yet'),
     await page.textContent('.banner'));
 
+  // The first person on an engagement should arrive pre-filled from the client
+  // record, because every client already has a name and address on file and
+  // retyping an email is how a client ends up unable to sign in.
+  await page.click('.linkish:has-text("Add person")');
+  await page.waitForSelector('.sheet', { timeout: 10000 });
+  check('the first person is filled in from the client record',
+    (await page.inputValue('input[name="email"]'))
+      === sql(`select email from public.clients where business_name = 'Cedar & Pine Millwork'`),
+    await page.inputValue('input[name="email"]'));
+  check('and says where it came from, so it gets checked rather than trusted',
+    /client record/i.test(await page.textContent('.sheet .banner')));
+  await page.click('.sheet-foot .btn-ghost');
+  await page.waitForSelector('.sheet', { state: 'detached', timeout: 10000 });
+
   const addPerson = async (name, email, title, role) => {
     await page.click('.linkish:has-text("Add person")');
     await page.waitForSelector('.sheet', { timeout: 10000 });
@@ -370,6 +384,45 @@ async function main() {
 
   check('the first engagement and its answers are still there',
     sql(`select count(*) from public.onboarding_responses where engagement_section_id = '${fin}'`) === '3');
+
+  // ---- The brief -----------------------------------------------------------
+  // What gets pasted into Claude Code. The thing that matters is not that it
+  // contains the answers — it is that it says which questions were NOT
+  // answered, so nothing downstream invents a number to fill a gap.
+  await page.goto(origin + '/index.html#/onboarding/' + engagement(), { waitUntil: 'load' });
+  await page.waitForSelector('.onb-sec', { timeout: 20000 });
+  await page.click('.linkish:has-text("Brief")');
+  await page.waitForSelector('.onb-brief-preview', { timeout: 20000 });
+  const brief = await page.textContent('.onb-brief-preview');
+
+  check('the brief carries the client and the engagement',
+    brief.includes('Cedar & Pine Millwork') && brief.includes('onboarding answers'), brief.slice(0, 200));
+  check('every answer keeps the question it answered',
+    brief.includes('**Last full year of revenue**') && brief.includes('$1,840,000'),
+    brief.slice(0, 400));
+  check('a deliberate "I don\'t know" survives into the brief as one',
+    /_They don't know_/.test(brief));
+  check('unanswered questions are listed, not silently dropped',
+    brief.includes('## Still unanswered'), brief.slice(-400));
+  check('and the brief says outright not to invent them',
+    /do not invent/i.test(brief));
+
+  const listedBlank = (brief.split('## Still unanswered')[1] || '').split('\n').filter((l) => l.startsWith('- ')).length;
+  const reallyBlank = Number(sql(`
+    select count(*) from public.onboarding_engagement_sections es
+      join public.onboarding_fields f on f.section_key = es.section_key
+     where es.engagement_id = '${engagement()}' and es.active and f.active and f.parent_field_id is null
+       and not exists (select 1 from public.onboarding_responses r
+                        where r.engagement_section_id = es.id and r.field_id = f.id and r.row_id is null)
+       and f.field_type is distinct from 'file_upload'
+       and f.field_kind = 'scalar'`));
+  check('the unanswered list matches what the database says is unanswered',
+    listedBlank >= reallyBlank && listedBlank > 0, `brief lists ${listedBlank}, database has ${reallyBlank} scalar blanks`);
+
+  check('a printable version is offered as well as the paste-able one',
+    await page.isVisible('.onb-brief-actions .btn-ghost'));
+  await shot(page, 'admin-7-brief');
+  await page.click('.sheet-foot .btn-ghost:has-text("Close")');
 
   check('no uncaught errors in the app', errors.length === 0, errors.join('\n      '));
   report();

@@ -163,6 +163,19 @@ five minutes.
 `unknown` and `not_applicable` count toward the completion percentage, because
 they are answers. A section full of them tells you more than a blank one does.
 
+### Turning it into a brief
+
+**Brief**, next to Settings on an engagement. Two buttons, two jobs:
+
+- **Copy for Claude Code** — the whole engagement as markdown, every answer
+  still attached to the question that produced it, with a **Still unanswered**
+  list at the end and an instruction not to invent those. That list is the point:
+  a brief that quietly omits its gaps invites whatever reads it to fill them
+  with something plausible, which is the expensive failure here.
+- **Print / Save PDF** — the same content, printable, for sending back to the
+  client or filing. A worse input to anything automated, because getting the
+  text out again means parsing it back.
+
 ### Sending an existing client something new
 
 An engagement is not only for new clients. To send somebody who onboarded months
@@ -170,7 +183,9 @@ ago a fresh set of questions — an app discovery, say:
 
 1. Their previous engagement has to be **complete** or **archived** first. Open
    it, **Settings**, set the status. A client with something still in flight is
-   not offered, because two open at once is confusion.
+   not offered, because two open at once is confusion. **A client who has never
+   onboarded through the portal at all needs none of this** — they have no
+   engagement, so they are already in the list.
 2. **Start onboarding** → pick them (they are labelled *has answered before*) →
    pick the closest template.
 3. Switch off everything they should not be asked again. For an app discovery

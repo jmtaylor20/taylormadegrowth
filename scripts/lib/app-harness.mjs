@@ -148,6 +148,9 @@ const WHERE = (filters) => {
     const c = ident(col);
     if (op === 'is') return `${c} is ${val === null ? 'null' : lit(val)}`;
     if (op === 'ilike') return `${c} ilike ${lit(val)}`;
+    // An empty IN list matches nothing, which is what PostgREST does too — and
+    // `in ()` is a syntax error, so it has to be spelled out.
+    if (op === 'in') return (val || []).length ? `${c} in (${val.map(lit).join(', ')})` : 'false';
     return `${c} = ${lit(val)}`;
   });
   return ' where ' + parts.join(' and ');

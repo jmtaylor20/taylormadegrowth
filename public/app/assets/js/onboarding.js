@@ -23,7 +23,7 @@
 import {
   el, clear, iconSvg, pageHeader, primaryBtn, badge, emptyState, toast,
   openSheet, closeSheet, confirmDialog, field, textInput, dateInput, selectInput,
-  fmtDate, todayISO, relDue, sectionTitle,
+  fmtDate, todayISO, relDue, sectionTitle, openDocPreview,
 } from './ui.js';
 import {
   Clients, Contacts, OnbSections, OnbTemplates, OnbEngagements, OnbEngSections, sb,
@@ -300,6 +300,7 @@ async function renderEngagement(root, id) {
       badge(st.label, st.tone),
       engagement.due_date ? el('span.field-hint', { text: 'Due ' + fmtDate(engagement.due_date) }) : null,
       engagement.invited_at ? el('span.field-hint', { text: 'Invited ' + fmtDate(engagement.invited_at) }) : null,
+      el('button.linkish', { type: 'button', text: 'Brief', onclick: () => openBrief(state) }),
       el('button.linkish', { type: 'button', text: 'Settings', onclick: () => openSettings(state, refresh) }),
     ].filter(Boolean)));
 
@@ -464,6 +465,213 @@ async function setSectionActive(state, lib, on) {
 }
 
 // ---------------------------------------------------------------------------
+// The brief
+// ---------------------------------------------------------------------------
+/**
+ * Everything a client said, as one document.
+ *
+ * Two formats because there are two jobs. Markdown is the one that matters:
+ * it pastes straight into Claude Code, and every answer keeps its question, so
+ * the model is reading "Gross margin: 38.5%" rather than a loose number. A PDF
+ * is for sending back to the client or filing — it is a worse input to anything
+ * automated, because getting the text out again means parsing it back.
+ *
+ * The unanswered questions are listed at the end on purpose. A brief that
+ * silently omits them invites whatever reads it to fill the gaps with something
+ * plausible, which is the one failure mode that costs real money here.
+ */
+async function openBrief(state) {
+  const body = el('div');
+  body.append(el('p.field-hint', { text: 'Gathering answers…' }));
+  const sheet = openSheet({ title: 'Brief', body, wide: true, actions: [
+    { label: 'Close', tone: 'ghost', onClick: () => closeSheet() },
+  ] });
+
+  const active = state.sections.filter((s) => s.active)
+    .sort((a, b) => (a.position || 0) - (b.position || 0));
+  if (!active.length) {
+    clear(body);
+    body.append(el('div.banner', { html: '<b>Nothing to brief.</b> Every section is switched off.' }));
+    return;
+  }
+  const keys = active.map((s) => s.section_key);
+
+  let fields, responses, rows, assets, library;
+  try {
+    [fields, responses, rows, assets, library] = await Promise.all([
+      sb.from('onboarding_fields')
+        .select('id,section_key,field_key,label,field_type,field_kind,options,unit,position,parent_field_id')
+        .in('section_key', keys).eq('active', true).order('position').then(unwrap),
+      sb.from('onboarding_responses')
+        .select('field_id,row_id,engagement_section_id,status,value_text,value_number,value_boolean,value_date,value_json')
+        .eq('engagement_id', state.engagement.id).then(unwrap),
+      sb.from('onboarding_response_rows')
+        .select('id,engagement_section_id,group_field_id,position')
+        .eq('engagement_id', state.engagement.id).order('position').then(unwrap),
+      sb.from('onboarding_assets')
+        .select('field_id,row_id,engagement_section_id,file_name,byte_size,mime_type')
+        .eq('engagement_id', state.engagement.id).order('created_at').then(unwrap),
+      sb.from('onboarding_sections').select('key,title,description').in('key', keys).then(unwrap),
+    ]);
+  } catch (err) {
+    clear(body);
+    body.append(el('div.banner', { html: `<b>Couldn't load.</b> ${err.message || err}` }));
+    return;
+  }
+
+  const titleOf = Object.fromEntries(library.map((l) => [l.key, l.title]));
+  const doc = composeBrief(state, active, titleOf, fields, responses, rows, assets);
+
+  clear(body);
+  body.append(el('p.field-hint', {
+    text: `${doc.answered} answered, ${doc.blank} still blank, across ${active.length} section${active.length === 1 ? '' : 's'}.`,
+  }));
+  body.append(el('div.onb-brief-actions', {}, [
+    el('button.btn.btn-primary', {
+      type: 'button', text: 'Copy for Claude Code',
+      onclick: () => navigator.clipboard.writeText(doc.markdown)
+        .then(() => toast('Brief copied — paste it straight in'))
+        .catch(() => toast('Could not copy.', 'warn')),
+    }),
+    el('button.btn.btn-ghost', {
+      type: 'button', text: 'Print / Save PDF',
+      onclick: () => { closeSheet(); openDocPreview(doc.html, doc.title); },
+    }),
+  ]));
+  body.append(el('p.field-hint.mt-16', {
+    text: 'The markdown keeps every question next to its answer, and lists what is still blank so nothing gets invented to fill a gap. The PDF is for sending back or filing.',
+  }));
+  body.append(el('pre.onb-brief-preview', { text: doc.markdown }));
+  return sheet;
+}
+
+function composeBrief(state, active, titleOf, fields, responses, rows, assets) {
+  const { client, engagement } = state;
+  const md = [];
+  const blanks = [];
+  let answered = 0, blank = 0;
+
+  const respFor = (sectionId, fieldId, rowId = null) =>
+    responses.find((r) => r.engagement_section_id === sectionId && r.field_id === fieldId && (r.row_id || null) === rowId);
+
+  md.push(`# ${client.business_name || 'Client'} — onboarding answers`);
+  md.push('');
+  md.push(`> Collected through the TaylorMade client portal. Every question below was asked exactly as written.`);
+  md.push(`> "Doesn't know" and "Doesn't apply" are deliberate answers, not blanks.`);
+  md.push(`> Anything listed under **Still unanswered** at the end was not answered — do not invent it.`);
+  md.push('');
+  const facts = [
+    ['Client', client.business_name],
+    ['Location', [client.city, client.state].filter(Boolean).join(', ')],
+    ['Website', client.website],
+    ['Services on file', (client.services || []).join(', ')],
+    ['Engagement', engagement.title],
+    ['Exported', fmtDate(todayISO())],
+  ].filter(([, v]) => v);
+  for (const [k, v] of facts) md.push(`- **${k}:** ${v}`);
+  md.push('');
+
+  for (const sec of active) {
+    const secFields = fields.filter((f) => f.section_key === sec.section_key && !f.parent_field_id);
+    if (!secFields.length) continue;
+    md.push(`## ${titleOf[sec.section_key] || sec.section_key}`);
+    md.push('');
+
+    for (const f of secFields) {
+      if (f.field_kind === 'repeating_group') {
+        const myRows = rows.filter((r) => r.engagement_section_id === sec.id && r.group_field_id === f.id);
+        md.push(`### ${f.label}`);
+        if (!myRows.length) { md.push('_No rows._'); md.push(''); blank++; blanks.push(`${titleOf[sec.section_key]} — ${f.label}`); continue; }
+        const kids = fields.filter((k) => k.parent_field_id === f.id);
+        myRows.forEach((r, i) => {
+          const parts = kids.map((k) => {
+            const a = respFor(sec.id, k.id, r.id);
+            return a ? `${k.label}: ${a.status === 'answered' ? formatValue(k, a) : statusWord(a.status)}` : null;
+          }).filter(Boolean);
+          md.push(`${i + 1}. ${parts.join(' · ') || '—'}`);
+        });
+        md.push('');
+        answered++;
+        continue;
+      }
+
+      const files = assets.filter((a) => a.engagement_section_id === sec.id && a.field_id === f.id && !a.row_id);
+      const r = respFor(sec.id, f.id);
+      md.push(`**${f.label}**`);
+      if (f.field_type === 'file_upload') {
+        if (files.length) { files.forEach((a) => md.push(`- ${a.file_name} (${fileSize(a.byte_size)})`)); answered++; }
+        else if (r && r.status !== 'answered') { md.push(`_${statusWord(r.status)}_`); answered++; }
+        else { md.push('_Nothing uploaded._'); blank++; blanks.push(`${titleOf[sec.section_key]} — ${f.label}`); }
+      } else if (!r) {
+        md.push('_Not answered._');
+        blank++; blanks.push(`${titleOf[sec.section_key]} — ${f.label}`);
+      } else if (r.status !== 'answered') {
+        md.push(`_${statusWord(r.status)}_`);
+        answered++;
+      } else {
+        md.push(formatValue(f, r));
+        answered++;
+      }
+      md.push('');
+    }
+  }
+
+  if (blanks.length) {
+    md.push('## Still unanswered');
+    md.push('');
+    md.push('These were not answered. Treat them as unknown rather than filling them in.');
+    md.push('');
+    blanks.forEach((b) => md.push(`- ${b}`));
+    md.push('');
+  }
+
+  const markdown = md.join('\n');
+  return {
+    markdown,
+    answered, blank,
+    title: `${client.business_name || 'Client'} — onboarding`,
+    html: briefHtml(client, engagement, markdown),
+  };
+}
+
+/** The same content, printable. Deliberately plain: this gets read, not admired. */
+function briefHtml(client, engagement, markdown) {
+  const esc = (t) => String(t).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const body = markdown.split('\n').map((line) => {
+    if (line.startsWith('# ')) return `<h1>${esc(line.slice(2))}</h1>`;
+    if (line.startsWith('## ')) return `<h2>${esc(line.slice(3))}</h2>`;
+    if (line.startsWith('### ')) return `<h3>${esc(line.slice(4))}</h3>`;
+    if (line.startsWith('> ')) return `<p class="note">${esc(line.slice(2))}</p>`;
+    if (line.startsWith('- ')) return `<div class="li">• ${esc(line.slice(2))}</div>`;
+    if (/^\d+\. /.test(line)) return `<div class="li">${esc(line)}</div>`;
+    if (/^\*\*.*\*\*$/.test(line)) return `<div class="q">${esc(line.replace(/\*\*/g, ''))}</div>`;
+    if (/^_.*_$/.test(line)) return `<div class="flag">${esc(line.slice(1, -1))}</div>`;
+    if (!line.trim()) return '';
+    return `<div class="a">${esc(line)}</div>`;
+  }).join('\n');
+
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(client.business_name || 'Onboarding')}</title>
+<style>
+  @page { margin: 18mm 16mm; }
+  body { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; color: #1b1b1b; line-height: 1.5; margin: 0; padding: 24px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .06em; color: #13294b;
+       border-bottom: 2px solid #d4af37; padding-bottom: 5px; margin: 26px 0 12px; page-break-after: avoid; }
+  h3 { font-size: 13px; margin: 16px 0 6px; color: #13294b; page-break-after: avoid; }
+  .note { color: #666; font-size: 11px; margin: 2px 0; }
+  .q { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em;
+       color: #666; margin-top: 12px; page-break-after: avoid; }
+  .a { font-size: 13px; white-space: pre-wrap; }
+  .flag { font-size: 13px; font-style: italic; color: #777; }
+  .li { font-size: 13px; margin-left: 4px; }
+  .foot { margin-top: 32px; border-top: 1px solid #ddd; padding-top: 8px; color: #888; font-size: 10px; }
+</style></head><body>
+${body}
+<div class="foot">TaylorMade Brands · ${esc(engagement.title || '')} · generated ${esc(fmtDate(todayISO()))}</div>
+</body></html>`;
+}
+
+// ---------------------------------------------------------------------------
 // Reading what came back
 // ---------------------------------------------------------------------------
 /**
@@ -610,10 +818,25 @@ function copyAnswers(body) {
 // ---------------------------------------------------------------------------
 function openContact(state, existing, onSaved) {
   const body = el('div.form-grid');
-  const name = textInput('name', existing?.name || '');
-  const email = textInput('email', existing?.email || '', { type: 'email', placeholder: 'them@theirbusiness.com' });
+
+  // Every client in the CRM already carries a contact name and email — that is
+  // how they were reachable before any of this existed. Retyping it for the
+  // first person on an engagement is pure friction, and a typo there is a
+  // client who cannot sign in and does not know why.
+  const onFile = !existing && !state.contacts.length && state.client?.email
+    ? { name: state.client.contact_name || '', email: state.client.email }
+    : null;
+
+  const name = textInput('name', existing?.name || onFile?.name || '');
+  const email = textInput('email', existing?.email || onFile?.email || '', { type: 'email', placeholder: 'them@theirbusiness.com' });
   const title = textInput('title', existing?.title || '', { placeholder: 'Owner, Shop lead, Bookkeeper' });
-  const role = selectInput('role', ROLES, existing?.role || 'contact');
+  const role = selectInput('role', ROLES, existing?.role || (onFile ? 'owner' : 'contact'));
+
+  if (onFile) {
+    body.append(el('div.banner', {
+      html: '<b>Filled in from their client record.</b> Check the address is the one they actually read — it is what the sign-in code goes to.',
+    }));
+  }
 
   body.append(
     field('Name', name),

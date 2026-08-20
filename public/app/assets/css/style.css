@@ -461,3 +461,12 @@ body.locked { background: radial-gradient(120% 120% at 50% 0%, #16305a 0%, var(-
   text-decoration: underline; text-align: left; cursor: pointer;
 }
 .linkish:disabled { color: var(--muted); text-decoration: none; cursor: default; }
+
+/* ---- The brief ------------------------------------------------------------ */
+.onb-brief-actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0 4px; }
+.onb-brief-preview {
+  white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .74rem; line-height: 1.55; color: var(--ink);
+  background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  padding: 14px; margin-top: 14px; max-height: 45vh; overflow: auto;
+}
