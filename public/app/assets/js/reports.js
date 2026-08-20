@@ -1,15 +1,16 @@
 // Reports — monthly client growth reports. Enter the month's metrics (most
 // language prefilled), then Send to email the client a branded report and file
 // it to Drive. Same pipeline as proposals/invoices.
-import { Reports, Clients, Trips, TimeEntries, AdMetrics } from './db.js';
+import { Reports, Clients, Trips, TimeEntries, AdMetrics, Expenses } from './db.js';
 import {
   REPORT_METRICS, REPORT_HIGHLIGHTS_TEMPLATE, REPORT_NEXTSTEPS_TEMPLATE, BUSINESS,
 } from './config.js';
 import {
   el, clear, iconSvg, pageHeader, badge, fmtDate, money, emptyState, primaryBtn,
   field, textInput, numberInput, textArea, selectInput, readForm, openSheet,
-  toast, confirmDialog,
+  toast, confirmDialog, openDocPreview,
 } from './ui.js';
+import { openExpenseForm } from './tracker.js';
 import { queueDoc, docBadges } from './docs.js';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -29,13 +30,14 @@ export async function renderReports(root) {
   const wrap = el('div');
   root.append(wrap);
 
-  let list = [], reports = [];
+  let list = [], reports = [], expenses = [];
   let clientCache = null;
   async function clients() { if (!clientCache) clientCache = await Clients.list({ order: { col: 'business_name', asc: true } }); return clientCache; }
-  async function load() { clientCache = null; [list, reports] = await Promise.all([clients(), Reports.list({ order: { col: 'created_at', asc: false } })]); }
+  async function load() { clientCache = null; [list, reports, expenses] = await Promise.all([clients(), Reports.list({ order: { col: 'created_at', asc: false } }), Expenses.list()]); }
 
   function refresh() {
     clear(wrap);
+    expenseSummary();
     const activeClients = list.filter((c) => c.stage === 'client');
     if (!reports.length) {
       wrap.append(el('div.banner', { html: 'Create a monthly report: pick a client, drop in the metrics (impressions, clicks, CTR, conversions…), and Send — it emails a branded report and files it to Drive.' }));
@@ -67,6 +69,38 @@ export async function renderReports(root) {
     } else if (!reports.length) {
       wrap.append(emptyState('Add an active client first.', 'report'));
     }
+  }
+
+  // Business-expenses overview at the top of Reports (add + at-a-glance totals);
+  // full list + editing lives in Money → Expenses.
+  function expenseSummary() {
+    const yr = String(new Date().getFullYear());
+    const inYr = (d) => (d || '').slice(0, 4) === yr;
+    const sameMo = (d) => { if (!d) return false; const now = new Date(), x = new Date(d + 'T00:00:00'); return x.getFullYear() === now.getFullYear() && x.getMonth() === now.getMonth(); };
+    const moTotal = expenses.filter((e) => sameMo(e.expense_date)).reduce((s, e) => s + Number(e.amount || 0), 0);
+    const yrTotal = expenses.filter((e) => inYr(e.expense_date)).reduce((s, e) => s + Number(e.amount || 0), 0);
+    const byCat = {};
+    expenses.filter((e) => inYr(e.expense_date)).forEach((e) => { const k = e.category || 'Other'; byCat[k] = (byCat[k] || 0) + Number(e.amount || 0); });
+    const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+    wrap.append(el('div.section-title', {}, [
+      el('h3', { text: 'Business expenses' }),
+      el('button.btn.btn-gold.btn-sm', { html: `${iconSvg('plus', 14)} Add expense`, onclick: () => openExpenseForm({}, refreshAfter, list) }),
+    ]));
+    wrap.append(el('div.grid.grid-3', {}, [
+      el('div.stat.stat-gold', {}, [el('div.stat-value', { text: money(moTotal) }), el('div.stat-label', { text: 'This month' })]),
+      el('div.stat', {}, [el('div.stat-value', { text: money(yrTotal) }), el('div.stat-label', { text: yr + ' total' })]),
+      el('div.stat', {}, [el('div.stat-value', { text: String(expenses.length) }), el('div.stat-label', { text: 'Logged' })]),
+    ]));
+    if (cats.length) {
+      wrap.append(el('div.section-title', {}, [el('h3', { text: yr + ' by category' })]));
+      const rows = el('div.rows.card');
+      cats.forEach(([k, v]) => rows.append(el('div.row', {}, [
+        el('div.row-main', {}, [el('div.row-title', { text: k })]),
+        el('span.row-amount', { text: money(v) }),
+      ])));
+      wrap.append(rows);
+    }
+    wrap.append(el('div.field-hint.mt-8', { text: 'Full expense list + editing lives in Money → Expenses.' }));
   }
 
   async function refreshAfter() { await load(); refresh(); }
@@ -235,7 +269,5 @@ export function reportDocHtml(r, clientName, opts = {}) {
 }
 
 function previewReport(r, clientName) {
-  const w = window.open('', '_blank', 'width=880,height=1040');
-  if (!w) { toast('Allow pop-ups to preview', 'err'); return; }
-  w.document.write(reportDocHtml(r, clientName)); w.document.close();
+  openDocPreview(reportDocHtml(r, clientName), clientName + ' — ' + (r.period || 'Report'));
 }
