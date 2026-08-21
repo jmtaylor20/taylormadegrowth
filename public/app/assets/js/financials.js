@@ -123,9 +123,12 @@ export async function renderFinancials(root) {
     if (FEATURES.splitDeposit) {
       const coleMo = active.reduce((s, c) => s + n(c.mrr) * (Number(c.cole_pct) || 0), 0);
       const afterCole = mrr - coleMo;
-      // Full-liability mode: reserve the whole federal bill (minus spouse
-      // withholding) spread over the year. Otherwise the old flat % of MRR.
-      const fullMo = annualReserveTarget() / 12;
+      // Full-liability mode: what's still owed on the federal bill (after what's
+      // already in the bucket), spread over the months LEFT in the year — not a
+      // flat 1/12, since a mid-year start has fewer months to catch up.
+      const stillToSaveMo = Math.max(0, annualReserveTarget() - taxReserve);
+      const ml = monthsLeft();
+      const fullMo = stillToSaveMo / ml;
       const taxMo = taxMode === 'full' ? fullMo : afterCole * ALLOCATION.tax;
       const taxLabel = taxMode === 'full' ? 'Tax reserve' : 'Tax (30%)';
       const recurTotal = recurExp.reduce((s, x) => s + n(x.amount), 0);
@@ -136,13 +139,13 @@ export async function renderFinancials(root) {
       ]));
       summary.append(el('div.grid.grid-4', {}, [
         el('div.stat', {}, [el('div.stat-value', { text: money(coleMo) }), el('div.stat-label', { text: 'Cole’s cut' })]),
-        el('div.stat' + (taxMode === 'full' ? '' : ''), {}, [el('div.stat-value', { text: money(taxMo) }), el('div.stat-label', { text: taxLabel }), taxMode === 'full' ? el('div.stat-sub', { text: 'full fed bill ÷ 12' }) : null]),
+        el('div.stat', {}, [el('div.stat-value', { text: money(taxMo) }), el('div.stat-label', { text: taxLabel }), taxMode === 'full' ? el('div.stat-sub', { text: `to catch up ÷ ${ml} mo left` }) : null]),
         el('div.stat', {}, [el('div.stat-value', { text: money(recurTotal) }), el('div.stat-label', { text: 'Recurring exp' }), el('div.stat-sub', { text: recurExp.length + ' items' })]),
         el('div.stat.stat-gold', {}, [el('div.stat-value', { text: money(available) }), el('div.stat-label', { text: 'Available / mo' })]),
       ]));
       summary.append(el('div.field-hint.mt-8', {
         text: taxMode === 'full'
-          ? `From ${money(mrr)} MRR: minus Cole’s commission, ${money(taxMo)}/mo toward your full ${money(fedLiability)} federal bill (less ${money(spouseWH)} paycheck withholding), and ${money(recurTotal)} recurring expenses. See the Taxes tab to adjust. Before mileage and owner’s draw.`
+          ? `From ${money(mrr)} MRR: minus Cole’s commission, ${money(taxMo)}/mo to catch up your ${money(fedLiability)} federal bill (less ${money(spouseWH)} withholding, ${money(taxReserve)} already saved) over ${ml} months left, and ${money(recurTotal)} recurring expenses. See the Taxes tab to adjust. Before mileage and owner’s draw.`
           : `From ${money(mrr)} MRR: minus Cole’s commission, 30% for taxes, and ${money(recurTotal)} recurring expenses. Projection only — before mileage and owner’s draw.`,
       }));
     }
