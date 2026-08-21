@@ -58,6 +58,7 @@ export const TimeEntries = table('time_entries');
 export const Expenses   = table('expenses');
 export const Contractors = table('contractors');
 export const AdMetrics  = table('ad_metrics');
+export const DocJobs    = table('doc_jobs');
 export const Settings   = table('app_settings');
 
 // Client onboarding. The library tables are definitions shared by every client;
