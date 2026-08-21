@@ -2,7 +2,7 @@
 // Network-first for same-origin app files (so pushes go live on next launch),
 // with a cached shell as offline fallback. Supabase/CDN requests always hit
 // the network. Bump CACHE to force a refresh.
-const CACHE = 'tmg-ops-v45';
+const CACHE = 'tmg-ops-v46';
 const SHELL = [
   './',
   './index.html',

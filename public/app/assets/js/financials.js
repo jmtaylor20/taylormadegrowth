@@ -142,7 +142,7 @@ export async function renderFinancials(root) {
       ]));
       summary.append(el('div.field-hint.mt-8', {
         text: taxMode === 'full'
-          ? `From ${money(mrr)} MRR: minus Cole’s commission, ${money(taxMo)}/mo toward your full ${money(fedLiability)} federal bill (less your wife’s ${money(spouseWH)} withholding), and ${money(recurTotal)} recurring expenses. See the Taxes tab to adjust. Before mileage and owner’s draw.`
+          ? `From ${money(mrr)} MRR: minus Cole’s commission, ${money(taxMo)}/mo toward your full ${money(fedLiability)} federal bill (less ${money(spouseWH)} paycheck withholding), and ${money(recurTotal)} recurring expenses. See the Taxes tab to adjust. Before mileage and owner’s draw.`
           : `From ${money(mrr)} MRR: minus Cole’s commission, 30% for taxes, and ${money(recurTotal)} recurring expenses. Projection only — before mileage and owner’s draw.`,
       }));
     }
@@ -323,7 +323,7 @@ export async function renderFinancials(root) {
       wrap.append(el('div.section-title', {}, [el('h3', { text: 'Full-year tax plan (out of TaylorMade)' })]));
       wrap.append(el('div.grid.grid-3', {}, [
         st(money(fedLiability), 'Total federal bill'),
-        st('−' + money(spouseWH), 'Wife’s withholding'),
+        st('−' + money(spouseWH), 'Paycheck withholding'),
         st(money(netToReserve), 'TaylorMade covers', null, 'gold'),
       ]));
       wrap.append(el('div.grid.grid-3.mt-8', {}, [
@@ -343,7 +343,7 @@ export async function renderFinancials(root) {
       const shIn = numberInput('sh', safeHarbor || '', { step: '1' }); shIn.style.maxWidth = '130px';
       wrap.append(el('div.card.card-pad.mt-8', {}, [
         el('div.field-row', { style: 'align-items:center;gap:10px;flex-wrap:wrap' }, [
-          field('Total federal bill', fedIn), field('Wife’s withholding', spIn),
+          field('Total federal bill', fedIn), field('Paycheck withholding (both jobs)', spIn),
           field('Estimates paid', esIn), field('Safe harbor', shIn),
         ]),
         el('div.field-row.mt-8', { style: 'gap:10px;flex-wrap:wrap' }, [
@@ -354,7 +354,7 @@ export async function renderFinancials(root) {
           } }),
           el('button.btn.btn-ghost.btn-sm', { text: 'Switch to agency-only %', onclick: async () => { taxMode = 'agency'; await setSetting('tax', taxObj({ mode: 'agency' })); toast('Using agency rate'); refreshAfter(); } }),
         ]),
-        el('div.field-hint.mt-8', { html: 'TaylorMade reserves your <b>whole federal bill</b> (agency tax + the wage tax your paycheck isn’t withholding), minus your wife’s expected withholding. Update her withholding from a recent paystub to sharpen it.' }),
+        el('div.field-hint.mt-8', { html: 'TaylorMade reserves your <b>whole federal bill</b> (agency tax + the wage tax your paychecks aren’t withholding), minus <b>all</b> paycheck withholding — yours and your wife’s combined. If you add some back to your own check, raise this number and TaylorMade’s share drops automatically.' }),
       ]));
     }
 
