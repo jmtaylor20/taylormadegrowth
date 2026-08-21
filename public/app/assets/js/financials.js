@@ -1,8 +1,8 @@
 // Financials — the money command center. Build fees, collected, outstanding,
 // MRR; one-click new invoice to any client/lead/prospect; record payments;
 // editable statuses and amounts.
-import { Clients, Invoices, Payments, Expenses, Trips, Contractors, getSetting, setSetting } from './db.js';
-import { INVOICE_STATUS, INVOICE_TYPE, PAYMENT_KIND, INVOICE_NET_DAYS, ALLOCATION, mileageRateFor, FEATURES, PROFILE } from './config.js';
+import { Clients, Invoices, Payments, Expenses, Trips, Contractors, DocJobs, getSetting, setSetting } from './db.js';
+import { INVOICE_STATUS, INVOICE_TYPE, PAYMENT_KIND, INVOICE_NET_DAYS, ALLOCATION, mileageRateFor, FEATURES, PROFILE, BUSINESS } from './config.js';
 import {
   el, clear, money, iconSvg, pageHeader, badge, statusBadge, labelOf, fmtDate,
   relDue, todayISO, emptyState, primaryBtn, selectInput, numberInput, toast, confirmDialog,
@@ -33,7 +33,8 @@ export async function renderFinancials(root) {
 
   const seg = el('div.segmented.mt-16');
   const segTabs = [...(FEATURES.invoicing ? [['invoices', 'Invoices']] : []), ['payments', 'Payments'], ['expenses', 'Expenses'], ['clients', 'By client'],
-    ...(FEATURES.contractorsTab ? [['contractors', 'Contractors']] : []), ['taxes', 'Taxes']];
+    ...(FEATURES.contractorsTab ? [['contractors', 'Contractors']] : []), ['taxes', 'Taxes'],
+    ...(FEATURES.splitDeposit ? [['documents', 'Binders']] : [])];
   segTabs.forEach(([k, l]) =>
     seg.append(el('button.seg' + (state.view === k ? '.on' : ''), { text: l, dataset: { v: k }, onclick: () => { state.view = k; seg.querySelectorAll('.seg').forEach((s) => s.classList.toggle('on', s.dataset.v === k)); refresh(); } })));
   root.append(el('div.toolbar', {}, [seg]));
@@ -135,6 +136,7 @@ export async function renderFinancials(root) {
     if (state.view === 'invoices') viewInvoices();
     else if (state.view === 'payments') viewPayments();
     else if (state.view === 'expenses') viewExpenses();
+    else if (state.view === 'documents' && FEATURES.splitDeposit) viewDocuments();
     else if (state.view === 'taxes') viewTaxes();
     else if (state.view === 'contractors' && FEATURES.contractorsTab) viewContractors();
     else viewByClient();
@@ -411,6 +413,64 @@ export async function renderFinancials(root) {
       ]),
     ])));
     wrap.append(rows);
+  }
+
+  // Binders & exports: queue a Drive/email build. The Apps Script picks up the
+  // job, builds a combined PDF (+ CSV), files it into Drive, and emails it.
+  function viewDocuments() {
+    const now = new Date();
+    const monthOpts = [];
+    for (let i = 0; i < 12; i++) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); monthOpts.push({ key: d.toISOString().slice(0, 7), label: d.toLocaleString('en-US', { month: 'long', year: 'numeric' }) }); }
+    const yearOpts = []; for (let y = now.getFullYear(); y >= now.getFullYear() - 2; y--) yearOpts.push({ key: String(y), label: String(y) });
+    const scope = { type: 'month' };
+    const monthSel = selectInput('m', monthOpts, monthOpts[0].key);
+    const yearSel = selectInput('y', yearOpts, yearOpts[0].key); yearSel.style.display = 'none';
+    const scopeSeg = el('div.segmented');
+    [['month', 'Month'], ['year', 'Year']].forEach(([k, l]) => scopeSeg.append(el('button.seg' + (scope.type === k ? '.on' : ''), {
+      text: l, onclick: (e) => { scope.type = k; scopeSeg.querySelectorAll('.seg').forEach((s) => s.classList.remove('on')); e.target.classList.add('on'); monthSel.style.display = k === 'month' ? '' : 'none'; yearSel.style.display = k === 'year' ? '' : 'none'; },
+    })));
+    const period = () => (scope.type === 'month' ? monthSel.value : yearSel.value);
+    const build = async (kind, labelText) => {
+      try {
+        await DocJobs.create({ kind, period_type: scope.type, period: period(), status: 'queued', email: BUSINESS.email });
+        toast(`Building your ${labelText} — you’ll get an email when it’s ready`);
+        loadJobs();
+      } catch (e) { toast(e.message, 'err'); }
+    };
+    wrap.append(el('div.section-title', {}, [el('h3', { text: 'Binders & exports' })]));
+    wrap.append(el('div.field-hint.mb-8', { text: 'Builds a combined PDF (+ CSV) in your Google Drive and emails it to you. Receipts and mileage are pulled automatically for the period.' }));
+    wrap.append(el('div.card.card-pad', {}, [
+      el('div.field-row', { style: 'gap:10px;align-items:center;flex-wrap:wrap' }, [el('span', { text: 'Period' }), scopeSeg, monthSel, yearSel]),
+      el('div.pill-row.mt-8', {}, [
+        el('button.btn.btn-primary.btn-sm', { html: iconSvg('money', 14) + ' Expense binder', onclick: () => build('expense_binder', 'expense binder') }),
+        el('button.btn.btn-gold.btn-sm', { html: iconSvg('car', 14) + ' Mileage log', onclick: () => build('mileage_log', 'mileage log') }),
+        el('button.btn.btn-ghost.btn-sm', { html: iconSvg('report', 14) + ' Tax packet', onclick: () => build('tax_packet', 'tax packet') }),
+      ]),
+    ]));
+    const jobsWrap = el('div.mt-16');
+    wrap.append(jobsWrap);
+    async function loadJobs() {
+      clear(jobsWrap);
+      let jobs = [];
+      try { jobs = await DocJobs.list({ order: { col: 'created_at', asc: false } }); } catch (e) { /* table may not exist yet */ }
+      if (!jobs.length) { jobsWrap.append(el('div.field-hint', { text: 'No binders built yet.' })); return; }
+      jobsWrap.append(el('div.section-title', {}, [el('h3', { text: 'Recent builds' }), el('button.btn.btn-ghost.btn-sm', { text: 'Refresh', onclick: loadJobs })]));
+      const KIND = { expense_binder: 'Expense binder', mileage_log: 'Mileage log', tax_packet: 'Tax packet' };
+      const TONE = { queued: 'gray', building: 'amber', done: 'green', error: 'red' };
+      const rows = el('div.rows.card');
+      jobs.slice(0, 20).forEach((j) => rows.append(el('div.row', {}, [
+        el('div.row-main', {}, [
+          el('div.row-title', { text: (KIND[j.kind] || j.kind) + ' · ' + j.period }),
+          el('div.row-sub', {}, [badge(j.status, TONE[j.status] || 'gray'), j.built_at ? el('span', { text: fmtDate(j.built_at) }) : null, j.error ? el('span.text-red', { text: j.error }) : null]),
+        ]),
+        el('div.row-right', {}, [
+          j.file_url ? el('a.icon-btn', { href: j.file_url, target: '_blank', title: 'Open PDF', html: iconSvg('external', 18) }) : null,
+          j.drive_url ? el('a.icon-btn', { href: j.drive_url, target: '_blank', title: 'Open Drive folder', html: iconSvg('cloud', 18) }) : null,
+        ]),
+      ])));
+      jobsWrap.append(rows);
+    }
+    loadJobs();
   }
 
   function viewByClient() {

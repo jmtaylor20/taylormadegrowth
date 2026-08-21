@@ -306,6 +306,22 @@ create table if not exists public.contractors (
   created_at timestamptz default now()
 );
 
+-- ---- Document/binder build jobs (Drive PDFs + CSV via Apps Script) ---------
+create table if not exists public.doc_jobs (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz default now(),
+  kind text not null,            -- expense_binder | mileage_log | tax_packet
+  period_type text not null,     -- month | year
+  period text not null,          -- '2026-08' or '2026'
+  status text not null default 'queued',
+  email text,
+  drive_url text,
+  file_url text,
+  csv_url text,
+  error text,
+  built_at timestamptz
+);
+
 -- ---- Row-level security ----------------------------------------------------
 -- Permissive: the app is PIN-gated and uses the publishable (anon) key.
 do $$
@@ -314,7 +330,7 @@ begin
   foreach t in array array[
     'clients','tasks','invoices','content_items','assets','reviews','proposals',
     'activities','payments','reports','trips','meetings','time_entries','expenses',
-    'app_settings','ad_metrics','contractors'
+    'app_settings','ad_metrics','contractors','doc_jobs'
   ] loop
     execute format('alter table public.%I enable row level security;', t);
     execute format('drop policy if exists %I on public.%I;', t || '_all', t);

@@ -130,6 +130,7 @@ function processQueue() {
   processTable_('reports');
   processWelcome_();
   processContractorProposals_();
+  processDocJobs_();
 }
 
 // Email contractors' APPROVED proposals from your Gmail. A proposal is only
@@ -281,6 +282,8 @@ function processRow_(table, row) {
   if (needDrive && row.drive_status !== 'saved') {
     var folder = targetFolder_(client.business_name);
     var file = folder.createFile(pdf);
+    // Archive a copy of sent reports into your own Reports / <period> folder.
+    if (type === 'report') { try { periodFolderReports_(row.period).createFile(pdf); } catch (e) { Logger.log('report archive failed: ' + e); } }
     patch.drive_status = 'saved';
     patch.drive_url = file.getUrl();
     patch.drive_saved_at = nowIso_();
@@ -651,4 +654,177 @@ function esc_(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function
 function titleCase_(s) { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1); }
 function nowIso_() { return new Date().toISOString(); }
 function dateStamp_() { return Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd'); }
+
+// ==== DOCUMENT BINDERS / EXPORTS ==========================================
+// The app inserts rows into `doc_jobs`; this builds a combined PDF (+ CSV) per
+// job, files it into Drive (Expenses|Mileage|Tax Packets / period), emails it,
+// and writes status + links back. Reports are archived into Reports/<period>
+// when sent (see processRow_).
+
+function processDocJobs_() {
+  var jobs;
+  try { jobs = sbGet_('doc_jobs?status=eq.queued&select=*&order=created_at.asc'); }
+  catch (e) { return; }  // table may not exist on this project
+  for (var i = 0; i < jobs.length; i++) {
+    var j = jobs[i];
+    try {
+      sbPatch_('doc_jobs', j.id, { status: 'building' });
+      var out;
+      if (j.kind === 'expense_binder') out = buildExpenseBinder_(j.period, j.period_type);
+      else if (j.kind === 'mileage_log') out = buildMileageLog_(j.period, j.period_type);
+      else if (j.kind === 'tax_packet') out = buildTaxPacket_(j.period, j.period_type);
+      else throw new Error('Unknown job kind: ' + j.kind);
+      emailBinder_(j, out);
+      sbPatch_('doc_jobs', j.id, { status: 'done', file_url: out.fileUrl, drive_url: out.folderUrl, csv_url: out.csvUrl || null, built_at: nowIso_(), error: null });
+    } catch (err) {
+      sbPatch_('doc_jobs', j.id, { status: 'error', error: String(err).slice(0, 400) });
+      Logger.log('doc_job ' + j.id + ' failed: ' + err);
+    }
+  }
+}
+
+// ---- Drive folder helpers ----
+function rootFolder_() { return DriveApp.getFolderById(CONFIG.DRIVE_FOLDER_ID); }
+function subFolder_(parent, name) {
+  var clean = String(name).replace(/[\\/:*?"<>|]/g, '').trim() || 'Folder';
+  var it = parent.getFoldersByName(clean);
+  return it.hasNext() ? it.next() : parent.createFolder(clean);
+}
+function monthName_(ym) {
+  var m = Number(String(ym).slice(5, 7));
+  return ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][m - 1] || '';
+}
+// e.g. Expenses / "2026-08 August"  (year jobs -> "2026")
+function periodFolder_(section, period, ptype) {
+  var top = subFolder_(rootFolder_(), section);
+  var label = ptype === 'year' ? String(period) : period + ' ' + monthName_(period);
+  return subFolder_(top, label);
+}
+function periodFolderReports_(period) { return subFolder_(subFolder_(rootFolder_(), 'Reports'), period || 'Undated'); }
+// period -> { start, end, label }
+function periodRange_(period, ptype) {
+  if (ptype === 'year') return { start: period + '-01-01', end: period + '-12-31', label: String(period) };
+  var y = period.slice(0, 4), m = period.slice(5, 7);
+  var last = new Date(Number(y), Number(m), 0).getDate();
+  return { start: period + '-01', end: period + '-' + String(last), label: monthName_(period) + ' ' + y };
+}
+function money2_(n) { return '$' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function mileageRate_(dateStr) {
+  var brackets = [{ from: '2026-07-01', rate: 0.76 }, { from: '2026-01-01', rate: 0.725 }, { from: '2025-01-01', rate: 0.70 }];
+  var d = dateStr || dateStamp_();
+  for (var i = 0; i < brackets.length; i++) if (d >= brackets[i].from) return brackets[i].rate;
+  return brackets[brackets.length - 1].rate;
+}
+function htmlToPdf_(html, fileName) { return Utilities.newBlob(html, 'text/html', fileName).getAs('application/pdf').setName(fileName); }
+function csvCell_(s) { s = String(s == null ? '' : s); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+function clientNamer_(clients) {
+  var map = {}; (clients || []).forEach(function (c) { map[c.id] = c.business_name; });
+  return function (id) { return map[id] || ''; };
+}
+function binderCss_() {
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><style>' +
+    'body{font-family:Arial,Helvetica,sans-serif;color:#101827;margin:26px}' +
+    'h1{font-size:24px;color:#0d1b30;margin:0 0 2px}.sub{color:#666;font-size:13px;margin-bottom:6px}' +
+    '.sec{font-weight:800;letter-spacing:1px;text-transform:uppercase;font-size:12px;color:#0d1b30;border-bottom:2px solid #0d1b30;padding-bottom:4px;margin:22px 0 10px}' +
+    '.t{width:100%;border-collapse:collapse;margin:6px 0}.t th{background:#0d1b30;color:#fff;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;text-align:left;padding:7px 6px}' +
+    '.t td{border-bottom:1px solid #e3e6ec;padding:7px 6px;font-size:12.5px}.t .r{text-align:right}' +
+    '.t .tot td{font-weight:800;border-top:2px solid #0d1b30;background:#f6f7f9}' +
+    '.stat{background:#f6f1df;border:1px solid #e6dcb8;border-radius:8px;padding:10px 14px;font-size:14px;margin:8px 0}' +
+    '.muted{color:#888;font-size:12px}' +
+    '.rpage{page-break-before:always;text-align:center}.rcap{font-weight:700;font-size:13px;margin:8px 0}.rimg{max-width:100%;max-height:9in;border:1px solid #ccc}' +
+    '</style></head><body>';
+}
+function emailBinder_(job, out) {
+  var to = job.email || CONFIG.NOTIFY_EMAIL;
+  if (!to) return;
+  var body = 'Your ' + out.title + ' is built and filed in Google Drive.\n\n' +
+    'PDF: ' + out.fileUrl + '\n' + (out.csvUrl ? 'CSV: ' + out.csvUrl + '\n' : '') + 'Folder: ' + out.folderUrl + '\n\n— TaylorMade Brands';
+  GmailApp.sendEmail(to, out.title + ' — ready', body, { name: CONFIG.FROM_NAME, attachments: [out.pdf] });
+}
+
+// ---- Expense binder ----
+function buildExpenseBinder_(period, ptype) {
+  var r = periodRange_(period, ptype);
+  var exp = sbGet_('expenses?expense_date=gte.' + r.start + '&expense_date=lte.' + r.end + '&select=*&order=expense_date.asc');
+  var nameFor = clientNamer_(sbGet_('clients?select=id,business_name'));
+  var total = 0, byCat = {};
+  exp.forEach(function (e) { var a = Number(e.amount || 0); total += a; var k = e.category || 'Other'; byCat[k] = (byCat[k] || 0) + a; });
+  var catRows = Object.keys(byCat).sort(function (a, b) { return byCat[b] - byCat[a]; }).map(function (k) { return '<tr><td>' + esc_(k) + '</td><td class="r">' + money2_(byCat[k]) + '</td></tr>'; }).join('');
+  var rowsHtml = exp.map(function (e) {
+    return '<tr><td>' + esc_(e.expense_date || '') + '</td><td>' + esc_(e.vendor || '') + '</td><td>' + esc_(e.category || '') + '</td><td>' + esc_(e.client_id ? nameFor(e.client_id) : '') + '</td><td>' + esc_(e.notes || '') + '</td><td class="r">' + money2_(e.amount) + '</td></tr>';
+  }).join('') || '<tr><td colspan="6" class="muted">No expenses in this period.</td></tr>';
+  var receipts = exp.filter(function (e) { return e.receipt_url && /^data:image/i.test(e.receipt_url); });
+  var receiptPages = receipts.map(function (e) { return '<div class="rpage"><div class="rcap">' + esc_(e.expense_date || '') + ' · ' + esc_(e.vendor || '') + ' · ' + money2_(e.amount) + '</div><img class="rimg" src="' + e.receipt_url + '"></div>'; }).join('');
+  var html = binderCss_() +
+    '<h1>Expense Binder</h1><div class="sub">' + esc_(r.label) + ' · TaylorMade Brands</div>' +
+    '<div class="sec">Summary by category</div><table class="t"><tbody>' + catRows + '<tr class="tot"><td>Total</td><td class="r">' + money2_(total) + '</td></tr></tbody></table>' +
+    '<div class="sec">All expenses (' + exp.length + ')</div><table class="t"><thead><tr><th>Date</th><th>Vendor</th><th>Category</th><th>Client</th><th>Notes</th><th class="r">Amount</th></tr></thead><tbody>' + rowsHtml + '</tbody></table>' +
+    (receipts.length ? '<div class="sec">Receipts (' + receipts.length + ')</div>' + receiptPages : '<div class="muted" style="margin-top:14px">No receipt images attached for this period.</div>') +
+    '</body></html>';
+  var folder = periodFolder_('Expenses', period, ptype);
+  var base = 'Expenses - ' + r.label;
+  var pdf = folder.createFile(htmlToPdf_(html, base + '.pdf'));
+  var csvLines = ['Date,Vendor,Category,Client,Notes,Amount'];
+  exp.forEach(function (e) { csvLines.push([csvCell_(e.expense_date), csvCell_(e.vendor), csvCell_(e.category), csvCell_(e.client_id ? nameFor(e.client_id) : ''), csvCell_(e.notes), Number(e.amount || 0).toFixed(2)].join(',')); });
+  var csv = folder.createFile(base + '.csv', csvLines.join('\n'), MimeType.CSV);
+  return { fileUrl: pdf.getUrl(), folderUrl: folder.getUrl(), csvUrl: csv.getUrl(), pdf: pdf, title: base };
+}
+
+// ---- Mileage log ----
+function buildMileageLog_(period, ptype) {
+  var r = periodRange_(period, ptype);
+  var trips = sbGet_('trips?trip_date=gte.' + r.start + '&trip_date=lte.' + r.end + '&select=*&order=trip_date.asc');
+  var nameFor = clientNamer_(sbGet_('clients?select=id,business_name'));
+  var totMiles = 0, totDed = 0;
+  var rows = trips.map(function (t) {
+    var miles = Number(t.miles || 0);
+    var rate = (t.rate != null) ? Number(t.rate) : mileageRate_(t.trip_date);
+    var ded = miles * rate; totMiles += miles; totDed += ded;
+    return '<tr><td>' + esc_(t.trip_date || '') + '</td><td>' + esc_(t.purpose || '') + '</td><td>' + esc_(t.client_id ? nameFor(t.client_id) : '') + '</td><td>' + esc_(t.from_address || '') + '</td><td>' + esc_(t.to_address || '') + '</td><td class="r">' + (t.round_trip ? 'RT' : '') + '</td><td class="r">' + miles.toFixed(1) + '</td><td class="r">$' + rate.toFixed(3) + '</td><td class="r">' + money2_(ded) + '</td></tr>';
+  }).join('') || '<tr><td colspan="9" class="muted">No trips in this period.</td></tr>';
+  var html = binderCss_() +
+    '<h1>Mileage Log</h1><div class="sub">' + esc_(r.label) + ' · TaylorMade Brands</div>' +
+    '<div class="stat">Total miles <b>' + totMiles.toFixed(1) + '</b> &nbsp;·&nbsp; Deduction <b>' + money2_(totDed) + '</b> &nbsp;·&nbsp; Trips <b>' + trips.length + '</b></div>' +
+    '<table class="t"><thead><tr><th>Date</th><th>Purpose</th><th>Client</th><th>From</th><th>To</th><th class="r">RT</th><th class="r">Miles</th><th class="r">Rate</th><th class="r">Deduction</th></tr></thead><tbody>' + rows +
+    '<tr class="tot"><td colspan="6">Total</td><td class="r">' + totMiles.toFixed(1) + '</td><td></td><td class="r">' + money2_(totDed) + '</td></tr></tbody></table>' +
+    '<div class="muted" style="margin-top:14px">Rate is the IRS standard mileage rate in effect on each trip date. Round trips (RT) already reflect total miles driven.</div></body></html>';
+  var folder = periodFolder_('Mileage', period, ptype);
+  var base = 'Mileage Log - ' + r.label;
+  var pdf = folder.createFile(htmlToPdf_(html, base + '.pdf'));
+  var csvLines = ['Date,Purpose,Client,From,To,RoundTrip,Miles,Rate,Deduction'];
+  trips.forEach(function (t) { var miles = Number(t.miles || 0); var rate = (t.rate != null) ? Number(t.rate) : mileageRate_(t.trip_date); csvLines.push([csvCell_(t.trip_date), csvCell_(t.purpose), csvCell_(t.client_id ? nameFor(t.client_id) : ''), csvCell_(t.from_address), csvCell_(t.to_address), t.round_trip ? 'yes' : 'no', miles.toFixed(1), rate.toFixed(3), (miles * rate).toFixed(2)].join(',')); });
+  var csv = folder.createFile(base + '.csv', csvLines.join('\n'), MimeType.CSV);
+  return { fileUrl: pdf.getUrl(), folderUrl: folder.getUrl(), csvUrl: csv.getUrl(), pdf: pdf, title: base };
+}
+
+// ---- Tax packet (income - expenses - mileage = net) + the detail binders ----
+function buildTaxPacket_(period, ptype) {
+  var r = periodRange_(period, ptype);
+  var income = 0;
+  sbGet_('invoices?status=eq.paid&select=amount,paid_on,issued_on').forEach(function (i) { var d = i.paid_on || i.issued_on || ''; if (d >= r.start && d <= r.end) income += Number(i.amount || 0); });
+  sbGet_('payments?select=amount,paid_on').forEach(function (p) { var d = p.paid_on || ''; if (d >= r.start && d <= r.end) income += Number(p.amount || 0); });
+  var exp = sbGet_('expenses?expense_date=gte.' + r.start + '&expense_date=lte.' + r.end + '&select=amount,category');
+  var expTotal = 0, byCat = {};
+  exp.forEach(function (e) { var a = Number(e.amount || 0); expTotal += a; var k = e.category || 'Other'; byCat[k] = (byCat[k] || 0) + a; });
+  var mileDed = 0, totMiles = 0;
+  sbGet_('trips?trip_date=gte.' + r.start + '&trip_date=lte.' + r.end + '&select=miles,rate,trip_date').forEach(function (t) { var m = Number(t.miles || 0); totMiles += m; mileDed += m * ((t.rate != null) ? Number(t.rate) : mileageRate_(t.trip_date)); });
+  var net = income - expTotal - mileDed;
+  var catRows = Object.keys(byCat).sort(function (a, b) { return byCat[b] - byCat[a]; }).map(function (k) { return '<tr><td>' + esc_(k) + '</td><td class="r">' + money2_(byCat[k]) + '</td></tr>'; }).join('');
+  var html = binderCss_() +
+    '<h1>Tax Packet</h1><div class="sub">' + esc_(r.label) + ' · TaylorMade Brands</div>' +
+    '<div class="sec">Profit &amp; Loss summary</div><table class="t"><tbody>' +
+    '<tr><td>Income (collected)</td><td class="r">' + money2_(income) + '</td></tr>' +
+    '<tr><td>Business expenses</td><td class="r">(' + money2_(expTotal) + ')</td></tr>' +
+    '<tr><td>Mileage deduction (' + totMiles.toFixed(1) + ' mi)</td><td class="r">(' + money2_(mileDed) + ')</td></tr>' +
+    '<tr class="tot"><td>Net profit</td><td class="r">' + money2_(net) + '</td></tr></tbody></table>' +
+    '<div class="sec">Expenses by category</div><table class="t"><tbody>' + (catRows || '<tr><td colspan="2" class="muted">None</td></tr>') + '</tbody></table>' +
+    '<div class="muted" style="margin-top:14px">Cash-basis summary from collected income, logged expenses, and the standard mileage deduction. The full Expense Binder and Mileage Log for this period are filed alongside this packet.</div></body></html>';
+  var folder = periodFolder_('Tax Packets', period, ptype);
+  var base = 'Tax Packet - ' + r.label;
+  var pdf = folder.createFile(htmlToPdf_(html, base + '.pdf'));
+  try { buildExpenseBinder_(period, ptype); } catch (e) { Logger.log('packet expense binder: ' + e); }
+  try { buildMileageLog_(period, ptype); } catch (e) { Logger.log('packet mileage: ' + e); }
+  var csv = folder.createFile(base + '.csv', ['Line,Amount', 'Income,' + income.toFixed(2), 'Expenses,' + (-expTotal).toFixed(2), 'Mileage,' + (-mileDed).toFixed(2), 'Net,' + net.toFixed(2)].join('\n'), MimeType.CSV);
+  return { fileUrl: pdf.getUrl(), folderUrl: folder.getUrl(), csvUrl: csv.getUrl(), pdf: pdf, title: base };
+}
 function dateNice_() { return Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'MMM d, yyyy'); }

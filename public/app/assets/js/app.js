@@ -142,7 +142,7 @@ function tabLink(n) {
     html: `<span class="tab-ic">${navGlyph(n, 24)}</span><span>${n.label}</span>`,
   });
 }
-const BUILD = 'v42';
+const BUILD = 'v43';
 function moreTab() {
   const overflow = NAV.filter((n) => !n.primary);
   const tab = el('a.tab.tab-more', {
