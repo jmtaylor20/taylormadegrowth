@@ -43,6 +43,10 @@ export async function renderFinancials(root) {
   root.append(wrap);
 
   let list = [], invoices = [], payments = [], expenses = [], trips = [], contractors = [], recurExp = [], taxRate = 0.25, taxReserve = 0, taxApr = 0;
+  // Full-liability planning: when taxMode==='full', TaylorMade covers the whole
+  // household federal tax bill (agency tax + the wage tax the day-job paycheck
+  // isn't withholding), offset by the spouse's withholding.
+  let taxMode = 'agency', fedLiability = 0, spouseWH = 0, estPaid = 0, safeHarbor = 0;
   let clientCache = null;
   async function clients() { if (!clientCache) clientCache = await Clients.list({ order: { col: 'business_name', asc: true } }); return clientCache; }
   async function load() {
@@ -57,8 +61,25 @@ export async function renderFinancials(root) {
     taxRate = Number(tax.effective_rate) || 0.25;
     taxReserve = Number(tax.reserve_balance) || 0;
     taxApr = Number(tax.reserve_apr) || 0;
+    taxMode = tax.mode === 'full' ? 'full' : 'agency';
+    fedLiability = Number(tax.fed_liability) || 0;
+    spouseWH = Number(tax.spouse_withholding) || 0;
+    estPaid = Number(tax.estimates_paid) || 0;
+    safeHarbor = Number(tax.safe_harbor) || 0;
     markOverdue(invoices);
   }
+
+  // Build the full tax setting object so partial saves never drop the other
+  // fields (mode / full-liability plan / reserve balance all live together).
+  const taxObj = (over) => Object.assign({
+    effective_rate: taxRate, reserve_balance: taxReserve, reserve_apr: taxApr,
+    mode: taxMode, fed_liability: fedLiability, spouse_withholding: spouseWH,
+    estimates_paid: estPaid, safe_harbor: safeHarbor,
+  }, over || {});
+  // Annual amount TaylorMade must reserve toward the full federal bill, and the
+  // months left in the year to spread it over.
+  const monthsLeft = () => Math.max(1, 12 - new Date().getMonth());
+  const annualReserveTarget = () => Math.max(0, fedLiability - spouseWH - estPaid);
 
   function refresh() {
     clear(summary); clear(wrap);
@@ -102,7 +123,11 @@ export async function renderFinancials(root) {
     if (FEATURES.splitDeposit) {
       const coleMo = active.reduce((s, c) => s + n(c.mrr) * (Number(c.cole_pct) || 0), 0);
       const afterCole = mrr - coleMo;
-      const taxMo = afterCole * ALLOCATION.tax;
+      // Full-liability mode: reserve the whole federal bill (minus spouse
+      // withholding) spread over the year. Otherwise the old flat % of MRR.
+      const fullMo = annualReserveTarget() / 12;
+      const taxMo = taxMode === 'full' ? fullMo : afterCole * ALLOCATION.tax;
+      const taxLabel = taxMode === 'full' ? 'Tax reserve' : 'Tax (30%)';
       const recurTotal = recurExp.reduce((s, x) => s + n(x.amount), 0);
       const available = afterCole - taxMo - recurTotal;
       summary.append(el('div.section-title', {}, [
@@ -111,11 +136,15 @@ export async function renderFinancials(root) {
       ]));
       summary.append(el('div.grid.grid-4', {}, [
         el('div.stat', {}, [el('div.stat-value', { text: money(coleMo) }), el('div.stat-label', { text: 'Cole’s cut' })]),
-        el('div.stat', {}, [el('div.stat-value', { text: money(taxMo) }), el('div.stat-label', { text: 'Tax (30%)' })]),
+        el('div.stat' + (taxMode === 'full' ? '' : ''), {}, [el('div.stat-value', { text: money(taxMo) }), el('div.stat-label', { text: taxLabel }), taxMode === 'full' ? el('div.stat-sub', { text: 'full fed bill ÷ 12' }) : null]),
         el('div.stat', {}, [el('div.stat-value', { text: money(recurTotal) }), el('div.stat-label', { text: 'Recurring exp' }), el('div.stat-sub', { text: recurExp.length + ' items' })]),
         el('div.stat.stat-gold', {}, [el('div.stat-value', { text: money(available) }), el('div.stat-label', { text: 'Available / mo' })]),
       ]));
-      summary.append(el('div.field-hint.mt-8', { text: `From ${money(mrr)} MRR: minus Cole’s commission, 30% for taxes, and ${money(recurTotal)} recurring expenses. Projection only — before mileage and owner’s draw.` }));
+      summary.append(el('div.field-hint.mt-8', {
+        text: taxMode === 'full'
+          ? `From ${money(mrr)} MRR: minus Cole’s commission, ${money(taxMo)}/mo toward your full ${money(fedLiability)} federal bill (less your wife’s ${money(spouseWH)} withholding), and ${money(recurTotal)} recurring expenses. See the Taxes tab to adjust. Before mileage and owner’s draw.`
+          : `From ${money(mrr)} MRR: minus Cole’s commission, 30% for taxes, and ${money(recurTotal)} recurring expenses. Projection only — before mileage and owner’s draw.`,
+      }));
     }
 
     // Contractor copy (Tony): show his split on everything he's collected —
@@ -279,18 +308,64 @@ export async function renderFinancials(root) {
     ]));
     wrap.append(el('div.section-title', {}, [el('h3', { text: 'Estimated tax to set aside' })]));
     wrap.append(el('div.grid.grid-3', {}, [
-      st(money(estTax), 'Owed so far (YTD)', Math.round(taxRate * 100) + '% effective', 'gold'),
-      st(money(projTax), 'Projected full year'),
+      st(money(estTax), 'Agency tax YTD', Math.round(taxRate * 100) + '% of net', 'gold'),
+      st(money(projTax), 'Agency full year'),
       st(money(mileageDed), 'Mileage deduction'),
     ]));
 
+    // --- Full-liability plan: TaylorMade covers the whole federal bill --------
+    if (taxMode === 'full') {
+      const netToReserve = annualReserveTarget();               // fed − spouse − estimates
+      const stillToSave = Math.max(0, netToReserve - taxReserve);
+      const monthlySet = stillToSave / monthsLeft();
+      const prepaid = spouseWH + estPaid;
+      const shortHarbor = Math.max(0, safeHarbor - prepaid);
+      wrap.append(el('div.section-title', {}, [el('h3', { text: 'Full-year tax plan (out of TaylorMade)' })]));
+      wrap.append(el('div.grid.grid-3', {}, [
+        st(money(fedLiability), 'Total federal bill'),
+        st('−' + money(spouseWH), 'Wife’s withholding'),
+        st(money(netToReserve), 'TaylorMade covers', null, 'gold'),
+      ]));
+      wrap.append(el('div.grid.grid-3.mt-8', {}, [
+        st(money(taxReserve), 'Saved in bucket'),
+        st(money(stillToSave), 'Still to save'),
+        st(money(monthlySet), 'Per month', monthsLeft() + ' mo left', 'gold'),
+      ]));
+      wrap.append(el('div.card.card-pad.mt-8' + (shortHarbor > 0 ? ' card-gold' : ''), {}, [
+        el('div', { html: shortHarbor > 0
+          ? `<b>Avoid the penalty:</b> you need ${money(safeHarbor)} prepaid (100% of last year’s tax). Withholding + estimates so far = ${money(prepaid)}, so make an estimated payment of about <b>${money(shortHarbor)}</b> (Q3 due Sep 15, Q4 due Jan 15). The rest can wait for your April return.`
+          : `<b>Penalty-safe:</b> your ${money(prepaid)} in withholding + estimates already clears the ${money(safeHarbor)} safe harbor. Keep saving the balance in the bucket for April.` }),
+      ]));
+      // Edit the plan numbers.
+      const fedIn = numberInput('fed', fedLiability || '', { step: '1' }); fedIn.style.maxWidth = '130px';
+      const spIn = numberInput('sp', spouseWH || '', { step: '1' }); spIn.style.maxWidth = '130px';
+      const esIn = numberInput('es', estPaid || '', { step: '1' }); esIn.style.maxWidth = '130px';
+      const shIn = numberInput('sh', safeHarbor || '', { step: '1' }); shIn.style.maxWidth = '130px';
+      wrap.append(el('div.card.card-pad.mt-8', {}, [
+        el('div.field-row', { style: 'align-items:center;gap:10px;flex-wrap:wrap' }, [
+          field('Total federal bill', fedIn), field('Wife’s withholding', spIn),
+          field('Estimates paid', esIn), field('Safe harbor', shIn),
+        ]),
+        el('div.field-row.mt-8', { style: 'gap:10px;flex-wrap:wrap' }, [
+          el('button.btn.btn-primary.btn-sm', { text: 'Save plan', onclick: async () => {
+            fedLiability = Number(fedIn.value || 0); spouseWH = Number(spIn.value || 0);
+            estPaid = Number(esIn.value || 0); safeHarbor = Number(shIn.value || 0);
+            await setSetting('tax', taxObj()); toast('Plan saved'); refreshAfter();
+          } }),
+          el('button.btn.btn-ghost.btn-sm', { text: 'Switch to agency-only %', onclick: async () => { taxMode = 'agency'; await setSetting('tax', taxObj({ mode: 'agency' })); toast('Using agency rate'); refreshAfter(); } }),
+        ]),
+        el('div.field-hint.mt-8', { html: 'TaylorMade reserves your <b>whole federal bill</b> (agency tax + the wage tax your paycheck isn’t withholding), minus your wife’s expected withholding. Update her withholding from a recent paystub to sharpen it.' }),
+      ]));
+    }
+
     // Actual reserve vs. what you should have set aside so far.
-    const cushion = taxReserve - estTax;
+    const reserveTarget = taxMode === 'full' ? annualReserveTarget() : estTax;
+    const cushion = taxReserve - reserveTarget;
     const interestYr = taxReserve * taxApr;
     wrap.append(el('div.section-title', {}, [el('h3', { text: 'Your tax reserve' })]));
     wrap.append(el('div.grid.grid-3', {}, [
       st(money(taxReserve), 'In tax account', taxApr ? (Math.round(taxApr * 1000) / 10) + '% APY' : null, 'gold'),
-      st(money(estTax), 'Target (YTD)'),
+      st(money(reserveTarget), taxMode === 'full' ? 'Target (full year)' : 'Target (YTD)'),
       st((cushion >= 0 ? '+' : '−') + money(Math.abs(cushion)), cushion >= 0 ? 'Cushion (ahead)' : 'Short — set aside', null, cushion >= 0 ? null : 'gold'),
     ]));
     const balIn = numberInput('bal', taxReserve || '', { step: '0.01' }); balIn.style.maxWidth = '140px';
@@ -298,7 +373,7 @@ export async function renderFinancials(root) {
     wrap.append(el('div.card.card-pad.mt-8', {}, [
       el('div.field-row', { style: 'align-items:center;gap:10px;flex-wrap:wrap' }, [
         el('span', { text: 'Reserve $' }), balIn, el('span', { text: 'APY' }), aprIn, el('span', { text: '%' }),
-        el('button.btn.btn-primary.btn-sm', { text: 'Save', onclick: async () => { taxReserve = Number(balIn.value || 0); taxApr = Number(aprIn.value || 0) / 100; await setSetting('tax', { effective_rate: taxRate, reserve_balance: taxReserve, reserve_apr: taxApr }); toast('Saved'); refreshAfter(); } }),
+        el('button.btn.btn-primary.btn-sm', { text: 'Save', onclick: async () => { taxReserve = Number(balIn.value || 0); taxApr = Number(aprIn.value || 0) / 100; await setSetting('tax', taxObj()); toast('Saved'); refreshAfter(); } }),
       ]),
       el('div.field-hint.mt-8', { text: taxApr ? `Earning about ${money(interestYr)}/yr at ${Math.round(taxApr * 1000) / 10}% — note that interest is taxable income.` : 'Update this as your reserve grows.' }),
     ]));
@@ -307,11 +382,12 @@ export async function renderFinancials(root) {
     rateInput.style.maxWidth = '110px';
     wrap.append(el('div.card.card-pad.mt-16', {}, [
       el('div.field-row', { style: 'align-items:center;gap:10px;flex-wrap:wrap' }, [
-        el('span', { text: 'Effective tax rate' }), rateInput, el('span', { text: '%' }),
-        el('button.btn.btn-primary.btn-sm', { text: 'Save', onclick: async () => { taxRate = Number(rateInput.value || 0) / 100; await setSetting('tax', { effective_rate: taxRate, reserve_balance: taxReserve, reserve_apr: taxApr }); toast('Saved'); refreshAfter(); } }),
+        el('span', { text: 'Agency effective rate' }), rateInput, el('span', { text: '%' }),
+        el('button.btn.btn-primary.btn-sm', { text: 'Save', onclick: async () => { taxRate = Number(rateInput.value || 0) / 100; await setSetting('tax', taxObj()); toast('Saved'); refreshAfter(); } }),
         el('button.btn.btn-ghost.btn-sm', { text: 'Calibrate from last year', onclick: openCalibrate }),
+        taxMode === 'full' ? null : el('button.btn.btn-ghost.btn-sm', { text: 'Cover full federal bill from TaylorMade', onclick: async () => { taxMode = 'full'; await setSetting('tax', taxObj({ mode: 'full' })); toast('Full-liability plan on'); refreshAfter(); } }),
       ]),
-      el('div.field-hint.mt-8', { html: 'Rough estimate: <b>net profit × your effective rate</b> (income tax + ~15.3% self-employment tax + state). As income and expenses change through the year, this updates so you can adjust what you set aside.' }),
+      el('div.field-hint.mt-8', { html: 'The agency rate estimates tax on your <b>agency net profit alone</b>. The full-year plan above (when on) reserves your <b>entire federal bill</b> out of TaylorMade instead.' }),
     ]));
   }
 
