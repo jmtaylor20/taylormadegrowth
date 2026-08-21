@@ -2,7 +2,7 @@
 // first unlock, and after that the browser's own encrypted copy in
 // localStorage is the source of truth.
 
-const CACHE = 'tfm-v9';
+const CACHE = 'tfm-v10';
 const SHELL = [
   './',
   './index.html',
@@ -13,15 +13,9 @@ const SHELL = [
   './assets/js/vault.js',
   './assets/js/ui.js',
   './assets/js/calc.js',
-  './assets/js/pages/home.js',
   './assets/js/pages/account.js',
-  './assets/js/pages/paydays.js',
-  './assets/js/pages/checkin.js',
-  './assets/js/pages/windfall.js',
-  './assets/js/pages/reconcile.js',
   './assets/js/pages/debt.js',
   './assets/js/pages/goals.js',
-  './assets/js/pages/scenarios.js',
 ];
 
 self.addEventListener('install', (e) => {
