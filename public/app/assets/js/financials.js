@@ -422,14 +422,18 @@ export async function renderFinancials(root) {
     const monthOpts = [];
     for (let i = 0; i < 12; i++) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); monthOpts.push({ key: d.toISOString().slice(0, 7), label: d.toLocaleString('en-US', { month: 'long', year: 'numeric' }) }); }
     const yearOpts = []; for (let y = now.getFullYear(); y >= now.getFullYear() - 2; y--) yearOpts.push({ key: String(y), label: String(y) });
+    const quarterOpts = [];
+    { let d = new Date(now.getFullYear(), now.getMonth(), 1); for (let i = 0; i < 6; i++) { const q = Math.floor(d.getMonth() / 3) + 1; const key = d.getFullYear() + '-Q' + q; if (!quarterOpts.find((o) => o.key === key)) quarterOpts.push({ key, label: 'Q' + q + ' ' + d.getFullYear() }); d = new Date(d.getFullYear(), d.getMonth() - 3, 1); } }
     const scope = { type: 'month' };
     const monthSel = selectInput('m', monthOpts, monthOpts[0].key);
+    const quarterSel = selectInput('q', quarterOpts, quarterOpts[0].key); quarterSel.style.display = 'none';
     const yearSel = selectInput('y', yearOpts, yearOpts[0].key); yearSel.style.display = 'none';
+    const sels = { month: monthSel, quarter: quarterSel, year: yearSel };
     const scopeSeg = el('div.segmented');
-    [['month', 'Month'], ['year', 'Year']].forEach(([k, l]) => scopeSeg.append(el('button.seg' + (scope.type === k ? '.on' : ''), {
-      text: l, onclick: (e) => { scope.type = k; scopeSeg.querySelectorAll('.seg').forEach((s) => s.classList.remove('on')); e.target.classList.add('on'); monthSel.style.display = k === 'month' ? '' : 'none'; yearSel.style.display = k === 'year' ? '' : 'none'; },
+    [['month', 'Month'], ['quarter', 'Quarter'], ['year', 'Year']].forEach(([k, l]) => scopeSeg.append(el('button.seg' + (scope.type === k ? '.on' : ''), {
+      text: l, onclick: (e) => { scope.type = k; scopeSeg.querySelectorAll('.seg').forEach((s) => s.classList.remove('on')); e.target.classList.add('on'); Object.keys(sels).forEach((t) => { sels[t].style.display = t === k ? '' : 'none'; }); },
     })));
-    const period = () => (scope.type === 'month' ? monthSel.value : yearSel.value);
+    const period = () => sels[scope.type].value;
     const build = async (kind, labelText) => {
       try {
         await DocJobs.create({ kind, period_type: scope.type, period: period(), status: 'queued', email: BUSINESS.email });
@@ -438,13 +442,15 @@ export async function renderFinancials(root) {
       } catch (e) { toast(e.message, 'err'); }
     };
     wrap.append(el('div.section-title', {}, [el('h3', { text: 'Binders & exports' })]));
-    wrap.append(el('div.field-hint.mb-8', { text: 'Builds a combined PDF (+ CSV) in your Google Drive and emails it to you. Receipts and mileage are pulled automatically for the period.' }));
+    wrap.append(el('div.field-hint.mb-8', { text: 'Builds a combined PDF (+ CSV) in your Google Drive and emails it to you. Receipts, mileage, income, and contractor pay are pulled automatically for the period. Monthly binders also build themselves on the 1st.' }));
     wrap.append(el('div.card.card-pad', {}, [
-      el('div.field-row', { style: 'gap:10px;align-items:center;flex-wrap:wrap' }, [el('span', { text: 'Period' }), scopeSeg, monthSel, yearSel]),
+      el('div.field-row', { style: 'gap:10px;align-items:center;flex-wrap:wrap' }, [el('span', { text: 'Period' }), scopeSeg, monthSel, quarterSel, yearSel]),
       el('div.pill-row.mt-8', {}, [
         el('button.btn.btn-primary.btn-sm', { html: iconSvg('money', 14) + ' Expense binder', onclick: () => build('expense_binder', 'expense binder') }),
         el('button.btn.btn-gold.btn-sm', { html: iconSvg('car', 14) + ' Mileage log', onclick: () => build('mileage_log', 'mileage log') }),
+        el('button.btn.btn-ghost.btn-sm', { html: iconSvg('money', 14) + ' Income register', onclick: () => build('income_register', 'income register') }),
         el('button.btn.btn-ghost.btn-sm', { html: iconSvg('report', 14) + ' Tax packet', onclick: () => build('tax_packet', 'tax packet') }),
+        el('button.btn.btn-ghost.btn-sm', { html: iconSvg('users', 14) + ' Contractor 1099s', onclick: () => build('contractor_1099', 'contractor 1099 summary') }),
       ]),
     ]));
     const jobsWrap = el('div.mt-16');
@@ -455,7 +461,7 @@ export async function renderFinancials(root) {
       try { jobs = await DocJobs.list({ order: { col: 'created_at', asc: false } }); } catch (e) { /* table may not exist yet */ }
       if (!jobs.length) { jobsWrap.append(el('div.field-hint', { text: 'No binders built yet.' })); return; }
       jobsWrap.append(el('div.section-title', {}, [el('h3', { text: 'Recent builds' }), el('button.btn.btn-ghost.btn-sm', { text: 'Refresh', onclick: loadJobs })]));
-      const KIND = { expense_binder: 'Expense binder', mileage_log: 'Mileage log', tax_packet: 'Tax packet' };
+      const KIND = { expense_binder: 'Expense binder', mileage_log: 'Mileage log', income_register: 'Income register', tax_packet: 'Tax packet', contractor_1099: 'Contractor 1099s' };
       const TONE = { queued: 'gray', building: 'amber', done: 'green', error: 'red' };
       const rows = el('div.rows.card');
       jobs.slice(0, 20).forEach((j) => rows.append(el('div.row', {}, [
