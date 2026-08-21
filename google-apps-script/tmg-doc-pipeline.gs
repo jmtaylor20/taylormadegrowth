@@ -61,6 +61,7 @@ var CONFIG = {
   INVOICE_NET_DAYS: 15,          // due this many days after issue
   AUTO_SEND_MONTHLY: false,      // false = save as DRAFTS and email you a review prompt; true = also email clients
   NOTIFY_EMAIL: 'josh@taylormadegrowth.com',  // where the "drafts ready to review" prompt is sent
+  AUTO_MONTHLY_BINDERS: true,     // on the 1st, auto-build last month's expense binder, mileage log + tax packet
   // ---- Contractor apps (separate databases) ----------------------------------
   // Each contractor runs their own isolated Supabase project. Proposals they
   // create are only emailed AFTER you approve them in your app's Approvals tab
@@ -130,6 +131,7 @@ function processQueue() {
   processTable_('reports');
   processWelcome_();
   processContractorProposals_();
+  autoMonthlyBinders_();
   processDocJobs_();
 }
 
@@ -672,7 +674,9 @@ function processDocJobs_() {
       var out;
       if (j.kind === 'expense_binder') out = buildExpenseBinder_(j.period, j.period_type);
       else if (j.kind === 'mileage_log') out = buildMileageLog_(j.period, j.period_type);
+      else if (j.kind === 'income_register') out = buildIncomeRegister_(j.period, j.period_type);
       else if (j.kind === 'tax_packet') out = buildTaxPacket_(j.period, j.period_type);
+      else if (j.kind === 'contractor_1099') out = buildContractor1099_(j.period, j.period_type);
       else throw new Error('Unknown job kind: ' + j.kind);
       emailBinder_(j, out);
       sbPatch_('doc_jobs', j.id, { status: 'done', file_url: out.fileUrl, drive_url: out.folderUrl, csv_url: out.csvUrl || null, built_at: nowIso_(), error: null });
@@ -694,19 +698,26 @@ function monthName_(ym) {
   var m = Number(String(ym).slice(5, 7));
   return ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][m - 1] || '';
 }
-// e.g. Expenses / "2026-08 August"  (year jobs -> "2026")
+function pad2_(n) { n = String(n); return n.length < 2 ? '0' + n : n; }
+// e.g. Expenses / "2026-08 August"  (quarter -> "2026-Q3", year -> "2026")
 function periodFolder_(section, period, ptype) {
   var top = subFolder_(rootFolder_(), section);
-  var label = ptype === 'year' ? String(period) : period + ' ' + monthName_(period);
+  var label = (ptype === 'year' || ptype === 'quarter') ? String(period) : period + ' ' + monthName_(period);
   return subFolder_(top, label);
 }
 function periodFolderReports_(period) { return subFolder_(subFolder_(rootFolder_(), 'Reports'), period || 'Undated'); }
 // period -> { start, end, label }
 function periodRange_(period, ptype) {
   if (ptype === 'year') return { start: period + '-01-01', end: period + '-12-31', label: String(period) };
+  if (ptype === 'quarter') {
+    var qy = period.slice(0, 4), q = Number(period.slice(6));
+    var sm = (q - 1) * 3 + 1, em = q * 3;
+    var eom = new Date(Number(qy), em, 0).getDate();
+    return { start: qy + '-' + pad2_(sm) + '-01', end: qy + '-' + pad2_(em) + '-' + pad2_(eom), label: 'Q' + q + ' ' + qy };
+  }
   var y = period.slice(0, 4), m = period.slice(5, 7);
   var last = new Date(Number(y), Number(m), 0).getDate();
-  return { start: period + '-01', end: period + '-' + String(last), label: monthName_(period) + ' ' + y };
+  return { start: period + '-01', end: period + '-' + pad2_(last), label: monthName_(period) + ' ' + y };
 }
 function money2_(n) { return '$' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function mileageRate_(dateStr) {
@@ -826,5 +837,69 @@ function buildTaxPacket_(period, ptype) {
   try { buildMileageLog_(period, ptype); } catch (e) { Logger.log('packet mileage: ' + e); }
   var csv = folder.createFile(base + '.csv', ['Line,Amount', 'Income,' + income.toFixed(2), 'Expenses,' + (-expTotal).toFixed(2), 'Mileage,' + (-mileDed).toFixed(2), 'Net,' + net.toFixed(2)].join('\n'), MimeType.CSV);
   return { fileUrl: pdf.getUrl(), folderUrl: folder.getUrl(), csvUrl: csv.getUrl(), pdf: pdf, title: base };
+}
+
+// ---- Income register (all collected income for the period) ----
+function buildIncomeRegister_(period, ptype) {
+  var r = periodRange_(period, ptype);
+  var nameFor = clientNamer_(sbGet_('clients?select=id,business_name'));
+  var items = [];
+  sbGet_('invoices?status=eq.paid&select=number,amount,paid_on,issued_on,client_id').forEach(function (i) { var d = i.paid_on || i.issued_on || ''; if (d >= r.start && d <= r.end) items.push({ date: d, kind: 'Invoice ' + (i.number || ''), who: nameFor(i.client_id), amount: Number(i.amount || 0) }); });
+  sbGet_('payments?select=amount,paid_on,client_id,kind').forEach(function (p) { var d = p.paid_on || ''; if (d >= r.start && d <= r.end) items.push({ date: d, kind: 'Payment' + (p.kind ? ' (' + p.kind + ')' : ''), who: nameFor(p.client_id), amount: Number(p.amount || 0) }); });
+  items.sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); });
+  var total = items.reduce(function (s, x) { return s + x.amount; }, 0);
+  var rows = items.map(function (x) { return '<tr><td>' + esc_(x.date) + '</td><td>' + esc_(x.kind) + '</td><td>' + esc_(x.who) + '</td><td class="r">' + money2_(x.amount) + '</td></tr>'; }).join('') || '<tr><td colspan="4" class="muted">No income in this period.</td></tr>';
+  var html = binderCss_() + '<h1>Income Register</h1><div class="sub">' + esc_(r.label) + ' · TaylorMade Brands</div>' +
+    '<table class="t"><thead><tr><th>Date</th><th>Source</th><th>Client</th><th class="r">Amount</th></tr></thead><tbody>' + rows + '<tr class="tot"><td colspan="3">Total collected</td><td class="r">' + money2_(total) + '</td></tr></tbody></table></body></html>';
+  var folder = periodFolder_('Income', period, ptype);
+  var base = 'Income Register - ' + r.label;
+  var pdf = folder.createFile(htmlToPdf_(html, base + '.pdf'));
+  var csvLines = ['Date,Source,Client,Amount'];
+  items.forEach(function (x) { csvLines.push([csvCell_(x.date), csvCell_(x.kind), csvCell_(x.who), x.amount.toFixed(2)].join(',')); });
+  var csv = folder.createFile(base + '.csv', csvLines.join('\n'), MimeType.CSV);
+  return { fileUrl: pdf.getUrl(), folderUrl: folder.getUrl(), csvUrl: csv.getUrl(), pdf: pdf, title: base };
+}
+
+// ---- Contractor 1099 summary (Subcontractor-category pay, grouped by vendor) ----
+function buildContractor1099_(period, ptype) {
+  var r = periodRange_(period, ptype);
+  var exp = sbGet_('expenses?category=eq.Subcontractor&expense_date=gte.' + r.start + '&expense_date=lte.' + r.end + '&select=*&order=expense_date.asc');
+  var byVendor = {};
+  exp.forEach(function (e) { var v = e.vendor || 'Unknown'; (byVendor[v] = byVendor[v] || []).push(e); });
+  var vendors = Object.keys(byVendor).sort();
+  var sections = vendors.map(function (v) {
+    var listv = byVendor[v]; var tot = listv.reduce(function (s, e) { return s + Number(e.amount || 0); }, 0);
+    var rows = listv.map(function (e) { return '<tr><td>' + esc_(e.expense_date || '') + '</td><td>' + esc_(e.notes || '') + '</td><td class="r">' + money2_(e.amount) + '</td></tr>'; }).join('');
+    return '<div class="sec">' + esc_(v) + ' — ' + money2_(tot) + (tot >= 600 ? ' · 1099 required' : '') + '</div><table class="t"><thead><tr><th>Date</th><th>Notes</th><th class="r">Amount</th></tr></thead><tbody>' + rows + '<tr class="tot"><td colspan="2">Total paid (' + esc_(r.label) + ')</td><td class="r">' + money2_(tot) + '</td></tr></tbody></table>';
+  }).join('') || '<div class="muted" style="margin-top:14px">No contractor (Subcontractor) payments in this period.</div>';
+  var grand = exp.reduce(function (s, e) { return s + Number(e.amount || 0); }, 0);
+  var html = binderCss_() + '<h1>Contractor Payments — 1099 Summary</h1><div class="sub">' + esc_(r.label) + ' · TaylorMade Brands</div>' +
+    '<div class="stat">Total contractor payments <b>' + money2_(grand) + '</b> across ' + vendors.length + ' contractor(s)</div>' +
+    sections + '<div class="muted" style="margin-top:14px">Totals are payments logged under the “Subcontractor” expense category. A contractor paid $600 or more in a calendar year generally needs a 1099-NEC.</div></body></html>';
+  var folder = periodFolder_('1099s', period, ptype);
+  var base = 'Contractor 1099 Summary - ' + r.label;
+  var pdf = folder.createFile(htmlToPdf_(html, base + '.pdf'));
+  var csvLines = ['Contractor,Date,Notes,Amount'];
+  vendors.forEach(function (v) { byVendor[v].forEach(function (e) { csvLines.push([csvCell_(v), csvCell_(e.expense_date), csvCell_(e.notes), Number(e.amount || 0).toFixed(2)].join(',')); }); });
+  var csv = folder.createFile(base + '.csv', csvLines.join('\n'), MimeType.CSV);
+  return { fileUrl: pdf.getUrl(), folderUrl: folder.getUrl(), csvUrl: csv.getUrl(), pdf: pdf, title: base };
+}
+
+// ---- Auto-build last month's binders on the 1st (deduped) ----
+function autoMonthlyBinders_() {
+  if (CONFIG.AUTO_MONTHLY_BINDERS === false) return;
+  var tz = Session.getScriptTimeZone();
+  var now = new Date();
+  if (Number(Utilities.formatDate(now, tz, 'd')) > 3) return;   // only the first few days
+  var lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  var period = Utilities.formatDate(lm, tz, 'yyyy-MM');
+  var existing = {};
+  try { sbGet_('doc_jobs?period=eq.' + period + '&select=kind').forEach(function (j) { existing[j.kind] = true; }); }
+  catch (e) { return; }  // no doc_jobs table -> nothing to do
+  ['expense_binder', 'mileage_log', 'tax_packet'].forEach(function (k) {
+    if (existing[k]) return;
+    try { sbInsert_('doc_jobs', { kind: k, period_type: 'month', period: period, status: 'queued', email: CONFIG.NOTIFY_EMAIL }); }
+    catch (e) { Logger.log('auto binder insert failed: ' + e); }
+  });
 }
 function dateNice_() { return Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'MMM d, yyyy'); }
