@@ -3,23 +3,18 @@
 import * as store from './store.js';
 import { el, clear, icon, ICONS, sheet, field, input, download, longDate } from './ui.js';
 
-import home from './pages/home.js';
 import account from './pages/account.js';
-import paydays from './pages/paydays.js';
 import debt from './pages/debt.js';
 import goals from './pages/goals.js';
-import scenarios from './pages/scenarios.js';
 
 const root = document.getElementById('root');
 
+// Four tabs. Two accounts, the debts, the trips — nothing that needs studying.
 const ROUTES = [
-  { id: 'home', label: 'Home', icon: 'home', title: 'Taylor Family Money', render: home },
   { id: 'josh', label: 'Josh', icon: 'josh', title: 'Josh', render: (s) => account(s, 'josh'), tint: 'josh' },
   { id: 'laci', label: 'Laci', icon: 'laci', title: 'Laci', render: (s) => account(s, 'laci'), tint: 'laci' },
-  { id: 'paydays', label: 'Paydays', icon: 'pay', title: 'Paydays vs. bills', render: paydays },
-  { id: 'debt', label: 'Debt', icon: 'debt', title: 'Debt attack plan', render: debt },
-  { id: 'goals', label: 'Goals', icon: 'goal', title: 'Goals', render: goals },
-  { id: 'scenarios', label: 'What if', icon: 'what', title: 'Scenarios', render: scenarios },
+  { id: 'debt', label: 'Debt', icon: 'debt', title: 'Debt', render: debt },
+  { id: 'goals', label: 'Trips', icon: 'goal', title: 'Trips', render: goals },
 ];
 
 const currentRoute = () => ROUTES.find((r) => r.id === location.hash.slice(1)) || ROUTES[0];
@@ -129,7 +124,7 @@ function renderApp() {
 function subtitle(route, state) {
   if (route.id === 'josh' || route.id === 'laci') {
     const a = state.accounts.find((x) => x.id === route.id);
-    return a ? `${a.bank} ${a.product} ····${a.mask}` : '';
+    return a ? `${a.bank} ····${a.mask}` : '';
   }
   return `Updated ${longDate(state.updated)}`;
 }
