@@ -91,6 +91,7 @@ create table if not exists public.invoices (
   send_status text,
   sent_to text,
   sent_at timestamptz,
+  sent_on date,
   send_error text,
   drive_status text,
   drive_url text,
