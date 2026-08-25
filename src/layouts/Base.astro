@@ -17,9 +17,14 @@ const {
   description = 'Taylormade Brands is a growth partner for owner-led businesses — custom software, growth strategy, research, and reporting that make good businesses run and grow better.',
   bodyClass = '',
   chrome = true,
+  // Social share card. Pages can override with their own image in /public.
+  image = '/og-image.png',
+  imageAlt = 'Taylormade Brands — your partner in business growth.',
 } = Astro.props;
 
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
+// Social crawlers (LinkedIn, Facebook, X, iMessage) require an absolute URL.
+const ogImage = new URL(image, Astro.site).href;
 ---
 
 <!DOCTYPE html>
@@ -44,7 +49,18 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:secure_url" content={ogImage} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={imageAlt} />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image:alt" content={imageAlt} />
 
     <Analytics />
     <slot name="head" />
