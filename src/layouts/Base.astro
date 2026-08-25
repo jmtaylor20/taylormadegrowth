@@ -18,8 +18,8 @@ const {
   bodyClass = '',
   chrome = true,
   // Social share card. Pages can override with their own image in /public.
-  image = '/og-image.png',
-  imageAlt = 'Taylormade Brands — your partner in business growth.',
+  image = '/og-image.jpg',
+  imageAlt = 'Taylormade Brands',
 } = Astro.props;
 
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
@@ -52,7 +52,7 @@ const ogImage = new URL(image, Astro.site).href;
     <meta property="og:locale" content="en_US" />
     <meta property="og:image" content={ogImage} />
     <meta property="og:image:secure_url" content={ogImage} />
-    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content={imageAlt} />
