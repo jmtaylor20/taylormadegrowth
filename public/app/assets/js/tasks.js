@@ -3,7 +3,7 @@
 // it forward to the next cycle instead of closing it. Exports openTaskForm +
 // markTaskDone, reused by the client detail sheet.
 import { Tasks, Clients, TimeEntries, tasksFor } from './db.js';
-import { TEAM, OWNER, FEATURES, TASK_CATEGORY, TASK_PRESETS, RECUR_INTERVAL, SUPABASE_URL } from './config.js';
+import { TEAM, OWNER, FEATURES, TASK_CATEGORY, TASK_PRESETS, DETAIL_PRESETS, RECUR_INTERVAL, SUPABASE_URL } from './config.js';
 import {
   el, clear, iconSvg, pageHeader, badge, relDue, fmtDate, fmtTime, fmtHours, daysUntil, emptyState, primaryBtn, clientAvatar,
   field, textInput, textArea, selectInput, numberInput, dateInput, checkbox, readForm, hoursSelect,
@@ -95,16 +95,8 @@ export async function renderTasks(root) {
   const wrap = el('div');
   root.append(wrap);
 
-  let all = [], list = [], minsByTask = {};
-  async function load() {
-    let times;
-    [all, list, times] = await Promise.all([tasksFor(null), clients(), TimeEntries.list()]);
-    // True per-task hours: sum completed time entries by task_id (excludes
-    // running timers with null minutes). This is what shows on each card, so
-    // the number on a task always matches that task's own logged time.
-    minsByTask = {};
-    (times || []).forEach((e) => { if (e.task_id && e.minutes != null) minsByTask[e.task_id] = (minsByTask[e.task_id] || 0) + Number(e.minutes); });
-  }
+  let all = [], list = [];
+  async function load() { [all, list] = await Promise.all([tasksFor(null), clients()]); }
 
   function refresh() {
     clear(wrap);
@@ -134,28 +126,20 @@ export async function renderTasks(root) {
     wrap.append(rows);
   }
 
+  // A task is a single-line reminder: check it off, tap to edit, or delete.
+  // Logging (hours / mileage / expense) lives on the Create button, not here.
   function row(t) {
     const done = t.status === 'done';
-    const client = list.find((c) => c.id === t.client_id);
-    const av = client ? clientAvatar(client) : el('div.avatar', { text: '—' });
-    av.style.width = '34px'; av.style.height = '34px'; av.style.fontSize = '.76rem';
-    if (client) { av.style.cursor = 'pointer'; av.onclick = (e) => { e.stopPropagation(); location.hash = '#/client/' + client.id; }; }
     return el('div.row', {}, [
       el('input.checkbox', { type: 'checkbox', checked: done, title: 'Mark complete', onchange: async (e) => {
         const r = await markTaskDone(t, e.target.checked);
-        if (r.recurred) toast('Recurring — next due ' + fmtDate(r.next));
+        if (r.recurred) toast('Next due ' + fmtDate(r.next));
         refreshAfter();
       } }),
-      av,
       el('div.row-main', { style: 'cursor:pointer', onclick: () => openTaskForm(t, refreshAfter, null, list) }, [
         el('div.row-title', { text: t.title, style: done ? 'text-decoration:line-through;color:var(--muted)' : '' }),
-        el('div.row-sub', {}, [
-          el('span.muted', { text: client ? client.business_name : 'Internal' }),
-          t.due_date ? el('span', { class: due(t.due_date, done), text: relDue(t.due_date) + (t.due_time ? ' · ' + fmtTime(t.due_time) : '') }) : el('span.muted', { text: 'No date' }),
-          minsByTask[t.id] ? badge(fmtHours(minsByTask[t.id]) + ' logged', 'gray') : null,
-        ]),
       ]),
-      done ? null : hoursQuickSelect(t, refreshAfter),
+      t.due_date ? el('span', { class: due(t.due_date, done), style: 'margin-left:auto;white-space:nowrap;font-size:.82rem', text: relDue(t.due_date) + (t.due_time ? ' · ' + fmtTime(t.due_time) : '') }) : null,
       el('button.icon-btn', { html: iconSvg('trash', 16), onclick: async () => { if (await confirmDialog('Delete this task?')) { await Tasks.remove(t.id); refreshAfter(); } } }),
     ]);
   }
@@ -197,9 +181,28 @@ export async function openTaskForm(existing = {}, onSaved, client, clientList) {
   presetSel.addEventListener('change', () => {
     syncOther();
     const p = TASK_PRESETS.find((x) => x.label === presetSel.value);
-    if (p) { catSel.value = p.cat; if (p.hrs && isNew) hoursSel.value = String(p.hrs); }
+    if (p) { catSel.value = p.cat; if (p.hrs && isNew) hoursSel.value = String(p.hrs); rebuildDetails(true); }
     if (presetSel.value === '__other__') otherInput.focus();
   });
+
+  // Details: a category-aware dropdown that pre-fills a vague description of the
+  // category's work; pick "Other" to open a box and write the specifics.
+  const detailSel = el('select.input', { name: '__detail_pick' });
+  const detailOther = textArea('detail_other', '', { rows: 2, placeholder: 'Write the specifics…' });
+  const detailOtherField = field('Specific details', detailOther);
+  const catDesc = () => DETAIL_PRESETS[catSel.value] || DETAIL_PRESETS.general;
+  function syncDetailOther() { detailOtherField.style.display = detailSel.value === '__other__' ? '' : 'none'; }
+  function rebuildDetails(selectDefault) {
+    const keep = detailSel.value;
+    const def = catDesc();
+    detailSel.innerHTML = '';
+    detailSel.add(new Option(def, def));
+    detailSel.add(new Option('Other — write your own…', '__other__'));
+    detailSel.value = (!selectDefault && keep === '__other__') ? '__other__' : def;
+    syncDetailOther();
+  }
+  detailSel.onchange = () => { syncDetailOther(); if (detailSel.value === '__other__') detailOther.focus(); };
+  catSel.addEventListener('change', () => rebuildDetails(true));
 
   const node = el('div.form', {}, [
     field('Task', presetSel),
@@ -208,11 +211,11 @@ export async function openTaskForm(existing = {}, onSaved, client, clientList) {
       field('Client', selectInput('client_id', clientOptions, existing.client_id || (client && client.id) || '')),
       FEATURES.assignee ? field('Assignee', selectInput('assignee', TEAM, existing.assignee || OWNER)) : null,
       field('Category', catSel),
-      field('Repeat', selectInput('recur_interval', RECUR_INTERVAL, existing.recur_interval || 'none')),
       field('Date', dateInput('due_date', existing.due_date || todayStr())),
-      field('Time (optional)', el('input.input', { type: 'time', name: 'due_time', value: existing.due_time || '' })),
+      field('Time', el('input.input', { type: 'time', name: 'due_time', value: existing.due_time || (isNew ? '10:00' : '') })),
     ]),
-    field('Details (optional)', textArea('detail', existing.detail, { rows: 2 })),
+    field('Details', detailSel),
+    detailOtherField,
     el('div.form-grid.cols-2', {}, [
       field('Hours worked (optional)', hoursSel),
       el('label.field-row', { style: 'align-items:center;gap:8px;margin-top:24px' }, [checkbox('__done', existing.status === 'done'), el('span', { text: 'Mark complete' })]),
@@ -225,6 +228,9 @@ export async function openTaskForm(existing = {}, onSaved, client, clientList) {
     ]),
   ]);
   syncOther();
+  // Seed details from the current category, or restore a custom one on edit.
+  rebuildDetails(true);
+  if (existing.detail && existing.detail !== catDesc()) { detailSel.value = '__other__'; detailOther.value = existing.detail; syncDetailOther(); }
 
   const { close } = openSheet({
     title: isNew ? 'New task' : 'Edit task', body: node,
@@ -238,16 +244,20 @@ export async function openTaskForm(existing = {}, onSaved, client, clientList) {
         const done = !!v.__done;
         const hours = Number(v.hours || 0);
         const cid = v.client_id || null;
+        // Repeat isn't shown any more (tasks are reminders) — keep whatever the
+        // record already had so renewals still recur.
+        const recur = existing.recur_interval || 'none';
+        const detail = (detailSel.value === '__other__' ? (detailOther.value || '').trim() : detailSel.value) || null;
         const patch = {
           title,
           client_id: cid,
           assignee: v.assignee || OWNER,
           category: v.category || 'general',
-          recur_interval: v.recur_interval || 'none',
-          recurring: !!(v.recur_interval && v.recur_interval !== 'none'),
+          recur_interval: recur,
+          recurring: recur !== 'none',
           due_date: v.due_date || null,
           due_time: v.due_time || null,
-          detail: v.detail || null,
+          detail,
         };
         try {
           let taskId = existing.id;
