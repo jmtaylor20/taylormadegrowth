@@ -239,10 +239,23 @@ export const TASK_CATEGORY = [
   { key: 'monthly',    label: 'Monthly mgmt' },
   { key: 'onboarding', label: 'Onboarding' },
   { key: 'build',      label: 'Website build' },
+  { key: 'app',        label: 'App Updates' },
   { key: 'content',    label: 'Content' },
   { key: 'renewal',    label: 'Renewal' },
   { key: 'general',    label: 'General' },
 ];
+
+// A vague, ready-to-use description per category — pre-fills the task's Details
+// dropdown when you pick a category. Choose "Other" to write your own instead.
+export const DETAIL_PRESETS = {
+  monthly:    'Monthly management, optimization, and reporting for this client.',
+  onboarding: 'New-client onboarding — set up accounts, access, and kickoff.',
+  build:      'Website build / updates per the agreed scope.',
+  app:        'App updates and maintenance.',
+  content:    'Create and schedule social / marketing content.',
+  renewal:    'Renewal coming due — confirm and process.',
+  general:    'General task.',
+};
 export const TASK_STATUS = [
   { key: 'todo',  label: 'To do',       tone: 'gray' },
   { key: 'doing', label: 'In progress', tone: 'blue' },
@@ -258,7 +271,7 @@ export const TASK_PRESETS = [
   { label: 'Website updates',                              cat: 'build',      hrs: 1.5 },
   { label: 'Web build',                                    cat: 'build',      hrs: 6 },
   { label: 'Website integration (forms / analytics)',      cat: 'build',      hrs: 2 },
-  { label: 'App updates',                                  cat: 'general',    hrs: 1 },
+  { label: 'App updates',                                  cat: 'app',        hrs: 1 },
   { label: 'Google Ads optimization & changes',            cat: 'monthly',    hrs: 1 },
   { label: 'Google Ads analysis',                          cat: 'monthly',    hrs: 1 },
   { label: 'Google Ads campaign setup',                    cat: 'onboarding', hrs: 2 },
