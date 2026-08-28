@@ -130,12 +130,22 @@ export async function renderTasks(root) {
   // Logging (hours / mileage / expense) lives on the Create button, not here.
   function row(t) {
     const done = t.status === 'done';
+    const client = list.find((c) => c.id === t.client_id);
+    // The client's logo right after the check tells you who it's for at a glance.
+    let av = null;
+    if (client) {
+      av = clientAvatar(client);
+      av.style.width = '26px'; av.style.height = '26px'; av.style.fontSize = '.66rem'; av.style.flex = '0 0 auto'; av.style.cursor = 'pointer';
+      av.title = client.business_name;
+      av.onclick = (e) => { e.stopPropagation(); location.hash = '#/client/' + client.id; };
+    }
     return el('div.row', {}, [
       el('input.checkbox', { type: 'checkbox', checked: done, title: 'Mark complete', onchange: async (e) => {
         const r = await markTaskDone(t, e.target.checked);
         if (r.recurred) toast('Next due ' + fmtDate(r.next));
         refreshAfter();
       } }),
+      av,
       el('div.row-main', { style: 'cursor:pointer', onclick: () => openTaskForm(t, refreshAfter, null, list) }, [
         el('div.row-title', { text: t.title, style: done ? 'text-decoration:line-through;color:var(--muted)' : '' }),
       ]),
