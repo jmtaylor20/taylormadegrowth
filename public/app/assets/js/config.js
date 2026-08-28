@@ -252,26 +252,28 @@ export const TASK_STATUS = [
 // Common tasks Josh logs — power the one-tap task picker on the task form.
 // `cat` maps to a TASK_CATEGORY key so choosing a task auto-sets its category.
 // Choose "Other" in the picker to type a custom title.
+// `hrs` is a typical time for the work — it pre-fills the "Hours worked"
+// picker when you choose the preset, so a logged task is one tweak away.
 export const TASK_PRESETS = [
-  { label: 'Website updates',                              cat: 'build' },
-  { label: 'Web build',                                    cat: 'build' },
-  { label: 'Website integration (forms / analytics)',      cat: 'build' },
-  { label: 'App updates',                                  cat: 'general' },
-  { label: 'Google Ads optimization & changes',            cat: 'monthly' },
-  { label: 'Google Ads analysis',                          cat: 'monthly' },
-  { label: 'Google Ads campaign setup',                    cat: 'onboarding' },
-  { label: 'Monthly report',                               cat: 'monthly' },
-  { label: 'Social media content creation & posting',      cat: 'content' },
-  { label: 'Facebook ad — post creation & promotion',      cat: 'content' },
-  { label: 'Facebook ads management & review',             cat: 'monthly' },
-  { label: 'Google Business Profile updates',              cat: 'monthly' },
-  { label: 'Google Business Profile post',                 cat: 'content' },
-  { label: 'Google Business Profile reputation management', cat: 'monthly' },
-  { label: 'Consultation / client meeting',                cat: 'general' },
-  { label: 'Needs assessment',                             cat: 'onboarding' },
-  { label: 'Branding / logo design',                       cat: 'general' },
-  { label: 'Print / marketing design',                     cat: 'content' },
-  { label: 'Apparel design & order',                       cat: 'general' },
+  { label: 'Website updates',                              cat: 'build',      hrs: 1.5 },
+  { label: 'Web build',                                    cat: 'build',      hrs: 6 },
+  { label: 'Website integration (forms / analytics)',      cat: 'build',      hrs: 2 },
+  { label: 'App updates',                                  cat: 'general',    hrs: 1 },
+  { label: 'Google Ads optimization & changes',            cat: 'monthly',    hrs: 1 },
+  { label: 'Google Ads analysis',                          cat: 'monthly',    hrs: 1 },
+  { label: 'Google Ads campaign setup',                    cat: 'onboarding', hrs: 2 },
+  { label: 'Monthly report',                               cat: 'monthly',    hrs: 1 },
+  { label: 'Social media content creation & posting',      cat: 'content',    hrs: 1.5 },
+  { label: 'Facebook ad — post creation & promotion',      cat: 'content',    hrs: 1 },
+  { label: 'Facebook ads management & review',             cat: 'monthly',    hrs: 1 },
+  { label: 'Google Business Profile updates',              cat: 'monthly',    hrs: 0.5 },
+  { label: 'Google Business Profile post',                 cat: 'content',    hrs: 0.5 },
+  { label: 'Google Business Profile reputation management', cat: 'monthly',   hrs: 0.5 },
+  { label: 'Consultation / client meeting',                cat: 'general',    hrs: 1 },
+  { label: 'Needs assessment',                             cat: 'onboarding', hrs: 1 },
+  { label: 'Branding / logo design',                       cat: 'general',    hrs: 3 },
+  { label: 'Print / marketing design',                     cat: 'content',    hrs: 2 },
+  { label: 'Apparel design & order',                       cat: 'general',    hrs: 1.5 },
 ];
 
 // Recurrence intervals (renewals use the longer ones).
@@ -413,6 +415,54 @@ export function mileageRateFor(dateStr) {
 export const MILEAGE_RATE = mileageRateFor();
 export const TRIP_PURPOSES = ['Client meeting', 'Site visit', 'Sales call', 'Delivery / drop-off', 'Networking', 'Errand', 'Other'];
 export const MEETING_TYPES = ['In person', 'Phone', 'Video', 'On site'];
+
+// ---- Saved places for the two-tap trip quick-fill --------------------------
+// Pick a From and a To and the miles fill in instantly for known pairs (from
+// the distance matrix below), or fall back to a Mapbox lookup for the rest.
+// `client` matches a client business_name so picking a destination also tags
+// the trip to that client; `purpose` pre-selects a reason.
+export const TRIP_LOCATIONS = [
+  { key: 'home',       label: 'Home (Notasulga)',        address: '1346 Tallapoosa St, Notasulga, AL 36866' },
+  { key: 'montgomery', label: '52 Ripley St (Montgomery)', address: '52 Ripley Street, Montgomery, AL' },
+  { key: 'ao',         label: 'A&O / Cole (Notasulga)',  address: 'A&O Tree Service, Notasulga, AL 36866', client: 'A&O Tree Service', purpose: 'Client meeting' },
+  { key: 'wolfcreek',  label: "Wolf Creek / Russ",       address: '3914 County Road 54, Notasulga, AL 36866', client: 'Wolf Creek Farms', purpose: 'Client meeting' },
+  { key: 'beehive',    label: 'Beehive Baseball (Auburn)', address: 'Beehive, Auburn, AL', client: 'Beehive Baseball', purpose: 'Client meeting' },
+  { key: 'kemp',       label: 'Kemp & Sons (Opelika)',   address: '200 S 6th St, Opelika, AL 36801', purpose: 'Delivery / drop-off' },
+  { key: 'church',     label: 'Beulah Church (Dadeville)', address: '5891 Lovelady Road, Dadeville, AL 36853' },
+  { key: 'tallassee',  label: 'Tallassee',               address: 'Tallassee, AL' },
+  { key: 'reeltown',   label: 'Reeltown School',         address: 'Reeltown, AL' },
+  { key: 'trussville', label: 'Trussville / Marshall Wealth', address: 'Trussville, AL', client: 'Marshall Wealth', purpose: 'Sales call' },
+];
+// One-way driving miles between saved places (symmetric). Verified via Mapbox.
+// Pairs not listed fall back to a live Mapbox lookup on the two addresses.
+export const TRIP_DISTANCES = {
+  'home|montgomery': 46.1, 'home|ao': 4.8, 'home|wolfcreek': 4.5, 'home|beehive': 10.9,
+  'home|kemp': 31.6, 'home|church': 14.1, 'home|tallassee': 13.55, 'home|reeltown': 8.0,
+  'home|trussville': 145.7, 'ao|montgomery': 45.2, 'kemp|montgomery': 62.5,
+  'beehive|montgomery': 48.6, 'ao|wolfcreek': 4.0, 'beehive|kemp': 16.6, 'kemp|reeltown': 38.3,
+};
+// Look up a saved one-way distance regardless of direction.
+export function tripDistanceBetween(a, b) {
+  if (!a || !b || a === b) return a === b ? 0 : null;
+  const v = TRIP_DISTANCES[a + '|' + b] ?? TRIP_DISTANCES[b + '|' + a];
+  return v == null ? null : v;
+}
+
+// ---- Expense quick-fill chips ---------------------------------------------
+// Tap a chip to prefill vendor / category / amount. Recurring software is
+// pre-priced; field expenses leave the amount blank to type in.
+export const EXPENSE_PRESETS = [
+  { label: 'OpenAI',        vendor: 'OpenAI',           category: 'Software / SaaS',    amount: 50 },
+  { label: 'QuickBooks',    vendor: 'QuickBooks',       category: 'Software / SaaS',    amount: 50 },
+  { label: 'Supabase',      vendor: 'Supabase',         category: 'Software / SaaS',    amount: 55 },
+  { label: 'Google Workspace', vendor: 'Google Workspace', category: 'Software / SaaS', amount: null },
+  { label: 'Canva',         vendor: 'Canva',            category: 'Software / SaaS',    amount: null },
+  { label: 'Gas / fuel',    vendor: 'Gas',              category: 'Travel',             amount: null },
+  { label: 'Meal',          vendor: '',                 category: 'Meals',              amount: null },
+  { label: 'Print materials', vendor: 'Kemp & Sons',    category: 'Advertising',        amount: null },
+  { label: 'Domain / hosting', vendor: '',              category: 'Domains / Hosting',  amount: null },
+  { label: 'Equipment',     vendor: '',                 category: 'Equipment',          amount: null },
+];
 
 // ---- Expenses & invoicing --------------------------------------------------
 export const EXPENSE_CATEGORIES = ['Software / SaaS', 'Advertising', 'Subcontractor', 'Equipment', 'Office', 'Travel', 'Meals', 'Domains / Hosting', 'Fees', 'Other'];
