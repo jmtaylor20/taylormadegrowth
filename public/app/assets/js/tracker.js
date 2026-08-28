@@ -1,7 +1,7 @@
 // Tracker — mileage log (with IRS-rate deduction) + meeting log. One tab, two
 // views. Both can be tied to a client and filed newest-first.
 import { Trips, Meetings, Clients, Expenses, TimeEntries } from './db.js';
-import { MILEAGE_RATE, mileageRateFor, TRIP_PURPOSES, MEETING_TYPES, EXPENSE_CATEGORIES } from './config.js';
+import { MILEAGE_RATE, mileageRateFor, TRIP_PURPOSES, MEETING_TYPES, EXPENSE_CATEGORIES, TRIP_LOCATIONS, tripDistanceBetween, EXPENSE_PRESETS } from './config.js';
 import {
   el, clear, iconSvg, pageHeader, badge, fmtDate, fmtHours, relDue, daysUntil, money, todayISO, emptyState, primaryBtn,
   field, textInput, numberInput, textArea, selectInput, dateInput, readForm, hoursSelect,
@@ -214,6 +214,42 @@ export function openTripForm(existing = {}, onSaved, list) {
   const roundChk = el('input.checkbox', { type: 'checkbox', name: 'round_trip', checked: !!existing.round_trip });
   const status = el('span.field-hint');
 
+  // --- Two-tap quick-fill: pick a saved From + To and the miles fill in ------
+  const locOpts = [{ key: '', label: '—' }, ...TRIP_LOCATIONS.map((l) => ({ key: l.key, label: l.label }))];
+  const fromSel = selectInput('__from_loc', locOpts, isNew ? 'home' : '');
+  const toSel = selectInput('__to_loc', locOpts, '');
+  const qStatus = el('span.field-hint');
+  const locOf = (k) => TRIP_LOCATIONS.find((l) => l.key === k);
+  async function quickFill() {
+    const f = locOf(fromSel.value), t = locOf(toSel.value);
+    if (f) fromInput.value = f.address;
+    if (t) toInput.value = t.address;
+    if (!f || !t) { qStatus.textContent = ''; return; }
+    // Destination can tag the client and reason automatically.
+    if (t.client) { const c = (list || []).find((x) => x.business_name === t.client); const cs = node.querySelector('[name=client_id]'); if (c && cs) cs.value = c.id; }
+    if (t.purpose) { const ps = node.querySelector('[name=purpose]'); if (ps) ps.value = t.purpose; }
+    let oneWay = tripDistanceBetween(f.key, t.key);
+    if (oneWay == null && mapboxReady()) {
+      qStatus.textContent = 'Calculating…';
+      try { oneWay = await drivingMiles(f.address, t.address); } catch { qStatus.textContent = 'Couldn’t calculate — type the miles below'; return; }
+    }
+    if (oneWay == null) { qStatus.textContent = `${f.label} → ${t.label} — type the miles below`; return; }
+    const mi = roundChk.checked ? Math.round(oneWay * 2 * 10) / 10 : oneWay;
+    milesInput.value = mi;
+    qStatus.textContent = `${f.label} → ${t.label}: ${mi} mi${roundChk.checked ? ' round trip' : ''}`;
+  }
+  fromSel.onchange = quickFill; toSel.onchange = quickFill;
+  roundChk.addEventListener('change', quickFill);
+
+  const quickBlock = el('div.card.card-pad', {}, [
+    el('div.form-grid.cols-2', {}, [field('From', fromSel), field('To', toSel)]),
+    el('div.field-row.mt-8', { style: 'align-items:center;gap:12px;flex-wrap:wrap' }, [
+      el('label.field-row', { style: 'gap:6px' }, [roundChk, el('span', { text: 'Round trip' })]),
+      qStatus,
+    ]),
+  ]);
+
+  // Editable addresses + a Mapbox recompute for anything not in the quick list.
   async function calc() {
     const from = fromInput.value.trim(), to = toInput.value.trim();
     if (!from || !to) { status.textContent = 'Enter both addresses first'; return; }
@@ -226,22 +262,17 @@ export function openTripForm(existing = {}, onSaved, list) {
       status.textContent = roundChk.checked ? `${label} → ${mi} mi round trip` : `${mi} mi`;
     } catch (e) { status.textContent = e.message || 'Could not calculate'; }
   }
-
-  const calcBlock = mapboxReady()
-    ? el('div', {}, [
-        field('From', fromInput),
-        field('To', toInput),
-        el('div.field-row.mt-8', { style: 'align-items:center;gap:12px' }, [
-          el('label.field-row', { style: 'gap:6px' }, [roundChk, el('span', { text: 'Round trip' })]),
+  const calcBlock = el('details.mt-8', {}, [
+    el('summary.field-hint', { text: 'Custom addresses' }),
+    field('From', fromInput),
+    field('To', toInput),
+    mapboxReady()
+      ? el('div.field-row.mt-8', { style: 'align-items:center;gap:12px' }, [
           el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('location', 15) + ' Calculate miles', onclick: calc }),
-        ]),
-        el('div.mt-8', {}, [status]),
-      ])
-    : el('div', {}, [
-        field('From', fromInput),
-        field('To', toInput),
-        el('div.field-hint.mt-8', { text: 'Add a Mapbox token in config to auto-calculate miles from these addresses.' }),
-      ]);
+          status,
+        ])
+      : el('div.field-hint.mt-8', { text: 'Add a Mapbox token in config to auto-calculate miles from addresses.' }),
+  ]);
 
   const node = el('div.form', {}, [
     el('div.form-grid.cols-2', {}, [
@@ -250,12 +281,14 @@ export function openTripForm(existing = {}, onSaved, list) {
       field('Purpose', selectInput('purpose', TRIP_PURPOSES, existing.purpose || TRIP_PURPOSES[0])),
       field('Rate ($/mi)', numberInput('rate', existing.rate ?? mileageRateFor(existing.trip_date), { step: '0.005' })),
     ]),
-    calcBlock,
+    quickBlock,
     field('Miles', milesInput),
+    calcBlock,
     field('Notes', textInput('notes', existing.notes, { placeholder: 'Anything worth noting' })),
   ]);
   const collect = () => {
     const v = readForm(node);
+    delete v.__from_loc; delete v.__to_loc;   // quick-fill helpers, not columns
     v.miles = Number(v.miles || 0);
     v.rate = v.rate === '' || v.rate == null ? mileageRateFor(v.trip_date) : Number(v.rate);
     if (!v.client_id) v.client_id = null;
@@ -322,7 +355,18 @@ export function openExpenseForm(existing = {}, onSaved, list) {
     try { receipt.value = await photoToDataUrl(f); status.textContent = 'Receipt attached ✓'; }
     catch (err) { status.textContent = 'Could not read image'; }
   } });
+  const presetChips = el('div', { style: 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px' },
+    EXPENSE_PRESETS.map((p) => el('button.btn.btn-ghost.btn-sm', {
+      type: 'button', text: p.label + (p.amount ? ` · $${p.amount}` : ''),
+      onclick: () => {
+        const setv = (name, val) => { const e = node.querySelector(`[name=${name}]`); if (e && val != null && val !== '') e.value = val; };
+        setv('vendor', p.vendor); setv('category', p.category);
+        if (p.amount != null) setv('amount', p.amount);
+        const amt = node.querySelector('[name=amount]'); if (amt && p.amount == null) amt.focus();
+      },
+    })));
   const node = el('div.form', {}, [
+    isNew ? el('div', {}, [el('div.field-hint', { text: 'Quick fill', style: 'margin-bottom:4px' }), presetChips]) : null,
     el('div.form-grid.cols-2', {}, [
       field('Amount', numberInput('amount', existing.amount ?? '', { step: '0.01', placeholder: '0.00' })),
       field('Date', dateInput('expense_date', existing.expense_date || todayISO())),

@@ -61,7 +61,7 @@ export async function renderTasks(root) {
   root.append(pageHeader('Tasks', 'Sorted by due date — soonest first', el('div.pill-row', {}, [
     el('button.btn.btn-ghost.btn-sm', { html: 'Sync Calendar', title: 'Subscribe to your tasks as a live iOS/Google calendar', onclick: () => subscribeCalendar() }),
     el('button.btn.btn-ghost.btn-sm', { html: `${iconSvg('renew', 15)} Renewal`, onclick: async () => openTaskForm({ category: 'renewal', recur_interval: 'annual' }, refreshAfter, null, await clients()) }),
-    primaryBtn('Task', async () => openTaskForm({}, refreshAfter, null, await clients()), 'plus'),
+    primaryBtn('Create', async () => quickLogSheet({}, await clients(), refreshAfter), 'plus'),
   ])));
 
   // Subscribe to the live task feed. webcal:// is handled by iOS Calendar
@@ -95,8 +95,16 @@ export async function renderTasks(root) {
   const wrap = el('div');
   root.append(wrap);
 
-  let all = [], list = [];
-  async function load() { [all, list] = await Promise.all([tasksFor(null), clients()]); }
+  let all = [], list = [], minsByTask = {};
+  async function load() {
+    let times;
+    [all, list, times] = await Promise.all([tasksFor(null), clients(), TimeEntries.list()]);
+    // True per-task hours: sum completed time entries by task_id (excludes
+    // running timers with null minutes). This is what shows on each card, so
+    // the number on a task always matches that task's own logged time.
+    minsByTask = {};
+    (times || []).forEach((e) => { if (e.task_id && e.minutes != null) minsByTask[e.task_id] = (minsByTask[e.task_id] || 0) + Number(e.minutes); });
+  }
 
   function refresh() {
     clear(wrap);
@@ -144,6 +152,7 @@ export async function renderTasks(root) {
         el('div.row-sub', {}, [
           el('span.muted', { text: client ? client.business_name : 'Internal' }),
           t.due_date ? el('span', { class: due(t.due_date, done), text: relDue(t.due_date) + (t.due_time ? ' · ' + fmtTime(t.due_time) : '') }) : el('span.muted', { text: 'No date' }),
+          minsByTask[t.id] ? badge(fmtHours(minsByTask[t.id]) + ' logged', 'gray') : null,
         ]),
       ]),
       done ? null : hoursQuickSelect(t, refreshAfter),
@@ -183,11 +192,12 @@ export async function openTaskForm(existing = {}, onSaved, client, clientList) {
   const otherInput = textInput('title_other', isPreset ? '' : existing.title, { placeholder: 'Describe the task' });
   const otherField = field('Custom task', otherInput);
   const catSel = selectInput('category', TASK_CATEGORY, existing.category || 'general');
+  const hoursSel = hoursSelect('hours', '');
   const syncOther = () => { otherField.style.display = presetSel.value === '__other__' ? '' : 'none'; };
   presetSel.addEventListener('change', () => {
     syncOther();
     const p = TASK_PRESETS.find((x) => x.label === presetSel.value);
-    if (p) catSel.value = p.cat;
+    if (p) { catSel.value = p.cat; if (p.hrs && isNew) hoursSel.value = String(p.hrs); }
     if (presetSel.value === '__other__') otherInput.focus();
   });
 
@@ -204,7 +214,7 @@ export async function openTaskForm(existing = {}, onSaved, client, clientList) {
     ]),
     field('Details (optional)', textArea('detail', existing.detail, { rows: 2 })),
     el('div.form-grid.cols-2', {}, [
-      field('Hours worked (optional)', hoursSelect('hours', '')),
+      field('Hours worked (optional)', hoursSel),
       el('label.field-row', { style: 'align-items:center;gap:8px;margin-top:24px' }, [checkbox('__done', existing.status === 'done'), el('span', { text: 'Mark complete' })]),
     ]),
     // Mileage / expense (need addresses / amounts, so they open their own form).
