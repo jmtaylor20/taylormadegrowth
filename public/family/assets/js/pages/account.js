@@ -9,7 +9,7 @@ import * as store from '../store.js';
 import {
   el, money, stat, section, sheet, field, input, select, longDate, shortDate, today, ord,
 } from '../ui.js';
-import { leftover, recurringFor, endedFor, forAccount, incomeDays, isBusiness } from '../calc.js';
+import { leftover, recurringFor, endedFor, forAccount, incomeDays, isBusiness, frontOfMonth } from '../calc.js';
 
 const CATEGORIES = ['Housing', 'Debt', 'Insurance', 'Utilities', 'Kids', 'Transport', 'Subscriptions', 'Health', 'Business', 'Other'];
 
@@ -33,6 +33,30 @@ export default function account(state, id) {
     stat('Money in', money(sums.income), 'every month', 'pos'),
     stat('Bills out', money(out), `${recurringFor(state, id).length} charges`, 'neg'),
   ));
+
+  // ---- What the 1st needs --------------------------------------------------
+  //
+  // Paid twice a month against bills that cluster at the front: the stretch can
+  // be comfortably in the black over its whole span and still run dry in the
+  // middle of it, so the number that matters is the low point.
+
+  const f = frontOfMonth(state, id);
+  if (f) {
+    wrap.append(el('div.card', { style: { marginTop: '12px' } },
+      el('div', { style: { display: 'flex', alignItems: 'baseline', gap: '10px' } },
+        el('div.tiny', { text: 'Needs to be in here on the 1st' }),
+        el('div.num', {
+          style: { marginLeft: 'auto', fontWeight: '680', fontSize: '20px' },
+          class: f.carry > 0 ? 'warn' : 'pos',
+          text: money(f.need),
+        }),
+      ),
+      el('div.tiny', { style: { marginTop: '6px' } },
+        f.carry > 0
+          ? `Tightest on the ${ord(f.lowDay)}. The ${money(f.opensWith)} landing at month end leaves ${money(f.carry)} to carry over from the month before.`
+          : `Tightest on the ${ord(f.lowDay)}, and the ${money(f.opensWith)} landing at month end covers it.`),
+    ));
+  }
 
   // ---- Balance and the two buttons that change it --------------------------
 
