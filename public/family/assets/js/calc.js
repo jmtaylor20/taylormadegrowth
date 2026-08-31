@@ -1078,3 +1078,44 @@ export function reconcileAccuracy(state) {
     daysSince: daysBetween(all.at(-1).date, today()),
   };
 }
+
+// ---- The front of the month ------------------------------------------------
+//
+// Being paid twice a month while the bills cluster at the front is a timing
+// problem, not a budget one: the stretch can be comfortably in the black across
+// its whole span and still run dry in the middle of it. So what matters is the
+// low point, not the closing figure — walk from the 1st to the next payday and
+// find the worst moment.
+
+export function frontOfMonth(state, accountId) {
+  const days = payDaysFor(state, accountId);
+  if (!days.length) return null;
+
+  const incomes = forAccount(state.income, accountId).filter((i) => !i.excludeFromPlan);
+  const bills = recurringFor(state, accountId);
+
+  // The paycheck that lands at the end of the previous month is what the 1st
+  // opens with; the next payday is where this stretch ends.
+  const opensWith = incomes
+    .filter((i) => incomeDays(i).includes(days.at(-1)))
+    .reduce((s, i) => s + i.amount, 0);
+  // The stretch runs from the 1st until the next payday lands.
+  const until = days[0];
+
+  let balance = 0;
+  let low = { day: 1, balance: 0 };
+  for (let d = 1; d <= until; d += 1) {
+    for (const i of incomes) if (incomeDays(i).includes(d) && d !== days.at(-1)) balance += i.amount;
+    for (const b of bills) if (b.day === d) balance -= b.amount;
+    if (balance < low.balance) low = { day: d, balance };
+  }
+
+  const need = Math.abs(low.balance);
+  return {
+    need,               // what has to be sitting there on the 1st
+    lowDay: low.day,    // the day it is tightest
+    until,              // the payday that ends the stretch
+    opensWith,          // the previous month's last paycheck
+    carry: need - opensWith, // what has to survive from the month before
+  };
+}
