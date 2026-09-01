@@ -1,0 +1,397 @@
+---
+import Base from '../layouts/Base.astro';
+import { Image } from 'astro:assets';
+
+import rhinoLogo from '../assets/clients/rhino-landworks.png';
+import millersLogo from '../assets/clients/millers-backhoe.png';
+import fordLogo from '../assets/clients/ford-paving.png';
+import aoLogo from '../assets/clients/ao-tree-service.png';
+
+const clientLogos = [
+  { src: rhinoLogo, name: 'Rhino Landworks' },
+  { src: millersLogo, name: "Miller's Backhoe Service" },
+  { src: fordLogo, name: 'Ford Paving & Sealing' },
+  { src: aoLogo, name: 'A&O Tree Service' },
+];
+
+const services = [
+  {
+    n: '01',
+    title: 'Websites',
+    body: 'A fast, mobile-first site that loads on a phone in the truck and turns a search into a phone call. Built custom, not dropped into a template.',
+    tags: ['Custom design', 'Mobile first', 'Lead forms'],
+  },
+  {
+    n: '02',
+    title: 'Google Business Profile',
+    body: 'The map listing people actually call from. Categories, service areas, photos, weekly posts, and a review system that keeps new five-star reviews coming in.',
+    tags: ['Map pack', 'Reviews', 'Local SEO'],
+  },
+  {
+    n: '03',
+    title: 'Google Ads',
+    body: 'Show up at the top the day someone searches for what you do. Built and managed with real conversion tracking, so you know what a lead actually costs.',
+    tags: ['Search ads', 'Call tracking', 'Reporting'],
+  },
+  {
+    n: '04',
+    title: 'Branding',
+    body: 'Logo, colors, and the pieces customers see in person: truck lettering, yard signs, business cards, estimate sheets, and review cards that all match.',
+    tags: ['Logo & identity', 'Print', 'Signage'],
+  },
+];
+
+const scored = [
+  ['Website', 'Loads fast on a phone, says what you do, and makes calling easy'],
+  ['Google Business Profile', 'Complete, categorized right, and posting regularly'],
+  ['Reviews', 'Your count and recency next to your three closest competitors'],
+  ['Google Ads', 'Whether anyone is bidding on your name and your services'],
+  ['Branding', 'Whether your truck, cards, and website look like the same company'],
+  ['Follow-up', 'What happens after someone fills out a form or calls once'],
+];
+---
+
+<Base
+  title="For Golfers | Websites, Branding & Google Growth | Taylormade Brands"
+  description="You scanned the scorecard. Taylormade Brands builds websites, branding, Google Business Profiles, and Google Ads for local businesses around Auburn, Opelika, and East Alabama."
+>
+  <main class="golf">
+    <!-- HERO -->
+    <section class="ink page-hero grid-bg glow-gold">
+      <div class="container wide hero-split">
+        <div>
+          <p class="label">Scanned from the scorecard</p>
+          <h1 class="display">Nice scan. That is marketing doing its job.</h1>
+          <p class="lead muted">
+            A code on a scorecard got your attention between shots. That is the whole idea behind good
+            marketing: be there at the exact moment someone is ready to look. I build the websites,
+            brands, and Google presence that do the same thing for local businesses around Auburn,
+            Opelika, and East Alabama.
+          </p>
+          <div class="btn-row mt-m">
+            <a href="#scorecard" class="btn btn-primary">Get your free business scorecard <span class="arrow">→</span></a>
+            <a href="tel:+13343916641" class="btn btn-ghost">Call or text 334-391-6641</a>
+          </div>
+          <p class="hero-note">No cost, no obligation. Finish your round first.</p>
+        </div>
+
+        <!-- Scorecard motif -->
+        <div class="card scorecard reveal" aria-hidden="true">
+          <div class="sc-head">
+            <span>Business scorecard</span>
+            <span class="sc-par">Par</span>
+            <span class="sc-you">You</span>
+          </div>
+          <div class="sc-rows">
+            <div class="sc-row"><span class="sc-hole">1</span><span class="sc-name">Website</span><span class="sc-par">4</span><span class="sc-you bad">7</span></div>
+            <div class="sc-row"><span class="sc-hole">2</span><span class="sc-name">Google profile</span><span class="sc-par">4</span><span class="sc-you bad">6</span></div>
+            <div class="sc-row"><span class="sc-hole">3</span><span class="sc-name">Reviews</span><span class="sc-par">3</span><span class="sc-you ok">3</span></div>
+            <div class="sc-row"><span class="sc-hole">4</span><span class="sc-name">Google Ads</span><span class="sc-par">5</span><span class="sc-you bad">8</span></div>
+            <div class="sc-row"><span class="sc-hole">5</span><span class="sc-name">Branding</span><span class="sc-par">4</span><span class="sc-you ok">4</span></div>
+          </div>
+          <div class="sc-total">
+            <span>Most local businesses</span>
+            <b class="gold">+8 over</b>
+          </div>
+          <p class="sc-foot">Every stroke here is a customer who called somebody else.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TRUST STRIP -->
+    <section class="ink-2 section tight">
+      <div class="container wide">
+        <p class="label plain center trust-title">Built for owner-led businesses across Alabama</p>
+        <div class="marquee mt-m">
+          <div class="marquee-track">
+            {[...clientLogos, ...clientLogos].map((c) => (
+              <span class="trust-plate"><Image src={c.src} alt={`${c.name} logo`} width={220} class="trust-logo" loading="lazy" /></span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- WHAT I DO -->
+    <section class="paper section" id="what">
+      <div class="container wide">
+        <div class="head">
+          <p class="label">What I build</p>
+          <h2>Four things that decide whether a local business gets the call.</h2>
+          <p>
+            Most owners are not losing work because of the work. They are losing it because the customer
+            searched, found somebody easier to trust, and never called. These four pieces fix that.
+          </p>
+        </div>
+        <div class="grid-4 svc-grid">
+          {services.map((s) => (
+            <article class="card num-card reveal">
+              <span class="index">{s.n}</span>
+              <h3>{s.title}</h3>
+              <p class="muted mt-s">{s.body}</p>
+              <div class="tags mt-m">{s.tags.map((t) => <span class="tag">{t}</span>)}</div>
+            </article>
+          ))}
+        </div>
+        <p class="muted mt-l center">
+          Need the bigger picture? <a href="/services.html" class="text-link">See every capability <span class="arrow">→</span></a>
+        </p>
+      </div>
+    </section>
+
+    <!-- THE OFFER -->
+    <section class="ink section" id="scorecard">
+      <div class="container wide split lean">
+        <div>
+          <p class="label">Free for golfers</p>
+          <h2>I will score your business the way you score a round.</h2>
+          <p class="lead muted mt-s">
+            Give me your business name and I will look at it the way a customer does, then send back a
+            short scorecard: what is working, what is costing you calls, and the one thing I would fix
+            first. It is free, it takes me a couple of days, and there is no pitch deck attached.
+          </p>
+          <ul class="feature-list mt-m">
+            {scored.map(([k, v]) => <li><strong>{k}.</strong> {v}</li>)}
+          </ul>
+          <div class="btn-row mt-l">
+            <a href="#request" class="btn btn-primary">Request my scorecard <span class="arrow">→</span></a>
+            <a href="tel:+13343916641" class="btn btn-ghost">Rather talk? 334-391-6641</a>
+          </div>
+        </div>
+
+        <div class="mock reveal">
+          <div class="mock-head"><span class="rdot active"></span> scorecard · sample findings</div>
+          <div class="mock-rows">
+            <div class="mock-row"><span>Mobile load time</span><b>6.4s</b></div>
+            <div class="mock-row"><span>Map pack visibility</span><b>Page 2</b></div>
+            <div class="mock-row"><span>Reviews vs top competitor</span><b>41 to 116</b></div>
+            <div class="mock-row"><span>Competitors bidding on you</span><b class="gold">3</b></div>
+            <div class="mock-row"><span>Missed form follow-up</span><b>No system</b></div>
+          </div>
+          <p class="mock-note">A sample of what a real scorecard turns up. Yours will look different.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROOF -->
+    <section class="paper section">
+      <div class="container wide">
+        <div class="head center mx-auto">
+          <p class="label center mx-auto">What it adds up to</p>
+          <h2>Local businesses, better rounds.</h2>
+        </div>
+        <div class="grid-3">
+          <div class="card center rstat reveal"><span class="stat-num">$300K+</span><p class="stat-label">in new business landed by local clients after launching their growth systems</p></div>
+          <div class="card center rstat reveal"><span class="stat-num">Booked out</span><p class="stat-label">demand strong enough that clients have hired new employees to keep up</p></div>
+          <div class="card center rstat reveal"><span class="stat-num">Search-led</span><p class="stat-label">for some clients, nearly every new customer now comes straight from Google</p></div>
+        </div>
+        <p class="results-quote center mx-auto">
+          “One client called just to say thank you. Another told me their office is tired of answering the phone.”
+        </p>
+        <p class="disclaimer center mx-auto">
+          Results reflect outcomes reported by clients and vary by business. Individual results are not guaranteed.
+        </p>
+      </div>
+    </section>
+
+    <!-- FORM -->
+    <section class="paper-2 section" id="request">
+      <div class="container wide split">
+        <div>
+          <p class="label">Send it over</p>
+          <h2>Two minutes now, a scorecard in a couple of days.</h2>
+          <p class="lead muted mt-s">
+            Just the basics. I will do the digging on my end and follow up with what I find. If you would
+            rather skip the form, call or text 334-391-6641 and say you scanned the scorecard.
+          </p>
+          <div class="card contact-info mt-l">
+            <h4>Direct line</h4>
+            <p class="mt-s"><span class="ci-label">Phone</span><a href="tel:+13343916641">334-391-6641</a></p>
+            <p><span class="ci-label">Email</span><a href="mailto:josh@taylormadegrowth.com">josh@taylormadegrowth.com</a></p>
+            <p><span class="ci-label">Based in</span><span>Notasulga, Alabama. Serving Auburn, Opelika, and East Alabama.</span></p>
+          </div>
+        </div>
+
+        <form name="golf-scorecard" method="POST" action="/thank-you.html" data-netlify="true" netlify-honeypot="bot-field" class="card field-form golf-form">
+          <input type="hidden" name="form-name" value="golf-scorecard" />
+          <input type="hidden" name="source" value="Golf scorecard QR code" />
+          <p class="hidden"><label>Don't fill this out: <input name="bot-field" /></label></p>
+
+          <label>Name<input type="text" name="name" required /></label>
+          <label>Business name<input type="text" name="business-name" required /></label>
+          <label>Phone<input type="tel" name="phone" required /></label>
+          <label>Email<input type="email" name="email" /></label>
+          <label>Which course were you playing?<input type="text" name="course" placeholder="Course name" /></label>
+          <label>What would you fix first?
+            <select name="priority">
+              <option value="">Select one</option>
+              <option>My website</option>
+              <option>Google Business Profile and reviews</option>
+              <option>Google Ads</option>
+              <option>Logo and branding</option>
+              <option>All of it, honestly</option>
+              <option>Not sure yet, just send the scorecard</option>
+            </select>
+          </label>
+          <label>Anything I should know? <span class="opt">(optional)</span><textarea name="message" rows="3"></textarea></label>
+          <button type="submit" class="btn btn-primary form-submit">Send my scorecard request <span class="arrow">→</span></button>
+          <p class="form-note">I read every one of these myself. No mailing list, no automated drip.</p>
+        </form>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="ink section">
+      <div class="container narrow">
+        <div class="head">
+          <p class="label">Straight answers</p>
+          <h2>What owners ask on the cart ride in.</h2>
+        </div>
+        <div class="faq">
+          <details>
+            <summary>What does a website actually cost?</summary>
+            <p>Setup packages start at $2,000 for a five-page launch site and run to $5,000 for a full build with advanced features. Most owners land in the middle at $3,000. Ongoing care, which covers hosting, updates, Google management, and reporting, starts at $250 a month. Everything is scoped and priced before anything starts. <a href="/investment.html" class="text-link">See the packages <span class="arrow">→</span></a></p>
+          </details>
+          <details>
+            <summary>Do you work with businesses like mine?</summary>
+            <p>Most of my clients are owner-led service businesses: tree service, excavation and septic, land clearing, paving, farms, and contractors, plus a few teams and organizations. If a customer finds you by searching, this work fits.</p>
+          </details>
+          <details>
+            <summary>Am I locked into a long contract?</summary>
+            <p>The build is a one-time project with a fixed scope and price. Ongoing care plans are separate and optional, and you know exactly what is included before you start.</p>
+          </details>
+          <details>
+            <summary>Who actually does the work?</summary>
+            <p>I do. You are not handed to an account manager. When you call the number on this page, you get me, and I am the one building your site, running your Google profile, and writing the reports.</p>
+          </details>
+          <details>
+            <summary>I already have a website. Is it worth a look?</summary>
+            <p>Yes, and often more so. Plenty of businesses have a site that looks fine and still loses calls because it is slow on a phone, buried in search, or missing a clear way to get in touch. That is exactly what the free scorecard is for.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="ink-2 section">
+      <div class="container narrow center">
+        <p class="label center mx-auto">Back at the clubhouse</p>
+        <h2 class="mt-s">Play the round. Then let's fix the scorecard.</h2>
+        <p class="lead muted mt-s mx-auto" style="max-width:54ch;">
+          Free review, honest answer, no pressure. Worst case you find out you are in good shape.
+        </p>
+        <div class="btn-row mt-m" style="justify-content:center;">
+          <a href="#request" class="btn btn-primary">Get my free scorecard <span class="arrow">→</span></a>
+          <a href="tel:+13343916641" class="btn btn-ghost">Call 334-391-6641</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Sticky mobile action bar -->
+  <div class="golf-bar" id="golf-bar">
+    <a href="tel:+13343916641" class="btn btn-ghost">Call</a>
+    <a href="#request" class="btn btn-primary">Free scorecard</a>
+  </div>
+
+  <script>
+    // Get the sticky bar out of the way once the form itself is on screen.
+    const bar = document.getElementById('golf-bar');
+    const form = document.getElementById('request');
+    if (bar && form && 'IntersectionObserver' in window) {
+      const io = new IntersectionObserver(
+        (entries) => entries.forEach((e) => bar.classList.toggle('hide', e.isIntersecting)),
+        { threshold: 0.12 }
+      );
+      io.observe(form);
+    }
+  </script>
+
+  <style>
+    /* Hero */
+    .golf .page-hero .hero-split { align-items: center; }
+    .hero-note { font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.08em; color: var(--d-faint); margin-top: 18px; }
+
+    /* Scorecard motif */
+    .scorecard { padding: 24px 26px; }
+    .sc-head, .sc-row { display: grid; grid-template-columns: 26px 1fr 42px 42px; align-items: center; gap: 8px; }
+    .sc-head { grid-template-columns: 1fr 42px 42px; font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--d-faint); padding-bottom: 12px; border-bottom: 1px solid var(--line-d-2); }
+    .sc-head .sc-par, .sc-head .sc-you { text-align: center; }
+    .sc-row { padding: 13px 0; border-bottom: 1px solid var(--line-d); font-size: 0.95rem; }
+    .sc-hole { font-family: var(--font-mono); font-size: 0.72rem; color: var(--d-faint); }
+    .sc-name { color: var(--d-text); }
+    .sc-row .sc-par, .sc-row .sc-you { text-align: center; font-family: var(--font-mono); font-size: 0.9rem; color: var(--d-muted); }
+    .sc-row .sc-you { border: 1px solid var(--line-d-2); border-radius: 6px; padding: 3px 0; }
+    .sc-you.bad { color: var(--gold-soft); border-color: var(--gold-deep); }
+    .sc-you.ok { color: var(--growth); border-color: rgba(87,192,138,.45); }
+    .sc-total { display: flex; justify-content: space-between; align-items: baseline; padding-top: 16px; font-size: 0.95rem; color: var(--d-muted); }
+    .sc-total b { font-family: var(--font-display); font-weight: 480; font-size: 1.5rem; }
+    .sc-foot { font-size: 0.82rem; color: var(--d-faint); margin-top: 12px; border-top: 1px solid var(--line-d); padding-top: 12px; }
+
+    /* Trust strip */
+    .trust-title { justify-content: center; color: var(--d-faint); }
+    .trust-plate { display: flex; align-items: center; justify-content: center; height: 74px; opacity: 0.75; transition: opacity .25s var(--ease); }
+    .trust-plate:hover { opacity: 1; }
+    .trust-plate :global(.trust-logo) { height: 100%; width: auto; object-fit: contain; }
+
+    /* Services */
+    .svc-grid .num-card h3 { margin-top: 4px; }
+    .svc-grid .num-card p { font-size: 0.97rem; }
+
+    /* Offer */
+    .rdot { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--line-d-2); flex: none; }
+    .rdot.active { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 0 4px rgba(201,162,74,.18); }
+    .mock-note { font-size: 0.8rem; color: var(--d-faint); margin-top: 16px; border-top: 1px solid var(--line-d); padding-top: 14px; }
+
+    /* Proof */
+    .rstat { display: flex; flex-direction: column; justify-content: center; padding: 34px 26px; }
+    .rstat .stat-label { max-width: 30ch; margin-inline: auto; }
+    .results-quote { font-family: var(--font-display); font-size: clamp(1.15rem, 2vw, 1.5rem); line-height: 1.4; max-width: 46ch; margin-top: 44px; }
+    .disclaimer { margin-top: 20px; }
+
+    /* Form */
+    .golf-form { display: grid; gap: 4px; }
+    .golf-form .opt { color: var(--l-faint); font-weight: 400; }
+    .form-submit { margin-top: 12px; width: 100%; }
+    .form-note { font-size: 0.82rem; color: var(--l-faint); margin-top: 12px; text-align: center; }
+    .contact-info h4 { font-size: 1.1rem; }
+    .contact-info p { display: flex; flex-direction: column; gap: 2px; margin-bottom: 14px; }
+    .contact-info p:last-child { margin-bottom: 0; }
+    .ci-label { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--l-faint); }
+    .contact-info a { color: var(--gold-deep); font-weight: 600; }
+
+    /* Sticky mobile bar */
+    .golf-bar { display: none; }
+
+    @media (max-width: 1080px) {
+      .svc-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 900px) {
+      .split, .split.lean, .hero-split { grid-template-columns: 1fr; }
+      .grid-3 { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      .svc-grid { grid-template-columns: 1fr; }
+      .golf-bar {
+        display: grid;
+        grid-template-columns: 1fr 1.4fr;
+        gap: 10px;
+        position: fixed;
+        left: 0; right: 0; bottom: 0;
+        z-index: 180;
+        padding: 12px var(--gutter) calc(12px + env(safe-area-inset-bottom));
+        background: rgba(11,14,20,.92);
+        backdrop-filter: saturate(140%) blur(14px);
+        -webkit-backdrop-filter: saturate(140%) blur(14px);
+        border-top: 1px solid var(--line-d);
+      }
+      .golf-bar .btn { min-height: 48px; padding: 0 14px; font-size: 0.92rem; width: 100%; }
+      .golf-bar.hide { transform: translateY(120%); }
+      .golf-bar { transition: transform .3s var(--ease); }
+      .golf-bar .btn-ghost { background: rgba(255,255,255,.04); }
+      .site-footer { padding-bottom: 108px; }
+    }
+  </style>
+</Base>
