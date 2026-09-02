@@ -14,6 +14,18 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
+# Scan-only landing page for the printed golf scorecard QR code. It should be
+# reachable by anyone who scans the code and by nobody who searches.
+[[headers]]
+  for = "/golf.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, follow"
+
+[[headers]]
+  for = "/golf"
+  [headers.values]
+    X-Robots-Tag = "noindex, follow"
+
 # Private household finance app. Keep it out of search engines entirely, and
 # never let a cache hold the encrypted vault — the browser's own copy wins
 # after first unlock.
