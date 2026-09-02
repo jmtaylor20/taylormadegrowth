@@ -10,7 +10,13 @@ export default defineConfig({
   build: {
     format: 'file',
   },
-  integrations: [sitemap()],
+  integrations: [
+    sitemap({
+      // /golf is a scan-only landing page for the printed scorecard QR code.
+      // Keep it out of the sitemap so it is never submitted for indexing.
+      filter: (page) => !page.includes('/golf'),
+    }),
+  ],
   // Astro's default image service (Sharp) optimizes every <Image>/getImage()
   // asset at build time — no extra config needed.
 });
