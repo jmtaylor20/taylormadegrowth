@@ -30,7 +30,7 @@ export const golfCourses: GolfCourse[] = [
     slug: 'aroostook',
     name: 'Aroostook Golf Course',
     short: 'Aroostook',
-    region: 'across Central and East Alabama',
+    region: 'around Montgomery, Prattville, and Central Alabama',
   },
   {
     slug: 'sylacauga',
