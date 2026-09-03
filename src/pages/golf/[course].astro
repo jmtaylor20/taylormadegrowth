@@ -1,0 +1,27 @@
+---
+import Base from '../../layouts/Base.astro';
+import GolfLanding from '../../components/GolfLanding.astro';
+import { golfCourses } from '../../data/golf-courses';
+
+// One page per course, so every scorecard QR code gets its own URL and its
+// own numbers. Add a course in src/data/golf-courses.ts to add a page here.
+export function getStaticPaths() {
+  return golfCourses.map((course) => ({
+    params: { course: course.slug },
+    props: { course },
+  }));
+}
+
+const { course } = Astro.props;
+---
+
+<Base
+  title={`${course.short} Golfers | Websites, Branding & Google Growth | Taylormade Brands`}
+  description={`You scanned the scorecard at ${course.name}. Taylormade Brands builds websites, branding, Google Business Profiles, and Google Ads for local businesses ${course.region}.`}
+>
+  <!-- Scan-only page: reachable by the scorecard QR code, never from search. -->
+  <meta slot="head" name="robots" content="noindex, follow" />
+  <meta slot="head" name="googlebot" content="noindex, follow" />
+
+  <GolfLanding course={course} />
+</Base>

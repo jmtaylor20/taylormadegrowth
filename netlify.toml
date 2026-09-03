@@ -26,6 +26,11 @@
   [headers.values]
     X-Robots-Tag = "noindex, follow"
 
+[[headers]]
+  for = "/golf/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, follow"
+
 # Private household finance app. Keep it out of search engines entirely, and
 # never let a cache hold the encrypted vault — the browser's own copy wins
 # after first unlock.
