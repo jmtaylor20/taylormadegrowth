@@ -1,5 +1,5 @@
 /* =========================================================================
-   TAYLORMADE BRANDS — Growth Partner design system
+   TAYLORMADE BRANDS: Growth Partner design system
    Full reinvention: ink-first, editorial serif + technical mono, refined gold.
    ========================================================================= */
 
@@ -12,7 +12,7 @@
   --paper-2:    #fbfaf6;   /* light card */
   --white:      #ffffff;
 
-  /* Brand accent — refined gold */
+  /* Brand accent: refined gold */
   --gold:       #c9a24a;
   --gold-soft:  #e2c77c;
   --gold-deep:  #a5822f;
@@ -481,7 +481,7 @@ p { font-size: 1.02rem; }
 .faq summary { cursor: pointer; list-style: none; padding: 22px 40px 22px 0; font-family: var(--font-display); font-size: 1.2rem; position: relative; }
 .faq summary::-webkit-details-marker { display: none; }
 .faq summary::after { content: "+"; position: absolute; right: 4px; top: 50%; transform: translateY(-50%); font-family: var(--font-mono); color: var(--gold); font-size: 1.4rem; transition: transform .2s var(--ease); }
-.faq details[open] summary::after { content: "–"; }
+.faq details[open] summary::after { content: "-"; }
 .faq details p { padding: 0 40px 24px 0; }
 .paper .faq details p, .paper-2 .faq details p { color: var(--l-muted); }
 .ink .faq details p, .ink-2 .faq details p { color: var(--d-muted); }
