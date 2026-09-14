@@ -1,0 +1,38 @@
+---
+import Base from '../layouts/Base.astro';
+import { Image } from 'astro:assets';
+import logo from '../assets/TMB_Horizontal_White_Logo.png';
+import { analytics } from '../config/analytics';
+
+const conv = analytics.conversions.auditForm;
+---
+
+<Base title="Thank You | Taylormade Brands" chrome={false}>
+  <main class="ink thanks grid-bg glow-gold">
+    <div class="container narrow center thanks-inner">
+      <Image src={logo} alt="Taylormade Brands" width={300} class="thanks-logo" />
+      <p class="label center mx-auto">Audit request received</p>
+      <h1 class="display mt-s">Thank you.</h1>
+      <p class="lead muted mt-s mx-auto" style="max-width: 58ch;">
+        Your free audit is on the way. I will review your website and online systems, put together your
+        one page report, and call you to walk through what is costing you calls.
+      </p>
+      <div class="btn-row mt-m" style="justify-content:center;">
+        <a href="/index.html" class="btn btn-primary">Return home <span class="arrow">→</span></a>
+        <a href="/work.html" class="btn btn-ghost">See the work</a>
+      </div>
+    </div>
+  </main>
+
+  <script is:inline define:vars={{ conv }}>
+    if (window.gtag) {
+      gtag('event', 'generate_lead', { form: 'free-audit' });
+      if (conv) gtag('event', 'conversion', { send_to: conv });
+    }
+  </script>
+
+  <style>
+    .thanks { min-height: 100vh; display: flex; align-items: center; overflow: hidden; }
+    .thanks-logo { height: 30px; width: auto; margin: 0 auto 34px; }
+  </style>
+</Base>

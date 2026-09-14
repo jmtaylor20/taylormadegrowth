@@ -25,6 +25,7 @@ export const analytics = {
   conversions: {
     contactForm: '',
     assessmentForm: '',
+    auditForm: '',
     phoneCall: '',
   },
 };
