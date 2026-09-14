@@ -1,0 +1,213 @@
+---
+import Base from '../layouts/Base.astro';
+
+const COUPON = 'FREEAUDIT';
+
+const reportCovers = [
+  { title: 'Your website', body: 'Speed, mobile experience, and whether it actually turns visitors into phone calls.' },
+  { title: 'Your Google profile', body: 'How you show up when a customer searches for what you do nearby.' },
+  { title: 'Reviews', body: 'How your rating and review flow stack up against the businesses next to you.' },
+  { title: 'Lead capture', body: 'How easy it is for a ready customer to reach you in the moment they decide.' },
+  { title: 'Follow-up', body: 'What happens to a lead after the first call, and where they slip away.' },
+];
+---
+
+<Base
+  title="Free Website & Systems Audit | Taylormade Brands"
+  description="Claim a free website and online systems audit. Get a one page report showing exactly what is costing your business phone calls, plus a callback to walk through it."
+>
+  <main>
+    <!-- HERO / OFFER -->
+    <section class="ink page-hero grid-bg glow-gold">
+      <div class="container wide">
+        <div class="hero-split">
+          <div>
+            <p class="label">Free for local businesses</p>
+            <h1 class="display">Find out what is costing you calls.</h1>
+            <p class="lead muted">
+              Claim a free website and online systems audit. You get a one page report showing exactly
+              where your business is losing phone calls, and the first things to fix. No cost, no obligation.
+            </p>
+            <div class="btn-row mt-m">
+              <a href="#claim" class="btn btn-primary">Claim my free audit <span class="arrow">→</span></a>
+              <a href="#report" class="btn btn-ghost">See what you get</a>
+            </div>
+          </div>
+
+          <div class="coupon reveal" aria-label="Coupon">
+            <div class="coupon-top">
+              <span class="label plain">Coupon</span>
+              <span class="coupon-value">Free audit + 1 page report</span>
+            </div>
+            <div class="coupon-code">
+              <span class="coupon-code-label">Use code</span>
+              <span class="coupon-code-value">{COUPON}</span>
+            </div>
+            <p class="coupon-note">Applied automatically when you submit the form below. One free audit per business.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- WHY IT MATTERS -->
+    <section class="paper section">
+      <div class="container narrow center">
+        <p class="label center mx-auto">Why it matters</p>
+        <h2 class="mt-s">Most businesses lose the call before the phone ever rings.</h2>
+        <p class="lead muted mt-m mx-auto" style="max-width: 62ch;">
+          A slow website, a thin Google profile, or a missing follow-up step quietly sends your customer
+          to the business listed right below you. The audit finds those leaks so you can plug them.
+        </p>
+      </div>
+    </section>
+
+    <!-- WHAT YOU GET -->
+    <section class="ink section" id="report">
+      <div class="container wide">
+        <div class="head">
+          <p class="label">What you get</p>
+          <h2>A one page report, in plain language.</h2>
+          <p>No jargon and no 40 page PDF. Just a clear read on where calls are leaking and what to do first. Here is what it covers.</p>
+        </div>
+        <div class="grid-3 report-grid">
+          {reportCovers.map((r) => (
+            <div class="card num-card reveal">
+              <h3>{r.title}</h3>
+              <p class="muted">{r.body}</p>
+            </div>
+          ))}
+          <div class="card num-card report-cta-card reveal">
+            <h3 class="gold">Then a callback.</h3>
+            <p class="muted">I walk you through the report and answer questions. You decide what, if anything, to do next.</p>
+            <a href="#claim" class="text-link mt-s">Claim it now <span class="arrow">→</span></a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="paper section">
+      <div class="container wide">
+        <div class="head center mx-auto">
+          <p class="label center mx-auto">How it works</p>
+          <h2>Three steps. About one minute of your time.</h2>
+        </div>
+        <div class="grid-3">
+          <div class="process-step reveal"><span class="index">01</span><h3>Submit the form</h3><p class="muted">Tell me your business and where you are online. It takes about a minute.</p></div>
+          <div class="process-step reveal"><span class="index">02</span><h3>I run the audit</h3><p class="muted">I review your website and online systems the way a customer would find them.</p></div>
+          <div class="process-step reveal"><span class="index">03</span><h3>You get the report</h3><p class="muted">A one page report plus a callback to walk through what is costing you calls.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CLAIM FORM -->
+    <section class="ink-2 section" id="claim">
+      <div class="container wide split">
+        <div>
+          <p class="label">Claim your free audit</p>
+          <h2>Enter your details and I will get started.</h2>
+          <p class="lead muted mt-s">
+            Coupon <strong class="gold">{COUPON}</strong> is applied automatically. Free, with no obligation
+            and no pressure. One free audit per business.
+          </p>
+          <ul class="feature-list mt-m">
+            <li>A one page report on what is costing you calls</li>
+            <li>A callback to walk through it</li>
+            <li>No cost and no commitment</li>
+          </ul>
+        </div>
+
+        <form
+          name="free-audit"
+          method="POST"
+          action="/audit-thank-you.html"
+          data-netlify="true"
+          netlify-honeypot="bot-field"
+          class="card field-form audit-form"
+        >
+          <input type="hidden" name="form-name" value="free-audit" />
+          <input type="hidden" name="coupon" value={COUPON} />
+          <input type="hidden" name="source" value="Google Business Profile" />
+          <p class="hidden"><label>Do not fill this out: <input name="bot-field" /></label></p>
+
+          <label>Name<input type="text" name="name" required /></label>
+          <label>Business name<input type="text" name="business-name" required /></label>
+          <label>Phone<input type="tel" name="phone" required /></label>
+          <label>Email<input type="email" name="email" required /></label>
+          <label>Current website (put N/A if you do not have one)<input type="text" name="website" /></label>
+          <label>What is your biggest frustration right now? (optional)<textarea name="message" rows="4"></textarea></label>
+
+          <button type="submit" class="btn btn-primary form-submit">Claim my free audit <span class="arrow">→</span></button>
+        </form>
+      </div>
+    </section>
+
+    <!-- TRUST -->
+    <section class="ink section tight">
+      <div class="container narrow center">
+        <p class="lead" style="max-width: 60ch; margin-inline: auto;">
+          Trusted by owner led businesses across Alabama, with more than <span class="gold">$300K</span> in new
+          business generated for local clients.
+        </p>
+        <p class="disclaimer mx-auto mt-s">Results reflect outcomes reported by clients and vary by business. Individual results are not guaranteed.</p>
+      </div>
+    </section>
+  </main>
+
+  <style>
+    /* Coupon ticket */
+    .coupon {
+      align-self: stretch;
+      background: var(--ink-2);
+      border: 1px dashed var(--gold-deep);
+      border-radius: 16px;
+      padding: 26px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+    }
+    .coupon-top { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+    .coupon-value { font-family: var(--font-display); font-size: 1.15rem; color: var(--d-text); }
+    .coupon-code {
+      border-top: 1px dashed var(--line-d-2);
+      border-bottom: 1px dashed var(--line-d-2);
+      padding: 18px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+      text-align: center;
+    }
+    .coupon-code-label { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--d-faint); }
+    .coupon-code-value {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: clamp(1.8rem, 4vw, 2.4rem);
+      letter-spacing: 0.14em;
+      color: var(--gold);
+    }
+    .coupon-note { font-size: 0.86rem; color: var(--d-muted); text-align: center; }
+
+    .report-cta-card { border-color: var(--gold-deep); display: flex; flex-direction: column; }
+    .process-step { border-top: 1px solid var(--line-l-2); padding-top: 22px; }
+    .process-step .index { color: var(--gold-deep); }
+    .process-step h3 { margin: 14px 0 10px; }
+
+    /* Offset anchor jumps for the sticky header */
+    #claim, #report { scroll-margin-top: calc(var(--header-h) + 16px); }
+
+    .audit-form { display: grid; gap: 4px; }
+    /* Form sits on a dark section, so labels need light text */
+    .audit-form label { color: var(--d-text); }
+    .audit-form .form-submit { margin-top: 12px; width: 100%; }
+
+    @media (max-width: 900px) {
+      .hero-split, .split { grid-template-columns: 1fr; }
+      .grid-3 { grid-template-columns: 1fr; }
+    }
+    @media (min-width: 561px) and (max-width: 900px) {
+      .report-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</Base>
