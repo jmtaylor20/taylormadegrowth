@@ -103,6 +103,39 @@ export async function renderFinancials(root) {
       + payments.filter((p) => p.kind === 'monthly' && p.paid_on && sameMonth(p.paid_on)).reduce((s, p) => s + n(p.amount), 0);
     const monthlyOutstanding = invoices.filter((i) => i.type === 'monthly' && (i.status === 'sent' || i.status === 'overdue')).reduce((s, i) => s + n(i.amount), 0);
 
+    // --- Year to date income (headline) ---
+    // Total money actually collected this calendar year, with build fees and
+    // recurring shown as the two components. Sums paid invoices + recorded
+    // payments the same way the Taxes tab does, so the numbers agree.
+    const yr = String(new Date().getFullYear());
+    const inYr = (d) => (d || '').slice(0, 4) === yr;
+    const yrBuild = payments.filter((p) => (p.kind === 'build' || p.kind === 'deposit') && inYr(p.paid_on)).reduce((s, p) => s + n(p.amount), 0)
+      + invoices.filter((i) => isBuildInv(i) && i.status === 'paid' && inYr(i.paid_on || i.issued_on)).reduce((s, i) => s + n(i.amount), 0);
+    const yrRecurring = payments.filter((p) => p.kind === 'monthly' && inYr(p.paid_on)).reduce((s, p) => s + n(p.amount), 0)
+      + invoices.filter((i) => i.type === 'monthly' && i.status === 'paid' && inYr(i.paid_on)).reduce((s, i) => s + n(i.amount), 0);
+    const yrTotal = payments.filter((p) => inYr(p.paid_on)).reduce((s, p) => s + n(p.amount), 0)
+      + invoices.filter((i) => i.status === 'paid' && inYr(i.paid_on || i.issued_on)).reduce((s, i) => s + n(i.amount), 0);
+    const yrOther = Math.max(0, yrTotal - yrBuild - yrRecurring);
+    summary.append(el('div.section-title', {}, [el('h3', { text: 'Income this year (' + yr + ')' })]));
+    summary.append(el('div.grid.grid-3', {}, [
+      el('div.stat', {}, [el('div.stat-value', { text: money(yrBuild) }), el('div.stat-label', { text: 'Build fees' })]),
+      el('div.stat', {}, [el('div.stat-value', { text: money(yrRecurring) }), el('div.stat-label', { text: 'Recurring' })]),
+      el('div.stat.stat-gold', {}, [el('div.stat-value', { text: money(yrTotal) }), el('div.stat-label', { text: 'Total income' }), yrOther ? el('div.stat-sub', { text: money(yrOther) + ' other' }) : null]),
+    ]));
+
+    // --- Projected year (run-rate) ---
+    // Annual value of build fees already on the books plus twelve months of
+    // current MRR. A run-rate, before costs, taxes, and owner draw.
+    const mrrYear = mrr * 12;
+    const projectedYear = buildFeesTotal + mrrYear;
+    summary.append(el('div.section-title', {}, [el('h3', { text: 'Projected year (run-rate)' })]));
+    summary.append(el('div.grid.grid-3', {}, [
+      el('div.stat', {}, [el('div.stat-value', { text: money(buildFeesTotal) }), el('div.stat-label', { text: 'Builds logged' })]),
+      el('div.stat', {}, [el('div.stat-value', { text: money(mrrYear) }), el('div.stat-label', { text: 'Recurring (MRR x 12)' })]),
+      el('div.stat.stat-gold', {}, [el('div.stat-value', { text: money(projectedYear) }), el('div.stat-label', { text: 'Projected total' })]),
+    ]));
+    summary.append(el('div.field-hint.mt-8', { text: 'Build fees already logged for signed clients plus twelve months of current MRR (' + money(mrr) + '/mo). Run-rate before costs, taxes, and owner draw.' }));
+
     summary.append(el('div.section-title', {}, [el('h3', { text: 'Initial builds' })]));
     summary.append(el('div.grid.grid-3', {}, [
       el('div.stat', {}, [el('div.stat-value', { text: money(buildFeesTotal) }), el('div.stat-label', { text: 'Build fees' })]),
