@@ -1,0 +1,258 @@
+---
+import Base from '../layouts/Base.astro';
+import { Image } from 'astro:assets';
+
+import aoBusinessCard from '../assets/ao_business_card.png';
+import aoReviewCard from '../assets/ao_review_card.png';
+import aoEstimate from '../assets/ao_estimate_sheet.png';
+import wcBusinessCard from '../assets/wolfcreek_business_card.png';
+import wcTailgate from '../assets/wolfcreek_tailgate_wrap.png';
+import wcSocial from '../assets/wolfcreek_social_post.png';
+import wcBadge from '../assets/wolf-creek-badge-logo.png';
+
+// Homepage captures, desktop and mobile, for every site in the gallery.
+const shots = import.meta.glob<ImageMetadata>('/src/assets/gallery/*.png', { eager: true, import: 'default' });
+const shot = (slug: string, kind: 'desktop' | 'mobile') => shots[`/src/assets/gallery/${slug}-${kind}.png`];
+
+const BEULAH_URL = 'https://beulahbaptistchurch.com';
+
+const sites = [
+  {
+    slug: 'aotrees', name: 'A&O Tree Service', kind: 'Tree service', place: 'Auburn, Alabama',
+    url: 'https://aotrees.com', tagline: 'Specializing in dead and dangerous trees.',
+    highlights: [
+      'The free estimate form sits above the fold, so a homeowner can ask for help without scrolling.',
+      'A licensed and insured trust bar, plus one tap call or text on every screen.',
+      'Service pages, a photo gallery, FAQ, and reviews built for local search.',
+    ],
+    tags: ['Website', 'Lead form', 'Google'],
+  },
+  {
+    slug: 'rhino', name: 'Rhino Landworks', kind: 'Land management', place: 'East Alabama',
+    url: 'https://rhinolandwork.com', tagline: 'Land work done right.',
+    highlights: [
+      'A bold green and yellow brand that stands out in a crowded local market.',
+      'Live Google rating and reviews pulled onto the homepage as social proof.',
+      'Services listed right in the hero, so visitors know in one glance what Rhino does.',
+    ],
+    tags: ['Website', 'Branding', 'Reviews'],
+  },
+  {
+    slug: 'miller', name: "Miller's Backhoe Service", kind: 'Excavation', place: 'Notasulga, Alabama',
+    url: 'https://millerbackhoe.com', tagline: 'Septic. Trenching. Backhoe work.',
+    highlights: [
+      'A three word headline that says exactly what the business does.',
+      'A custom illustrated backhoe mark and a navy and yellow identity built from scratch.',
+      'Licensed, insured, and Advanced Level I installer badges up front.',
+    ],
+    tags: ['Website', 'Brand identity'],
+  },
+  {
+    slug: 'fordpaving', name: 'Ford Paving & Sealing', kind: 'Asphalt paving', place: 'Central Alabama',
+    url: 'https://fordpaving.com', tagline: 'Built smooth. Finished sharp.',
+    highlights: [
+      'Cinematic asphalt photography that makes paving look premium.',
+      'A photo gallery for finished driveways and parking lots.',
+      'Free estimate and one tap call in the header on every page.',
+    ],
+    tags: ['Website', 'Branding', 'Gallery'],
+  },
+  {
+    slug: 'beehive', name: 'Beehive Stars Baseball', kind: 'Travel baseball', place: 'Alabama',
+    url: 'https://beehivestars.com', tagline: 'Built for the next level.',
+    highlights: [
+      'A full club platform in the nav: teams, tryouts, medical release, sponsors, and a player portal.',
+      'Online tryout registration and digital medical release waivers.',
+      'Team pages with rosters, calendars, and coach logins.',
+    ],
+    tags: ['Website', 'Web app', 'Registration'],
+  },
+  {
+    slug: 'wolfcreek', name: 'Wolf Creek Farms', kind: 'Land clearing and development', place: 'East Central Alabama',
+    url: 'https://wolfcreeklands.com', tagline: 'Built to transform your property.',
+    highlights: [
+      'A dark, cinematic hero with the estimate form right beside it.',
+      'Dedicated pages for clearing, road building, drainage, ponds, and more.',
+      'A complete rebrand carried through print, vehicle, and social.',
+    ],
+    tags: ['Website', 'Rebrand', 'Service pages'],
+  },
+  {
+    slug: 'correctivebodyworks', name: 'Corrective Bodyworks', kind: 'Physical therapy', place: 'Notasulga, Alabama',
+    url: 'https://correctiverehab.com', tagline: 'Relief today. Correction that lasts.',
+    highlights: [
+      'Patient portal login and appointment requests built into the header.',
+      'Credibility stats front and center, like combined years of experience and 1 to 1 care.',
+      'A clean clinical navy palette that feels trustworthy without feeling cold.',
+    ],
+    tags: ['Website', 'Patient portal', 'Healthcare'],
+  },
+  {
+    slug: 'iws', name: 'Interior Woodwork Specialist', kind: 'Custom cabinetry', place: 'Rancho Cucamonga, California',
+    url: '', tagline: 'Custom cabinetry. Without the custom price.',
+    highlights: [
+      'Premium editorial typography paired with full bleed kitchen photography.',
+      'Two clear product lines, Signature and Fully Custom, so buyers self select.',
+      'An estimate request and portfolio built to convert high ticket inquiries.',
+    ],
+    tags: ['Website', 'Premium brand', 'Launching soon'],
+  },
+  {
+    slug: 'beulah', name: 'Beulah Baptist Church', kind: 'Church', place: 'Dadeville, Alabama',
+    url: BEULAH_URL, tagline: 'Faith. Family. Fellowship.',
+    highlights: [
+      'Plan a visit and service times are the first two actions a newcomer sees.',
+      'Online giving and ministries one click away.',
+      'Warm evening photography of the actual church, not stock.',
+    ],
+    tags: ['Website', 'Giving', 'Ministries'],
+  },
+];
+
+const prints = [
+  { src: aoBusinessCard, label: 'A&O Tree Service business card' },
+  { src: aoReviewCard, label: 'A&O QR review card' },
+  { src: aoEstimate, label: 'A&O estimate sheet' },
+  { src: wcBusinessCard, label: 'Wolf Creek Farms business card' },
+  { src: wcTailgate, label: 'Wolf Creek tailgate wrap' },
+  { src: wcSocial, label: 'Wolf Creek social launch graphic' },
+  { src: wcBadge, label: 'Wolf Creek badge logo' },
+];
+---
+
+<Base
+  title="Gallery | Taylormade Brands"
+  description="A gallery of live websites and print pieces built by Taylormade Brands for owner-led businesses: tree service, land work, paving, baseball, physical therapy, cabinetry, and a church."
+>
+  <main>
+    <!-- HERO -->
+    <section class="ink page-hero grid-bg glow-gold">
+      <div class="container wide">
+        <p class="label">Gallery</p>
+        <h1 class="display" style="max-width: 15ch;">The work, up close.</h1>
+        <p class="lead muted" style="max-width: 60ch;">
+          Nine live websites and the print that goes with them. Every one was built for a real business,
+          to make it look sharper, get found, and get the call. Here is what stands out on each.
+        </p>
+        <div class="btn-row mt-m">
+          <a href="#sites" class="btn btn-primary">See the sites <span class="arrow">→</span></a>
+          <a href="#print" class="btn btn-ghost">See the print work</a>
+        </div>
+        <div class="hero-meta">
+          <div><span class="stat-num">9</span><p class="stat-label">live websites</p></div>
+          <div class="hero-meta-rule"></div>
+          <div><span class="stat-num">7</span><p class="stat-label">industries, from tree work to cabinetry</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SITES -->
+    <section class="paper section" id="sites">
+      <div class="container wide">
+        <div class="head">
+          <p class="label">Websites</p>
+          <h2>Nine homepages, each built for the business behind it.</h2>
+          <p>No two of these look alike on purpose. The brand, the photography, and the first action on the page all come from how that business actually wins work.</p>
+        </div>
+
+        <div class="site-grid">
+          {sites.map((s) => (
+            <article class="card site-card reveal">
+              <div class="shot">
+                <div class="shot-bar"><span></span><span></span><span></span><em>{s.url ? s.url.replace(/^https?:\/\/(www\.)?/, '') : s.name}</em></div>
+                <div class="shot-desktop"><Image src={shot(s.slug, 'desktop')} alt={`${s.name} homepage`} width={1200} /></div>
+                <div class="shot-mobile"><Image src={shot(s.slug, 'mobile')} alt={`${s.name} on mobile`} width={300} /></div>
+              </div>
+              <div class="site-body">
+                <p class="label plain site-kind">{s.kind} · {s.place}</p>
+                <h3>{s.name}</h3>
+                <p class="site-tag">{s.tagline}</p>
+                <ul class="feature-list mt-s">{s.highlights.map((h) => <li>{h}</li>)}</ul>
+                <div class="site-foot">
+                  <div class="tags">{s.tags.map((t) => <span class="tag">{t}</span>)}</div>
+                  {s.url && <a href={s.url} class="text-link" target="_blank" rel="noopener">Visit site <span class="arrow">→</span></a>}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- PRINT -->
+    <section class="ink section" id="print">
+      <div class="container wide">
+        <div class="head">
+          <p class="label">Print and brand pieces</p>
+          <h2>The pieces customers hold in their hands.</h2>
+          <p>Business cards, review cards, estimate sheets, vehicle graphics, and launch assets that carry the same brand off the screen.</p>
+        </div>
+        <div class="print-grid">
+          {prints.map((p) => (
+            <figure class="print-item reveal">
+              <div class="print-img"><Image src={p.src} alt={p.label} width={800} /></div>
+              <figcaption>{p.label}</figcaption>
+            </figure>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="ink-2 section">
+      <div class="container narrow center">
+        <p class="label center mx-auto">Your turn</p>
+        <h2 class="mt-s">Want your business to look like this?</h2>
+        <p class="lead muted mt-s mx-auto" style="max-width: 56ch;">
+          Start with a free audit of your website and online presence. I will show you what is costing you
+          calls and what a site like these would do for you.
+        </p>
+        <div class="btn-row mt-m" style="justify-content:center;">
+          <a href="/free-audit.html" class="btn btn-primary">Get your free online visibility audit <span class="arrow">→</span></a>
+          <a href="/contact.html" class="btn btn-ghost">Book a conversation</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <style>
+    .hero-meta { display: flex; align-items: center; gap: 32px; margin-top: 48px; }
+    .hero-meta-rule { width: 1px; height: 54px; background: var(--line-d); }
+
+    .site-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; }
+    .site-card { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+
+    /* Browser frame with a mobile inset */
+    .shot { position: relative; background: var(--ink); border-bottom: 1px solid var(--line-l); }
+    .shot-bar { display: flex; align-items: center; gap: 6px; padding: 10px 14px; background: var(--ink-2); border-bottom: 1px solid var(--line-d); }
+    .shot-bar span { width: 9px; height: 9px; border-radius: 50%; background: var(--line-d-2); }
+    .shot-bar em { margin-left: 10px; font-style: normal; font-family: var(--font-mono); font-size: 0.68rem; color: var(--d-faint); letter-spacing: 0.04em; }
+    .shot-desktop { aspect-ratio: 16 / 10; overflow: hidden; }
+    .shot-desktop :global(img) { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+    .shot-mobile { position: absolute; right: 18px; bottom: -22px; width: 22%; border: 3px solid var(--ink); border-radius: 14px; overflow: hidden; box-shadow: 0 18px 40px -18px rgba(0,0,0,.7); background: var(--ink); aspect-ratio: 9 / 19.5; }
+    .shot-mobile :global(img) { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+
+    .site-body { padding: 40px 28px 28px; display: flex; flex-direction: column; flex: 1; }
+    .site-kind { font-size: 0.68rem; margin-bottom: 10px; }
+    .site-body h3 { margin-bottom: 6px; }
+    .site-tag { font-family: var(--font-display); color: var(--gold-deep); font-size: 1.12rem; margin-bottom: 6px; }
+    .site-body .feature-list li { font-size: 0.95rem; }
+    .site-foot { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-top: auto; padding-top: 22px; }
+
+    .print-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .print-item { border: 1px solid var(--line-d); border-radius: 14px; overflow: hidden; background: var(--ink-2); }
+    .print-img { aspect-ratio: 4 / 3; overflow: hidden; background: var(--ink-3); }
+    .print-img :global(img) { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+    .print-item figcaption { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.06em; color: var(--d-muted); padding: 13px 16px; border-top: 1px solid var(--line-d); }
+
+    @media (max-width: 980px) {
+      .site-grid { grid-template-columns: 1fr; }
+      .print-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 560px) {
+      .hero-meta { flex-wrap: wrap; gap: 20px; }
+      .print-grid { grid-template-columns: 1fr; }
+      .shot-mobile { width: 26%; }
+    }
+  </style>
+</Base>
