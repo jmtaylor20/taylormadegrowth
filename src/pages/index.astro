@@ -140,8 +140,55 @@ const pillars = [
       </div>
     </section>
 
-    <!-- CAPABILITY PILLARS -->
+    <!-- RANGE: SMALL TO COMPLEX -->
     <section class="ink section">
+      <div class="container wide">
+        <div class="head">
+          <p class="label">What can Taylormade do for you?</p>
+          <h2>From a single fix to a full system.</h2>
+          <p>No job is too small and none is too complex. Wherever your business is right now, there is a simple place to start.</p>
+        </div>
+        <div class="grid-3">
+          <article class="card range-card reveal">
+            <span class="range-badge">Start small</span>
+            <h3>One thing, done right</h3>
+            <p class="muted">Need a single piece handled? A sharper logo, a faster website, a cleaned-up Google profile, or more reviews coming in.</p>
+            <ul class="feature-list mt-m">
+              <li>Logo or brand refresh</li>
+              <li>A new or updated website</li>
+              <li>Google Business Profile cleanup</li>
+              <li>Review generation</li>
+            </ul>
+          </article>
+          <article class="card range-card reveal">
+            <span class="range-badge">Build momentum</span>
+            <h3>The full local presence</h3>
+            <p class="muted">Ready for the pieces to work together? Brand, website, Google, ads, and follow-up built as one growth system.</p>
+            <ul class="feature-list mt-m">
+              <li>Brand and lead-generating website</li>
+              <li>Google Ads and local SEO</li>
+              <li>Reviews and follow-up systems</li>
+              <li>Monthly growth management</li>
+            </ul>
+          </article>
+          <article class="card range-card reveal">
+            <span class="range-badge">Go custom</span>
+            <h3>Software and partnership</h3>
+            <p class="muted">Outgrown the basics? Custom web apps, dashboards, research, and reporting, with one partner across the whole business.</p>
+            <ul class="feature-list mt-m">
+              <li>Custom apps, portals, and booking</li>
+              <li>Dashboards and automation</li>
+              <li>Research and monthly reporting</li>
+              <li>Ongoing growth partnership</li>
+            </ul>
+          </article>
+        </div>
+        <p class="range-foot center mx-auto">Not sure which fits? <a href="/free-audit.html" class="text-link">Start with a free visibility audit <span class="arrow">→</span></a></p>
+      </div>
+    </section>
+
+    <!-- CAPABILITY PILLARS -->
+    <section class="ink-2 section">
       <div class="container wide">
         <div class="head">
           <p class="label">What I do</p>
@@ -164,7 +211,7 @@ const pillars = [
     </section>
 
     <!-- SOFTWARE SPOTLIGHT -->
-    <section class="ink-2 section">
+    <section class="ink section">
       <div class="container wide software-grid">
         <div class="software-copy">
           <p class="label">The differentiator</p>
@@ -337,6 +384,15 @@ const pillars = [
 
     /* POSITIONING */
     .reposition { font-size: clamp(2rem, 4.4vw, 3.4rem); line-height: 1.08; }
+
+    /* RANGE: small to complex */
+    .range-card { display: flex; flex-direction: column; }
+    .range-badge { align-self: flex-start; font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); border: 1px solid var(--gold-deep); border-radius: 999px; padding: 5px 12px; margin-bottom: 16px; }
+    .range-card h3 { margin-bottom: 10px; }
+    .range-foot { margin-top: 40px; font-size: 1.05rem; color: var(--d-muted); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    @media (max-width: 900px) { .grid-3 { grid-template-columns: 1fr; } }
+    @media (min-width: 561px) and (max-width: 900px) { .grid-3 { grid-template-columns: 1fr 1fr; } }
 
     /* PILLARS */
     .pillar-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
