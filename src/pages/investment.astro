@@ -1,221 +1,131 @@
 ---
 import Base from '../layouts/Base.astro';
 
-const engagements = [
+const services = [
+  {
+    tag: 'Websites',
+    title: 'Website Design & Development',
+    price: 'Custom website packages available',
+    body: 'From a clean starter site to a full custom build, priced to fit what your business actually needs.',
+  },
+  {
+    tag: 'Growth',
+    title: 'Growth Management',
+    price: 'Monthly plans starting at $400/month',
+    body: 'Ongoing care for your website, Google presence, reviews, and reporting, so growth keeps compounding after launch.',
+    featured: true,
+  },
+  {
+    tag: 'Advertising',
+    title: 'Google Ads',
+    price: 'Custom management based on market and ad spend',
+    body: 'Search campaigns built and managed around your market, your budget, and the leads that actually turn into work.',
+  },
+  {
+    tag: 'Branding',
+    title: 'Branding & Rebranding',
+    price: 'Brand & rebrand packages available',
+    body: 'Logos, brand kits, and full rebrands that make your business look as good as the work you do.',
+  },
+  {
+    tag: 'Software',
+    title: 'Custom Software & Web Apps',
+    price: 'Custom quotes for apps, portals & automation',
+    body: 'Client portals, booking and registration systems, dashboards, and internal tools built around how you run.',
+  },
   {
     tag: 'Partnership',
     title: 'Growth Partnership',
-    price: 'Custom retainer',
-    body: 'The full relationship: strategy, software, research, reporting, and marketing under one partner, on an ongoing basis.',
-    points: ['Quarterly strategy & roadmap', 'Priority build capacity', 'Monthly research & reporting', 'One partner across the stack'],
-    cta: 'Book a conversation', href: '/contact.html', featured: true,
+    price: 'One partner across the whole stack',
+    body: 'Strategy, software, research, reporting, and marketing under one partner on an ongoing basis.',
   },
-  {
-    tag: 'Build',
-    title: 'Custom Software & Web Apps',
-    price: 'Scoped per project',
-    body: 'Client portals, registration systems, internal tools, and dashboards built around how your business runs.',
-    points: ['Discovery & scoping', 'Design, build & launch', 'Training & handoff', 'Ongoing support optional'],
-    cta: 'Discuss a build', href: '/contact.html', featured: false,
-  },
-  {
-    tag: 'Insight',
-    title: 'Research & Reporting',
-    price: 'Project or monthly',
-    body: 'Market and competitor research, performance reporting, and recommendations you can act on.',
-    points: ['Market & competitor research', 'Monthly performance reports', 'Value reporting', 'Plain-language recommendations'],
-    cta: 'Start with research', href: '/contact.html', featured: false,
-  },
-];
-
-const setups = [
-  { icon: '🌱', name: 'Launch', price: '$2,000', blurb: 'The essentials to look credible and get found.', pair: 'Essential Care · $250/mo',
-    items: ['Custom website, up to 5 pages', 'Mobile design, contact form, basic SEO', 'Analytics & Search Console', 'Google Business Profile foundation', 'Google Ads account foundation', 'Light brand refresh'], cta: 'navy' },
-  { icon: '📈', name: 'Grow', price: '$3,000', blurb: 'A stronger presence built to turn attention into leads.', pair: 'Growth Care · $800/mo', featured: true,
-    items: ['Everything in Launch, plus:', 'Professional website, up to 8 pages', 'One advanced feature or integration', 'Google optimization & review system', 'Google Ads setup & tracking', 'Visual identity & print templates'], cta: 'gold' },
-  { icon: '🏆', name: 'Lead', price: '$5,000', blurb: 'A full-service launch for businesses ready to lead their market.', pair: 'Market Leader · $1,500/mo',
-    items: ['Everything in Grow, plus:', 'Advanced website or Shopify (25 products)', 'Advanced forms, capture & automation', 'Advanced SEO & conversion tracking', 'Social setup + 30-day launch campaign', 'Marketing consultation & launch plan'], cta: 'navy' },
-];
-
-const care = [
-  { name: 'Essential Care', price: '$250/mo', items: ['Hosting, security & backups', 'Monthly maintenance & performance check', 'One scheduled content update', 'Email support'] },
-  { name: 'Growth Care', price: '$800/mo', featured: true, items: ['Everything in Essential Care', 'Weekly Google profile posts', 'Review monitoring & responses', 'Google Ads management', 'SEO, tracking & monthly reporting', 'Up to 2 hrs of updates + design pieces'] },
-  { name: 'Market Leader', price: 'from $1,500/mo', items: ['Everything in Growth Care', 'Social planning across 3 accounts', 'Up to 10 custom pieces / month', 'Print coordination', 'Monthly consultation & planning', 'Highest-priority support'] },
 ];
 ---
 
 <Base
-  title="Engagements | Taylormade Brands"
-  description="Ways to work with Taylormade Brands: growth partnership, custom software, research and reporting, plus website and marketing setup packages and monthly care plans."
+  title="Pricing | Taylormade Brands"
+  description="Simple, honest pricing built around your business. Custom website packages, growth management from $400/month, Google Ads, branding, and custom software. Start with a free online visibility audit."
 >
   <main>
     <!-- HERO -->
     <section class="ink page-hero grid-bg glow-gold">
       <div class="container wide">
-        <p class="label">Engagements</p>
-        <h1 class="display" style="max-width: 15ch;">Invest in the business, not just the marketing.</h1>
-        <p class="lead muted" style="max-width: 60ch;">
-          Start with a defined package, or work together as an ongoing partner. Either way, everything is
-          scoped up front and measured after, so you always know what your investment is producing.
+        <p class="label">Pricing</p>
+        <h1 class="display" style="max-width: 17ch;">Pricing built to start a conversation, not end one.</h1>
+        <p class="lead muted" style="max-width: 62ch;">
+          No long contracts and no pressure. Every project is scoped and priced up front, so you know
+          exactly what you are getting before anything begins. The easiest first step costs nothing.
         </p>
         <div class="btn-row mt-m">
-          <a href="/contact.html" class="btn btn-primary">Book a free strategy session <span class="arrow">→</span></a>
-          <a href="#setups" class="btn btn-ghost">See setup packages</a>
+          <a href="/free-audit.html" class="btn btn-primary">Get your free online visibility audit <span class="arrow">→</span></a>
+          <a href="/contact.html" class="btn btn-ghost">Talk it through</a>
         </div>
       </div>
     </section>
 
-    <!-- PREMIUM ENGAGEMENTS -->
-    <section class="ink-2 section">
+    <!-- SERVICES -->
+    <section class="paper section">
       <div class="container wide">
         <div class="head">
-          <p class="label">Ways to work together</p>
-          <h2>Partner-level engagements.</h2>
-          <p>For businesses ready for more than marketing: custom software, research, and an ongoing growth partnership.</p>
+          <p class="label">What we offer</p>
+          <h2>Find the piece that fits where you are.</h2>
+          <p>Start with one thing or build the whole system over time. Exact pricing is set once we understand your business, and it is always laid out clearly before you commit.</p>
         </div>
         <div class="grid-3">
-          {engagements.map((e) => (
-            <article class={`card price-card reveal ${e.featured ? 'price-featured' : ''}`}>
-              {e.featured && <span class="ribbon">Most complete</span>}
-              <span class="tag">{e.tag}</span>
-              <h3 class="mt-s">{e.title}</h3>
-              <p class="price">{e.price}</p>
-              <p class="muted">{e.body}</p>
-              <ul class="feature-list mt-m">{e.points.map((p) => <li>{p}</li>)}</ul>
-              <a href={e.href} class={`btn ${e.featured ? 'btn-primary' : 'btn-ghost'} price-cta`}>{e.cta}</a>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-
-    <!-- SETUP PACKAGES -->
-    <section class="paper section" id="setups">
-      <div class="container wide">
-        <div class="head">
-          <p class="label">Setup packages</p>
-          <h2>Choose the foundation your business needs now.</h2>
-          <p>Each one-time build gives you a clear starting point. Pair it with the care plan that matches how much ongoing support you want.</p>
-        </div>
-        <div class="grid-3">
-          {setups.map((s) => (
-            <article class={`card price-card reveal ${s.featured ? 'price-featured light' : ''}`}>
+          {services.map((s) => (
+            <article class={`card svc-card reveal ${s.featured ? 'svc-featured' : ''}`}>
               {s.featured && <span class="ribbon">Most popular</span>}
-              <div class="plan-icon">{s.icon}</div>
-              <h3>{s.name}</h3>
-              <p class="price-label">Starting at</p>
-              <p class="price">{s.price}</p>
-              <p class="muted">{s.blurb}</p>
-              <ul class="check-list mt-m">{s.items.map((i) => <li>{i}</li>)}</ul>
-              <div class="pair">Best paired with<strong>{s.pair}</strong></div>
-              <a href="/contact.html" class={`btn ${s.cta === 'gold' ? 'btn-primary' : 'btn-dark'} price-cta`}>Get started</a>
+              <span class="tag">{s.tag}</span>
+              <h3 class="mt-s">{s.title}</h3>
+              <p class="svc-price">{s.price}</p>
+              <p class="muted">{s.body}</p>
+              <a href="/contact.html" class="text-link svc-link mt-s">Ask about this <span class="arrow">→</span></a>
             </article>
           ))}
         </div>
       </div>
     </section>
 
-    <!-- CARE PLANS -->
+    <!-- HOW PRICING WORKS -->
     <section class="ink section">
       <div class="container wide">
-        <div class="head">
-          <p class="label">Monthly care</p>
-          <h2>Keep it moving after launch.</h2>
-          <p>Pick the matching plan or the level of ongoing support that fits your business.</p>
+        <div class="head center mx-auto">
+          <p class="label center mx-auto">How pricing works</p>
+          <h2>Clear, flexible, and built around you.</h2>
         </div>
         <div class="grid-3">
-          {care.map((c) => (
-            <article class={`card price-card reveal ${c.featured ? 'price-featured' : ''}`}>
-              {c.featured && <span class="ribbon">Recommended</span>}
-              <h3>{c.name}</h3>
-              <p class="price">{c.price}</p>
-              <ul class="check-list mt-m">{c.items.map((i) => <li>{i}</li>)}</ul>
-            </article>
-          ))}
+          <div class="card num-card reveal"><span class="index">01</span><h3>Scoped up front</h3><p class="muted">Every project is quoted in plain terms before it starts. No surprise invoices and no guessing.</p></div>
+          <div class="card num-card reveal"><span class="index">02</span><h3>No long contracts</h3><p class="muted">Monthly plans stay month to month. You continue because it is working, not because you are locked in.</p></div>
+          <div class="card num-card reveal"><span class="index">03</span><h3>One partner, real reporting</h3><p class="muted">One point of contact across everything, with reporting that shows what your investment is producing.</p></div>
         </div>
-        <p class="disclaimer mt-l">Advertising spend, printing, postage, premium software, and other third-party costs are separate. Scope and allowances are confirmed in your proposal.</p>
-      </div>
-    </section>
-
-    <!-- VALUE / COMPARE -->
-    <section class="paper-2 section">
-      <div class="container wide">
-        <div class="head center mx-auto">
-          <p class="label center mx-auto">The difference</p>
-          <h2>Agency-level work, without agency-level waste.</h2>
-          <p class="mx-auto">One partner instead of five vendors, flexible plans instead of long contracts, and reporting that shows the value being built.</p>
-        </div>
-        <div class="compare">
-          <div class="card compare-col">
-            <h4 class="muted">Typical marketing agency</h4>
-            <ul class="compare-list">
-              <li>Website: $5,000 to $25,000</li>
-              <li>Monthly marketing: $3,000 to $8,000+</li>
-              <li>Brand development: $5,000 to $15,000</li>
-              <li>Multiple vendors to coordinate</li>
-              <li>Long contracts</li>
-              <li>Generic templates</li>
-            </ul>
-          </div>
-          <div class="card compare-col compare-us">
-            <h4>Taylormade Brands</h4>
-            <ul class="compare-list">
-              <li>Setup from $2,000</li>
-              <li>Care from $250/mo</li>
-              <li>Custom software &amp; reporting included in partnership</li>
-              <li>One dedicated partner</li>
-              <li>Flexible, no long-term lock-in</li>
-              <li>Value report with every plan</li>
-            </ul>
-          </div>
-        </div>
-        <p class="disclaimer center mx-auto mt-l">Pricing varies by scope. Market ranges are based on publicly available U.S. agency pricing and are for general comparison only.</p>
       </div>
     </section>
 
     <!-- CTA -->
     <section class="ink-2 section">
       <div class="container narrow center">
-        <p class="label center mx-auto">Start here</p>
-        <h2 class="mt-s">Let's build something that works as hard as you do.</h2>
-        <p class="lead muted mt-s mx-auto" style="max-width:56ch;">Book a free strategy session and I'll recommend the right engagement for where your business is now.</p>
+        <p class="label center mx-auto">Start here, free</p>
+        <h2 class="mt-s">Not sure what you need yet? Start with a free audit.</h2>
+        <p class="lead muted mt-s mx-auto" style="max-width:58ch;">
+          I will review your website and online presence and send back a short report on what is costing you
+          calls, with no cost and no obligation. It is the easiest way to see where to start.
+        </p>
         <div class="btn-row mt-m" style="justify-content:center;">
-          <a href="/contact.html" class="btn btn-primary">Schedule your session <span class="arrow">→</span></a>
-          <a href="/growth-assessment.html" class="btn btn-ghost">Take the assessment</a>
+          <a href="/free-audit.html" class="btn btn-primary">Get your free online visibility audit <span class="arrow">→</span></a>
+          <a href="/contact.html" class="btn btn-ghost">Book a conversation</a>
         </div>
       </div>
     </section>
   </main>
 
   <style>
-    .price-card { display: flex; flex-direction: column; position: relative; }
-    .price-featured { border-color: var(--gold-deep); box-shadow: 0 30px 70px -45px rgba(201,162,74,.4); }
-    .price-featured.light { border-color: var(--gold-deep); }
+    .svc-card { display: flex; flex-direction: column; position: relative; }
+    .svc-featured { border-color: var(--gold-deep); box-shadow: 0 30px 70px -45px rgba(201,162,74,.35); }
     .ribbon { position: absolute; top: -11px; left: 30px; background: var(--gold); color: #201808; font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 12px; border-radius: 999px; }
-    .plan-icon { font-size: 1.9rem; margin-bottom: 10px; }
-    .price-label { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; }
-    .ink .price-label, .ink-2 .price-label { color: var(--d-faint); }
-    .paper .price-label, .paper-2 .price-label { color: var(--l-faint); }
-    .price { font-family: var(--font-display); font-weight: 480; font-size: 2rem; letter-spacing: -0.02em; margin: 4px 0 12px; }
-    .gold-price { color: var(--gold); }
-    .check-list, .compare-list { list-style: none; display: grid; gap: 11px; }
-    .check-list li, .compare-list li { position: relative; padding-left: 26px; font-size: 0.95rem; }
-    .ink .check-list li, .ink-2 .check-list li { color: var(--d-muted); }
-    .paper .check-list li, .paper-2 .check-list li { color: var(--l-muted); }
-    .check-list li::before { content: "✓"; position: absolute; left: 0; color: var(--gold); font-weight: 700; }
-    .pair { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line-l); font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; }
-    .ink .pair, .ink-2 .pair { border-top-color: var(--line-d); color: var(--d-faint); }
-    .paper .pair, .paper-2 .pair { color: var(--l-faint); }
-    .pair strong { display: block; margin-top: 6px; text-transform: none; letter-spacing: 0; font-family: var(--font-sans); font-size: 0.9rem; color: var(--gold); }
-    .price-cta { margin-top: 24px; width: 100%; }
-    .price-card ul { flex: 1 0 auto; }
-
-    .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .compare-list li::before { content: "•"; color: var(--l-faint); }
-    .compare-us { border-color: var(--gold-deep); }
-    .compare-us .compare-list li::before { content: "✓"; color: var(--gold-deep); font-weight: 700; }
-    .compare-col h4 { margin-bottom: 18px; font-size: 1.1rem; }
-
-    @media (max-width: 900px) { .grid-3, .compare { grid-template-columns: 1fr; } }
+    .svc-price { font-family: var(--font-display); font-weight: 480; font-size: 1.28rem; line-height: 1.25; letter-spacing: -0.01em; color: var(--gold-deep); margin: 6px 0 12px; }
+    .svc-card .muted { flex: 1 0 auto; }
+    .svc-link { font-size: 0.92rem; }
+    @media (max-width: 900px) { .grid-3 { grid-template-columns: 1fr; } }
+    @media (min-width: 561px) and (max-width: 900px) { .grid-3 { grid-template-columns: 1fr 1fr; } }
   </style>
 </Base>
