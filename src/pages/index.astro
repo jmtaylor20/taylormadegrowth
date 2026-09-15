@@ -110,7 +110,7 @@ const pillars = [
     </section>
 
     <!-- TRUST STRIP -->
-    <section class="ink-2 tight trust">
+    <section class="ink-2 trust">
       <div class="container wide">
         <p class="label plain center trust-title">Trusted by owner-led businesses across Alabama</p>
         <div class="marquee mt-m">
@@ -377,10 +377,12 @@ const pillars = [
     .rdot.active { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 0 4px rgba(201,162,74,.18); }
 
     /* TRUST */
+    /* Extra bottom padding so the white logo plates sit well inside the dark
+       band and never touch the light section below. */
+    .trust { padding: clamp(56px, 7vw, 88px) 0 clamp(88px, 9vw, 120px); }
     .trust-title { color: var(--d-faint); justify-content: center; }
-    .trust-plate { display: inline-flex; align-items: center; justify-content: center; height: 66px; padding: 0 26px; background: var(--paper-2); border-radius: 12px; flex: none; opacity: 0.9; transition: opacity .2s var(--ease); }
-    .trust-plate:hover { opacity: 1; }
-    .trust-logo { height: 38px; width: auto; object-fit: contain; }
+    .trust-plate { display: inline-flex; align-items: center; justify-content: center; height: 58px; padding: 0 22px; background: var(--paper-2); border: 1px solid var(--line-d); border-radius: 12px; flex: none; }
+    .trust-logo { height: 32px; width: auto; object-fit: contain; }
 
     /* POSITIONING */
     .reposition { font-size: clamp(2rem, 4.4vw, 3.4rem); line-height: 1.08; }
