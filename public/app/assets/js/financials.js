@@ -622,7 +622,7 @@ export async function renderFinancials(root) {
     const targets = list.filter((c) => c.stage === 'client' && n(c.mrr) > 0 && c.bill_frequency !== 'weekly' && !billed.has(c.id));
     if (!targets.length) { toast(`All active clients already invoiced for ${monthName}`); return; }
     if (!await confirmDialog(`Create ${targets.length} monthly invoice${targets.length > 1 ? 's' : ''}? Each client is billed per their setting (advance clients for ${nextMonthName}, arrears for ${monthName}). Saved as drafts to review and send.`, { confirmLabel: 'Create drafts' })) return;
-    let maxNum = invoices.reduce((m, i) => { const mm = /(\d+)/.exec(i.number || ''); return mm ? Math.max(m, parseInt(mm[1], 10)) : m; }, 0);
+    let maxNum = invoices.reduce((m, i) => { const s = String(i.number || '').trim(); return /^\d+$/.test(s) ? Math.max(m, parseInt(s, 10)) : m; }, 0);
     const due = new Date(now); due.setDate(due.getDate() + INVOICE_NET_DAYS);
     const dueStr = due.toISOString().slice(0, 10);
     try {
@@ -633,7 +633,7 @@ export async function renderFinancials(root) {
         const addons = Array.isArray(c.recurring_addons) ? c.recurring_addons : [];
         const items = [{ label, amount: n(c.mrr) }, ...addons.map((a) => ({ label: a.label, amount: n(a.amount) }))];
         const total = items.reduce((s, it) => s + n(it.amount), 0);
-        await Invoices.create({ client_id: c.id, number: 'INV-' + String(maxNum).padStart(4, '0'), type: 'monthly', amount: total, status: 'draft', method: 'Relay', issued_on: todayISO(), due_on: dueStr, description: items.map((it) => it.label).join(', '), items });
+        await Invoices.create({ client_id: c.id, number: String(maxNum).padStart(5, '0'), type: 'monthly', amount: total, status: 'draft', method: 'Relay', issued_on: todayISO(), due_on: dueStr, description: items.map((it) => it.label).join(', '), items });
       }
       toast(`Created ${targets.length} draft invoice${targets.length > 1 ? 's' : ''}`);
       refreshAfter();

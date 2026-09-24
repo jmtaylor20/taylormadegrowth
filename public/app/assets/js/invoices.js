@@ -84,9 +84,28 @@ export async function renderInvoices(root) {
 }
 
 // Shared invoice create/edit sheet — with line items (base retainer + add-ons).
+// Next number in the plain running series (00027 -> 00028), across every
+// invoice regardless of client or date. Only counts pure-digit numbers, so a
+// legacy "INV-1039" style import can't hijack the sequence. Width follows the
+// widest existing number (min 5), so it stays zero-padded like the rest.
+function nextInvoiceNumber(numbers) {
+  let max = 0, width = 5;
+  for (const num of numbers) {
+    const s = String(num || '').trim();
+    if (/^\d+$/.test(s)) { max = Math.max(max, parseInt(s, 10)); width = Math.max(width, s.length); }
+  }
+  return String(max + 1).padStart(width, '0');
+}
+
 export async function openInvoiceForm(existing = {}, onSaved, client, clientList) {
   const list = clientList || await clients();
   const isNew = !existing.id;
+  // Auto-fill the next invoice number for a new invoice so you never have to
+  // look up where you left off.
+  let numberValue = existing.number || '';
+  if (isNew && !existing.number) {
+    try { const allInv = await Invoices.list(); numberValue = nextInvoiceNumber(allInv.map((i) => i.number)); } catch (e) { /* leave blank */ }
+  }
   const clientOptions = [{ key: '', label: '— No client —' }, ...list.map((c) => ({ key: c.id, label: c.business_name }))];
 
   // ---- Contractor / rev-share ----
@@ -156,7 +175,7 @@ export async function openInvoiceForm(existing = {}, onSaved, client, clientList
       field('Client', clientSelect),
       field('Contact person', contactInput),
       FEATURES.repPicker ? field('Contractor / rep', repSelect) : null,
-      field('Invoice #', textInput('number', existing.number, { placeholder: 'INV-001' })),
+      field('Invoice #', textInput('number', numberValue, { placeholder: 'e.g. 00028' })),
       field('Type', selectInput('type', INVOICE_TYPE, existing.type || 'monthly')),
       field('Status', selectInput('status', INVOICE_STATUS, existing.status || 'draft')),
       field('Method', textInput('method', existing.method, { placeholder: 'Relay / QuickBooks / card' })),
