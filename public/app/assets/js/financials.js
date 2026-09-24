@@ -111,8 +111,8 @@ export async function renderFinancials(root) {
     const inYr = (d) => (d || '').slice(0, 4) === yr;
     const yrBuild = payments.filter((p) => (p.kind === 'build' || p.kind === 'deposit') && inYr(p.paid_on)).reduce((s, p) => s + n(p.amount), 0)
       + invoices.filter((i) => isBuildInv(i) && i.status === 'paid' && inYr(i.paid_on || i.issued_on)).reduce((s, i) => s + n(i.amount), 0);
-    const yrRecurring = payments.filter((p) => p.kind === 'monthly' && inYr(p.paid_on)).reduce((s, p) => s + n(p.amount), 0)
-      + invoices.filter((i) => i.type === 'monthly' && i.status === 'paid' && inYr(i.paid_on)).reduce((s, i) => s + n(i.amount), 0);
+    const yrRecurring = payments.filter((p) => (p.kind === 'monthly' || p.kind === 'weekly') && inYr(p.paid_on)).reduce((s, p) => s + n(p.amount), 0)
+      + invoices.filter((i) => (i.type === 'monthly' || i.type === 'weekly') && i.status === 'paid' && inYr(i.paid_on)).reduce((s, i) => s + n(i.amount), 0);
     const yrTotal = payments.filter((p) => inYr(p.paid_on)).reduce((s, p) => s + n(p.amount), 0)
       + invoices.filter((i) => i.status === 'paid' && inYr(i.paid_on || i.issued_on)).reduce((s, i) => s + n(i.amount), 0);
     const yrOther = Math.max(0, yrTotal - yrBuild - yrRecurring);
@@ -619,7 +619,7 @@ export async function renderFinancials(root) {
     const monthName = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
     const nextMonthName = new Date(now.getFullYear(), now.getMonth() + 1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
     const billed = new Set(invoices.filter((i) => i.type === 'monthly' && (i.issued_on || '').slice(0, 7) === monthKey).map((i) => i.client_id));
-    const targets = list.filter((c) => c.stage === 'client' && n(c.mrr) > 0 && !billed.has(c.id));
+    const targets = list.filter((c) => c.stage === 'client' && n(c.mrr) > 0 && c.bill_frequency !== 'weekly' && !billed.has(c.id));
     if (!targets.length) { toast(`All active clients already invoiced for ${monthName}`); return; }
     if (!await confirmDialog(`Create ${targets.length} monthly invoice${targets.length > 1 ? 's' : ''}? Each client is billed per their setting (advance clients for ${nextMonthName}, arrears for ${monthName}). Saved as drafts to review and send.`, { confirmLabel: 'Create drafts' })) return;
     let maxNum = invoices.reduce((m, i) => { const mm = /(\d+)/.exec(i.number || ''); return mm ? Math.max(m, parseInt(mm[1], 10)) : m; }, 0);

@@ -181,7 +181,8 @@ function generateMonthlyInvoices_() {
   var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   if ((lastDay - dom) > CONFIG.BILLING_DAYS_FROM_END) return;   // only the last week of the month
   var monthStart = Utilities.formatDate(now, tz, 'yyyy-MM') + '-01';
-  var clients = sbGet_('clients?stage=eq.client&mrr=gt.0&select=id,business_name,email,mrr,billing_mode,recurring_addons');
+  // Weekly-billed clients are handled outside monthly generation, so skip them.
+  var clients = sbGet_('clients?stage=eq.client&mrr=gt.0&bill_frequency=neq.weekly&select=id,business_name,email,mrr,billing_mode,recurring_addons');
   if (!clients.length) return;
   var billed = {};
   sbGet_('invoices?type=eq.monthly&issued_on=gte.' + monthStart + '&select=client_id').forEach(function (i) { billed[i.client_id] = true; });

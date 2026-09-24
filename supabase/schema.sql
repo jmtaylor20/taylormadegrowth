@@ -53,7 +53,10 @@ create table if not exists public.clients (
   google_ads_id text,
   cole_pct numeric default 0,
   build_review_status text default 'none',
-  build_review_note text
+  build_review_note text,
+  bill_frequency text not null default 'monthly',
+  bill_weekly_amount numeric,
+  weekly_start date
 );
 
 -- ---- Tasks ----------------------------------------------------------------
