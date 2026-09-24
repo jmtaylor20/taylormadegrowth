@@ -56,7 +56,8 @@ create table if not exists public.clients (
   build_review_note text,
   bill_frequency text not null default 'monthly',
   bill_weekly_amount numeric,
-  weekly_start date
+  weekly_start date,
+  autosend boolean not null default false
 );
 
 -- ---- Tasks ----------------------------------------------------------------

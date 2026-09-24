@@ -127,6 +127,7 @@ function accessToken_() {
 /** Main worker — runs on the trigger. Safe to run manually anytime. */
 function processQueue() {
   generateMonthlyInvoices_();
+  generateAutosendInvoices_();
   generateWeeklyInvoices_();
   processTable_('proposals');
   processTable_('invoices');
@@ -221,6 +222,51 @@ function generateMonthlyInvoices_() {
   if (created.length && !CONFIG.AUTO_SEND_MONTHLY && CONFIG.NOTIFY_EMAIL) notifyDraftInvoices_(created, monthName, due);
 }
 
+// ==== AUTOSEND MONTHLY INVOICES ============================================
+// Monthly-billed clients flagged autosend=true get this month's retainer
+// invoice created AND emailed + filed automatically in the last week of the
+// month. Independent of the global AUTO_MONTHLY_INVOICES draft switch, and
+// deduped by (client, month) so it never double-bills. Weekly clients are
+// handled by generateWeeklyInvoices_ instead.
+function generateAutosendInvoices_() {
+  var now = new Date();
+  var tz = Session.getScriptTimeZone();
+  var dom = Number(Utilities.formatDate(now, tz, 'd'));
+  var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  if ((lastDay - dom) > CONFIG.BILLING_DAYS_FROM_END) return;   // only the last week of the month
+  var monthStart = Utilities.formatDate(now, tz, 'yyyy-MM') + '-01';
+  var clients = sbGet_('clients?stage=eq.client&autosend=eq.true&bill_frequency=neq.weekly&mrr=gt.0&select=id,business_name,email,mrr,billing_mode,recurring_addons');
+  if (!clients.length) return;
+  var billed = {};
+  sbGet_('invoices?type=eq.monthly&issued_on=gte.' + monthStart + '&select=client_id').forEach(function (i) { billed[i.client_id] = true; });
+  var nums = sbGet_('invoices?select=number');
+  var maxNum = 0;
+  nums.forEach(function (i) { var s = String(i.number || '').trim(); if (/^\d+$/.test(s)) maxNum = Math.max(maxNum, parseInt(s, 10)); });
+  var monthName = Utilities.formatDate(now, tz, 'MMMM yyyy');
+  var nextMonthName = Utilities.formatDate(new Date(now.getFullYear(), now.getMonth() + 1, 1), tz, 'MMMM yyyy');
+  var issued = Utilities.formatDate(now, tz, 'yyyy-MM-dd');
+  var dueDate = new Date(now.getTime()); dueDate.setDate(dueDate.getDate() + CONFIG.INVOICE_NET_DAYS);
+  var due = Utilities.formatDate(dueDate, tz, 'yyyy-MM-dd');
+  for (var i = 0; i < clients.length; i++) {
+    var c = clients[i];
+    if (billed[c.id]) continue;
+    var periodName = (c.billing_mode === 'arrears') ? monthName : nextMonthName;
+    var label = periodName + ' Monthly management';
+    var items = [{ label: label, amount: Number(c.mrr) }];
+    var addons = (c.recurring_addons && c.recurring_addons.length) ? c.recurring_addons : [];
+    for (var a = 0; a < addons.length; a++) items.push({ label: addons[a].label, amount: Number(addons[a].amount || 0) });
+    var total = items.reduce(function (s, it) { return s + Number(it.amount || 0); }, 0);
+    maxNum++;
+    var row = {
+      client_id: c.id, number: ('0000' + maxNum).slice(-5), type: 'monthly',
+      amount: total, status: 'sent', method: 'Relay', issued_on: issued, due_on: due,
+      description: items.map(function (it) { return it.label; }).join(', '), items: items,
+    };
+    if (c.email) { row.send_status = 'queued'; row.sent_to = c.email; row.drive_status = 'queued'; }
+    try { sbInsert_('invoices', row); } catch (err) { Logger.log('Autosend invoice failed for ' + c.business_name + ': ' + err); }
+  }
+}
+
 // ==== AUTO WEEKLY INVOICES =================================================
 // Weekly-billed clients (bill_frequency='weekly') are invoiced every Friday on
 // or after their weekly_start, EXCEPT when that Friday is a US federal holiday,
@@ -254,7 +300,7 @@ function generateWeeklyInvoices_() {
     return;                                               // only Thu/Fri are candidate send days
   }
   var weekStartStr = ymd_(new Date(now.getTime() - 6 * 86400000), tz);
-  var clients = sbGet_('clients?stage=eq.client&bill_frequency=eq.weekly&select=id,business_name,email,bill_weekly_amount,weekly_start');
+  var clients = sbGet_('clients?stage=eq.client&bill_frequency=eq.weekly&autosend=eq.true&select=id,business_name,email,bill_weekly_amount,weekly_start');
   if (!clients.length) return;
   var nums = sbGet_('invoices?select=number');
   var maxNum = 0;
