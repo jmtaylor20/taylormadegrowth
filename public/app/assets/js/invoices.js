@@ -125,10 +125,36 @@ export async function openInvoiceForm(existing = {}, onSaved, client, clientList
   }
   startItems.forEach((it) => itemsWrap.append(itemRow(it)));
 
+  // Client select + contact input kept as refs so picking a client can
+  // autofill the contact on file and the normal monthly fee, no lookup needed.
+  // Only fills blanks (or a line we auto-filled and you haven't touched), so it
+  // never clobbers a typed value or an existing invoice's numbers.
+  const clientSelect = selectInput('client_id', clientOptions, existing.client_id || (client && client.id) || '');
+  const contactInput = textInput('contact_name', existing.contact_name, { placeholder: 'Customer contact name' });
+  let autoContact = null, autoLine = null;
+  function autofillFromClient() {
+    const c = list.find((x) => x.id === clientSelect.value);
+    if (!c) return;
+    if ((!contactInput.value.trim() || contactInput.value === autoContact) && c.contact_name) {
+      contactInput.value = c.contact_name; autoContact = c.contact_name;
+    }
+    const rows = [...itemsWrap.children];
+    const cur = rows.length === 1 ? rows[0]._get() : null;
+    const blank = !cur || (!cur.label && !cur.amount);
+    const untouchedAuto = cur && autoLine && cur.label === autoLine.label && Number(cur.amount) === Number(autoLine.amount);
+    if ((blank || untouchedAuto) && Number(c.mrr) > 0) {
+      itemsWrap.innerHTML = '';
+      autoLine = { label: 'Monthly management', amount: Number(c.mrr) };
+      itemsWrap.append(itemRow(autoLine));
+      recalc();
+    }
+  }
+  clientSelect.addEventListener('change', autofillFromClient);
+
   const node = el('div.form', {}, [
     el('div.form-grid.cols-2', {}, [
-      field('Client', selectInput('client_id', clientOptions, existing.client_id || (client && client.id) || '')),
-      field('Contact person', textInput('contact_name', existing.contact_name, { placeholder: 'Customer contact name' })),
+      field('Client', clientSelect),
+      field('Contact person', contactInput),
       FEATURES.repPicker ? field('Contractor / rep', repSelect) : null,
       field('Invoice #', textInput('number', existing.number, { placeholder: 'INV-001' })),
       field('Type', selectInput('type', INVOICE_TYPE, existing.type || 'monthly')),
@@ -147,6 +173,9 @@ export async function openInvoiceForm(existing = {}, onSaved, client, clientList
     ])),
   ]);
   recalc();
+  // Prefill when the sheet opens already tied to a client (e.g. from a client's
+  // detail page), so a new invoice lands populated without touching the picker.
+  if (isNew && clientSelect.value) autofillFromClient();
 
   function collect() {
     const v = readForm(node);
