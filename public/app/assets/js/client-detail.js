@@ -65,6 +65,23 @@ export async function openClient(id, onChange) {
         ]),
       ]),
     ]));
+    // Autosend banner + toggle. On = this client's invoices are generated and
+    // emailed automatically (weekly clients via the weekly job, everyone else
+    // via the monthly autosend job). Off = invoices stay manual.
+    const asOn = client.autosend === true;
+    const cadence = client.bill_frequency === 'weekly'
+      ? money(Number(client.bill_weekly_amount) || 0) + ' weekly'
+      : money(Number(client.mrr) || 0) + '/mo';
+    body.append(el('div', {
+      style: `display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0;padding:10px 14px;border-radius:10px;border:1px solid ${asOn ? '#1a7f37' : 'var(--line,#dcdcdc)'};background:${asOn ? 'rgba(26,127,55,0.08)' : 'transparent'}`,
+    }, [
+      el('div', {}, [
+        el('div', { style: `font-weight:800;letter-spacing:1.5px;font-size:12px;color:${asOn ? '#1a7f37' : '#8a8a8a'}`, text: asOn ? 'AUTOSEND ON' : 'AUTOSEND OFF' }),
+        el('div.muted', { style: 'font-size:12px;margin-top:2px', text: asOn ? `Invoices email to ${client.email || 'the client'} automatically (${cadence}).` : 'Invoices stay manual until you send them.' }),
+      ]),
+      el('button.btn.btn-sm' + (asOn ? '.btn-ghost' : '.btn-primary'), { type: 'button', text: asOn ? 'Turn off' : 'Turn on', onclick: () => patch({ autosend: !asOn }) }),
+    ]));
+
     // Contact actions
     const actions = el('div.contact-actions');
     if (client.phone) actions.append(el('a', { href: 'tel:' + client.phone, html: `${iconSvg('phone', 15)} Call` }));
