@@ -190,7 +190,7 @@ function generateMonthlyInvoices_() {
   sbGet_('invoices?type=eq.monthly&issued_on=gte.' + monthStart + '&select=client_id').forEach(function (i) { billed[i.client_id] = true; });
   var nums = sbGet_('invoices?select=number');
   var maxNum = 0;
-  nums.forEach(function (i) { var m = /(\d+)/.exec(i.number || ''); if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10)); });
+  nums.forEach(function (i) { var s = String(i.number || '').trim(); if (/^\d+$/.test(s)) maxNum = Math.max(maxNum, parseInt(s, 10)); });
   var monthName = Utilities.formatDate(now, tz, 'MMMM yyyy');
   var nextMonthName = Utilities.formatDate(new Date(now.getFullYear(), now.getMonth() + 1, 1), tz, 'MMMM yyyy');
   var issued = Utilities.formatDate(now, tz, 'yyyy-MM-dd');
@@ -204,7 +204,7 @@ function generateMonthlyInvoices_() {
     // Advance clients (default) are billed for next month; arrears for the current month.
     var periodName = (c.billing_mode === 'arrears') ? monthName : nextMonthName;
     var label = periodName + ' — Monthly management';
-    var num = 'INV-' + ('000' + maxNum).slice(-4);
+    var num = ('0000' + maxNum).slice(-5);
     var items = [{ label: label, amount: Number(c.mrr) }];
     var addons = (c.recurring_addons && c.recurring_addons.length) ? c.recurring_addons : [];
     for (var a = 0; a < addons.length; a++) items.push({ label: addons[a].label, amount: Number(addons[a].amount || 0) });
@@ -258,7 +258,7 @@ function generateWeeklyInvoices_() {
   if (!clients.length) return;
   var nums = sbGet_('invoices?select=number');
   var maxNum = 0;
-  nums.forEach(function (i) { var m = /(\d+)/.exec(i.number || ''); if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10)); });
+  nums.forEach(function (i) { var s = String(i.number || '').trim(); if (/^\d+$/.test(s)) maxNum = Math.max(maxNum, parseInt(s, 10)); });
   for (var i = 0; i < clients.length; i++) {
     var c = clients[i];
     var amt = Number(c.bill_weekly_amount || 0);
