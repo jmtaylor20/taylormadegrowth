@@ -60,6 +60,7 @@ var CONFIG = {
   BILLING_DAYS_FROM_END: 6,      // generate in the last week: fires when <= this many days remain in the month
   INVOICE_NET_DAYS: 15,          // due this many days after issue
   AUTO_SEND_MONTHLY: false,      // false = save as DRAFTS and email you a review prompt; true = also email clients
+  AUTO_WEEKLY_INVOICES: true,    // weekly-billed clients (bill_frequency='weekly') auto-invoice + send each Friday (Thursday if the Friday is a US federal holiday)
   NOTIFY_EMAIL: 'josh@taylormadegrowth.com',  // where the "drafts ready to review" prompt is sent
   AUTO_MONTHLY_BINDERS: true,     // on the 1st, auto-build last month's expense binder, mileage log + tax packet
   // ---- Contractor apps (separate databases) ----------------------------------
@@ -126,6 +127,7 @@ function accessToken_() {
 /** Main worker — runs on the trigger. Safe to run manually anytime. */
 function processQueue() {
   generateMonthlyInvoices_();
+  generateWeeklyInvoices_();
   processTable_('proposals');
   processTable_('invoices');
   processTable_('reports');
@@ -217,6 +219,63 @@ function generateMonthlyInvoices_() {
     catch (err) { Logger.log('Invoice create failed for ' + c.business_name + ': ' + err); }
   }
   if (created.length && !CONFIG.AUTO_SEND_MONTHLY && CONFIG.NOTIFY_EMAIL) notifyDraftInvoices_(created, monthName, due);
+}
+
+// ==== AUTO WEEKLY INVOICES =================================================
+// Weekly-billed clients (bill_frequency='weekly') are invoiced every Friday on
+// or after their weekly_start, EXCEPT when that Friday is a US federal holiday,
+// in which case the Thursday before is used. Deduped by week so repeated runs
+// never double-bill. Auto-sent to the client's email and filed to Drive via
+// the same queue the rest of the pipeline uses.
+var US_FEDERAL_HOLIDAYS_OBSERVED = {
+  '2026-01-01':1,'2026-01-19':1,'2026-02-16':1,'2026-05-25':1,'2026-06-19':1,'2026-07-03':1,
+  '2026-09-07':1,'2026-10-12':1,'2026-11-11':1,'2026-11-26':1,'2026-12-25':1,
+  '2027-01-01':1,'2027-01-18':1,'2027-02-15':1,'2027-05-31':1,'2027-06-18':1,'2027-07-05':1,
+  '2027-09-06':1,'2027-10-11':1,'2027-11-11':1,'2027-11-25':1,'2027-12-24':1,'2027-12-31':1,
+  '2028-01-17':1,'2028-02-21':1,'2028-05-29':1,'2028-06-19':1,'2028-07-04':1,'2028-09-04':1,
+  '2028-10-09':1,'2028-11-10':1,'2028-11-23':1,'2028-12-25':1,
+};
+function ymd_(d, tz) { return Utilities.formatDate(d, tz, 'yyyy-MM-dd'); }
+function generateWeeklyInvoices_() {
+  if (!CONFIG.AUTO_WEEKLY_INVOICES) return;
+  var tz = Session.getScriptTimeZone();
+  var now = new Date();
+  var todayStr = ymd_(now, tz);
+  var dow = Number(Utilities.formatDate(now, tz, 'u'));   // 1=Mon .. 7=Sun
+  var friStr;
+  if (dow === 5) {                                        // Friday
+    if (US_FEDERAL_HOLIDAYS_OBSERVED[todayStr]) return;   // holiday Friday: Thursday run handles it
+    friStr = todayStr;
+  } else if (dow === 4) {                                 // Thursday
+    var friday = ymd_(new Date(now.getTime() + 86400000), tz);
+    if (!US_FEDERAL_HOLIDAYS_OBSERVED[friday]) return;    // normal week bills Friday, not today
+    friStr = friday;
+  } else {
+    return;                                               // only Thu/Fri are candidate send days
+  }
+  var weekStartStr = ymd_(new Date(now.getTime() - 6 * 86400000), tz);
+  var clients = sbGet_('clients?stage=eq.client&bill_frequency=eq.weekly&select=id,business_name,email,bill_weekly_amount,weekly_start');
+  if (!clients.length) return;
+  var nums = sbGet_('invoices?select=number');
+  var maxNum = 0;
+  nums.forEach(function (i) { var m = /(\d+)/.exec(i.number || ''); if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10)); });
+  for (var i = 0; i < clients.length; i++) {
+    var c = clients[i];
+    var amt = Number(c.bill_weekly_amount || 0);
+    if (!amt) continue;
+    if (c.weekly_start && friStr < c.weekly_start) continue;                 // not started yet
+    var existing = sbGet_('invoices?client_id=eq.' + c.id + '&type=eq.weekly&issued_on=gte.' + weekStartStr + '&select=id');
+    if (existing.length) continue;                                          // already billed this week
+    maxNum++;
+    var label = 'Weekly management, week of ' + friStr;
+    var row = {
+      client_id: c.id, number: ('0000' + maxNum).slice(-5), type: 'weekly',
+      amount: amt, status: 'sent', method: 'Relay', issued_on: todayStr, due_on: todayStr,
+      description: label, items: [{ label: label, amount: amt }],
+    };
+    if (c.email) { row.send_status = 'queued'; row.sent_to = c.email; row.drive_status = 'queued'; }
+    try { sbInsert_('invoices', row); } catch (err) { Logger.log('Weekly invoice failed for ' + c.business_name + ': ' + err); }
+  }
 }
 
 // Email Josh a summary of the drafts that were just generated, so he's
