@@ -1,0 +1,11 @@
+{
+  "name": "tmg-remotion",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts",
+    "still": "remotion still src/index.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  }
+}

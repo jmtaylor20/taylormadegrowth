@@ -1,0 +1,6 @@
+node_modules/
+.tools/
+renders/
+out/
+.hyperframes/
+ffmpeg-test/

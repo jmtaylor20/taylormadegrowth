@@ -1,0 +1,34 @@
+{
+  "name": "tmg-video",
+  "version": "1.0.0",
+  "description": "Video toolchain: HyperFrames (HTML→video), Remotion (React→video), FFmpeg",
+  "scripts": {
+    "setup": "bash scripts/setup.sh",
+    "verify": "bash scripts/verify.sh",
+    "hf:check": "cd hyperframes-demo && hyperframes check",
+    "hf:render": "cd hyperframes-demo && hyperframes render",
+    "hf:preview": "cd hyperframes-demo && hyperframes preview",
+    "studio": "cd remotion && remotion studio src/index.ts",
+    "remotion:render": "cd remotion && remotion render src/index.ts"
+  },
+  "devDependencies": {
+    "@remotion/bundler": "4.0.539",
+    "@remotion/cli": "4.0.539",
+    "@remotion/google-fonts": "4.0.539",
+    "@remotion/media": "4.0.539",
+    "@remotion/media-utils": "4.0.539",
+    "@remotion/renderer": "4.0.539",
+    "@remotion/transitions": "4.0.539",
+    "@types/react": "^19.3.0",
+    "hyperframes": "0.8.206",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "remotion": "4.0.539",
+    "typescript": "^7.0.2"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  }
+}
