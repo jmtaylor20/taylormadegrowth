@@ -17,6 +17,7 @@ const {
   description = 'Taylormade Brands is a growth partner for owner-led businesses. Custom software, growth strategy, research, and reporting that make good businesses run and grow better.',
   bodyClass = '',
   chrome = true,
+  noindex = false,
 } = Astro.props;
 
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
@@ -37,6 +38,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
 
     <!-- Open Graph / social sharing -->
     <meta property="og:type" content="website" />
