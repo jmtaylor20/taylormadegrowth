@@ -116,7 +116,7 @@ export async function openInvoiceForm(existing = {}, onSaved, client, clientList
   const repPctFor = (name) => { const r = reps.find((x) => x.name === name); return r ? Number(r.split_pct) : (name && name === existing.rep ? Number(existing.rep_pct || 0) : 0); };
   function updateSplit() {
     const rep = repSelect.value;
-    const total = currentItems().reduce((s, i) => s + i.amount, 0);
+    const total = currentItems().reduce((s, i) => s + Number(i.amount || 0), 0);
     if (!rep || !total) { splitEl.style.display = 'none'; return; }
     const pct = repPctFor(rep); const theirs = total * pct;
     splitEl.style.display = '';
@@ -130,7 +130,7 @@ export async function openInvoiceForm(existing = {}, onSaved, client, clientList
     : [{ label: existing.description || '', amount: existing.amount ?? '' }];
   const itemsWrap = el('div.inv-items');
   const totalEl = el('span.row-amount');
-  function recalc() { totalEl.textContent = money(currentItems().reduce((s, i) => s + i.amount, 0)); updateSplit(); }
+  function recalc() { totalEl.textContent = money(currentItems().reduce((s, i) => s + Number(i.amount || 0), 0)); updateSplit(); }
   function currentItems() { return [...itemsWrap.children].map((r) => r._get()).filter((i) => i.label || i.amount); }
   function itemRow(it) {
     const label = el('input.input', { value: it.label || '', placeholder: 'e.g. Monthly management, extra blog post' });
@@ -139,7 +139,9 @@ export async function openInvoiceForm(existing = {}, onSaved, client, clientList
       label, amt,
       el('button.icon-btn', { type: 'button', title: 'Remove', html: iconSvg('trash', 15), onclick: () => { row.remove(); recalc(); } }),
     ]);
-    row._get = () => ({ label: label.value.trim(), amount: Number(amt.value || 0) });
+    // A blank amount means this line is a description/sub-note with no price,
+    // stored as null so it renders with an empty amount column (not "$0").
+    row._get = () => ({ label: label.value.trim(), amount: amt.value.trim() === '' ? null : Number(amt.value) });
     return row;
   }
   startItems.forEach((it) => itemsWrap.append(itemRow(it)));
@@ -200,7 +202,7 @@ export async function openInvoiceForm(existing = {}, onSaved, client, clientList
     const v = readForm(node);
     const items = currentItems();
     v.items = items.length ? items : null;
-    v.amount = items.reduce((s, i) => s + i.amount, 0);
+    v.amount = items.reduce((s, i) => s + Number(i.amount || 0), 0);
     v.description = items.map((i) => i.label).filter(Boolean).join(', ') || null;
     if (!v.client_id) v.client_id = null;
     v.contact_name = v.contact_name || null;
@@ -234,7 +236,8 @@ export function invoiceDocHtml(inv, client = {}) {
   const items = (inv.items && inv.items.length) ? inv.items : [{ label: inv.description || labelOf(INVOICE_TYPE, inv.type), amount: inv.amount }];
   const total = items.reduce((s, it) => s + Number(it.amount || 0), 0) || Number(inv.amount || 0);
   const cityState = [client.city, client.state].filter(Boolean).join(', ');
-  const rows = items.map((it) => `<tr><td>${esc(it.label || '')}</td><td class="r">${money(Number(it.amount || 0))}</td></tr>`).join('');
+  const hasAmt = (it) => it.amount !== null && it.amount !== undefined && it.amount !== '';
+  const rows = items.map((it) => `<tr><td>${esc(it.label || '')}</td><td class="r">${hasAmt(it) ? money(Number(it.amount)) : ''}</td></tr>`).join('');
   const paid = inv.status === 'paid';
   const detail = (l, v) => `<div class="drow"><span class="dl">${esc(l)}</span> <span>${esc(v || '—')}</span></div>`;
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>

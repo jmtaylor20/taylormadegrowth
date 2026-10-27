@@ -232,6 +232,7 @@ export const INVOICE_STATUS = [
 ];
 export const INVOICE_TYPE = [
   { key: 'monthly',   label: 'Monthly retainer' },
+  { key: 'recurring', label: 'Recurring' },
   { key: 'build_fee', label: 'Build fee' },
   { key: 'one_time',  label: 'One-time' },
 ];

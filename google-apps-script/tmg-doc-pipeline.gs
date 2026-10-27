@@ -569,7 +569,8 @@ function invoiceHtml_(inv, client) {
   var cityState = [client.city, client.state].filter(Boolean).join(', ');
   var items = (inv.items && inv.items.length) ? inv.items : [{ label: inv.description || titleCase_(inv.type || 'Service'), amount: inv.amount }];
   var total = items.reduce(function (s, it) { return s + Number(it.amount || 0); }, 0) || Number(inv.amount || 0);
-  var itemRows = items.map(function (it) { return '<tr><td>' + esc_(it.label || '') + '</td><td class="r">' + money_(Number(it.amount || 0)) + '</td></tr>'; }).join('');
+  var hasAmt = function (it) { return it.amount !== null && it.amount !== undefined && it.amount !== ''; };
+  var itemRows = items.map(function (it) { return '<tr><td>' + esc_(it.label || '') + '</td><td class="r">' + (hasAmt(it) ? money_(Number(it.amount)) : '') + '</td></tr>'; }).join('');
   var paid = String(inv.status) === 'paid';
   function detail(label, value) {
     return '<div class="drow"><span class="dl">' + esc_(label) + '</span><span class="dv">' + esc_(value || '—') + '</span></div>';
