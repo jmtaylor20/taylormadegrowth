@@ -51,3 +51,9 @@ body {
     @apply h-2 cursor-pointer accent-[var(--color-accent)];
   }
 }
+
+@keyframes toast-in {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+.toast-in { animation: toast-in 0.22s ease-out; }

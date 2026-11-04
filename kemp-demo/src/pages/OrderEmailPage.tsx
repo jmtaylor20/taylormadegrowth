@@ -4,7 +4,6 @@ import { templateById } from '../templates'
 import { money } from '../lib/draft'
 import { orderTitle, useOrders, type Order } from '../lib/orders'
 import { renderSide } from '../lib/render'
-import { downloadPrintPdf } from '../lib/pdf'
 
 const when = (iso: string) =>
   new Date(iso).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
@@ -39,6 +38,9 @@ function Email({ o }: { o: Order }) {
   const download = async () => {
     setDone(null)
     try {
+      setStatus('Preparing')
+      // jsPDF is loaded only when a print file is actually requested.
+      const { downloadPrintPdf } = await import('../lib/pdf')
       const r = await downloadPrintPdf(o, setStatus)
       setDone(`${r.fileName} (${(r.bytes / 1_000_000).toFixed(1)} MB, ${r.ppi} ppi)`)
     } catch {
