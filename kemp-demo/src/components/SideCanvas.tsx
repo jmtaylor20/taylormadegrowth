@@ -2,8 +2,8 @@ import { memo, useMemo } from 'react'
 import { Stage, Layer, Group, Rect, Ellipse, Line, Star, Text, Image as KImage, Circle } from 'react-konva'
 import type Konva from 'konva'
 import type { Context } from 'konva/lib/Context'
-import { BLEED, type Element, type PhotoEl, type Side, type Template, type TextEl } from '../templates/types'
-import { fillTokens, fitText, konvaFontStyle, tokensIn } from '../lib/textFit'
+import { BLEED, type Element, type PhotoEl, type Side, type StackEl, type Template, type TextEl } from '../templates/types'
+import { fieldsOf, fillTokens, fitStack, fitText, konvaFontStyle } from '../lib/textFit'
 import type { PhotoState } from '../lib/draft'
 import { useImages } from '../lib/images'
 
@@ -105,6 +105,7 @@ interface NodeProps {
 }
 
 function ElementNode({ el, ...rest }: NodeProps) {
+  if (el.showIf && !(rest.values[el.showIf] ?? '').trim()) return null
   const common = { rotation: el.rotation, opacity: el.opacity, listening: false }
   switch (el.type) {
     case 'rect':
@@ -165,6 +166,8 @@ function ElementNode({ el, ...rest }: NodeProps) {
       )
     case 'text':
       return <TextNode el={el} values={rest.values} highlight={rest.highlight} />
+    case 'stack':
+      return <StackNode el={el} values={rest.values} highlight={rest.highlight} />
     case 'photo':
       return <PhotoNode el={el} {...rest} />
   }
@@ -176,26 +179,56 @@ function TextNode({ el, values, highlight }: { el: TextEl; values: Record<string
   const lh = el.lineHeight ?? 1.2
   const textH = fit.lines.length * fit.size * lh
   const boxH = el.h * PT
+  const boxW = el.w * PT
   const dy = el.valign === 'top' ? 0 : el.valign === 'bottom' ? boxH - textH : (boxH - textH) / 2
-  const isHot = highlight != null && tokensIn(el.text).includes(highlight)
+  const isHot = highlight != null && fieldsOf(el).includes(highlight)
+  const font = { fontFamily: el.font, fontStyle: konvaFontStyle(el), fontSize: fit.size, fill: el.color, letterSpacing: (el.letterSpacing ?? 0) * fit.size, wrap: 'none' as const }
   return (
     <Group x={el.x * PT} y={el.y * PT} rotation={el.rotation} opacity={el.opacity} listening={false}>
-      {isHot && (
-        <Rect x={-3} y={-3} width={el.w * PT + 6} height={boxH + 6} stroke="#d08a3c" strokeWidth={1} dash={[3, 2]} cornerRadius={2} />
+      {isHot && <Rect x={-3} y={-3} width={boxW + 6} height={boxH + 6} stroke="#d08a3c" strokeWidth={1} dash={[3, 2]} cornerRadius={2} />}
+      {fit.rows ? (
+        fit.rows.map((r, i) => {
+          const y = dy + i * fit.size * lh
+          return (
+            <Group key={i} y={y}>
+              {r.left && <Text {...font} text={r.left} lineHeight={lh} />}
+              {r.dots && <Text {...font} x={r.dotsX} text={r.dots} lineHeight={lh} opacity={0.7} />}
+              {r.right && <Text {...font} width={boxW} align="right" text={r.right} lineHeight={lh} />}
+            </Group>
+          )
+        })
+      ) : (
+        <Text {...font} y={dy} width={boxW} text={fit.lines.join('\n')} lineHeight={lh} align={el.align ?? 'center'} />
       )}
-      <Text
-        y={dy}
-        width={el.w * PT}
-        text={fit.lines.join('\n')}
-        fontFamily={el.font}
-        fontStyle={konvaFontStyle(el)}
-        fontSize={fit.size}
-        lineHeight={lh}
-        align={el.align ?? 'center'}
-        fill={el.color}
-        letterSpacing={(el.letterSpacing ?? 0) * fit.size}
-        wrap="none"
-      />
+    </Group>
+  )
+}
+
+function StackNode({ el, values, highlight }: { el: StackEl; values: Record<string, string>; highlight: string | null }) {
+  const fit = fitStack(el, values)
+  const boxH = el.h * PT
+  const boxW = el.w * PT
+  const dy = el.valign === 'top' ? 0 : el.valign === 'bottom' ? boxH - fit.height : (boxH - fit.height) / 2
+  const isHot = highlight != null && fieldsOf(el).includes(highlight)
+  const style = (st: StackEl['heading'], size: number) => ({
+    fontFamily: st.font,
+    fontStyle: konvaFontStyle(st),
+    fontSize: size,
+    fill: st.color,
+    letterSpacing: (st.letterSpacing ?? 0) * size,
+    align: st.align ?? 'center',
+    width: boxW,
+    wrap: 'none' as const,
+  })
+  return (
+    <Group x={el.x * PT} y={el.y * PT} rotation={el.rotation} opacity={el.opacity} listening={false}>
+      {isHot && <Rect x={-3} y={-3} width={boxW + 6} height={boxH + 6} stroke="#d08a3c" strokeWidth={1} dash={[3, 2]} cornerRadius={2} />}
+      {fit.blocks.map((b, i) => (
+        <Group key={i} y={dy}>
+          <Text {...style(el.heading, b.heading.size)} y={b.y} text={b.heading.lines.join('\n')} lineHeight={el.heading.lineHeight ?? 1.15} />
+          <Text {...style(el.body, b.body.size)} y={b.bodyY} text={b.body.lines.join('\n')} lineHeight={el.body.lineHeight ?? 1.25} />
+        </Group>
+      ))}
     </Group>
   )
 }
@@ -242,9 +275,10 @@ function PhotoNode({ el, photos, images, interactive, showPlaceholderLabel, onPh
   const h = el.h * PT
   const clip = useMemo(() => clipFor(el), [el])
   const lay = img && ph ? photoLayout(img, w, h, ph) : null
+  if (!lay && el.optional) return null
 
   return (
-    <Group x={el.x * PT} y={el.y * PT} rotation={el.rotation}>
+    <Group x={el.x * PT} y={el.y * PT} rotation={el.rotation} opacity={el.opacity}>
       <Group clipFunc={clip}>
         {img && ph && lay ? (
           <KImage
@@ -270,7 +304,7 @@ function PhotoNode({ el, photos, images, interactive, showPlaceholderLabel, onPh
         )}
       </Group>
       {el.stroke && <Outline el={el} w={w} h={h} />}
-      {highlight === el.field && <Outline el={{ ...el, stroke: '#d08a3c', strokeWidth: 1.5 }} w={w} h={h} dash />}
+      {highlight != null && fieldsOf(el).includes(highlight) && <Outline el={{ ...el, stroke: '#d08a3c', strokeWidth: 1.5 }} w={w} h={h} dash />}
     </Group>
   )
 }

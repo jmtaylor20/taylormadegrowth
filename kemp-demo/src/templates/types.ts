@@ -36,6 +36,11 @@ export interface PhotoField {
   id: string
   type: 'photo'
   label: string
+  /**
+   * For collages: number of photo slots. Slots are stored as
+   * "<id>_1" ... "<id>_N" and photo elements reference those ids.
+   */
+  count?: number
   hint?: string
   section?: string
 }
@@ -47,6 +52,8 @@ interface Base {
   y: number
   rotation?: number
   opacity?: number
+  /** Hide this element when the named field is left blank. */
+  showIf?: string
 }
 
 export interface RectEl extends Base {
@@ -109,6 +116,35 @@ export interface TextEl extends Base {
   /** Extra tracking in em (0.1 = 10% of the font size). */
   letterSpacing?: number
   uppercase?: boolean
+  /**
+   * Dotted leader rows, as in an order of service. Each line written as
+   * "Item | Person" draws the item on the left, the person on the right and
+   * dots between. A line starting with "|" is right-aligned on its own.
+   */
+  leaders?: boolean
+}
+
+export type TextStyle = Pick<TextEl, 'font' | 'size' | 'weight' | 'italic' | 'color' | 'lineHeight' | 'letterSpacing' | 'uppercase' | 'align'>
+
+/**
+ * A vertical stack of titled sections (Pallbearers, Interment, Repast...).
+ * Sections whose body is blank are left out and the rest close the gap.
+ * Everything scales down together if the stack is too tall for its box.
+ */
+export interface StackEl extends Base {
+  type: 'stack'
+  w: number
+  h: number
+  valign?: 'top' | 'middle' | 'bottom'
+  /** Space between sections, in inches. */
+  gap: number
+  /** Space between a heading and its body, in inches. */
+  headingGap: number
+  heading: TextStyle
+  body: TextStyle
+  items: { heading: string; body: string }[]
+  /** Smallest scale allowed when shrinking (default 0.55). */
+  minScale?: number
 }
 
 export interface PhotoEl extends Base {
@@ -123,9 +159,11 @@ export interface PhotoEl extends Base {
   strokeWidth?: number
   /** Placeholder tint when no photo is uploaded yet. */
   placeholder?: string
+  /** Draw nothing (no placeholder) until a photo is added, e.g. a faint background photo. */
+  optional?: boolean
 }
 
-export type Element = RectEl | EllipseEl | LineEl | StarEl | TextEl | PhotoEl
+export type Element = RectEl | EllipseEl | LineEl | StarEl | TextEl | StackEl | PhotoEl
 
 export interface Side {
   id: string

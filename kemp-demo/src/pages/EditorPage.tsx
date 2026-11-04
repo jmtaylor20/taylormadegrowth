@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { templateById, CATEGORIES } from '../templates'
 import type { Template } from '../templates/types'
-import { tokensIn } from '../lib/textFit'
+import { fieldsOf } from '../lib/textFit'
 import { defaultDraft, money, priceFor, useDraft, type PhotoState } from '../lib/draft'
 import { FieldForm } from '../components/FieldForm'
 import { OptionsPanel } from '../components/OptionsPanel'
@@ -20,8 +20,7 @@ export function EditorPage() {
 function sideOfField(t: Template, fieldId: string): string | undefined {
   for (const s of t.sides)
     for (const el of s.elements) {
-      if (el.type === 'text' && tokensIn(el.text).includes(fieldId)) return s.id
-      if (el.type === 'photo' && el.field === fieldId) return s.id
+      if (fieldsOf(el).includes(fieldId)) return s.id
     }
 }
 
@@ -32,7 +31,7 @@ function Editor({ t }: { t: Template }) {
   const [showGuides, setShowGuides] = useState(false)
   const [focused, setFocused] = useState<string | null>(null)
   const [typing, setTyping] = useState(false)
-  const photoInputs = useRef<Record<string, HTMLInputElement | null>>({})
+  const photoPickers = useRef<Record<string, (() => void) | null>>({})
   const stickyRef = useRef<HTMLDivElement>(null)
   const desktop = useMediaQuery('(min-width: 1024px)')
   const category = CATEGORIES.find((c) => c.id === t.category)!
@@ -61,7 +60,7 @@ function Editor({ t }: { t: Template }) {
       }),
     [setDraft],
   )
-  const onPhotoTap = useCallback((id: string) => photoInputs.current[id]?.click(), [])
+  const onPhotoTap = useCallback((id: string) => photoPickers.current[id]?.(), [])
 
   // On phones the preview is sticky. Tell the browser how tall it is so a
   // focused field is always scrolled into view below it, never underneath.
@@ -142,7 +141,7 @@ function Editor({ t }: { t: Template }) {
             onValue={onValue}
             onPhoto={onPhoto}
             onFocusField={focusField}
-            registerPhotoInput={(id, el) => (photoInputs.current[id] = el)}
+            registerPhotoPicker={(id, open) => (photoPickers.current[id] = open)}
           />
           <OptionsPanel template={t} draft={draft} onChange={(patch) => setDraft((d) => ({ ...d, ...patch }))} />
           <button type="button" onClick={() => setDraft(defaultDraft(t))} className="btn-ghost w-full">

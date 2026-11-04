@@ -31,7 +31,7 @@ export function defaultDraft(t: Template): Draft {
 }
 
 export function useDraft(t: Template) {
-  return useStored<Draft>(`draft:${t.id}`, defaultDraft(t))
+  return useStored<Draft>(`draft:v2:${t.id}`, defaultDraft(t))
 }
 
 export interface PriceBreakdown {

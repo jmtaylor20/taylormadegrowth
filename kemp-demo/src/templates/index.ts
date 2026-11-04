@@ -1,9 +1,10 @@
 import type { CategoryId, Template } from './types'
 import { funeralClassic } from './funeral-classic'
+import { funeralRose } from './funeral-rose'
 import { christmasEvergreen } from './christmas-evergreen'
 
 /** Add a template: create a config file, then list it here. */
-export const TEMPLATES: Template[] = [funeralClassic, christmasEvergreen]
+export const TEMPLATES: Template[] = [funeralClassic, funeralRose, christmasEvergreen]
 
 export interface Category {
   id: CategoryId

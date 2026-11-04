@@ -1,5 +1,5 @@
-import type { Template } from './types'
-import { FUNERAL_FIELDS, FUNERAL_OPTIONS } from './shared'
+import type { Element, Template } from './types'
+import { BACK_SECTIONS, FUNERAL_FIELDS, FUNERAL_OPTIONS } from './shared'
 
 /**
  * Folded 8.5 x 11 program, printed on an 11 x 8.5 sheet.
@@ -9,15 +9,19 @@ import { FUNERAL_FIELDS, FUNERAL_OPTIONS } from './shared'
 
 const IVORY = '#f6f1e7'
 const GOLD = '#ae9265'
-const INK = '#2e2a24'
-const SOFT = '#5d554a'
+const BROWN = '#6f5733'
+const INK = '#26221d'
+const SOFT = '#4a433a'
 const R = 5.5 // x of the right-hand panel
 
-const panelBorder = (x0: number) =>
-  [
-    { type: 'rect', x: x0 + 0.32, y: 0.32, w: 4.86, h: 7.86, stroke: GOLD, strokeWidth: 0.9 },
-    { type: 'rect', x: x0 + 0.4, y: 0.4, w: 4.7, h: 7.7, stroke: GOLD, strokeWidth: 0.35 },
-  ] as const
+const panelBorder = (x0: number): Element[] => [
+  { type: 'rect', x: x0 + 0.3, y: 0.3, w: 4.9, h: 7.9, stroke: GOLD, strokeWidth: 0.9 },
+  { type: 'rect', x: x0 + 0.38, y: 0.38, w: 4.74, h: 7.74, stroke: GOLD, strokeWidth: 0.35 },
+]
+
+const label = (text: string, x: number, y: number): Element => ({
+  type: 'text', text, x, y, w: 3.9, h: 0.3, font: 'Cormorant Garamond', weight: 600, italic: true, size: 14, color: BROWN,
+})
 
 export const funeralClassic: Template = {
   id: 'funeral-classic-ivory',
@@ -43,24 +47,26 @@ export const funeralClassic: Template = {
         ...panelBorder(R),
 
         // Front cover
-        { type: 'text', text: 'In Loving Memory', x: R + 0.6, y: 0.66, w: 4.3, h: 0.62, font: 'Great Vibes', size: 30, color: '#7a6440' },
-        { type: 'photo', field: 'photo', x: R + 1.3, y: 1.42, w: 2.9, h: 3.6, shape: 'ellipse', stroke: GOLD, strokeWidth: 1.6 },
-        { type: 'ellipse', x: R + 2.75, y: 3.22, rx: 1.56, ry: 1.91, stroke: GOLD, strokeWidth: 0.4 },
-        { type: 'text', text: '{{name}}', x: R + 0.65, y: 5.3, w: 4.2, h: 0.9, font: 'Cormorant Garamond', weight: 600, size: 25, minSize: 13, uppercase: true, letterSpacing: 0.06, lineHeight: 1.05, color: INK },
-        { type: 'text', text: '{{birthDate}}\n{{deathDate}}', x: R + 0.8, y: 6.2, w: 3.9, h: 0.55, font: 'Cormorant Garamond', italic: true, size: 13, color: SOFT, lineHeight: 1.15 },
-        { type: 'line', x: R + 2.25, y: 6.92, points: [0, 0, 1, 0], stroke: GOLD, strokeWidth: 0.75 },
-        { type: 'text', text: 'A Celebration of Life', x: R + 0.8, y: 7.02, w: 3.9, h: 0.22, font: 'Montserrat', weight: 500, size: 7, uppercase: true, letterSpacing: 0.24, color: '#7a6440' },
-        { type: 'text', text: '{{serviceDate}} at {{serviceTime}}\n{{location}}', x: R + 0.7, y: 7.26, w: 4.1, h: 0.56, font: 'Cormorant Garamond', weight: 500, size: 12, color: INK, lineHeight: 1.18 },
+        { type: 'text', text: 'In Loving Memory', x: R + 0.6, y: 0.6, w: 4.3, h: 0.7, font: 'Great Vibes', size: 34, color: BROWN },
+        { type: 'photo', field: 'photo', x: R + 1.35, y: 1.38, w: 2.8, h: 3.45, shape: 'ellipse', stroke: GOLD, strokeWidth: 1.6 },
+        { type: 'ellipse', x: R + 2.75, y: 3.105, rx: 1.51, ry: 1.835, stroke: GOLD, strokeWidth: 0.4 },
+        { type: 'text', text: '{{name}}', x: R + 0.6, y: 5.05, w: 4.3, h: 0.95, font: 'Cormorant Garamond', weight: 700, size: 27, minSize: 14, uppercase: true, letterSpacing: 0.04, lineHeight: 1.02, color: INK },
+        { type: 'text', text: 'Sunrise {{birthDate}}\nSunset {{deathDate}}', x: R + 0.7, y: 6.0, w: 4.1, h: 0.62, font: 'Cormorant Garamond', weight: 600, italic: true, size: 15, minSize: 9, color: SOFT, lineHeight: 1.12 },
+        { type: 'line', x: R + 2.25, y: 6.74, points: [0, 0, 1, 0], stroke: GOLD, strokeWidth: 0.75 },
+        { type: 'text', text: '{{serviceDate}}\n{{serviceTime}}  ·  {{location}}', x: R + 0.6, y: 6.86, w: 4.3, h: 0.62, font: 'Cormorant Garamond', weight: 700, size: 14, minSize: 8, color: INK, lineHeight: 1.18 },
+        { type: 'text', text: '{{officiant}}, Officiating', x: R + 0.6, y: 7.5, w: 4.3, h: 0.32, font: 'Cormorant Garamond', weight: 600, italic: true, size: 13, minSize: 8, color: SOFT, showIf: 'officiant' },
 
-        // Back cover
-        { type: 'text', text: 'With Gratitude', x: 0.8, y: 0.85, w: 3.9, h: 0.6, font: 'Great Vibes', size: 26, color: '#7a6440' },
-        { type: 'text', text: '{{familyMessage}}', x: 0.85, y: 1.6, w: 3.8, h: 2.25, font: 'Cormorant Garamond', italic: true, size: 13, minSize: 8, color: SOFT, lineHeight: 1.35 },
-        { type: 'line', x: 2.25, y: 4.15, points: [0, 0, 1, 0], stroke: GOLD, strokeWidth: 0.75 },
-        { type: 'text', text: 'Pallbearers', x: 0.8, y: 4.4, w: 3.9, h: 0.24, font: 'Montserrat', weight: 500, size: 7, uppercase: true, letterSpacing: 0.24, color: '#7a6440' },
-        { type: 'text', text: '{{pallbearers}}', x: 0.85, y: 4.7, w: 3.8, h: 1.2, font: 'Cormorant Garamond', weight: 500, size: 12, minSize: 8, color: INK, lineHeight: 1.25 },
-        { type: 'text', text: 'Interment', x: 0.8, y: 6.15, w: 3.9, h: 0.24, font: 'Montserrat', weight: 500, size: 7, uppercase: true, letterSpacing: 0.24, color: '#7a6440' },
-        { type: 'text', text: '{{interment}}', x: 0.85, y: 6.42, w: 3.8, h: 0.5, font: 'Cormorant Garamond', weight: 500, size: 12, minSize: 8, color: INK, lineHeight: 1.2 },
-        { type: 'text', text: 'Arrangements entrusted to {{funeralHome}}', x: 0.8, y: 7.55, w: 3.9, h: 0.3, font: 'Montserrat', weight: 500, size: 6.5, minSize: 5, letterSpacing: 0.08, color: SOFT },
+        // Back cover: sections stack and close up when one is left blank
+        {
+          type: 'stack', x: 0.75, y: 0.65, w: 4.0, h: 5.75, gap: 0.24, headingGap: 0.04, valign: 'middle',
+          heading: { font: 'Great Vibes', size: 24, color: BROWN, lineHeight: 1.1 },
+          body: { font: 'Cormorant Garamond', weight: 700, size: 14, color: INK, lineHeight: 1.2 },
+          items: BACK_SECTIONS,
+        },
+        { type: 'line', x: 2.25, y: 6.6, points: [0, 0, 1, 0], stroke: GOLD, strokeWidth: 0.75 },
+        { type: 'text', text: 'Services entrusted to', x: 0.8, y: 6.72, w: 3.9, h: 0.28, font: 'Cormorant Garamond', weight: 600, italic: true, size: 12, color: BROWN },
+        { type: 'text', text: '{{funeralHome}}', x: 0.8, y: 6.98, w: 3.9, h: 0.32, font: 'Cormorant Garamond', weight: 700, size: 14, minSize: 8, color: INK },
+        { type: 'text', text: '{{funeralHomeDetails}}', x: 0.8, y: 7.3, w: 3.9, h: 0.5, font: 'Cormorant Garamond', weight: 600, size: 11.5, minSize: 7, color: SOFT, lineHeight: 1.15 },
       ],
     },
     {
@@ -74,19 +80,17 @@ export const funeralClassic: Template = {
         ...panelBorder(R),
 
         // Inside left: obituary
-        { type: 'text', text: 'Remembering {{firstName}}', x: 0.8, y: 0.72, w: 3.9, h: 0.42, font: 'Cormorant Garamond', weight: 600, size: 16, minSize: 10, uppercase: true, letterSpacing: 0.14, color: INK },
-        { type: 'line', x: 2.25, y: 1.24, points: [0, 0, 1, 0], stroke: GOLD, strokeWidth: 0.75 },
-        { type: 'text', text: '{{obituary}}', x: 0.78, y: 1.42, w: 3.94, h: 6.3, font: 'Cormorant Garamond', size: 12, minSize: 7.5, color: INK, lineHeight: 1.36, align: 'left', valign: 'top' },
+        { type: 'text', text: 'Remembering {{firstName}}', x: 0.7, y: 0.6, w: 4.1, h: 0.62, font: 'Great Vibes', size: 30, minSize: 18, color: BROWN },
+        { type: 'text', text: '{{obituary}}', x: 0.72, y: 1.32, w: 4.06, h: 5.95, font: 'Cormorant Garamond', weight: 600, size: 14, minSize: 8, color: INK, lineHeight: 1.3, align: 'left', valign: 'top' },
+        { type: 'text', text: '{{closingQuote}}', x: 0.7, y: 7.35, w: 4.1, h: 0.45, font: 'Cormorant Garamond', weight: 700, italic: true, size: 14, minSize: 9, color: BROWN, showIf: 'closingQuote' },
 
-        // Inside right: order of service
-        { type: 'text', text: 'Order of Service', x: R + 0.8, y: 0.72, w: 3.9, h: 0.42, font: 'Cormorant Garamond', weight: 600, size: 16, uppercase: true, letterSpacing: 0.14, color: INK },
-        { type: 'line', x: R + 2.25, y: 1.24, points: [0, 0, 1, 0], stroke: GOLD, strokeWidth: 0.75 },
-        { type: 'text', text: '{{orderOfService}}', x: R + 0.8, y: 1.45, w: 3.9, h: 3.95, font: 'Cormorant Garamond', weight: 500, size: 13, minSize: 8, color: INK, lineHeight: 1.5 },
-        { type: 'text', text: 'Officiating', x: R + 0.8, y: 5.6, w: 3.9, h: 0.24, font: 'Montserrat', weight: 500, size: 7, uppercase: true, letterSpacing: 0.24, color: '#7a6440' },
-        { type: 'text', text: '{{officiant}}', x: R + 0.8, y: 5.86, w: 3.9, h: 0.32, font: 'Cormorant Garamond', weight: 500, size: 13, minSize: 8, color: INK },
-        { type: 'text', text: 'Service Location', x: R + 0.8, y: 6.4, w: 3.9, h: 0.24, font: 'Montserrat', weight: 500, size: 7, uppercase: true, letterSpacing: 0.24, color: '#7a6440' },
-        { type: 'text', text: '{{location}}\n{{locationAddress}}', x: R + 0.8, y: 6.66, w: 3.9, h: 0.6, font: 'Cormorant Garamond', weight: 500, size: 13, minSize: 8, color: INK, lineHeight: 1.2 },
-        { type: 'text', text: '{{serviceDate}} at {{serviceTime}}', x: R + 0.8, y: 7.3, w: 3.9, h: 0.3, font: 'Cormorant Garamond', italic: true, size: 12, minSize: 8, color: SOFT },
+        // Inside right: order of service with dotted leaders
+        { type: 'text', text: 'Order of Service', x: R + 0.6, y: 0.6, w: 4.3, h: 0.62, font: 'Great Vibes', size: 30, color: BROWN },
+        { type: 'text', text: '{{orderOfService}}', x: R + 0.7, y: 1.4, w: 4.1, h: 4.35, font: 'Cormorant Garamond', weight: 600, size: 14, minSize: 8, color: INK, lineHeight: 1.45, leaders: true, valign: 'top' },
+        { type: 'line', x: R + 2.25, y: 6.0, points: [0, 0, 1, 0], stroke: GOLD, strokeWidth: 0.75 },
+        label('Service Location', R + 0.8, 6.15),
+        { type: 'text', text: '{{location}}\n{{locationAddress}}', x: R + 0.7, y: 6.45, w: 4.1, h: 0.72, font: 'Cormorant Garamond', weight: 700, size: 14, minSize: 8, color: INK, lineHeight: 1.15 },
+        { type: 'text', text: '{{serviceDate}} at {{serviceTime}}', x: R + 0.7, y: 7.25, w: 4.1, h: 0.4, font: 'Cormorant Garamond', weight: 600, italic: true, size: 13, minSize: 8, color: SOFT },
       ],
     },
   ],
