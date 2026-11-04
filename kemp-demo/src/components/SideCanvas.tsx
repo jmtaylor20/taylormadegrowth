@@ -35,7 +35,6 @@ interface Props {
   onPhotoChange?: (fieldId: string, next: PhotoState) => void
   onPhotoTap?: (fieldId: string) => void
   stageRef?: React.Ref<Konva.Stage>
-  pixelRatio?: number
 }
 
 const PT = 72
@@ -57,7 +56,7 @@ export const SideCanvas = memo(function SideCanvas(p: Props) {
   const H = t.trim.h * PT
 
   return (
-    <Stage width={size.w} height={size.h} ref={p.stageRef} pixelRatio={p.pixelRatio}>
+    <Stage width={size.w} height={size.h} ref={p.stageRef}>
       <Layer>
         <Group x={offset * scale} y={offset * scale} scaleX={scale} scaleY={scale}>
           <Rect x={-bleedPt} y={-bleedPt} width={W + 2 * bleedPt} height={H + 2 * bleedPt} fill={side.background} listening={false} />
