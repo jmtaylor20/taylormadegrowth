@@ -179,6 +179,8 @@ function Editor({ t, shop, backHref, phone, phoneHref }: { t: Template } & Props
       <div className="ed-body">
         <div className="ed-stage">
           <PreviewPane
+            // Redraw once web fonts load: text is measured with the real fonts, not the fallback.
+            key={fontsReady ? 'fonts' : 'fallback'}
             template={t}
             sideId={sideId}
             onSide={setSideId}
