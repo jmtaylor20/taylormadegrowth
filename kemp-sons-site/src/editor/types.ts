@@ -14,7 +14,7 @@
 export type CategoryId = 'funeral-programs' | 'christmas-cards' | 'business-cards' | 'thank-you-cards' | 'stickers'
 
 export type FontFamily =
-  | 'Rye'
+  | 'Christmas Math'
   | 'Playfair Display'
   | 'Great Vibes'
   | 'Montserrat'
@@ -122,6 +122,8 @@ export interface TextEl extends Base {
    * dots between. A line starting with "|" is right-aligned on its own.
    */
   leaders?: boolean
+  /** Most lines the text may wrap to before it shrinks instead (e.g. 1 for a one-line script headline). */
+  maxLines?: number
 }
 
 export type TextStyle = Pick<TextEl, 'font' | 'size' | 'weight' | 'italic' | 'color' | 'lineHeight' | 'letterSpacing' | 'uppercase' | 'align'>

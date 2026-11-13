@@ -1,3 +1,10 @@
+/* Licensed display fonts that aren't on Fontsource live in /public/fonts. */
+@font-face {
+  font-family: 'Christmas Math';
+  src: url('/fonts/christmas-math-demo.otf') format('opentype');
+  font-display: block;
+}
+
 /* Design editor. Uses the site tokens from global.css. */
 
 .ed { min-height: 100svh; background: var(--stock); padding-bottom: 96px; }

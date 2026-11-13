@@ -121,7 +121,7 @@ function leaderLayout(text: string, maxW: number, size: number, el: TextEl): { r
 
 export function fitText(rawText: string, el: TextEl): FitResult {
   const text = el.uppercase ? rawText.toUpperCase() : rawText
-  const key = `${text}|${el.font}|${el.weight}|${el.italic}|${el.size}|${el.minSize}|${el.w}|${el.h}|${el.lineHeight}|${el.letterSpacing}|${el.leaders}`
+  const key = `${text}|${el.font}|${el.weight}|${el.italic}|${el.size}|${el.minSize}|${el.w}|${el.h}|${el.lineHeight}|${el.letterSpacing}|${el.leaders}|${el.maxLines}`
   return cached(key, () => {
     const maxW = el.w * 72
     const maxH = el.h * 72
@@ -134,7 +134,7 @@ export function fitText(rawText: string, el: TextEl): FitResult {
         return { lines: r.rows.map((x) => x.left), rows: r.rows, ok: r.ok && r.rows.length * size * lh <= maxH + 0.01 }
       }
       const r = wrapLines(text, maxW, size, el)
-      return { lines: r.lines, rows: undefined, ok: r.widest <= maxW + 0.01 && r.lines.length * size * lh <= maxH + 0.01 }
+      return { lines: r.lines, rows: undefined, ok: r.widest <= maxW + 0.01 && r.lines.length * size * lh <= maxH + 0.01 && r.lines.length <= (el.maxLines ?? Infinity) }
     }
 
     const first = attempt(el.size)
