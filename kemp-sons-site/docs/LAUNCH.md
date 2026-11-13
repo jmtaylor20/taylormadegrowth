@@ -130,3 +130,58 @@ Test on an older iPhone and an Android phone, on mobile data:
 - [ ] Checkout with local pickup and with shipping.
 - [ ] The order in Shopify has working print file, proof and envelope links.
 - [ ] The reorder link from the confirmation email opens the design on a different device.
+
+---
+
+## 5. Staff job board (`/staff/`)
+
+The job board shows every online order in four columns: New, Printing, Ready and Done.
+
+- **Ready for pickup** sends Shopify's "Ready for pickup" email.
+- **Mark shipped** sends Shopify's shipping email with the tracking number.
+- **Notes and stages** are saved on the Shopify order (stages are tags such as `stage-printing`), so they also show in the Shopify admin.
+- **Demo:** add `?demo=1` to the address to see the board with sample jobs, without signing in.
+
+### Setup (one time)
+
+**A. Create the Shopify app that lets the board read and update orders**
+
+1. Open **dev.shopify.com** and sign in with the account that **owns Kemp's store**, or a staff account allowed to develop apps. The app has to belong to the same organization as the store, or Shopify refuses the connection.
+2. Go to **Apps → Create app**, name it `Kemp Job Board`, and start it in the Dev Dashboard.
+3. Create a **version** with these access scopes, then release it:
+   - `read_orders`
+   - `write_orders`
+   - `read_merchant_managed_fulfillment_orders`
+   - `write_merchant_managed_fulfillment_orders`
+   - `read_customers`
+4. **Install** the app on the Kemp & Sons store and approve the scopes.
+5. Open the app's **Settings** and copy the **Client ID** and **Client secret**.
+
+**B. Add the settings in Netlify**
+
+Go to **Site configuration → Environment variables**. Mark each one as a secret where Netlify offers it, with **Functions** scope:
+
+| Key | Value |
+| --- | --- |
+| `SHOPIFY_ADMIN_CLIENT_ID` | Client ID from step A5 |
+| `SHOPIFY_ADMIN_CLIENT_SECRET` | Client secret from step A5 |
+| `STAFF_PASSWORD` | The shared staff password. Use a long one, and share it with staff in person, not by email. |
+
+`STAFF_SESSION_SECRET` is already set. Then go to **Deploys → Trigger deploy**.
+
+**C. Use it**
+
+1. Open `https://<site>/staff/` on the shop computer and sign in. The sign-in lasts 30 days.
+2. To sign everyone out, change `STAFF_PASSWORD` and redeploy.
+3. After 8 wrong passwords in a row, that address is locked out for 15 minutes.
+
+### Turning on pickup texts later
+
+1. Create a Twilio account and buy a local number.
+2. Complete the **A2P 10DLC** registration (Twilio walks you through it). Carrier approval can take 1 to 3 weeks.
+3. Add these in Netlify, then redeploy:
+   - `TWILIO_ACCOUNT_SID`
+   - `TWILIO_AUTH_TOKEN`
+   - `TWILIO_FROM` (the number, for example `+13345550100`)
+
+The board then texts the customer's phone number along with the email when a pickup order is marked ready.
