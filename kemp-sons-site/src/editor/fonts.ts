@@ -1,3 +1,4 @@
+import '@fontsource/rye/400.css'
 import '@fontsource/playfair-display/400.css'
 import '@fontsource/playfair-display/400-italic.css'
 import '@fontsource/playfair-display/700.css'
@@ -10,7 +11,7 @@ import { invalidateTextCache } from './textFit'
 
 /** Every face the templates use. Add new faces here and in FontFamily (types.ts). */
 const FACES = [
-  '400 16px "Christmas Math"',
+  '400 16px "Rye"',
   '400 16px "Playfair Display"', 'italic 400 16px "Playfair Display"', '700 16px "Playfair Display"',
   '400 16px "Great Vibes"',
   '400 16px "Montserrat"', '500 16px "Montserrat"', '600 16px "Montserrat"', '700 16px "Montserrat"',

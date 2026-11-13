@@ -14,7 +14,7 @@
 export type CategoryId = 'funeral-programs' | 'christmas-cards' | 'business-cards' | 'thank-you-cards' | 'stickers'
 
 export type FontFamily =
-  | 'Christmas Math'
+  | 'Rye'
   | 'Playfair Display'
   | 'Great Vibes'
   | 'Montserrat'
