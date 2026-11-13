@@ -148,29 +148,68 @@ export function christmasTexture(r: THREE.WebGLRenderer) {
   return toTexture(c, r)
 }
 
-export function yardSignTexture(r: THREE.WebGLRenderer) {
-  const W = 960, H = 720
+/** A customer's business card from the online lineup (sample design). */
+export function sampleBusinessCardFront(r: THREE.WebGLRenderer) {
+  const W = 1050, H = 600
+  const [c, g] = canvas(W, H)
+  g.fillStyle = '#ffffff'
+  g.fillRect(0, 0, W, H)
+  g.fillStyle = C.navy
+  g.fillRect(0, 0, 26, H)
+  g.textAlign = 'left'
+  g.textBaseline = 'alphabetic'
+  g.fillStyle = C.navy
+  g.font = `bold 66px ${SANS}`
+  g.fillText('JORDAN HAYES', 90, 200)
+  g.fillStyle = C.red
+  g.font = `italic 38px ${SERIF}`
+  g.fillText('Hayes Home & Land', 90, 262)
+  g.fillStyle = C.red
+  g.fillRect(90, 312, 90, 6)
+  g.fillStyle = '#4a5560'
+  g.font = `30px ${SANS}`
+  g.fillText('(334) 555-0142', 90, 420)
+  g.fillText('jordan@hayeshomeandland.com', 90, 468)
+  g.fillText('Opelika, Alabama', 90, 516)
+  return toTexture(c, r)
+}
+
+export function sampleBusinessCardBack(r: THREE.WebGLRenderer) {
+  const W = 1050, H = 600
   const [c, g] = canvas(W, H)
   g.fillStyle = C.navy
   g.fillRect(0, 0, W, H)
-  g.fillStyle = C.red
-  g.fillRect(0, H - 170, W, 170)
-  g.fillStyle = '#ffffff'
-  g.beginPath(); g.arc(230, 280, 160, 0, Math.PI * 2); g.fill()
-  photo(g, 230, 280, 296, 296)
-  g.textAlign = 'left'
-  g.textBaseline = 'alphabetic'
-  g.fillStyle = '#e8c8a0'
-  g.font = `bold 46px ${SANS}`
-  g.fillText('CONGRATULATIONS', 430, 170)
-  g.fillStyle = '#ffffff'
-  g.font = `bold 92px ${SANS}`
-  g.fillText('JORDAN', 430, 270)
-  g.fillText('HAYES', 430, 362)
-  g.fillStyle = '#e8c8a0'
-  g.font = `bold 50px ${SANS}`
-  g.fillText('CLASS OF 2027', 430, 440)
-  centerText(g, 'We are so proud of you!', W / 2, H - 85, `italic 64px ${SERIF}`, '#ffffff')
+  centerText(g, 'HAYES', W / 2, 270, `bold 120px ${SANS}`, '#ffffff', 14)
+  centerText(g, 'HOME & LAND', W / 2, 360, `bold 34px ${SANS}`, '#e8c8a0', 10)
+  return toTexture(c, r)
+}
+
+/** Thank you card (sample design), matching the funeral program. */
+export function thankYouTexture(r: THREE.WebGLRenderer) {
+  const W = 500, H = 700
+  const [c, g] = canvas(W, H)
+  g.fillStyle = C.ivory
+  g.fillRect(0, 0, W, H)
+  g.strokeStyle = C.gold
+  g.lineWidth = 3
+  g.strokeRect(26, 26, W - 52, H - 52)
+  g.lineWidth = 1.5
+  g.strokeRect(38, 38, W - 76, H - 76)
+  // small sprig
+  g.strokeStyle = '#7d8f7a'
+  g.lineWidth = 3
+  g.beginPath(); g.moveTo(W / 2, 250); g.quadraticCurveTo(W / 2 - 10, 190, W / 2, 140); g.stroke()
+  g.fillStyle = '#9aab95'
+  for (let i = 0; i < 5; i++) {
+    const y = 235 - i * 22, d = i % 2 ? 1 : -1
+    g.beginPath(); g.ellipse(W / 2 + d * 18, y, 16, 7, d * 0.6, 0, Math.PI * 2); g.fill()
+  }
+  centerText(g, 'Thank You', W / 2, 345, `italic 76px ${SERIF}`, C.navy)
+  g.fillStyle = C.gold
+  g.fillRect(W / 2 - 40, 400, 80, 3)
+  centerText(g, 'for your kindness', W / 2, 455, `italic 28px ${SERIF}`, '#5b6670')
+  centerText(g, 'and sympathy', W / 2, 495, `italic 28px ${SERIF}`, '#5b6670')
+  centerText(g, 'THE HAYES FAMILY', W / 2, 590, `bold 17px ${SANS}`, C.red, 5)
   return toTexture(c, r)
 }
 
@@ -202,24 +241,6 @@ export function stickerSheetTexture(r: THREE.WebGLRenderer) {
   return toTexture(c, r)
 }
 
-export function sportsProgramTexture(r: THREE.WebGLRenderer) {
-  const W = 620, H = 800
-  const [c, g] = canvas(W, H)
-  g.fillStyle = C.black
-  g.fillRect(0, 0, W, H)
-  g.fillStyle = C.red
-  g.beginPath(); g.moveTo(0, 520); g.lineTo(W, 380); g.lineTo(W, H); g.lineTo(0, H); g.fill()
-  g.strokeStyle = 'rgba(255,255,255,0.12)'
-  g.lineWidth = 3
-  for (let y = 80; y < 520; y += 60) { g.beginPath(); g.moveTo(40, y); g.lineTo(W - 40, y); g.stroke() }
-  centerText(g, 'FRIDAY', W / 2, 150, `bold 96px ${SANS}`, '#ffffff', 6)
-  centerText(g, 'NIGHT', W / 2, 250, `bold 96px ${SANS}`, '#ffffff', 6)
-  centerText(g, 'LIGHTS', W / 2, 350, `bold 96px ${SANS}`, C.gray, 6)
-  centerText(g, 'OFFICIAL GAME PROGRAM', W / 2, 620, `bold 26px ${SANS}`, '#ffffff', 5)
-  centerText(g, '2026 Season', W / 2, 680, `italic 34px ${SERIF}`, '#f3dede')
-  return toTexture(c, r)
-}
-
 export function letterheadTexture(r: THREE.WebGLRenderer, logo: HTMLImageElement | null) {
   const W = 680, H = 880
   const [c, g] = canvas(W, H)
@@ -233,7 +254,7 @@ export function letterheadTexture(r: THREE.WebGLRenderer, logo: HTMLImageElement
   return toTexture(c, r)
 }
 
-/** Owners' business card, front: the full-color wordmark on bright white stock. */
+/** Kemp & Sons business card, front: the full-color wordmark on bright white stock. */
 export function businessCardFront(r: THREE.WebGLRenderer, logo: HTMLImageElement | null) {
   const W = 1050, H = 600
   const [c, g] = canvas(W, H)
@@ -245,7 +266,7 @@ export function businessCardFront(r: THREE.WebGLRenderer, logo: HTMLImageElement
   return toTexture(c, r)
 }
 
-/** Owners' business card, back: navy with contact details. */
+/** Kemp & Sons business card, back: navy with contact details. */
 export function businessCardBack(r: THREE.WebGLRenderer) {
   const W = 1050, H = 600
   const [c, g] = canvas(W, H)
@@ -257,10 +278,10 @@ export function businessCardBack(r: THREE.WebGLRenderer) {
   g.textBaseline = 'alphabetic'
   g.fillStyle = '#ffffff'
   g.font = `bold 64px ${SANS}`
-  g.fillText('BRIAN & SUSAN BASS', 70, 190)
+  g.fillText('KEMP & SONS PRINTING', 70, 190)
   g.fillStyle = '#c9d3db'
   g.font = `30px ${SANS}`
-  g.fillText('Owners, Kemp & Sons Printing', 70, 240)
+  g.fillText('Family owned and operated', 70, 240)
   g.fillStyle = '#ffffff'
   g.font = `32px ${SANS}`
   g.fillText('(334) 705-5888', 70, 400)

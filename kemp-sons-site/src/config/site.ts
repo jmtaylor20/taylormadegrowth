@@ -8,6 +8,7 @@ export const business = {
   name: 'Kemp & Sons Printing',
   shortName: 'Kemp & Sons',
   owners: 'Brian and Susan Bass',
+  ownership: 'Family owned and operated',
   // TODO(kemp): confirm founding year before using it anywhere.
   founded: null as number | null,
   address: {
@@ -58,15 +59,15 @@ export const productLines = [
     tone: 'red',
   },
   {
-    collection: 'yard-signs',
-    name: 'Yard Signs',
-    blurb: 'Weatherproof signs for grads, events, real estate and "for sale, call this number."',
+    collection: 'business-cards',
+    name: 'Business Cards',
+    blurb: 'Crisp cards on heavy stock, from our layouts or your own logo. Reorder in a few clicks.',
     tone: 'navy',
   },
   {
-    collection: 'school-sports-programs',
-    name: 'School & Sports Programs',
-    blurb: 'Football programs, banquet programs and school events, ready for the season.',
+    collection: 'thank-you-cards',
+    name: 'Thank You Cards',
+    blurb: 'For sympathy, weddings, showers and graduations, printed to match your program or invitation.',
     tone: 'gray',
   },
   {
@@ -91,7 +92,7 @@ export const services = [
 export const capabilities = [
   { title: 'Offset printing', body: 'Two- and one-color offset presses for long runs, letterhead, envelopes and forms.' },
   { title: 'Digital printing', body: 'Fast short runs in full color, with a wide range of paper kept in stock.' },
-  { title: 'Bindery and finishing', body: 'Cutting, folding, numbering, coil binding and hard bound books, done in house.' },
+  { title: 'Bindery and finishing', body: 'Cutting, folding, numbering and coil binding, done in house.' },
   { title: 'Design help', body: 'Bring a sketch, a Canva file or nothing at all. Our team can set it up for you.' },
 ]
 

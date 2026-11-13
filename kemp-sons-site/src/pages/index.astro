@@ -38,7 +38,7 @@ const SHEETS = 5
         </div>
         <div class="copy">
           <h1 class="headline reveal">Printed right<br />here in<br /><span class="accent misreg">Opelika.</span></h1>
-          <p class="lede reveal">Design funeral programs, Christmas cards, yard signs and more online, approve your proof, and pick it up at our shop. For everything else, our presses and our people are ready.</p>
+          <p class="lede reveal">Design funeral programs, Christmas cards, business cards and more online, approve your proof, then pick it up at our shop or have it shipped. For everything else, our presses and our people are ready.</p>
           <div class="btn-row reveal">
             <a class="btn btn-primary" href={shop.shopUrl}>Start an order <span class="arrow" aria-hidden="true">&rarr;</span></a>
             <a class="btn" href="#custom">Get a custom quote</a>
@@ -65,9 +65,8 @@ const SHEETS = 5
           <ol class="steps">
             <li class="reveal"><span class="n mono">01</span><div><p class="sub">Pick a template</p><p>Layouts our team designs and prints every week.</p></div></li>
             <li class="reveal"><span class="n mono">02</span><div><p class="sub">Make it yours</p><p>Type names and dates, add photos, and watch it update as you go.</p></div></li>
-            <li class="reveal"><span class="n mono">03</span><div><p class="sub">Approve &amp; pick up</p><p>Check your proof, pay online, and get a text when it's ready.</p></div></li>
+            <li class="reveal"><span class="n mono">03</span><div><p class="sub">Approve, then pick up or ship</p><p>Check your proof and pay online. We'll text you when it's ready for pickup, or ship it to your door.</p></div></li>
           </ol>
-          <p class="note reveal"><span class="mono">In the shop?</span> Use our design kiosk with our team right beside you.</p>
         </div>
       </div>
     </section>
@@ -126,8 +125,8 @@ const SHEETS = 5
       <div class="wrap">
         <div class="copy">
           <span class="sheet-no mono reveal"><RegMark /> Sheet <b>05</b> / {pad(SHEETS)} &middot; Who we are</span>
-          <h2 class="headline reveal">Local owners.<br />Real people<br /><span class="accent">on the phone.</span></h2>
-          <p class="lede reveal">Kemp &amp; Sons is owned by {business.owners} and run by a small team in Opelika. When you call, you talk to the people who print your job.</p>
+          <h2 class="headline reveal">Family owned.<br />Real people<br /><span class="accent">on the phone.</span></h2>
+          <p class="lede reveal">Kemp &amp; Sons is family owned and operated, with a small team in Opelika. When you call, you talk to the people who print your job.</p>
           <div class="btn-row reveal">
             <a class="btn" href={business.phoneHref}>Call {business.phone}</a>
           </div>
@@ -198,8 +197,6 @@ const SHEETS = 5
   .steps .n { font-size: 14px; color: var(--red-ink); padding-top: 2px; }
   .steps .sub { margin-bottom: 4px; }
   .steps p:not(.sub) { color: var(--ink-2); font-size: 16px; }
-  .note { font-size: 15.5px; color: var(--ink-2); }
-  .note .mono { color: var(--red-ink); margin-right: 8px; }
 
   /* Price list */
   .products .copy { max-width: 640px; }

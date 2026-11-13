@@ -27,8 +27,8 @@ const socials = Object.entries(business.social).filter(([, url]) => url)
         <p><a href={shop.shopUrl}>Start an order</a><br /><a href={shop.accountUrl}>Reorder a past job</a><br /><a href="/#custom">Custom job quote</a></p>
       </div>
       <div>
-        <p class="h mono">Owners</p>
-        <p>{business.owners}</p>
+        <p class="h mono">Kemp &amp; Sons</p>
+        <p>{business.ownership} in {business.address.city}, Alabama.</p>
         {socials.length > 0 && (
           <p class="social">{socials.map(([k, url]) => <a href={url} target="_blank" rel="noopener">{k === 'googleBusiness' ? 'Google' : k[0].toUpperCase() + k.slice(1)}</a>)}</p>
         )}

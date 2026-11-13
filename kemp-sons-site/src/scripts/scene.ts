@@ -1,8 +1,8 @@
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import {
-  programTextures, christmasTexture, yardSignTexture, stickerSheetTexture,
-  sportsProgramTexture, letterheadTexture, plainPaper, businessCardFront, businessCardBack,
+  programTextures, christmasTexture, sampleBusinessCardFront, sampleBusinessCardBack,
+  stickerSheetTexture, thankYouTexture, letterheadTexture, plainPaper, businessCardFront, businessCardBack,
 } from './textures'
 
 /**
@@ -12,7 +12,7 @@ import {
  *   1 fold       it folds into a finished funeral program
  *   2 fan        the rest of the online lineup joins it
  *   3 stack      fresh sheets stack up off the press
- *   4 cards      the owners' business cards, full-color logo
+ *   4 cards      Kemp & Sons business cards, full-color logo
  */
 
 type V3 = [number, number, number]
@@ -99,14 +99,18 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
 
   // --- The rest of the lineup ---
   const card = sheet(5 * S, 7 * S, christmasTexture(renderer), paperBack, edge)
+  // A customer's business cards: one face up, one showing the back
   const signGroup = new THREE.Group()
-  const sign = sheet(24 * S * 0.28, 18 * S * 0.28, yardSignTexture(renderer), yardSignTexture(renderer), edge)
-  const stakeMat = new THREE.MeshStandardMaterial({ color: 0x8c8f93, metalness: 0.6, roughness: 0.4, transparent: true })
-  const stake = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2.4, 10), stakeMat)
-  stake.position.y = -1.6
-  signGroup.add(sign, stake)
+  const bcw = 3.5 * S * 1.75, bch = 2 * S * 1.75
+  const bcFront = sampleBusinessCardFront(renderer), bcBack = sampleBusinessCardBack(renderer)
+  const bcTop = sheet(bcw, bch, bcFront, bcBack, edge)
+  const bcUnder = sheet(bcw, bch, bcBack, bcFront, edge)
+  bcUnder.position.set(0.35, -0.5, -0.08)
+  bcUnder.rotation.z = -0.12
+  bcTop.rotation.z = 0.05
+  signGroup.add(bcUnder, bcTop)
   const stickers = sheet(8.5 * S * 0.62, 11 * S * 0.62, stickerSheetTexture(renderer), paperBack, edge)
-  const sports = sheet(5.5 * S, 8.5 * S * 0.97, sportsProgramTexture(renderer), paperBack, edge)
+  const sports = sheet(5 * S, 7 * S, thankYouTexture(renderer), paperBack, edge)
 
   // --- Press stack: a pile of sheets, letterhead on top ---
   const stack = new THREE.Group()
@@ -139,7 +143,7 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
   }
   logoImg.src = '/brand/kemp-sons-full-color.svg'
 
-  // --- The owners' business cards, fanned out ---
+  // --- Kemp & Sons business cards, fanned out ---
   const cards = new THREE.Group()
   const cardFan = new THREE.Group()
   const cw = 3.5 * S * 2.3, ch = 2 * S * 2.3
@@ -186,7 +190,7 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
     },
     {
       obj: sports,
-      poses: [HIDE_DOWN, HIDE_DOWN, { p: [0.3, 0.2, -1.6], r: [0.02, -0.1, -0.04], s: 0.95, o: 1 }, HIDE_UP, HIDE_UP],
+      poses: [HIDE_DOWN, HIDE_DOWN, { p: [-1.95, 1.05, -0.9], r: [0.04, 0.36, 0.1], s: 0.9, o: 1 }, HIDE_UP, HIDE_UP],
     },
     {
       obj: stack,

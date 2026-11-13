@@ -44,13 +44,13 @@ are waiting on the Getting Started Checklist (hours, social links, founding
 year, confirmed equipment). Product line `collection` values must match the
 Shopify collection handles:
 
-`funeral-programs`, `christmas-cards`, `yard-signs`, `school-sports-programs`, `stickers`
+`funeral-programs`, `christmas-cards`, `business-cards`, `thank-you-cards`, `stickers`
 
 ## The 3D story
 
 `src/scripts/scene.ts` builds five stages that advance as each `[data-stage]`
 section scrolls in: open sheet, folded funeral program, product lineup, press
-stack, and the owners' business cards. Artwork is drawn on canvases in
+stack, and Kemp & Sons business cards. Artwork is drawn on canvases in
 `src/scripts/textures.ts` (no stock images). `src/scripts/experience.ts` wires
 Lenis smooth scrolling, GSAP ScrollTrigger and the scene together. Three.js
 loads after the page text, motion is reduced for visitors who ask for it, and
