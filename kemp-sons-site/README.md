@@ -1,20 +1,38 @@
 # Kemp & Sons Printing website
 
-Custom marketing site for **kempandsons.com**: a scroll-driven 3D landing page,
-the custom job work-order form, and the front door to the Shopify store.
+Custom site for **kempandsons.com**: a scroll-driven 3D landing page, the
+online design editor, and the custom job work-order form. Shopify handles
+checkout.
 
 ## How it fits together
 
 | Piece | Where | What it does |
 | --- | --- | --- |
-| This site (Astro, static) | kempandsons.com on Netlify | Story, product lines, custom job leads, visit info |
-| Shopify store | shop.kempandsons.com | PitchPrint template editor, proofs, cart, checkout, customer accounts and reorders, reviews, discounts, shipping |
+| This site (Astro, static) | kempandsons.com on Netlify | Story, product galleries (`/shop/:line/`), the design editor (`/design/:template/`), reorders (`/reorder/`), custom job leads |
+| Design editor (React island) | `src/editor/` | Fill-in-the-blanks templates, live preview, proofs, print PDFs with bleed and crop marks, addressed envelopes |
+| Netlify Functions + Blobs | `netlify/functions/` | Stores each approved design (print file, proof, envelopes, editable design and photos) for 13 months |
+| Shopify store | shop.kempandsons.com | Prices and options (product variants), cart, checkout, payments, customer accounts, orders |
 | Netlify Forms | built into this site | Stores custom job requests (with file upload) and emails the shop |
 
-Personalization apps like PitchPrint only run inside a Shopify theme, so the
-ordering experience lives on the Shopify store (themed to match). This site
-reads the product lines from Shopify's Storefront API at build time and links
-into the store.
+Customers design and approve on this site. On approval the editor uploads the
+print file and adds the item to a Shopify cart through the Storefront API; the
+order line carries the print file, proof, envelope and reorder links. The
+Shopify theme redirects its storefront pages back to this site
+(`snippets/kemp-site-redirect.liquid` in the theme).
+
+### Adding a template
+
+1. Create `src/editor/templates/<name>.ts` (see `christmas-very-merry.ts` and the
+   documented format in `src/editor/types.ts`). Positions are in inches from the
+   trim, font sizes in points. Background art goes in `public/templates/<name>/`
+   at 300 ppi including the 0.125 in bleed.
+2. Register it in `src/editor/templates/index.ts`.
+3. In Shopify, create the product with handle = the template's `shopifyHandle`,
+   options such as Quantity and Paper, publish it to Online Store and Headless,
+   add it to its collection, and set the metafield `custom.editor_path` to
+   `/design/<template id>/`.
+
+See `docs/LAUNCH.md` for the Shopify admin steps and launch checklist.
 
 ## Run
 
@@ -65,9 +83,4 @@ printing@kempandsons.com.
 
 ## Launch checklist
 
-- [ ] Fill in `TODO(kemp)` items in `src/config/site.ts`
-- [ ] Shopify env vars set, collections created and published to the Headless channel
-- [ ] Form notification email set in Netlify
-- [ ] Remove the `X-Robots-Tag: noindex` header from `netlify.toml`
-- [ ] Point kempandsons.com DNS to Netlify, shop.kempandsons.com to Shopify
-- [ ] Submit the sitemap and verify the domain in Google Search Console
+See [`docs/LAUNCH.md`](docs/LAUNCH.md).
