@@ -8,7 +8,7 @@ import * as THREE from 'three'
 const C = {
   navy: '#103750',
   navyDeep: '#0a2536',
-  burgundy: '#982b38',
+  red: '#ed1c24',
   gray: '#838783',
   black: '#111111',
   paper: '#fbfaf6',
@@ -93,7 +93,7 @@ export function programTextures(r: THREE.WebGLRenderer) {
     return toTexture(c, r)
   }
   const front = panel((g) => {
-    centerText(g, 'In Loving Memory', W / 2, 96, `italic 44px ${SERIF}`, C.burgundy)
+    centerText(g, 'In Loving Memory', W / 2, 96, `italic 44px ${SERIF}`, C.red)
     photo(g, W / 2, 330, 280, 350)
     g.strokeStyle = C.gold
     g.lineWidth = 4
@@ -105,20 +105,20 @@ export function programTextures(r: THREE.WebGLRenderer) {
     lines(g, W / 2, 762, 300, 2, 22, '#c9bfa9')
   })
   const back = panel((g) => {
-    centerText(g, 'With Gratitude', W / 2, 110, `italic 38px ${SERIF}`, C.burgundy)
+    centerText(g, 'With Gratitude', W / 2, 110, `italic 38px ${SERIF}`, C.red)
     lines(g, W / 2, 170, 380, 5, 26, '#bdb4a2')
-    centerText(g, 'Pallbearers', W / 2, 360, `italic 30px ${SERIF}`, C.burgundy)
+    centerText(g, 'Pallbearers', W / 2, 360, `italic 30px ${SERIF}`, C.red)
     lines(g, W / 2, 400, 320, 3, 26, '#bdb4a2')
-    centerText(g, 'Interment', W / 2, 530, `italic 30px ${SERIF}`, C.burgundy)
+    centerText(g, 'Interment', W / 2, 530, `italic 30px ${SERIF}`, C.red)
     lines(g, W / 2, 570, 260, 2, 26, '#bdb4a2')
     centerText(g, 'Printed by Kemp & Sons', W / 2, 770, `14px ${SANS}`, C.gray, 2)
   })
   const insideLeft = panel((g) => {
-    centerText(g, 'Obituary', W / 2, 100, `italic 40px ${SERIF}`, C.burgundy)
+    centerText(g, 'Obituary', W / 2, 100, `italic 40px ${SERIF}`, C.red)
     lines(g, 70, 160, 410, 22, 26, '#b9b1a1', false)
   })
   const insideRight = panel((g) => {
-    centerText(g, 'Order of Service', W / 2, 100, `italic 40px ${SERIF}`, C.burgundy)
+    centerText(g, 'Order of Service', W / 2, 100, `italic 40px ${SERIF}`, C.red)
     g.fillStyle = '#b9b1a1'
     for (let i = 0; i < 11; i++) {
       const y = 170 + i * 44
@@ -139,7 +139,7 @@ export function christmasTexture(r: THREE.WebGLRenderer) {
   for (const [x, h] of [[90, 170], [170, 120], [330, 200], [420, 140]] as const) {
     g.beginPath(); g.moveTo(x, 470 - h); g.lineTo(x + h * 0.32, 470); g.lineTo(x - h * 0.32, 470); g.fill()
   }
-  g.fillStyle = C.burgundy
+  g.fillStyle = C.red
   g.fillRect(0, 490, W, 210)
   g.fillStyle = C.gold
   g.fillRect(0, 490, W, 6)
@@ -153,7 +153,7 @@ export function yardSignTexture(r: THREE.WebGLRenderer) {
   const [c, g] = canvas(W, H)
   g.fillStyle = C.navy
   g.fillRect(0, 0, W, H)
-  g.fillStyle = C.burgundy
+  g.fillStyle = C.red
   g.fillRect(0, H - 170, W, 170)
   g.fillStyle = '#ffffff'
   g.beginPath(); g.arc(230, 280, 160, 0, Math.PI * 2); g.fill()
@@ -179,7 +179,7 @@ export function stickerSheetTexture(r: THREE.WebGLRenderer) {
   const [c, g] = canvas(W, H)
   g.fillStyle = '#ffffff'
   g.fillRect(0, 0, W, H)
-  const fills = [C.burgundy, C.navy, C.burgundy, C.navy, C.burgundy, C.navy]
+  const fills = [C.red, C.navy, C.red, C.navy, C.red, C.navy]
   let i = 0
   for (let row = 0; row < 3; row++) {
     for (let col = 0; col < 2; col++) {
@@ -207,7 +207,7 @@ export function sportsProgramTexture(r: THREE.WebGLRenderer) {
   const [c, g] = canvas(W, H)
   g.fillStyle = C.black
   g.fillRect(0, 0, W, H)
-  g.fillStyle = C.burgundy
+  g.fillStyle = C.red
   g.beginPath(); g.moveTo(0, 520); g.lineTo(W, 380); g.lineTo(W, H); g.lineTo(0, H); g.fill()
   g.strokeStyle = 'rgba(255,255,255,0.12)'
   g.lineWidth = 3
@@ -226,7 +226,7 @@ export function letterheadTexture(r: THREE.WebGLRenderer, logo: HTMLImageElement
   g.fillStyle = C.paper
   g.fillRect(0, 0, W, H)
   if (logo) g.drawImage(logo, 50, 40, 200, 132)
-  g.fillStyle = C.burgundy
+  g.fillStyle = C.red
   g.fillRect(50, 196, W - 100, 4)
   lines(g, 50, 250, 560, 16, 30, '#cfd3d6', false)
   centerText(g, '2301 Enterprise Drive  |  Opelika, Alabama', W / 2, 840, `15px ${SANS}`, C.gray, 1)
@@ -240,7 +240,7 @@ export function businessCardFront(r: THREE.WebGLRenderer, logo: HTMLImageElement
   g.fillStyle = '#ffffff'
   g.fillRect(0, 0, W, H)
   if (logo) g.drawImage(logo, (W - 600) / 2, 70, 600, 396)
-  g.fillStyle = C.burgundy
+  g.fillStyle = C.red
   g.fillRect(0, H - 34, W, 34)
   return toTexture(c, r)
 }
@@ -251,7 +251,7 @@ export function businessCardBack(r: THREE.WebGLRenderer) {
   const [c, g] = canvas(W, H)
   g.fillStyle = C.navy
   g.fillRect(0, 0, W, H)
-  g.fillStyle = C.burgundy
+  g.fillStyle = C.red
   g.fillRect(70, 96, 70, 8)
   g.textAlign = 'left'
   g.textBaseline = 'alphabetic'

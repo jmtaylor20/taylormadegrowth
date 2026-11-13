@@ -106,17 +106,17 @@ import RegMark from './RegMark.astro'
 <style>
   .work-order { background: var(--white); border: 2px solid var(--ink); padding: clamp(20px, 3vw, 36px); display: grid; gap: 30px; box-shadow: 10px 10px 0 var(--navy); }
   .wo-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; border-bottom: 2px solid var(--ink); padding-bottom: 16px; }
-  .wo-title { font-stretch: 122%; font-weight: 800; font-size: clamp(30px, 3.4vw, 44px); text-transform: uppercase; line-height: 0.9; }
+  .wo-title { font-stretch: var(--stretch-display); font-weight: 800; font-size: clamp(30px, 3.4vw, 44px); text-transform: uppercase; line-height: 0.9; }
   .wo-meta { display: grid; justify-items: end; gap: 4px; color: var(--ink-2); text-align: right; }
   .wo-meta span { display: inline-flex; align-items: center; gap: 8px; }
   fieldset { border: 0; display: grid; gap: 18px; }
-  legend { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; font-stretch: 115%; font-weight: 800; font-size: 15px; letter-spacing: 0.04em; text-transform: uppercase; }
+  legend { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; font-stretch: var(--stretch-display); font-weight: 800; font-size: 15px; letter-spacing: 0.04em; text-transform: uppercase; }
   legend .mono { display: grid; place-items: center; width: 26px; height: 26px; background: var(--ink); color: var(--white); font-size: 12px; }
   .grid { display: grid; gap: 18px 22px; }
   .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   label { display: grid; gap: 4px; }
   .lbl { font-family: var(--mono); font-size: 11.5px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
-  .req { color: var(--burgundy); }
+  .req { color: var(--red-ink); }
   .hint { text-transform: none; letter-spacing: 0; color: var(--gray); }
   /* Fill-in-the-blank fields, like a printed form */
   input, select, textarea {
@@ -127,9 +127,9 @@ import RegMark from './RegMark.astro'
   select { cursor: pointer; }
   textarea { resize: vertical; min-height: 110px; border: 1.5px solid var(--ink); padding: 10px 12px; background-image: repeating-linear-gradient(transparent 0 31px, var(--rule) 31px 32px); line-height: 32px; }
   input[type='file'] { font-size: 14px; padding-top: 11px; }
-  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--burgundy); background-color: #fbf3f4; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--red); background-color: #fbf3f4; }
   .hp { position: absolute; left: -9999px; }
-  .error { border: 2px solid var(--burgundy); color: var(--burgundy-deep); padding: 12px 14px; font-weight: 700; font-size: 15px; }
+  .error { border: 2px solid var(--red); color: var(--red-ink); padding: 12px 14px; font-weight: 700; font-size: 15px; }
   .wo-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; border-top: 2px solid var(--ink); padding-top: 22px; }
   .fine { color: var(--ink-2); line-height: 1.6; }
   @media (max-width: 640px) {

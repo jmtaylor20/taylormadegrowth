@@ -55,7 +55,7 @@ export const productLines = [
     collection: 'christmas-cards',
     name: 'Christmas & Seasonal Cards',
     blurb: '5x7 photo cards and greetings, with names and addresses merged from a spreadsheet.',
-    tone: 'burgundy',
+    tone: 'red',
   },
   {
     collection: 'yard-signs',
@@ -73,7 +73,7 @@ export const productLines = [
     collection: 'stickers',
     name: 'Stickers',
     blurb: 'Sheets of six 3-inch circles, sized for party cups, favors and packaging.',
-    tone: 'burgundy',
+    tone: 'red',
   },
 ] as const
 

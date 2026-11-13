@@ -42,10 +42,10 @@ import { shop, business } from '../config/site'
   .logo img { width: 104px; height: auto; }
   .nav { display: flex; gap: 28px; margin-left: auto; }
   .nav a {
-    font-stretch: 112%; font-weight: 700; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase;
+    font-stretch: var(--stretch-ui); font-weight: 700; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase;
     text-decoration: none; color: var(--ink); position: relative; padding: 6px 0;
   }
-  .nav a::after { content: ''; position: absolute; left: 0; right: 100%; bottom: 0; height: 2px; background: var(--burgundy); transition: right 0.25s var(--ease); }
+  .nav a::after { content: ''; position: absolute; left: 0; right: 100%; bottom: 0; height: 2px; background: var(--red); transition: right 0.25s var(--ease); }
   .nav a:hover::after { right: 0; }
   .actions { display: flex; align-items: center; gap: 20px; }
   .phone { text-decoration: none; color: var(--ink-2); font-size: 12.5px; }
@@ -62,7 +62,7 @@ import { shop, business } from '../config/site'
   .mobile-menu { display: grid; padding: 0 var(--gutter) 18px; background: var(--stock); border-bottom: 2px solid var(--ink); }
   .mobile-menu a {
     padding: 15px 0; border-bottom: 1px solid var(--rule); text-decoration: none;
-    font-stretch: 115%; font-weight: 800; font-size: 22px; text-transform: uppercase; letter-spacing: -0.005em;
+    font-stretch: var(--stretch-display); font-weight: 800; font-size: 22px; text-transform: uppercase; letter-spacing: -0.005em;
   }
   @media (max-width: 960px) { .phone { display: none; } }
   @media (max-width: 860px) {
