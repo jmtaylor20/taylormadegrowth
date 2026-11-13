@@ -39,6 +39,7 @@ export async function initExperience() {
   const sections = Array.from(document.querySelectorAll<HTMLElement>('[data-stage]'))
   // Text sits on the opposite side of the 3D object.
   exp?.setSide(sections.map((s) => (s.classList.contains('right') ? -1 : 1)))
+  exp?.setCopy(sections.map((s) => s.querySelector<HTMLElement>('.copy')))
   const progress = sections.map(() => 0)
   sections.forEach((section, i) => {
     if (i === 0) return

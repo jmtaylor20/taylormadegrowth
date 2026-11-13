@@ -48,6 +48,7 @@ const smooth = (t: number) => t * t * (3 - 2 * t)
 export interface Experience {
   setStage(v: number): void
   setSide(side: number[]): void
+  setCopy(els: (HTMLElement | null)[]): void
   dispose(): void
 }
 
@@ -197,6 +198,47 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
     },
   ]
 
+  // Footprint of each stage's visible objects (world units, at world scale 1),
+  // so the stage can be kept clear of the text column on narrower windows.
+  function poseAt(i: number) {
+    for (const { obj, poses } of objects) {
+      const P = poses[i]
+      obj.position.set(...P.p)
+      obj.rotation.set(...P.r)
+      obj.scale.setScalar(Math.max(0.0001, P.s))
+      obj.visible = P.o > 0.01
+      if (obj === program) {
+        leftPivot.rotation.y = -Math.PI * smooth(P.fold ?? 0)
+        programInner.position.x = -pw / 2 * smooth(P.fold ?? 0)
+      }
+    }
+  }
+  const footprints = [0, 1, 2, 3, 4].map((i) => {
+    poseAt(i)
+    world.updateMatrixWorld(true)
+    const box = new THREE.Box3()
+    for (const { obj } of objects) if (obj.visible) box.expandByObject(obj)
+    return { cx: (box.min.x + box.max.x) / 2, w: box.max.x - box.min.x }
+  })
+  for (const { obj } of objects) obj.visible = true
+
+  // Horizontal extent (px) of the text on each stage, set from the page.
+  let copyEls: (HTMLElement | null)[] = []
+  let copyBounds: ({ left: number; right: number } | null)[] = []
+  function measureCopy() {
+    copyBounds = copyEls.map((el) => {
+      if (!el) return null
+      let left = Infinity, right = -Infinity
+      for (const c of [el, ...Array.from(el.children)]) {
+        const r = c.getBoundingClientRect()
+        if (r.width === 0) continue
+        left = Math.min(left, r.left)
+        right = Math.max(right, r.right)
+      }
+      return left < right ? { left, right } : null
+    })
+  }
+
   // Which side of the screen the 3D sits on for each stage (+1 right, -1 left).
   let sides = [1, -1, 1, -1, 1]
   let target = 0
@@ -213,6 +255,7 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
     viewH = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.position.z
     viewW = viewH * camera.aspect
     mobile = w < 861
+    measureCopy()
   }
   resize()
   window.addEventListener('resize', resize)
@@ -225,7 +268,25 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
   function anchorFor(stage: number) {
     const i = Math.max(0, Math.min(4, Math.round(stage)))
     if (mobile) return { x: 0, y: viewH * 0.25, scale: Math.min(0.85, viewW / 7) }
-    return { x: sides[i] * viewW * 0.25, y: 0, scale: Math.min(1.15, viewW / 13) }
+    const scale = Math.min(1.15, viewW / 13)
+    const x = sides[i] * viewW * 0.25
+    // Only steps in when the object would run into the text; wide windows keep the default.
+    const copy = copyBounds[i]
+    const fp = footprints[i]
+    if (!copy || fp.w <= 0) return { x, y: 0, scale }
+    const w = window.innerWidth
+    const pxPerUnit = w / viewW
+    const toWorld = (px: number) => (px - w / 2) / pxPerUnit
+    const gap = 24
+    const freeL = sides[i] > 0 ? copy.right + gap : gap
+    const freeR = sides[i] > 0 ? w - gap : copy.left - gap
+    // 10% allowance for the idle sway and pointer tilt
+    const halfPx = (fp.w * scale * 1.1 * pxPerUnit) / 2
+    const centerPx = w / 2 + (x + fp.cx * scale) * pxPerUnit
+    if (centerPx - halfPx >= freeL && centerPx + halfPx <= freeR) return { x, y: 0, scale }
+    const freeW = Math.max(0, freeR - freeL) / pxPerUnit
+    const fit = Math.max(scale * 0.45, Math.min(scale, freeW / (fp.w * 1.1)))
+    return { x: (toWorld(freeL) + toWorld(freeR)) / 2 - fp.cx * fit, y: 0, scale: fit }
   }
 
   const start = performance.now()
@@ -276,6 +337,12 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
     },
     setSide(s: number[]) {
       sides = s
+    },
+    setCopy(els: (HTMLElement | null)[]) {
+      copyEls = els
+      measureCopy()
+      // Text can reflow once web fonts finish loading.
+      document.fonts?.ready.then(measureCopy)
     },
     dispose() {
       running = false
