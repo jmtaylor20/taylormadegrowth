@@ -1,0 +1,60 @@
+---
+import { business, shop } from '../config/site'
+import ColorBar from './ColorBar.astro'
+import RegMark from './RegMark.astro'
+const year = new Date().getFullYear()
+const socials = Object.entries(business.social).filter(([, url]) => url)
+---
+<footer class="site-footer">
+  <ColorBar />
+  <div class="wrap">
+    <div class="top">
+      <img class="logo" src="/brand/kemp-sons-white.svg" alt="Kemp & Sons Printing" width="220" height="145" loading="lazy" />
+      <p class="tag">Printed in<br />Opelika,<br /><span>Alabama.</span></p>
+    </div>
+    <div class="cols">
+      <div>
+        <p class="h mono">Shop</p>
+        <p>{business.address.street}<br />{business.address.city}, {business.address.state} {business.address.zip}</p>
+        <a href={business.mapUrl} target="_blank" rel="noopener">Get directions</a>
+      </div>
+      <div>
+        <p class="h mono">Contact</p>
+        <p><a href={business.phoneHref}>{business.phone}</a><br /><a href={`mailto:${business.email}`}>{business.email}</a><br />Fax {business.fax}</p>
+      </div>
+      <div>
+        <p class="h mono">Order</p>
+        <p><a href={shop.shopUrl}>Start an order</a><br /><a href={shop.accountUrl}>Reorder a past job</a><br /><a href="/#custom">Custom job quote</a></p>
+      </div>
+      <div>
+        <p class="h mono">Owners</p>
+        <p>{business.owners}</p>
+        {socials.length > 0 && (
+          <p class="social">{socials.map(([k, url]) => <a href={url} target="_blank" rel="noopener">{k === 'googleBusiness' ? 'Google' : k[0].toUpperCase() + k.slice(1)}</a>)}</p>
+        )}
+      </div>
+    </div>
+    <div class="slug mono">
+      <span><RegMark /> &copy; {year} {business.name}</span>
+      <span>Website by <a href="https://taylormadegrowth.com" target="_blank" rel="noopener">TaylorMade Brands</a></span>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer { background: var(--reg); color: rgba(255, 255, 255, 0.78); font-size: 15.5px; padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .wrap { padding-top: 72px; padding-bottom: 28px; display: grid; gap: 56px; }
+  .top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 28px; border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding-bottom: 40px; }
+  .logo { width: clamp(150px, 18vw, 220px); }
+  .tag { font-stretch: 122%; font-weight: 800; text-transform: uppercase; line-height: 0.88; font-size: clamp(36px, 6vw, 88px); color: var(--white); text-align: right; }
+  .tag span { color: var(--burgundy); }
+  .cols { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
+  .h { color: var(--white); margin-bottom: 12px; }
+  a { color: var(--white); text-decoration-color: rgba(255, 255, 255, 0.35); text-underline-offset: 4px; }
+  a:hover { text-decoration-color: var(--burgundy); }
+  .social { display: flex; gap: 14px; margin-top: 10px; }
+  .slug { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; color: rgba(255, 255, 255, 0.55); border-top: 1px solid rgba(255, 255, 255, 0.2); padding-top: 18px; }
+  .slug span { display: inline-flex; align-items: center; gap: 10px; }
+  @media (max-width: 860px) { .cols { grid-template-columns: 1fr 1fr; } .tag { text-align: left; } }
+  @media (max-width: 460px) { .cols { grid-template-columns: 1fr; } }
+</style>

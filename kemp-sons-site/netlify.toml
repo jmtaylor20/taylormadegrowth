@@ -1,0 +1,21 @@
+# Kemp & Sons Printing marketing site (kempandsons.com).
+# Static Astro build. The custom job form is handled by Netlify Forms.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[[headers]]
+  for = "/_astro/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    # Preview only: keeps the site out of search results until launch. Remove at launch.
+    X-Robots-Tag = "noindex, nofollow"

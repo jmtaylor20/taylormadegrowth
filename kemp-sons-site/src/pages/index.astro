@@ -1,0 +1,258 @@
+---
+import Base from '../layouts/Base.astro'
+import Header from '../components/Header.astro'
+import Footer from '../components/Footer.astro'
+import QuoteForm from '../components/QuoteForm.astro'
+import RegMark from '../components/RegMark.astro'
+import ColorBar from '../components/ColorBar.astro'
+import { business, shop, productLines, services, capabilities } from '../config/site'
+import { getCollection, formatPrice } from '../lib/shopify'
+
+// Live product-line details from Shopify at build time (falls back to config).
+const lines = await Promise.all(
+  productLines.map(async (line) => {
+    const c = await getCollection(line.collection)
+    return {
+      ...line,
+      title: c?.title ?? line.name,
+      blurb: c?.description || line.blurb,
+      url: c?.onlineStoreUrl ?? `${shop.shopUrl}/collections/${line.collection}`,
+      from: formatPrice(c?.startingPrice ?? null),
+    }
+  }),
+)
+const pad = (n: number) => String(n).padStart(2, '0')
+const SHEETS = 5
+---
+<Base>
+  <canvas id="stage" aria-hidden="true"></canvas>
+  <Header />
+
+  <main id="main">
+    <!-- Sheet 01: an open printed sheet floats in -->
+    <section class="chapter hero" data-stage="sheet" id="top">
+      <div class="wrap hero-inner">
+        <div class="slug-row reveal">
+          <span class="sheet-no mono"><RegMark /> Sheet <b>01</b> / {pad(SHEETS)}</span>
+          <span class="mono slug-addr">{business.address.street} &middot; {business.address.city}, {business.address.state}</span>
+        </div>
+        <div class="copy">
+          <h1 class="headline reveal">Printed right<br />here in<br /><span class="accent misreg">Opelika.</span></h1>
+          <p class="lede reveal">Design funeral programs, Christmas cards, yard signs and more online, approve your proof, and pick it up at our shop. For everything else, our presses and our people are ready.</p>
+          <div class="btn-row reveal">
+            <a class="btn btn-primary" href={shop.shopUrl}>Start an order <span class="arrow" aria-hidden="true">&rarr;</span></a>
+            <a class="btn" href="#custom">Get a custom quote</a>
+          </div>
+        </div>
+        <div class="hero-foot reveal">
+          <ColorBar class="hero-bar" />
+          <ul class="specs mono">
+            <li>Order online 24/7</li>
+            <li>Rush available</li>
+            <li>Pickup or shipping</li>
+            <li>Proof before print</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sheet 02: it folds into a finished program -->
+    <section class="chapter right" data-stage="fold" id="how">
+      <div class="wrap">
+        <div class="copy">
+          <span class="sheet-no mono reveal"><RegMark /> Sheet <b>02</b> / {pad(SHEETS)} &middot; How it works</span>
+          <h2 class="headline reveal">Design it.<br />Proof it.<br /><span class="accent">Print it.</span></h2>
+          <ol class="steps">
+            <li class="reveal"><span class="n mono">01</span><div><p class="sub">Pick a template</p><p>Layouts our team designs and prints every week.</p></div></li>
+            <li class="reveal"><span class="n mono">02</span><div><p class="sub">Make it yours</p><p>Type names and dates, add photos, and watch it update as you go.</p></div></li>
+            <li class="reveal"><span class="n mono">03</span><div><p class="sub">Approve &amp; pick up</p><p>Check your proof, pay online, and get a text when it's ready.</p></div></li>
+          </ol>
+          <p class="note reveal"><span class="mono">In the shop?</span> Use our design kiosk with our team right beside you.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sheet 03: the rest of the online lineup joins it -->
+    <section class="chapter products" data-stage="fan" id="products">
+      <div class="wrap">
+        <div class="copy">
+          <span class="sheet-no mono reveal"><RegMark /> Sheet <b>03</b> / {pad(SHEETS)} &middot; Order online</span>
+          <h2 class="headline reveal">On the<br />menu.</h2>
+          <ol class="price-list">
+            {lines.map((l, i) => (
+              <li class="reveal">
+                <a href={l.url}>
+                  <span class="pl-no mono">{pad(i + 1)}</span>
+                  <span class="pl-body">
+                    <span class="pl-name">{l.title}</span>
+                    <span class="pl-blurb">{l.blurb}</span>
+                  </span>
+                  <span class="pl-price mono">{l.from ? `From ${l.from}` : 'Design'} <span aria-hidden="true">&rarr;</span></span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sheet 04: fresh sheets stack up off the press -->
+    <section class="chapter right" data-stage="stack" id="custom-work">
+      <div class="wrap">
+        <div class="copy">
+          <span class="sheet-no mono reveal"><RegMark /> Sheet <b>04</b> / {pad(SHEETS)} &middot; In house</span>
+          <h2 class="headline reveal">Bigger jobs.<br /><span class="accent">Real presses.</span></h2>
+          <div class="caps">
+            {capabilities.map((c, i) => (
+              <div class="cap reveal"><span class="mono">{pad(i + 1)}</span><p class="sub">{c.title}</p><p>{c.body}</p></div>
+            ))}
+          </div>
+          <div class="btn-row reveal"><a class="btn btn-ink" href="#custom">Quote a custom job <span class="arrow" aria-hidden="true">&rarr;</span></a></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Everything else we print -->
+    <section class="ticker" aria-label="Everything else we print">
+      <ColorBar />
+      <div class="ticker-track" data-marquee>
+        <ul>{services.map((s) => <li>{s}</li>)}</ul>
+        <ul aria-hidden="true">{services.map((s) => <li>{s}</li>)}</ul>
+      </div>
+    </section>
+
+    <!-- Sheet 05: the Kemp & Sons mark -->
+    <section class="chapter about" data-stage="medallion" id="about">
+      <div class="wrap">
+        <div class="copy">
+          <span class="sheet-no mono reveal"><RegMark /> Sheet <b>05</b> / {pad(SHEETS)} &middot; Who we are</span>
+          <h2 class="headline reveal">Local owners.<br />Real people<br /><span class="accent">on the phone.</span></h2>
+          <p class="lede reveal">Kemp &amp; Sons is owned by {business.owners} and run by a small team in Opelika. When you call, you talk to the people who print your job.</p>
+          <div class="btn-row reveal">
+            <a class="btn" href={business.phoneHref}>Call {business.phone}</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Work order: custom job form -->
+    <section class="quote" id="custom">
+      <div class="wrap quote-grid">
+        <div class="quote-intro">
+          <span class="label reveal">Custom jobs</span>
+          <h2 class="headline reveal">Tell us<br />what you<br />need.</h2>
+          <p class="lede reveal">Forms, booklets, letterhead, labels, numbered tickets, anything that isn't in the online shop. Fill out the work order and we'll send a quote.</p>
+          <dl class="contact reveal">
+            <dt class="mono">Call</dt><dd><a href={business.phoneHref}>{business.phone}</a></dd>
+            <dt class="mono">Email</dt><dd><a href={`mailto:${business.email}`}>{business.email}</a></dd>
+            <dt class="mono">Visit</dt><dd>{business.address.street}, {business.address.city}</dd>
+          </dl>
+        </div>
+        <QuoteForm />
+      </div>
+    </section>
+
+    <!-- Visit -->
+    <section class="visit" id="visit">
+      <div class="wrap">
+        <div class="visit-top">
+          <span class="label">Visit the shop</span>
+          <span class="mono">{business.address.city}, {business.address.state} {business.address.zip}</span>
+        </div>
+        <h2 class="headline">{business.address.street}</h2>
+        {business.hours.length > 0 && (
+          <dl class="hours">{business.hours.map((h) => (<><dt class="mono">{h.days}</dt><dd>{h.time}</dd></>))}</dl>
+        )}
+        <div class="btn-row">
+          <a class="btn btn-paper" href={business.mapUrl} target="_blank" rel="noopener">Get directions <span class="arrow" aria-hidden="true">&rarr;</span></a>
+          <a class="btn btn-outline-paper" href={business.phoneHref}>Call the shop</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <Footer />
+</Base>
+
+<script>
+  import { initExperience } from '../scripts/experience'
+  initExperience()
+</script>
+
+<style>
+  /* Hero */
+  .hero { padding-bottom: 0; align-items: stretch; }
+  .hero-inner { display: grid; grid-template-rows: auto 1fr auto; gap: 36px; }
+  .slug-row { display: flex; justify-content: space-between; gap: 16px; color: var(--ink-2); border-bottom: 1px solid var(--rule); padding-bottom: 12px; }
+  .hero .copy { max-width: 760px; align-self: center; gap: 30px; }
+  .hero .lede { max-width: 40ch; }
+  .hero-foot { display: grid; gap: 14px; padding-bottom: 28px; }
+  .hero-bar { width: min(420px, 100%); }
+  @media (max-width: 860px) { .slug-addr { display: none; } .hero.chapter { padding-top: 44svh; } }
+  .specs { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 28px; color: var(--ink); }
+  .specs li::before { content: '+'; color: var(--burgundy); margin-right: 8px; }
+
+  /* Steps */
+  .steps { list-style: none; border-top: 2px solid var(--ink); }
+  .steps li { display: grid; grid-template-columns: 54px 1fr; gap: 14px; padding: 18px 0; border-bottom: 1px solid var(--rule); }
+  .steps .n { font-size: 14px; color: var(--burgundy); padding-top: 2px; }
+  .steps .sub { margin-bottom: 4px; }
+  .steps p:not(.sub) { color: var(--ink-2); font-size: 16px; }
+  .note { font-size: 15.5px; color: var(--ink-2); }
+  .note .mono { color: var(--burgundy); margin-right: 8px; }
+
+  /* Price list */
+  .products .copy { max-width: 640px; }
+  .price-list { list-style: none; border-top: 2px solid var(--ink); }
+  .price-list a {
+    display: grid; grid-template-columns: 40px 1fr auto; gap: 16px; align-items: start;
+    padding: 18px 14px 18px 0; border-bottom: 1px solid var(--rule); text-decoration: none;
+    background: linear-gradient(var(--ink), var(--ink)) no-repeat left / 0% 100%;
+    transition: background-size 0.35s var(--ease), color 0.25s var(--ease), padding 0.35s var(--ease);
+  }
+  .price-list a:hover { background-size: 100% 100%; color: var(--white); padding-left: 14px; }
+  .pl-no { color: var(--burgundy); padding-top: 4px; }
+  .pl-body { display: grid; gap: 4px; }
+  .pl-name { font-stretch: 116%; font-weight: 800; font-size: 22px; text-transform: uppercase; line-height: 1.05; }
+  .pl-blurb { font-size: 15px; color: var(--ink-2); transition: color 0.25s; }
+  .price-list a:hover .pl-blurb { color: rgba(255, 255, 255, 0.75); }
+  .pl-price { white-space: nowrap; padding-top: 5px; }
+  @media (max-width: 520px) { .price-list a { grid-template-columns: 32px 1fr; } .pl-price { grid-column: 2; padding-top: 0; color: var(--burgundy); } }
+
+  /* Capabilities */
+  .caps { display: grid; grid-template-columns: 1fr 1fr; border-top: 2px solid var(--ink); border-left: 1px solid var(--rule); }
+  .cap { padding: 18px 18px 20px; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); display: grid; gap: 6px; align-content: start; }
+  .cap .mono { color: var(--burgundy); }
+  .cap .sub { font-size: 18px; }
+  .cap p:last-child { color: var(--ink-2); font-size: 15px; }
+  @media (max-width: 520px) { .caps { grid-template-columns: 1fr; } }
+
+  /* Ticker */
+  .ticker { position: relative; z-index: 1; background: var(--ink); color: var(--white); overflow: hidden; }
+  .ticker-track { display: flex; width: max-content; padding: 26px 0; animation: ticker 70s linear infinite; }
+  .ticker ul { list-style: none; display: flex; }
+  .ticker li { font-stretch: 120%; font-weight: 800; font-size: clamp(28px, 3.6vw, 52px); text-transform: uppercase; white-space: nowrap; padding: 0 26px; line-height: 1; }
+  .ticker li:nth-child(even) { color: transparent; -webkit-text-stroke: 1.2px var(--white); }
+  .ticker li::after { content: ''; display: inline-block; width: 0.32em; height: 0.32em; background: var(--burgundy); margin-left: 52px; vertical-align: 0.18em; }
+  @keyframes ticker { to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) { .ticker-track { animation: none; width: auto; } .ticker ul { flex-wrap: wrap; row-gap: 14px; } .ticker ul[aria-hidden] { display: none; } }
+
+  /* Work order */
+  .quote { position: relative; z-index: 1; background: var(--stock); padding: 120px 0; border-top: 2px solid var(--ink); }
+  .quote-grid { display: grid; grid-template-columns: 0.85fr 1.15fr; gap: clamp(32px, 5vw, 80px); align-items: start; }
+  .quote-intro { display: grid; gap: 24px; position: sticky; top: calc(var(--header-h) + 32px); }
+  .contact { display: grid; grid-template-columns: 64px 1fr; gap: 10px 12px; border-top: 1px solid var(--rule); padding-top: 18px; }
+  .contact dt { color: var(--ink-2); padding-top: 3px; }
+  .contact dd { font-weight: 700; }
+  .contact a { text-decoration-color: var(--burgundy); text-underline-offset: 4px; }
+  @media (max-width: 960px) { .quote-grid { grid-template-columns: 1fr; } .quote-intro { position: static; } }
+
+  /* Visit */
+  .visit { position: relative; z-index: 1; background: var(--navy); color: var(--white); padding: 96px 0 104px; }
+  .visit .wrap { display: grid; gap: 32px; }
+  .visit-top { display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.25); padding-bottom: 14px; }
+  .visit .label { color: var(--white); }
+  .visit .label::before { background: var(--burgundy); }
+  .visit .headline { font-size: clamp(40px, 7.6vw, 128px); }
+  .hours { display: grid; grid-template-columns: auto 1fr; gap: 6px 22px; }
+</style>

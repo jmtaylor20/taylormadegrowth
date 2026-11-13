@@ -1,0 +1,65 @@
+---
+import '../styles/global.css'
+import { business } from '../config/site'
+
+interface Props {
+  title?: string
+  description?: string
+}
+const {
+  title = `${business.name} | Opelika, Alabama`,
+  description = 'Order funeral programs, Christmas cards, yard signs, stickers and more online, or request a quote for custom print work. Printed in Opelika, Alabama.',
+} = Astro.props
+const canonical = new URL(Astro.url.pathname, Astro.site)
+
+// Structured data so Google shows the right business details.
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'LocalBusiness',
+  '@id': 'https://kempandsons.com/#business',
+  name: business.name,
+  url: 'https://kempandsons.com/',
+  telephone: business.phone,
+  email: business.email,
+  image: 'https://kempandsons.com/og-image.png',
+  logo: 'https://kempandsons.com/brand/kemp-sons-full-color.svg',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: business.address.street,
+    addressLocality: business.address.city,
+    addressRegion: business.address.state,
+    postalCode: business.address.zip,
+    addressCountry: 'US',
+  },
+  founder: undefined,
+  sameAs: Object.values(business.social).filter(Boolean),
+}
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <meta name="theme-color" content="#103750" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content="https://kempandsons.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <script is:inline>
+      document.documentElement.classList.add('js')
+    </script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <slot />
+  </body>
+</html>

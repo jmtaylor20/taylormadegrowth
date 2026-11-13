@@ -1,0 +1,9 @@
+---
+// Printer's registration target.
+interface Props { class?: string }
+const { class: cls = '' } = Astro.props
+---
+<svg class={`reg-mark ${cls}`} viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.2">
+  <circle cx="12" cy="12" r="6.5" /><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" />
+  <path d="M12 1v22M1 12h22" />
+</svg>

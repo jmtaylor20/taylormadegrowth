@@ -1,0 +1,163 @@
+---
+import { quoteJobTypes } from '../config/site'
+import RegMark from './RegMark.astro'
+/**
+ * Custom job lead form, styled as a shop work order and handled by Netlify
+ * Forms (form name: custom-job). Netlify detects it in the built HTML, stores
+ * submissions, accepts the file upload, and emails notifications (set the
+ * recipient in Netlify: Site configuration > Forms > Form notifications).
+ */
+---
+<form
+  class="work-order crop"
+  name="custom-job"
+  method="POST"
+  action="/thank-you/"
+  enctype="multipart/form-data"
+  data-netlify="true"
+  netlify-honeypot="company_website"
+  data-quote-form
+  novalidate
+>
+  <input type="hidden" name="form-name" value="custom-job" />
+  <p class="hp" aria-hidden="true"><label>Leave this empty <input name="company_website" tabindex="-1" autocomplete="off" /></label></p>
+
+  <div class="wo-head">
+    <div>
+      <p class="wo-title">Work Order</p>
+      <p class="mono">Custom job request</p>
+    </div>
+    <div class="wo-meta mono">
+      <span><RegMark /> Kemp &amp; Sons Printing</span>
+      <span>Opelika, Alabama</span>
+    </div>
+  </div>
+
+  <fieldset>
+    <legend><span class="mono">A</span> Customer</legend>
+    <div class="grid two">
+      <label><span class="lbl">Name <span class="req">*</span></span><input id="qf-name" name="name" required autocomplete="name" /></label>
+      <label><span class="lbl">Business or organization</span><input id="qf-org" name="organization" autocomplete="organization" /></label>
+      <label><span class="lbl">Email <span class="req">*</span></span><input id="qf-email" type="email" name="email" required autocomplete="email" inputmode="email" /></label>
+      <label><span class="lbl">Phone</span><input id="qf-phone" type="tel" name="phone" autocomplete="tel" inputmode="tel" /></label>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend><span class="mono">B</span> Job specs</legend>
+    <div class="grid two">
+      <label><span class="lbl">Item <span class="req">*</span></span>
+        <select id="qf-type" name="job_type" required>
+          <option value="">Choose one</option>
+          {quoteJobTypes.map((t) => <option>{t}</option>)}
+        </select>
+      </label>
+      <label><span class="lbl">Quantity</span><input id="qf-qty" name="quantity" inputmode="numeric" placeholder="500" /></label>
+      <label><span class="lbl">Finished size</span><input id="qf-size" name="size" placeholder='8.5" x 11"' /></label>
+      <label><span class="lbl">Stock / finish</span><input id="qf-paper" name="paper" placeholder="Gloss, cardstock, carbonless" /></label>
+      <label><span class="lbl">Needed by</span><input id="qf-date" type="date" name="needed_by" /></label>
+      <label><span class="lbl">Delivery</span>
+        <select id="qf-delivery" name="delivery">
+          <option>Pickup in Opelika</option>
+          <option>Ship it to me</option>
+          <option>Not sure yet</option>
+        </select>
+      </label>
+    </div>
+    <label><span class="lbl">Job notes <span class="req">*</span></span>
+      <textarea id="qf-details" name="details" rows="4" required placeholder="Colors, pages, folding, numbering, binding, anything that helps us quote it"></textarea>
+    </label>
+  </fieldset>
+
+  <fieldset>
+    <legend><span class="mono">C</span> Artwork</legend>
+    <div class="grid two">
+      <label><span class="lbl">Artwork status</span>
+        <select id="qf-art" name="artwork_status">
+          <option>Print-ready file</option>
+          <option>Canva or draft file</option>
+          <option>Need design help</option>
+        </select>
+      </label>
+      <label><span class="lbl">Upload <span class="hint">PDF, JPG, PNG, AI, EPS, ZIP &middot; 8 MB max</span></span>
+        <input id="qf-file" type="file" name="artwork" accept=".pdf,.jpg,.jpeg,.png,.ai,.eps,.svg,.zip" data-file />
+      </label>
+    </div>
+    <label><span class="lbl">How did you find us?</span>
+      <select id="qf-source" name="source">
+        <option value="">Choose one</option>
+        <option>Google</option>
+        <option>Facebook</option>
+        <option>Friend or family</option>
+        <option>Funeral home or church</option>
+        <option>Past customer</option>
+        <option>Other</option>
+      </select>
+    </label>
+  </fieldset>
+
+  <p class="error" role="alert" data-form-error hidden></p>
+  <div class="wo-foot">
+    <button class="btn btn-primary" type="submit">Send work order <span class="arrow" aria-hidden="true">&rarr;</span></button>
+    <p class="mono fine">We reply within one business day.<br />Need it today? Call us.</p>
+  </div>
+</form>
+
+<style>
+  .work-order { background: var(--white); border: 2px solid var(--ink); padding: clamp(20px, 3vw, 36px); display: grid; gap: 30px; box-shadow: 10px 10px 0 var(--navy); }
+  .wo-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; border-bottom: 2px solid var(--ink); padding-bottom: 16px; }
+  .wo-title { font-stretch: 122%; font-weight: 800; font-size: clamp(30px, 3.4vw, 44px); text-transform: uppercase; line-height: 0.9; }
+  .wo-meta { display: grid; justify-items: end; gap: 4px; color: var(--ink-2); text-align: right; }
+  .wo-meta span { display: inline-flex; align-items: center; gap: 8px; }
+  fieldset { border: 0; display: grid; gap: 18px; }
+  legend { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; font-stretch: 115%; font-weight: 800; font-size: 15px; letter-spacing: 0.04em; text-transform: uppercase; }
+  legend .mono { display: grid; place-items: center; width: 26px; height: 26px; background: var(--ink); color: var(--white); font-size: 12px; }
+  .grid { display: grid; gap: 18px 22px; }
+  .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  label { display: grid; gap: 4px; }
+  .lbl { font-family: var(--mono); font-size: 11.5px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+  .req { color: var(--burgundy); }
+  .hint { text-transform: none; letter-spacing: 0; color: var(--gray); }
+  /* Fill-in-the-blank fields, like a printed form */
+  input, select, textarea {
+    width: 100%; min-height: 46px; padding: 8px 2px; font-size: 17px; color: var(--ink);
+    background: transparent; border: 0; border-bottom: 1.5px solid var(--ink); border-radius: 0;
+    transition: border-color 0.2s var(--ease), background-color 0.2s var(--ease);
+  }
+  select { cursor: pointer; }
+  textarea { resize: vertical; min-height: 110px; border: 1.5px solid var(--ink); padding: 10px 12px; background-image: repeating-linear-gradient(transparent 0 31px, var(--rule) 31px 32px); line-height: 32px; }
+  input[type='file'] { font-size: 14px; padding-top: 11px; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--burgundy); background-color: #fbf3f4; }
+  .hp { position: absolute; left: -9999px; }
+  .error { border: 2px solid var(--burgundy); color: var(--burgundy-deep); padding: 12px 14px; font-weight: 700; font-size: 15px; }
+  .wo-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; border-top: 2px solid var(--ink); padding-top: 22px; }
+  .fine { color: var(--ink-2); line-height: 1.6; }
+  @media (max-width: 640px) {
+    .grid.two { grid-template-columns: 1fr; }
+    .wo-foot .btn { width: 100%; }
+    .wo-head { flex-direction: column; align-items: flex-start; }
+    .wo-meta { justify-items: start; text-align: left; }
+    .work-order { box-shadow: 6px 6px 0 var(--navy); }
+  }
+</style>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>('[data-quote-form]')!
+  const file = form.querySelector<HTMLInputElement>('[data-file]')!
+  const err = form.querySelector<HTMLElement>('[data-form-error]')!
+  const MAX = 8 * 1024 * 1024
+  const show = (msg: string) => { err.textContent = msg; err.hidden = false; err.scrollIntoView({ block: 'center', behavior: 'smooth' }) }
+  file.addEventListener('change', () => {
+    err.hidden = true
+    const f = file.files?.[0]
+    if (f && f.size > MAX) { show(`That file is ${(f.size / 1024 / 1024).toFixed(1)} MB. Files must be under 8 MB, so email larger files to us instead.`); file.value = '' }
+  })
+  form.addEventListener('submit', (e) => {
+    if (!form.checkValidity()) {
+      e.preventDefault()
+      const first = form.querySelector<HTMLElement>(':invalid')
+      show('Please fill in the required fields marked with *.')
+      first?.focus()
+    }
+  })
+</script>

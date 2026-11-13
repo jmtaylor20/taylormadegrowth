@@ -1,0 +1,94 @@
+---
+import { shop, business } from '../config/site'
+---
+<header class="site-header" data-header>
+  <div class="wrap bar">
+    <a href="/" class="logo" aria-label="Kemp & Sons Printing, home">
+      <img src="/brand/kemp-sons-full-color.svg" alt="Kemp & Sons Printing" width="150" height="99" />
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="/#products">Order online</a>
+      <a href="/#custom">Custom jobs</a>
+      <a href="/#about">About</a>
+      <a href="/#visit">Visit</a>
+    </nav>
+    <div class="actions">
+      <a class="phone mono" href={business.phoneHref}>{business.phone}</a>
+      <a class="btn btn-primary btn-sm" href={shop.shopUrl}><span>Start<span class="long"> an order</span></span></a>
+      <button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobile-menu" data-menu-btn>
+        <span class="sr">Menu</span><span class="bars" aria-hidden="true"></span>
+      </button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobile-menu" hidden data-menu>
+    <a href="/#products">Order online</a>
+    <a href="/#custom">Custom jobs</a>
+    <a href="/#about">About</a>
+    <a href="/#visit">Visit</a>
+    <a href={shop.accountUrl}>Reorder a past job</a>
+    <a href={business.phoneHref}>Call {business.phone}</a>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+    padding-top: env(safe-area-inset-top, 0px);
+    transition: background-color 0.3s var(--ease), border-color 0.3s var(--ease);
+    border-bottom: 1px solid transparent;
+  }
+  .site-header.scrolled { background: var(--stock); border-bottom-color: var(--ink); }
+  .bar { height: var(--header-h); display: flex; align-items: center; gap: 28px; }
+  .logo img { width: 104px; height: auto; }
+  .nav { display: flex; gap: 28px; margin-left: auto; }
+  .nav a {
+    font-stretch: 112%; font-weight: 700; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase;
+    text-decoration: none; color: var(--ink); position: relative; padding: 6px 0;
+  }
+  .nav a::after { content: ''; position: absolute; left: 0; right: 100%; bottom: 0; height: 2px; background: var(--burgundy); transition: right 0.25s var(--ease); }
+  .nav a:hover::after { right: 0; }
+  .actions { display: flex; align-items: center; gap: 20px; }
+  .phone { text-decoration: none; color: var(--ink-2); font-size: 12.5px; }
+  .btn-sm { min-height: 42px; padding: 0 18px; font-size: 12.5px; box-shadow: 3px 3px 0 var(--ink); }
+  .menu-btn { display: none; width: 44px; height: 44px; border: 2px solid var(--ink); background: var(--stock); cursor: pointer; position: relative; }
+  .bars, .bars::before, .bars::after { position: absolute; left: 10px; width: 20px; height: 2px; background: var(--ink); content: ''; transition: transform 0.25s var(--ease); }
+  .bars { top: 19px; }
+  .bars::before { top: -6px; left: 0; }
+  .bars::after { top: 6px; left: 0; }
+  .menu-btn[aria-expanded='true'] .bars { background: transparent; }
+  .menu-btn[aria-expanded='true'] .bars::before { transform: translateY(6px) rotate(45deg); }
+  .menu-btn[aria-expanded='true'] .bars::after { transform: translateY(-6px) rotate(-45deg); }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .mobile-menu { display: grid; padding: 0 var(--gutter) 18px; background: var(--stock); border-bottom: 2px solid var(--ink); }
+  .mobile-menu a {
+    padding: 15px 0; border-bottom: 1px solid var(--rule); text-decoration: none;
+    font-stretch: 115%; font-weight: 800; font-size: 22px; text-transform: uppercase; letter-spacing: -0.005em;
+  }
+  @media (max-width: 960px) { .phone { display: none; } }
+  @media (max-width: 860px) {
+    .nav { display: none; }
+    .actions { margin-left: auto; gap: 10px; }
+    .menu-btn { display: block; }
+    .logo img { width: 92px; }
+  }
+  @media (max-width: 420px) { .long { display: none; } }
+  @media (min-width: 861px) { .mobile-menu { display: none !important; } }
+</style>
+
+<script>
+  const header = document.querySelector<HTMLElement>('[data-header]')!
+  const btn = document.querySelector<HTMLButtonElement>('[data-menu-btn]')!
+  const menu = document.querySelector<HTMLElement>('[data-menu]')!
+  const onScroll = () => header.classList.toggle('scrolled', window.scrollY > 24 || !menu.hidden)
+  window.addEventListener('scroll', onScroll, { passive: true })
+  onScroll()
+  btn.addEventListener('click', () => {
+    const open = btn.getAttribute('aria-expanded') === 'true'
+    btn.setAttribute('aria-expanded', String(!open))
+    menu.hidden = open
+    onScroll()
+  })
+  menu.querySelectorAll('a').forEach((a) =>
+    a.addEventListener('click', () => { btn.setAttribute('aria-expanded', 'false'); menu.hidden = true; onScroll() }),
+  )
+</script>

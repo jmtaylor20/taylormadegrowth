@@ -1,0 +1,6 @@
+---
+// Press-sheet color bar: CMYK, the three brand plates and a gray step wedge.
+interface Props { class?: string }
+const { class: cls = '' } = Astro.props
+---
+<div class={`colorbar ${cls}`} aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>

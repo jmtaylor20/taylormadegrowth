@@ -1,0 +1,187 @@
+/* Kemp & Sons Printing
+   Visual language borrowed from the press room: crop marks, color bars,
+   registration targets, slug lines and work-order forms. Square-cut edges,
+   no rounded "cards". Brand colors from the Brand Asset Guide. */
+
+@import '@fontsource-variable/archivo/wdth.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+
+:root {
+  /* Brand */
+  --burgundy: #982b38;
+  --burgundy-deep: #7a1f2b;
+  --navy: #103750;
+  --navy-deep: #0b2638;
+  --gray: #838783;
+  --reg: #111111; /* registration black */
+
+  /* Stock */
+  --stock: #f5f5f2;     /* bright uncoated sheet */
+  --stock-2: #ebebe6;
+  --white: #ffffff;
+  --ink: #111111;
+  --ink-2: #3b4148;
+  --rule: rgba(17, 17, 17, 0.16);
+  --rule-strong: #111111;
+
+  /* Process colors for the press color bar */
+  --c: #00a3e0;
+  --m: #d6007e;
+  --y: #ffd400;
+
+  --font: 'Archivo Variable', 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+
+  --maxw: 1360px;
+  --gutter: max(20px, 4vw);
+  --header-h: 68px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: calc(var(--header-h) + 16px); }
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+body {
+  font-family: var(--font);
+  font-stretch: 100%;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--ink);
+  background-color: var(--stock);
+  /* faint paper tooth */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+img, svg, canvas { display: block; max-width: 100%; }
+[hidden] { display: none !important; }
+a { color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
+::selection { background: var(--burgundy); color: var(--white); }
+:focus-visible { outline: 2px solid var(--burgundy); outline-offset: 3px; }
+
+.skip { position: absolute; left: -999px; top: 8px; background: var(--ink); color: #fff; padding: 10px 14px; z-index: 100; }
+.skip:focus { left: 12px; }
+
+.wrap {
+  width: 100%;
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+}
+
+/* ---------- Type ---------- */
+.mono, .slug, .label {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.label { color: var(--burgundy); display: inline-flex; align-items: center; gap: 10px; }
+.label::before { content: ''; width: 22px; height: 2px; background: currentColor; }
+.headline {
+  font-family: var(--font);
+  font-stretch: 118%;
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: 0.88;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+h1.headline { font-size: clamp(46px, 7.4vw, 132px); }
+h2.headline { font-size: clamp(38px, 5.2vw, 88px); }
+.sub {
+  font-stretch: 112%;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  font-size: 20px;
+  line-height: 1.1;
+}
+.lede { font-size: clamp(17px, 1.45vw, 21px); line-height: 1.5; color: var(--ink-2); max-width: 44ch; }
+.accent { color: var(--burgundy); }
+
+/* Misregistered print: the burgundy plate lands a hair off the black. */
+.misreg { text-shadow: 0.045em 0.035em 0 rgba(152, 43, 56, 0.9); }
+
+/* ---------- Buttons: square-cut, press-shadow ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 12px;
+  min-height: 54px; padding: 0 26px;
+  font-family: var(--font); font-stretch: 112%; font-weight: 700; font-size: 14px;
+  letter-spacing: 0.06em; text-transform: uppercase; text-decoration: none; cursor: pointer; white-space: nowrap;
+  border: 2px solid var(--ink); background: transparent; color: var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease), background-color 0.18s, color 0.18s;
+}
+.btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
+.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+.btn-primary { background: var(--burgundy); color: var(--white); }
+.btn-ink { background: var(--ink); color: var(--white); box-shadow: 4px 4px 0 var(--burgundy); }
+.btn-ink:hover { box-shadow: 6px 6px 0 var(--burgundy); }
+.btn-paper { background: var(--white); border-color: var(--white); color: var(--navy); box-shadow: 4px 4px 0 var(--reg); }
+.btn-outline-paper { border-color: var(--white); color: var(--white); box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35); }
+.btn .arrow { font-family: var(--mono); transition: transform 0.18s var(--ease); }
+.btn:hover .arrow { transform: translateX(4px); }
+.btn-row { display: flex; flex-wrap: wrap; gap: 16px 18px; }
+
+/* ---------- Press-room details ---------- */
+/* Crop marks at two opposite corners of an element */
+.crop { position: relative; }
+.crop::before, .crop::after {
+  content: ''; position: absolute; width: 22px; height: 22px; pointer-events: none;
+  border-color: var(--ink); border-style: solid; opacity: 0.55;
+}
+.crop::before { top: -12px; left: -12px; border-width: 0 1px 1px 0; }
+.crop::after { bottom: -12px; right: -12px; border-width: 1px 0 0 1px; }
+
+/* Color bar: CMYK plus the brand plates, as printed in a press-sheet margin */
+.colorbar { display: flex; height: 10px; }
+.colorbar i { flex: 1; }
+.colorbar i:nth-child(1) { background: var(--c); }
+.colorbar i:nth-child(2) { background: var(--m); }
+.colorbar i:nth-child(3) { background: var(--y); }
+.colorbar i:nth-child(4) { background: var(--reg); }
+.colorbar i:nth-child(5) { background: var(--navy); }
+.colorbar i:nth-child(6) { background: var(--burgundy); }
+.colorbar i:nth-child(7) { background: var(--gray); }
+.colorbar i:nth-child(8) { background: linear-gradient(90deg, #111 0 25%, #555 25% 50%, #999 50% 75%, #ddd 75%); }
+
+.reg-mark { width: 18px; height: 18px; flex: none; }
+
+/* Fixed 3D stage behind the page */
+#stage {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  width: 100vw; height: 100vh; height: 100lvh;
+}
+.no-webgl #stage { display: none; }
+main, footer { position: relative; z-index: 1; }
+
+/* ---------- Story chapters ---------- */
+.chapter { min-height: 100vh; min-height: 100svh; display: flex; align-items: center; padding: calc(var(--header-h) + 56px) 0 96px; position: relative; }
+.chapter .copy { max-width: 600px; display: grid; gap: 26px; }
+.chapter.right .copy { margin-left: auto; }
+.sheet-no { display: flex; align-items: center; gap: 12px; color: var(--ink-2); }
+.sheet-no b { color: var(--ink); font-weight: 500; }
+
+.js .reveal { opacity: 0; transform: translateY(32px); }
+
+@media (max-width: 860px) {
+  /* Phones: 3D object in the top half, the sheet of copy below it */
+  .chapter { align-items: flex-start; padding-top: 50svh; padding-bottom: 72px; }
+  .chapter .copy, .chapter.right .copy {
+    margin: 0; max-width: none;
+    background: var(--stock);
+    border-top: 2px solid var(--ink);
+    padding: 22px 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  .js .reveal { opacity: 1; transform: none; }
+}
