@@ -37,7 +37,7 @@ const pad = (n: number) => String(n).padStart(2, '0')
             <li>
               <a class="card" href={`/design/${t.id}/`}>
                 <div class="thumb crop" style={`aspect-ratio: ${t.trim.w} / ${t.trim.h}`}>
-                  <TemplateThumb client:visible id={t.id} />
+                  <TemplateThumb client:idle id={t.id} />
                 </div>
                 <div class="meta">
                   <p class="mono no">No. {pad(i + 1)} / {t.sizeLabel}</p>
