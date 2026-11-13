@@ -1,0 +1,23 @@
+---
+import Base from '../../layouts/Base.astro'
+import EditorApp from '../../editor/EditorApp'
+import { TEMPLATES } from '../../editor/templates'
+import { business } from '../../config/site'
+
+export function getStaticPaths() {
+  return TEMPLATES.map((t) => ({ params: { template: t.id }, props: { name: t.name, description: t.description } }))
+}
+
+const { template } = Astro.params
+const { name, description } = Astro.props
+// Public Storefront token (read-only). The editor uses it in the browser for prices and the cart.
+const domain = import.meta.env.SHOPIFY_STORE_DOMAIN
+const token = import.meta.env.SHOPIFY_STOREFRONT_TOKEN
+const shop = domain && token ? { domain, token } : null
+---
+<Base title={`Design your ${name} card | ${business.name}`} description={description}>
+  <main id="main">
+    <EditorApp client:only="react" templateId={template} shop={shop} backHref="/#products" phone={business.phone} phoneHref={business.phoneHref} />
+    <noscript><p style="padding:40px">The designer needs JavaScript. To order, call us at {business.phone}.</p></noscript>
+  </main>
+</Base>

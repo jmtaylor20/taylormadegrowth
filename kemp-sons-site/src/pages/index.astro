@@ -7,6 +7,7 @@ import RegMark from '../components/RegMark.astro'
 import ColorBar from '../components/ColorBar.astro'
 import { business, shop, productLines, services, capabilities } from '../config/site'
 import { getCollection, formatPrice } from '../lib/shopify'
+import { templatesIn } from '../editor/templates'
 
 // Live product-line details from Shopify at build time (falls back to config).
 const lines = await Promise.all(
@@ -16,7 +17,8 @@ const lines = await Promise.all(
       ...line,
       title: c?.title ?? line.name,
       blurb: c?.description || line.blurb,
-      url: c?.onlineStoreUrl ?? `${shop.shopUrl}/collections/${line.collection}`,
+      // Product lines with templates in our editor open the designer; the rest go to the Shopify collection.
+      url: templatesIn(line.collection)[0] ? `/design/${templatesIn(line.collection)[0].id}/` : c?.onlineStoreUrl ?? `${shop.shopUrl}/collections/${line.collection}`,
       from: formatPrice(c?.startingPrice ?? null),
     }
   }),
