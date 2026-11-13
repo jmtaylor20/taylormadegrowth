@@ -5,9 +5,12 @@ import { business } from '../config/site'
 interface Props {
   title?: string
   description?: string
+  /** Keep this page out of search results (staff pages). */
+  noindex?: boolean
 }
 const {
   title = `${business.name} | Opelika, Alabama`,
+  noindex = false,
   description = 'Order funeral programs, Christmas cards, business cards, stickers and more online, or request a quote for custom print work. Printed in Opelika, Alabama.',
 } = Astro.props
 const canonical = new URL(Astro.url.pathname, Astro.site)
@@ -42,6 +45,7 @@ const jsonLd = {
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
     <link rel="canonical" href={canonical} />
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <meta name="theme-color" content="#103750" />

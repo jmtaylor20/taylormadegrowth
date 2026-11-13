@@ -19,3 +19,10 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     # Preview only: keeps the site out of search results until launch. Remove at launch.
     X-Robots-Tag = "noindex, nofollow"
+
+# Staff pages and API stay out of search results permanently.
+[[headers]]
+  for = "/staff/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Cache-Control = "no-store"
