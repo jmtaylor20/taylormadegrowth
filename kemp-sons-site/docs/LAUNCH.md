@@ -12,7 +12,7 @@ How the pieces fit:
 
 ### 1a. Preview and publish the matching theme
 
-A draft theme called **"Kemp & Sons (matches site) - DRAFT"** is ready. It has:
+Done: the theme **"Kemp & Sons (matches site)"** is published. It has:
 
 - **Look:** Kemp's logo, the site's colors and type (Archivo), square corners, red buttons, and an announcement bar.
 - **Redirects:** storefront pages send shoppers to the matching page on the website. For example, the Christmas card product page opens the designer, and the Christmas Cards collection opens /shop/christmas-cards/. Cart, checkout and account pages stay on Shopify.
@@ -23,7 +23,7 @@ To preview and publish:
 2. Check the cart drawer and account pages look right.
 3. Choose **Publish**.
 
-### 1b. Brand the checkout
+### 1b. Brand the checkout (done)
 
 The API doesn't allow checkout branding, so set it by hand:
 
@@ -36,7 +36,7 @@ The API doesn't allow checkout branding, so set it by hand:
 4. Set **corner radius** to None (square) and **font** to Archivo, if offered.
 5. Save, then check a test checkout on your phone.
 
-### 1c. Add print files to the staff order email
+### 1c. Add print files to the staff order email (done)
 
 1. Go to **Settings → Notifications → Staff notifications → New order → Edit code**.
 2. Paste this near the top of the email body, just after the opening greeting:
@@ -63,7 +63,7 @@ The API doesn't allow checkout branding, so set it by hand:
 
 The same links also appear on every order in the Shopify admin, under each line item.
 
-### 1d. Add the reorder link to the customer confirmation email
+### 1d. Add the reorder link to the customer confirmation email (done)
 
 1. Go to **Settings → Notifications → Customer notifications → Order confirmation → Edit code**.
 2. Paste this just before the order summary:
@@ -80,8 +80,8 @@ The same links also appear on every order in the Shopify admin, under each line 
 
 ### 1e. Clean up the PitchPrint test
 
-1. Uninstall **PitchPrint** under Settings → Apps.
-2. Optional: cancel and then delete test orders #1001 and #1002. They're already archived.
+1. Done: PitchPrint is uninstalled.
+2. Optional: cancel and then delete test orders #1001, #1002 and #1003.
 
 ---
 

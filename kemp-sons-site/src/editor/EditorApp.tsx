@@ -322,6 +322,8 @@ function Proof({
   const [error, setError] = useState<string | null>(null)
   const issues = useMemo(() => preflight(t, draft), [t, draft])
   const allChecked = checked.every(Boolean)
+  // Every photo spot must be filled: an empty one would print as a gray placeholder.
+  const missingPhotos = issues.some((i) => i.kind === 'photo')
 
   useEffect(() => {
     const prev = document.body.style.overflow
@@ -351,7 +353,7 @@ function Proof({
   const total = variant ? variant.price + (env && envVariant ? envVariant.price * env.recipients.length : 0) : 0
 
   const approve = async () => {
-    if (!allChecked || !variant || !shop) return
+    if (!allChecked || missingPhotos || !variant || !shop) return
     setError(null)
     try {
       const ref = `KS-${Date.now().toString(36).toUpperCase()}`
@@ -438,7 +440,7 @@ function Proof({
                   <li key={i.message}>{i.message}</li>
                 ))}
               </ul>
-              <p className="ed-hint">You can still approve, or go back and fix them.</p>
+              <p className="ed-hint">{missingPhotos ? 'Go back and add a photo to every spot before approving.' : 'You can still approve, or go back and fix them.'}</p>
             </section>
           )}
 
@@ -472,9 +474,9 @@ function Proof({
 
       <div className="ed-proof-bar">
         <p className="mono" aria-live="polite">
-          {work ?? (allChecked ? `Ready / ${summary}` : `${checked.filter(Boolean).length} of ${CHECKS.length} checked`)}
+          {work ?? (missingPhotos ? 'Add your photos to continue' : allChecked ? `Ready / ${summary}` : `${checked.filter(Boolean).length} of ${CHECKS.length} checked`)}
         </p>
-        <button type="button" className="btn btn-primary" disabled={!allChecked || !variant || !!work} onClick={approve}>
+        <button type="button" className="btn btn-primary" disabled={!allChecked || missingPhotos || !variant || !!work} onClick={approve}>
           {work ? 'Working...' : variant ? `Approve & checkout ${money(total)}` : 'Approve proof'}
         </button>
       </div>

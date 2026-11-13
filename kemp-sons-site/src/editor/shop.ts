@@ -93,8 +93,6 @@ export async function putDesignFile(id: string, kind: string, blob: Blob) {
 
 export const designFileUrl = (id: string, kind: string) => `${window.location.origin}/api/designs/${id}/${kind}`
 
-const CART_KEY = 'kemp-cart-id'
-
 const CART_FIELDS = /* GraphQL */ `
   fragment CartBits on Cart { id checkoutUrl totalQuantity }
 `
@@ -117,27 +115,8 @@ export interface CartLine {
 
 export async function addToCart(cfg: ShopConfig, items: CartLine[]): Promise<string> {
   const lines = items.map((it) => ({ merchandiseId: it.variantId, quantity: it.quantity, attributes: Object.entries(it.attributes).map(([key, value]) => ({ key, value })) }))
-  let cartId: string | null = null
-  try {
-    cartId = localStorage.getItem(CART_KEY)
-  } catch {
-    /* private mode: start a fresh cart */
-  }
-
-  if (cartId) {
-    try {
-      const data = await storefront<{ cartLinesAdd: CartResult }>(
-        cfg,
-        `${CART_FIELDS} mutation Add($cartId: ID!, $lines: [CartLineInput!]!) { cartLinesAdd(cartId: $cartId, lines: $lines) { cart { ...CartBits } userErrors { message } } }`,
-        { cartId, lines },
-      )
-      const r = data.cartLinesAdd
-      if (r.cart && !r.userErrors.length) return r.cart.checkoutUrl
-    } catch {
-      /* cart expired or already checked out: fall through to a new one */
-    }
-  }
-
+  // A fresh cart for every approved design. The site has no cart page, so an
+  // older unpaid design left in a reused cart would ride along unnoticed.
   const data = await storefront<{ cartCreate: CartResult }>(
     cfg,
     `${CART_FIELDS} mutation Create($input: CartInput!) { cartCreate(input: $input) { cart { ...CartBits } userErrors { message } } }`,
@@ -145,10 +124,5 @@ export async function addToCart(cfg: ShopConfig, items: CartLine[]): Promise<str
   )
   const r = data.cartCreate
   if (!r.cart || r.userErrors.length) throw new Error(r.userErrors.map((e) => e.message).join('; ') || 'Could not create cart')
-  try {
-    localStorage.setItem(CART_KEY, r.cart.id)
-  } catch {
-    /* ignore */
-  }
   return r.cart.checkoutUrl
 }
