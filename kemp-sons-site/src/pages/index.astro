@@ -7,7 +7,6 @@ import RegMark from '../components/RegMark.astro'
 import ColorBar from '../components/ColorBar.astro'
 import { business, shop, productLines, services, capabilities } from '../config/site'
 import { getCollection, formatPrice } from '../lib/shopify'
-import { templatesIn } from '../editor/templates'
 
 // Live product-line details from Shopify at build time (falls back to config).
 const lines = await Promise.all(
@@ -17,8 +16,8 @@ const lines = await Promise.all(
       ...line,
       title: c?.title ?? line.name,
       blurb: c?.description || line.blurb,
-      // Product lines with templates in our editor open the designer; the rest go to the Shopify collection.
-      url: templatesIn(line.collection)[0] ? `/design/${templatesIn(line.collection)[0].id}/` : c?.onlineStoreUrl ?? `${shop.shopUrl}/collections/${line.collection}`,
+      // Each product line has its own design gallery page on this site.
+      url: `/shop/${line.collection}/`,
       from: formatPrice(c?.startingPrice ?? null),
     }
   }),
@@ -42,7 +41,7 @@ const SHEETS = 5
           <h1 class="headline reveal">Printed right<br />here in<br /><span class="accent misreg">Opelika.</span></h1>
           <p class="lede reveal">Design funeral programs, Christmas cards, business cards and more online, approve your proof, then pick it up at our shop or have it shipped. For everything else, our presses and our people are ready.</p>
           <div class="btn-row reveal">
-            <a class="btn btn-primary" href={shop.shopUrl}>Start an order <span class="arrow" aria-hidden="true">&rarr;</span></a>
+            <a class="btn btn-primary" href="/#products">Start an order <span class="arrow" aria-hidden="true">&rarr;</span></a>
             <a class="btn" href="#custom">Get a custom quote</a>
           </div>
         </div>

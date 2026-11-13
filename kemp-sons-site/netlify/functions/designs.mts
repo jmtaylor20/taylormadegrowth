@@ -5,19 +5,30 @@ import type { Config, Context } from '@netlify/functions'
  * Stores each customer's approved design so the shop can download it from
  * the Shopify order:
  *
- *   POST /api/designs                 -> { id }      start a design
- *   PUT  /api/designs/:id/pdf|proof   upload the print file or proof image (once each)
- *   GET  /api/designs/:id/pdf|proof   download it
+ *   POST /api/designs              -> { id }   start a design
+ *   PUT  /api/designs/:id/:kind    upload one file (once each)
+ *   GET  /api/designs/:id/:kind    download it
+ *
+ * Kinds: pdf (print file), proof (preview image), envelopes (addressed
+ * envelopes PDF), draft (the editable design as JSON, for reorders) and
+ * photo-<slot> (the customer's photos, for reorders).
  *
  * Ids are random UUIDs, so links can't be guessed. Uploads are only accepted
  * for an hour after the id is created, and never overwrite.
  */
 
-const KINDS = {
-  pdf: { type: 'application/pdf', max: 6 * 1024 * 1024, magic: [0x25, 0x50, 0x44, 0x46] }, // %PDF
-  proof: { type: 'image/jpeg', max: 2 * 1024 * 1024, magic: [0xff, 0xd8, 0xff] },
-} as const
-type Kind = keyof typeof KINDS
+interface Spec { type: string; max: number; magic: number[]; file: string; inline: boolean }
+const MB = 1024 * 1024
+const PDF = [0x25, 0x50, 0x44, 0x46] // %PDF
+const JPEG = [0xff, 0xd8, 0xff]
+function specFor(kind: string): Spec | null {
+  if (kind === 'pdf') return { type: 'application/pdf', max: 6 * MB, magic: PDF, file: 'print.pdf', inline: false }
+  if (kind === 'envelopes') return { type: 'application/pdf', max: 6 * MB, magic: PDF, file: 'envelopes.pdf', inline: false }
+  if (kind === 'proof') return { type: 'image/jpeg', max: 2 * MB, magic: JPEG, file: 'proof.jpg', inline: true }
+  if (kind === 'draft') return { type: 'application/json', max: 256 * 1024, magic: [0x7b], file: 'design.json', inline: true } // {
+  if (/^photo-[a-z0-9_]{1,40}$/.test(kind)) return { type: 'image/jpeg', max: 6 * MB, magic: JPEG, file: `${kind}.jpg`, inline: true }
+  return null
+}
 
 const UPLOAD_WINDOW_MS = 60 * 60 * 1000
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
@@ -35,8 +46,8 @@ export default async (req: Request, context: Context) => {
     return json({ id: newId }, 201)
   }
 
-  if (!UUID.test(id) || !kind || !(kind in KINDS)) return json({ error: 'Not found' }, 404)
-  const spec = KINDS[kind as Kind]
+  const spec = kind ? specFor(kind) : null
+  if (!UUID.test(id) || !spec) return json({ error: 'Not found' }, 404)
   const key = `${id}/${kind}`
 
   if (req.method === 'GET') {
@@ -45,7 +56,7 @@ export default async (req: Request, context: Context) => {
     return new Response(blob, {
       headers: {
         'Content-Type': spec.type,
-        'Content-Disposition': `${kind === 'pdf' ? 'attachment' : 'inline'}; filename="kemp-${id.slice(0, 8)}-${kind === 'pdf' ? 'print.pdf' : 'proof.jpg'}"`,
+        'Content-Disposition': `${spec.inline ? 'inline' : 'attachment'}; filename="kemp-${id.slice(0, 8)}-${spec.file}"`,
         'Cache-Control': 'private, max-age=31536000, immutable',
         'X-Robots-Tag': 'noindex',
       },

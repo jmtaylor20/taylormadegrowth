@@ -9,7 +9,10 @@ import { preflight } from './preflight'
 import { proofPpi, renderSide } from './render'
 import { loadFonts } from './fonts'
 import { buildPrintPdf } from './pdf'
-import { addToCart, getProduct, money, uploadDesign, type ShopConfig, type ShopProduct, type Variant } from './shop'
+import { addToCart, createDesign, designFileUrl, getProduct, money, putDesignFile, type CartLine, type ShopConfig, type ShopProduct, type Variant } from './shop'
+import { EnvelopePanel } from './EnvelopePanel'
+import { buildEnvelopePdf, emptyEnvelopes, type EnvelopeState } from './envelopes'
+import { dataUrlToBlob, draftJson, loadDesign, photoKind, rememberDesign, reorderUrl } from './saved'
 import './editor.css'
 
 interface Props {
@@ -84,6 +87,36 @@ function Editor({ t, shop, backHref, phone, phoneHref }: { t: Template } & Props
   const desktop = useMedia('(min-width: 1024px)')
   const { product, choice, setChoice, variant } = useProduct(t, shop)
   const [fontsReady, setFontsReady] = useState(false)
+  const [envVariant, setEnvVariant] = useState<Variant | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!shop || !t.envelope) return
+    getProduct(shop, t.envelope.shopifyHandle)
+      .then((p) => setEnvVariant(p?.variants.find((v) => v.available) ?? null))
+      .catch(() => setEnvVariant(null))
+  }, [t, shop])
+
+  // Reorder: /design/<template>/?from=<design id> opens a stored design.
+  useEffect(() => {
+    if (!loaded) return
+    const from = new URLSearchParams(window.location.search).get('from')
+    if (!from) return
+    setNotice('Opening your saved design...')
+    loadDesign(from)
+      .then(({ templateId, draft }) => {
+        if (templateId !== t.id) throw new Error('wrong template')
+        setDraft(draft)
+        setNotice('Your saved design is loaded. Update anything you like (the year, a new photo), then review your proof.')
+      })
+      .catch(() => setNotice(`We couldn't open that saved design. It may have expired. Call us at ${phone} and we'll help.`))
+      .finally(() => history.replaceState(null, '', window.location.pathname))
+  }, [loaded])
+
+  const env: EnvelopeState = draft.envelopes ?? emptyEnvelopes
+  const envCount = t.envelope && env.on ? env.recipients.length : 0
+  const envTotal = envCount && envVariant ? envVariant.price * envCount : 0
+  const cardQty = Number((Object.entries(choice).find(([k]) => /quantity/i.test(k))?.[1] ?? '').match(/\d+/)?.[0] ?? NaN)
 
   useEffect(() => {
     loadFonts().then(() => setFontsReady(true))
@@ -121,7 +154,7 @@ function Editor({ t, shop, backHref, phone, phoneHref }: { t: Template } & Props
     return () => clearTimeout(h)
   }, [focused])
 
-  const price = variant ? money(variant.price) : null
+  const price = variant ? money(variant.price + envTotal) : null
   const canOrder = !!variant && variant.available
   const status =
     product === 'loading' ? 'Loading prices...' : product === 'error' || product === null ? 'Online ordering opens soon' : !variant ? 'Choose your options' : !variant.available ? 'Sold out' : null
@@ -163,6 +196,7 @@ function Editor({ t, shop, backHref, phone, phoneHref }: { t: Template } & Props
         </div>
 
         <div className="ed-side">
+          {notice && <p className="ed-notice" role="status">{notice}</p>}
           {!loaded ? (
             <p className="ed-hint">Loading your design...</p>
           ) : (
@@ -199,6 +233,17 @@ function Editor({ t, shop, backHref, phone, phoneHref }: { t: Template } & Props
             )}
           </fieldset>
 
+          {t.envelope && (
+            <EnvelopePanel
+              spec={t.envelope}
+              value={draft.envelopes}
+              onChange={(next) => setDraft((d) => ({ ...d, envelopes: next }))}
+              each={envVariant?.price ?? null}
+              cardQty={Number.isFinite(cardQty) ? cardQty : null}
+              sectionNo={String.fromCharCode(66 + new Set(t.fields.map((f) => f.section ?? 'Details')).size)}
+            />
+          )}
+
           <button
             type="button"
             className="ed-btn ed-btn-ghost ed-reset"
@@ -217,7 +262,7 @@ function Editor({ t, shop, backHref, phone, phoneHref }: { t: Template } & Props
       <div className={`ed-bar ${!desktop && typing ? 'is-hidden' : ''}`}>
         <div className="ed-bar-in">
           <div className="ed-total">
-            <span className="mono">{status ?? Object.values(choice).join(' / ')}</span>
+            <span className="mono">{status ?? [...Object.values(choice), envCount ? `${envCount} envelopes` : ''].filter(Boolean).join(' / ')}</span>
             <strong>{price ?? ' '}</strong>
           </div>
           <button type="button" className="btn btn-primary" onClick={() => setProofOpen(true)}>
@@ -232,6 +277,7 @@ function Editor({ t, shop, backHref, phone, phoneHref }: { t: Template } & Props
           draft={draft}
           shop={shop}
           variant={canOrder ? variant! : null}
+          envVariant={envCount && envVariant ? envVariant : null}
           summary={Object.values(choice).join(', ')}
           orderStatus={status}
           phone={phone}
@@ -250,6 +296,7 @@ function Proof({
   draft,
   shop,
   variant,
+  envVariant,
   summary,
   orderStatus,
   phone,
@@ -260,6 +307,7 @@ function Proof({
   draft: Draft
   shop: ShopConfig | null
   variant: Variant | null
+  envVariant: Variant | null
   summary: string
   orderStatus: string | null
   phone: string
@@ -297,6 +345,9 @@ function Proof({
     }
   }, [t, draft])
 
+  const env = t.envelope && draft.envelopes?.on && draft.envelopes.recipients.length ? draft.envelopes : null
+  const total = variant ? variant.price + (env && envVariant ? envVariant.price * env.recipients.length : 0) : 0
+
   const approve = async () => {
     if (!allChecked || !variant || !shop) return
     setError(null)
@@ -306,19 +357,44 @@ function Proof({
       // Keep under the 6 MB upload limit; very detailed photos can push past it.
       if (pdf.size > 5.6 * 1024 * 1024) pdf = await buildPrintPdf(t, draft, { ref, summary }, setWork, 0.82)
       setWork('Sending your design to the shop')
-      const firstSide = t.sides[0]
-      const proofUrl = await renderSide(t, firstSide, draft.values, draft.photos, { mode: 'trim', ppi: 600 / Math.max(t.trim.w, t.trim.h), quality: 0.85 })
-      const proof = await (await fetch(proofUrl)).blob()
-      const up = await uploadDesign(pdf, proof)
+      const id = await createDesign()
+      const proofUrl = await renderSide(t, t.sides[0], draft.values, draft.photos, { mode: 'trim', ppi: 600 / Math.max(t.trim.w, t.trim.h), quality: 0.85 })
+      const thumb = await renderSide(t, t.sides[0], draft.values, draft.photos, { mode: 'trim', ppi: 220 / Math.max(t.trim.w, t.trim.h), quality: 0.7 })
+      await putDesignFile(id, 'pdf', pdf)
+      await putDesignFile(id, 'proof', await dataUrlToBlob(proofUrl))
+      // Saved for reorders: the editable design and its photos.
+      await putDesignFile(id, 'draft', draftJson(t.id, draft))
+      for (const [slot, p] of Object.entries(draft.photos)) await putDesignFile(id, photoKind(slot), await dataUrlToBlob(p.src))
+      if (env && t.envelope) {
+        setWork('Preparing your envelopes')
+        await putDesignFile(id, 'envelopes', buildEnvelopePdf(t.envelope, env, ref))
+      }
       setWork('Adding to your cart')
-      const checkoutUrl = await addToCart(shop, variant.id, {
-        Design: t.name,
-        Proof: 'Approved',
-        _Reference: ref,
-        '_Print file': up.printUrl,
-        _Proof: up.proofUrl,
-        _Template: t.id,
-      })
+      const reorder = reorderUrl(t.id, id)
+      const items: CartLine[] = [
+        {
+          variantId: variant.id,
+          quantity: 1,
+          attributes: {
+            Design: t.name,
+            Proof: 'Approved',
+            _Reference: ref,
+            '_Print file': designFileUrl(id, 'pdf'),
+            _Proof: designFileUrl(id, 'proof'),
+            _Reorder: reorder,
+            '_Design ID': id,
+            _Template: t.id,
+          },
+        },
+      ]
+      if (env && envVariant)
+        items.push({
+          variantId: envVariant.id,
+          quantity: env.recipients.length,
+          attributes: { For: `${t.name} cards`, _Reference: ref, '_Envelopes file': designFileUrl(id, 'envelopes') },
+        })
+      const checkoutUrl = await addToCart(shop, items)
+      rememberDesign({ id, templateId: t.id, name: t.name, ref, summary, savedAt: new Date().toISOString(), thumb })
       setWork('Opening checkout')
       window.location.href = checkoutUrl
     } catch (e) {
@@ -374,6 +450,15 @@ function Proof({
             ))}
           </section>
 
+          {env && (
+            <section className="ed-proof-side">
+              <p className="mono">Envelopes</p>
+              <p className="ed-proof-note" style={{ textAlign: 'left' }}>
+                {env.recipients.length} addressed {t.envelope!.label}s{envVariant ? `, ${money(envVariant.price * env.recipients.length)}` : ''}. First one: {env.recipients[0].join(', ')}
+              </p>
+            </section>
+          )}
+
           {!variant && (
             <p className="ed-proof-note">
               {orderStatus ?? 'Online ordering opens soon.'} To order this design now, call us at <a href={phoneHref}>{phone}</a>.
@@ -388,7 +473,7 @@ function Proof({
           {work ?? (allChecked ? `Ready / ${summary}` : `${checked.filter(Boolean).length} of ${CHECKS.length} checked`)}
         </p>
         <button type="button" className="btn btn-primary" disabled={!allChecked || !variant || !!work} onClick={approve}>
-          {work ? 'Working...' : variant ? `Approve & checkout ${money(variant.price)}` : 'Approve proof'}
+          {work ? 'Working...' : variant ? `Approve & checkout ${money(total)}` : 'Approve proof'}
         </button>
       </div>
     </div>

@@ -210,6 +210,8 @@ export interface Template {
    * managed in the Shopify admin, not here.
    */
   shopifyHandle: string
+  /** Offer addressed envelopes with this template (e.g. A7 for 5 x 7 cards). */
+  envelope?: import('./envelopes').EnvelopeSpec
   /** Which side the thumbnail shows. Defaults to the first. */
   thumbnailSide?: string
   /** For thumbnails of folded pieces, crop to this region of the side (inches). */

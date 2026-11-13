@@ -18,6 +18,7 @@ export const christmasVeryMerry: Template = {
   id: 'very-merry-three-photo',
   category: 'christmas-cards',
   shopifyHandle: 'christmas-card-very-merry',
+  envelope: { w: 7.25, h: 5.25, label: 'A7 envelope', shopifyHandle: 'addressed-envelopes' },
   name: 'Very Merry',
   description: 'Three favorite photos over whitewashed wood planks, with a big vintage "Merry Christmas" in holiday red.',
   trim: { w: 7, h: 5 },

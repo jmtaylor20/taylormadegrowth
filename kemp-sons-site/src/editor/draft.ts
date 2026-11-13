@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Template, TextField } from './types'
+import type { EnvelopeState } from './envelopes'
 
 export interface PhotoState {
   src: string
@@ -16,6 +17,8 @@ export interface PhotoState {
 export interface Draft {
   values: Record<string, string>
   photos: Record<string, PhotoState>
+  /** Addressed envelopes add-on, for templates that offer it. */
+  envelopes?: EnvelopeState
 }
 
 export function defaultDraft(t: Template): Draft {
@@ -67,7 +70,7 @@ export function useDraft(t: Template) {
       .then((saved) => {
         if (!alive || !saved) return
         // Keep sample text for any field added to the template since the draft was saved.
-        setDraft({ values: { ...defaultDraft(t).values, ...saved.values }, photos: saved.photos ?? {} })
+        setDraft({ values: { ...defaultDraft(t).values, ...saved.values }, photos: saved.photos ?? {}, envelopes: saved.envelopes })
       })
       .catch(() => undefined)
       .finally(() => alive && setLoaded(true))

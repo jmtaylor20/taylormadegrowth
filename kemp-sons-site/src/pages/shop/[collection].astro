@@ -1,0 +1,104 @@
+---
+import Base from '../../layouts/Base.astro'
+import Header from '../../components/Header.astro'
+import Footer from '../../components/Footer.astro'
+import ColorBar from '../../components/ColorBar.astro'
+import TemplateThumb from '../../editor/TemplateThumb'
+import { productLines, business } from '../../config/site'
+import { templatesIn } from '../../editor/templates'
+import { getStartingPrice, formatPrice } from '../../lib/shopify'
+
+export function getStaticPaths() {
+  return productLines.map((line) => ({ params: { collection: line.collection }, props: { line } }))
+}
+
+const { line } = Astro.props
+const templates = await Promise.all(
+  templatesIn(line.collection).map(async (t) => ({ t, from: formatPrice(await getStartingPrice(t.shopifyHandle)) })),
+)
+const others = productLines.filter((l) => l.collection !== line.collection)
+const pad = (n: number) => String(n).padStart(2, '0')
+---
+<Base title={`${line.name} | Order online | ${business.name}, Opelika AL`} description={`${line.intro} ${line.blurb}`}>
+  <Header />
+  <main id="main" class="shop">
+    <section class="intro">
+      <div class="wrap">
+        <p class="label">Order online</p>
+        <h1 class="headline">{line.name}</h1>
+        <p class="lede">{line.intro}</p>
+      </div>
+    </section>
+
+    <section class="wrap designs" aria-label={`${line.name} designs`}>
+      {templates.length > 0 ? (
+        <ol class="grid">
+          {templates.map(({ t, from }, i) => (
+            <li>
+              <a class="card" href={`/design/${t.id}/`}>
+                <div class="thumb crop" style={`aspect-ratio: ${t.trim.w} / ${t.trim.h}`}>
+                  <TemplateThumb client:visible id={t.id} />
+                </div>
+                <div class="meta">
+                  <p class="mono no">No. {pad(i + 1)} / {t.sizeLabel}</p>
+                  <h2 class="sub">{t.name}</h2>
+                  <p class="desc">{t.description}</p>
+                  <p class="row">
+                    <span class="mono">{from ? `From ${from}` : ''}</span>
+                    <span class="go">Personalize <span aria-hidden="true">&rarr;</span></span>
+                  </p>
+                </div>
+              </a>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <div class="soon">
+          <p class="sub">Online designs are on the way.</p>
+          <p>We're setting up {line.name.toLowerCase()} you can design yourself. Until then, call us or send a quote request and we'll take care of it.</p>
+          <div class="btn-row">
+            <a class="btn btn-primary" href={business.phoneHref}>Call {business.phone}</a>
+            <a class="btn" href="/#custom">Request a quote</a>
+          </div>
+        </div>
+      )}
+      <p class="help">Need something different? <a href="/#custom">Send us a custom job</a> and we'll quote it within one business day.</p>
+    </section>
+
+    <section class="more">
+      <ColorBar />
+      <div class="wrap">
+        <p class="label">Also printed here</p>
+        <ul class="others">
+          {others.map((l) => <li><a href={`/shop/${l.collection}/`}>{l.name} <span aria-hidden="true">&rarr;</span></a></li>)}
+        </ul>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Base>
+
+<style>
+  .shop { padding-top: var(--header-h); }
+  .intro { padding: 64px 0 40px; border-bottom: 2px solid var(--ink); }
+  .intro .wrap { display: grid; gap: 18px; }
+  .designs { padding-top: 48px; padding-bottom: 72px; display: grid; gap: 36px; }
+  .grid { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 40px 32px; }
+  .card { display: grid; gap: 18px; text-decoration: none; }
+  .thumb { background: var(--stock-2); box-shadow: 0 18px 34px -22px rgba(17, 17, 17, 0.55); transition: transform 0.25s var(--ease); }
+  .card:hover .thumb { transform: translateY(-4px) rotate(-0.4deg); }
+  .meta { display: grid; gap: 6px; border-top: 2px solid var(--ink); padding-top: 12px; }
+  .no { color: var(--ink-2); }
+  .desc { color: var(--ink-2); font-size: 15.5px; }
+  .row { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+  .go { font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 14px; color: var(--red-ink); }
+  .card:hover .go { text-decoration: underline; text-underline-offset: 4px; }
+  .soon { border: 2px solid var(--ink); background: var(--white); padding: 28px; display: grid; gap: 14px; max-width: 760px; }
+  .help { color: var(--ink-2); }
+  .help a { color: var(--red-ink); font-weight: 700; }
+  .more { background: var(--white); }
+  .more .wrap { padding-top: 40px; padding-bottom: 56px; display: grid; gap: 18px; }
+  .others { list-style: none; display: flex; flex-wrap: wrap; gap: 12px; }
+  .others a { display: inline-flex; gap: 8px; padding: 12px 16px; border: 1.5px solid var(--ink); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; font-size: 14px; text-decoration: none; }
+  .others a:hover { background: var(--ink); color: var(--white); }
+</style>

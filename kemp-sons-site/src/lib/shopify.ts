@@ -106,3 +106,12 @@ export function formatPrice(p: { amount: string; currencyCode: string } | null):
   if (!p) return null
   return Number(p.amount).toLocaleString('en-US', { style: 'currency', currency: p.currencyCode })
 }
+
+/** Lowest price of a product (any variant), for "from $X" labels. Null when unavailable. */
+export async function getStartingPrice(handle: string): Promise<{ amount: string; currencyCode: string } | null> {
+  const data = await storefront<{ product: { priceRange: { minVariantPrice: { amount: string; currencyCode: string } } } | null }>(
+    `query P($handle: String!) { product(handle: $handle) { priceRange { minVariantPrice { amount currencyCode } } } }`,
+    { handle },
+  )
+  return data?.product?.priceRange.minVariantPrice ?? null
+}

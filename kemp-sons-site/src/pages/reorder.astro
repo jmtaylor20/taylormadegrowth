@@ -1,0 +1,44 @@
+---
+import Base from '../layouts/Base.astro'
+import Header from '../components/Header.astro'
+import Footer from '../components/Footer.astro'
+import ReorderList from '../editor/ReorderList'
+import { business } from '../config/site'
+---
+<Base title={`Reorder a past design | ${business.name}`} description="Open a design you ordered before, update the year or a photo, and order it again.">
+  <Header />
+  <main id="main" class="reorder">
+    <section class="intro">
+      <div class="wrap">
+        <p class="label">Reorder</p>
+        <h1 class="headline">Print it again.</h1>
+        <p class="lede">Open a design you've ordered before, change what you need (the year, a new photo, this year's address list) and approve a fresh proof.</p>
+      </div>
+    </section>
+    <section class="wrap list">
+      <ReorderList client:load phone={business.phone} phoneHref={business.phoneHref} />
+      <p class="help">Reordering something we printed for you in the shop, like forms or letterhead? <a href="/#custom">Send a reorder request</a> or call <a href={business.phoneHref}>{business.phone}</a>.</p>
+    </section>
+  </main>
+  <Footer />
+</Base>
+
+<style>
+  .reorder { padding-top: var(--header-h); }
+  .intro { padding: 64px 0 40px; border-bottom: 2px solid var(--ink); }
+  .intro .wrap { display: grid; gap: 18px; }
+  .list { padding-top: 40px; padding-bottom: 72px; display: grid; gap: 32px; }
+  .help { color: var(--ink-2); }
+  .help a { color: var(--red-ink); font-weight: 700; }
+  :global(.ro-list) { list-style: none; display: grid; gap: 28px; }
+  :global(.ro-item) { display: grid; grid-template-columns: minmax(140px, 260px) 1fr; gap: 24px; align-items: start; border-top: 2px solid var(--ink); padding-top: 20px; }
+  :global(.ro-thumb img) { width: 100%; display: block; box-shadow: 0 14px 30px -18px rgba(17, 17, 17, 0.6); }
+  :global(.ro-meta) { display: grid; gap: 6px; }
+  :global(.ro-meta .mono) { color: var(--ink-2); }
+  :global(.ro-sum) { color: var(--ink-2); }
+  :global(.ro-actions) { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-top: 8px; }
+  :global(.ro-remove) { border: 0; background: none; text-decoration: underline; color: var(--ink-2); cursor: pointer; }
+  :global(.ro-empty) { border: 2px solid var(--ink); background: var(--white); padding: 24px; display: grid; gap: 10px; max-width: 760px; }
+  :global(.ro-empty a) { color: var(--red-ink); font-weight: 700; }
+  @media (max-width: 560px) { :global(.ro-item) { grid-template-columns: 1fr; } }
+</style>

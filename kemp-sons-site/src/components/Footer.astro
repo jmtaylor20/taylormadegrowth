@@ -1,5 +1,5 @@
 ---
-import { business, shop } from '../config/site'
+import { business } from '../config/site'
 import ColorBar from './ColorBar.astro'
 import RegMark from './RegMark.astro'
 const year = new Date().getFullYear()
@@ -24,7 +24,7 @@ const socials = Object.entries(business.social).filter(([, url]) => url)
       </div>
       <div>
         <p class="h mono">Order</p>
-        <p><a href={shop.shopUrl}>Start an order</a><br /><a href={shop.accountUrl}>Reorder a past job</a><br /><a href="/#custom">Custom job quote</a></p>
+        <p><a href="/#products">Start an order</a><br /><a href="/reorder/">Reorder a past job</a><br /><a href="/#custom">Custom job quote</a></p>
       </div>
       <div>
         <p class="h mono">Kemp &amp; Sons</p>

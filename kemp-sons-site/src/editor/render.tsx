@@ -68,3 +68,29 @@ export async function renderSide(
 export function proofPpi(t: Template) {
   return Math.min(160, 2200 / Math.max(t.trim.w, t.trim.h))
 }
+
+const thumbCache = new Map<string, Promise<string>>()
+let queue: Promise<unknown> = Promise.resolve()
+
+/**
+ * Gallery thumbnail drawn from the template's sample text, with soft
+ * illustrated scenes in the photo frames. Renders one at a time so a page of
+ * designs never stalls a phone.
+ */
+export function renderThumbnail(t: Template, width = 640): Promise<string> {
+  const hit = thumbCache.get(t.id)
+  if (hit) return hit
+  const job = (queue = queue.then(async () => {
+    const { defaultDraft } = await import('./draft')
+    const { SCENES, sampleScene } = await import('./samples')
+    const side = t.sides.find((s) => s.id === t.thumbnailSide) ?? t.sides[0]
+    const ppi = width / t.trim.w
+    const photos: Record<string, PhotoState> = {}
+    let i = t.category === 'christmas-cards' ? 1 : 0
+    for (const el of side.elements)
+      if (el.type === 'photo' && !el.optional) photos[el.field] = { src: sampleScene(SCENES[i++ % SCENES.length]), w: 800, h: 800, ox: 0, oy: 0, zoom: 1 }
+    return renderSide(t, side, defaultDraft(t).values, photos, { mode: 'trim', ppi, quality: 0.86 })
+  })) as Promise<string>
+  thumbCache.set(t.id, job)
+  return job
+}

@@ -2,7 +2,6 @@
 import Base from '../layouts/Base.astro'
 import Header from '../components/Header.astro'
 import Footer from '../components/Footer.astro'
-import { shop } from '../config/site'
 ---
 <Base title="Page not found | Kemp & Sons Printing">
   <Header />
@@ -12,7 +11,7 @@ import { shop } from '../config/site'
       <h1 class="headline">That page didn't make it to press.</h1>
       <div class="btn-row">
         <a class="btn btn-primary" href="/">Back to home</a>
-        <a class="btn" href={shop.shopUrl}>Order online</a>
+        <a class="btn" href="/#products">Order online</a>
       </div>
     </div>
   </main>

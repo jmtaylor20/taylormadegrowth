@@ -79,22 +79,19 @@ export async function getProduct(cfg: ShopConfig, handle: string): Promise<ShopP
 
 export const money = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
 
-/**
- * Uploads the print file and a small proof image. Returns their URLs, which
- * are attached to the order line so the shop can download them from the
- * Shopify order.
- */
-export async function uploadDesign(pdf: Blob, proof: Blob): Promise<{ id: string; printUrl: string; proofUrl: string }> {
-  const begin = await fetch('/api/designs', { method: 'POST' })
-  if (!begin.ok) throw new Error('Could not start the upload')
-  const { id } = (await begin.json()) as { id: string }
-  for (const [kind, blob] of [['pdf', pdf], ['proof', proof]] as const) {
-    const res = await fetch(`/api/designs/${id}/${kind}`, { method: 'PUT', body: blob, headers: { 'Content-Type': blob.type } })
-    if (!res.ok) throw new Error(`Upload failed (${res.status})`)
-  }
-  const origin = window.location.origin
-  return { id, printUrl: `${origin}/api/designs/${id}/pdf`, proofUrl: `${origin}/api/designs/${id}/proof` }
+/** Starts a stored design and returns its id. Files are then added with putDesignFile. */
+export async function createDesign(): Promise<string> {
+  const res = await fetch('/api/designs', { method: 'POST' })
+  if (!res.ok) throw new Error('Could not start the upload')
+  return ((await res.json()) as { id: string }).id
 }
+
+export async function putDesignFile(id: string, kind: string, blob: Blob) {
+  const res = await fetch(`/api/designs/${id}/${kind}`, { method: 'PUT', body: blob, headers: { 'Content-Type': blob.type } })
+  if (!res.ok) throw new Error(`Upload failed (${kind}, ${res.status})`)
+}
+
+export const designFileUrl = (id: string, kind: string) => `${window.location.origin}/api/designs/${id}/${kind}`
 
 const CART_KEY = 'kemp-cart-id'
 
@@ -112,8 +109,14 @@ interface CartResult {
  * and returns the Shopify checkout URL. Attributes starting with "_" are
  * hidden from the customer at checkout but shown to the shop on the order.
  */
-export async function addToCart(cfg: ShopConfig, variantId: string, attributes: Record<string, string>): Promise<string> {
-  const line = { merchandiseId: variantId, quantity: 1, attributes: Object.entries(attributes).map(([key, value]) => ({ key, value })) }
+export interface CartLine {
+  variantId: string
+  quantity: number
+  attributes: Record<string, string>
+}
+
+export async function addToCart(cfg: ShopConfig, items: CartLine[]): Promise<string> {
+  const lines = items.map((it) => ({ merchandiseId: it.variantId, quantity: it.quantity, attributes: Object.entries(it.attributes).map(([key, value]) => ({ key, value })) }))
   let cartId: string | null = null
   try {
     cartId = localStorage.getItem(CART_KEY)
@@ -126,7 +129,7 @@ export async function addToCart(cfg: ShopConfig, variantId: string, attributes: 
       const data = await storefront<{ cartLinesAdd: CartResult }>(
         cfg,
         `${CART_FIELDS} mutation Add($cartId: ID!, $lines: [CartLineInput!]!) { cartLinesAdd(cartId: $cartId, lines: $lines) { cart { ...CartBits } userErrors { message } } }`,
-        { cartId, lines: [line] },
+        { cartId, lines },
       )
       const r = data.cartLinesAdd
       if (r.cart && !r.userErrors.length) return r.cart.checkoutUrl
@@ -138,7 +141,7 @@ export async function addToCart(cfg: ShopConfig, variantId: string, attributes: 
   const data = await storefront<{ cartCreate: CartResult }>(
     cfg,
     `${CART_FIELDS} mutation Create($input: CartInput!) { cartCreate(input: $input) { cart { ...CartBits } userErrors { message } } }`,
-    { input: { lines: [line] } },
+    { input: { lines } },
   )
   const r = data.cartCreate
   if (!r.cart || r.userErrors.length) throw new Error(r.userErrors.map((e) => e.message).join('; ') || 'Could not create cart')

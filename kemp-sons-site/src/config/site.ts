@@ -51,30 +51,36 @@ export const productLines = [
     name: 'Funeral Programs',
     blurb: 'Folded programs and 8-page booklets, built from our own layouts. Rush available.',
     tone: 'navy',
+    intro:
+      'Choose a layout, add the photo and service details, and approve your proof from your phone. Printed in Opelika, with rush service when you need it.',
   },
   {
     collection: 'christmas-cards',
     name: 'Christmas & Seasonal Cards',
     blurb: '5x7 photo cards and greetings, with names and addresses merged from a spreadsheet.',
     tone: 'red',
+    intro: 'Pick a design, add your family photos and greeting, and approve your proof online. Printed on heavy card stock in Opelika, ready for pickup or shipped to your door.',
   },
   {
     collection: 'business-cards',
     name: 'Business Cards',
     blurb: 'Crisp cards on heavy stock, from our layouts or your own logo. Reorder in a few clicks.',
     tone: 'navy',
+    intro: 'Start from one of our layouts or bring your own logo. Approve your proof online and pick up your cards in Opelika, or have them shipped.',
   },
   {
     collection: 'thank-you-cards',
     name: 'Thank You Cards',
     blurb: 'For sympathy, weddings, showers and graduations, printed to match your program or invitation.',
     tone: 'gray',
+    intro: 'Sympathy, wedding, shower and graduation thank you cards, printed to match your program or invitation.',
   },
   {
     collection: 'stickers',
     name: 'Stickers',
     blurb: 'Sheets of six 3-inch circles, sized for party cups, favors and packaging.',
     tone: 'red',
+    intro: 'Round 3-inch stickers printed six to a sheet, sized for party cups, favors and packaging.',
   },
 ] as const
 

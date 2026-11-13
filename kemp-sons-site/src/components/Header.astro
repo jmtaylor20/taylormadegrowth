@@ -1,5 +1,5 @@
 ---
-import { shop, business } from '../config/site'
+import { business } from '../config/site'
 ---
 <header class="site-header" data-header>
   <div class="wrap bar">
@@ -14,7 +14,7 @@ import { shop, business } from '../config/site'
     </nav>
     <div class="actions">
       <a class="phone mono" href={business.phoneHref}>{business.phone}</a>
-      <a class="btn btn-primary btn-sm" href={shop.shopUrl}><span>Start<span class="long"> an order</span></span></a>
+      <a class="btn btn-primary btn-sm" href="/#products"><span>Start<span class="long"> an order</span></span></a>
       <button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobile-menu" data-menu-btn>
         <span class="sr">Menu</span><span class="bars" aria-hidden="true"></span>
       </button>
@@ -25,7 +25,7 @@ import { shop, business } from '../config/site'
     <a href="/#custom">Custom jobs</a>
     <a href="/#about">About</a>
     <a href="/#visit">Visit</a>
-    <a href={shop.accountUrl}>Reorder a past job</a>
+    <a href="/reorder/">Reorder a past job</a>
     <a href={business.phoneHref}>Call {business.phone}</a>
   </div>
 </header>
