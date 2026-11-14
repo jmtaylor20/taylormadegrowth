@@ -78,15 +78,16 @@ let queue: Promise<unknown> = Promise.resolve()
  * designs never stalls a phone.
  */
 /**
- * Public-domain sample photos (Library of Congress, see
+ * AI-generated sample photos of fictional people (see
  * public/kiosk/samples/CREDITS.txt). Used only by the kiosk screensaver so
- * designs show with real photos instead of gray placeholders.
+ * designs show real-looking photos instead of gray placeholders. Every
+ * funeral program uses the same portrait so it matches the sample name.
  */
-const SAMPLE_PORTRAITS = [1, 2, 3, 4, 5].map((n) => `/kiosk/samples/portrait-${n}.jpg`)
-const SAMPLE_WINTER = [1, 2, 3].map((n) => `/kiosk/samples/winter-${n}.jpg`)
+const SAMPLE_PORTRAITS = ['/kiosk/samples/portrait.jpg']
+const SAMPLE_HOLIDAY = [1, 2, 3].map((n) => `/kiosk/samples/holiday-${n}.jpg`)
 
 async function samplePhotos(t: Template, seed: number): Promise<Record<string, PhotoState>> {
-  const pool = t.category === 'funeral-programs' ? SAMPLE_PORTRAITS : SAMPLE_WINTER
+  const pool = t.category === 'funeral-programs' ? SAMPLE_PORTRAITS : SAMPLE_HOLIDAY
   const slots: string[] = []
   for (const f of t.fields) {
     if (f.type !== 'photo') continue
@@ -115,7 +116,7 @@ export function renderThumbnail(t: Template, width = 640, opts: { samples?: bool
     const crop = t.thumbnailCrop ?? { x: 0, y: 0, w: t.trim.w, h: t.trim.h }
     const ppi = width / crop.w
     // Photo spots show the plain gray placeholder, or sample photos for the kiosk.
-    const photos: Record<string, PhotoState> = opts.samples ? await samplePhotos(t, t.id.length) : {}
+    const photos: Record<string, PhotoState> = opts.samples ? await samplePhotos(t, 0) : {}
     const full = await renderSide(t, side, defaultDraft(t).values, photos, { mode: 'trim', ppi, quality: 0.86 })
     if (!t.thumbnailCrop) return full
     const img = await loadImage(full)
