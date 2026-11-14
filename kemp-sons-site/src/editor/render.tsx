@@ -28,7 +28,7 @@ export async function renderSide(
   photos: Record<string, PhotoState>,
   opts: RenderOptions,
 ): Promise<string> {
-  await loadFonts()
+  await loadFonts(t)
   const srcs = [...side.elements.flatMap((el) => (el.type === 'image' ? [el.src] : [])), ...Object.values(photos).map(activeSrc)]
   await Promise.all(srcs.map((s) => loadImage(s).catch(() => null)))
 

@@ -268,6 +268,37 @@ export function drawVectorText(doc: jsPDF, side: Side, indexes: Set<number>, val
   })
 }
 
+/** Characters in the text that the embedded font has no glyph for. */
+function missingChars(doc: jsPDF, style: Pick<TextStyle, 'font' | 'weight' | 'italic'>, text: string): boolean {
+  doc.setFont(fontFile(style), 'normal')
+  const font = doc.getFont() as unknown as { metadata?: { cmap?: { unicode?: { codeMap?: Record<number, number> } } } }
+  const map = font.metadata?.cmap?.unicode?.codeMap
+  if (!map) return false
+  return [...text].some((ch) => /\S/.test(ch) && !map[ch.codePointAt(0)!])
+}
+
+/**
+ * Drops text the embedded fonts can't fully draw (some of Kemp's script
+ * fonts have no numbers or accents). That text stays in the image, where the
+ * browser fills the gap, so nothing prints as an empty box.
+ */
+export function coveredIndexes(doc: jsPDF, side: Side, indexes: Set<number>, values: Record<string, string>): Set<number> {
+  const out = new Set<number>()
+  indexes.forEach((i) => {
+    const el = side.elements[i]
+    if (el.type === 'text') {
+      const fit = fitText(fillTokens(el.text, values), el)
+      const strings = fit.rows ? fit.rows.flatMap((r) => [r.left, r.dots, r.right]) : fit.lines
+      if (!strings.some((s) => missingChars(doc, el, s))) out.add(i)
+    } else if (el.type === 'stack') {
+      const fit = fitStack(el, values)
+      const bad = fit.blocks.some((b) => b.heading.lines.some((s) => missingChars(doc, el.heading, s)) || b.body.lines.some((s) => missingChars(doc, el.body, s)))
+      if (!bad) out.add(i)
+    }
+  })
+  return out
+}
+
 export function textElements(side: Side, indexes: Set<number>) {
   return side.elements.filter((el, i): el is TextEl | StackEl => indexes.has(i) && (el.type === 'text' || el.type === 'stack'))
 }

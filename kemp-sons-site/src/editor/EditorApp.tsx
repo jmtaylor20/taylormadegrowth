@@ -145,7 +145,7 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
   const cardQty = Number((Object.entries(choice).find(([k]) => /quantity/i.test(k))?.[1] ?? '').match(/\d+/)?.[0] ?? NaN)
 
   useEffect(() => {
-    loadFonts().then(() => setFontsReady(true))
+    loadFonts(t).then(() => setFontsReady(true))
   }, [])
 
   const focusField = useCallback(

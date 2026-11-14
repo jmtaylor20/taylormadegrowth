@@ -2,7 +2,7 @@ import { jsPDF } from 'jspdf'
 import { BLEED, type Template } from './types'
 import type { Draft } from './draft'
 import { renderSide } from './render'
-import { drawVectorText, embedFace, prepareFonts, textElements, vectorTextIndexes } from './pdfText'
+import { coveredIndexes, drawVectorText, embedFace, prepareFonts, textElements, vectorTextIndexes } from './pdfText'
 
 /**
  * Print-ready PDF: one page per side at the trim size plus 0.125 in bleed,
@@ -47,6 +47,7 @@ export async function buildPrintPdf(t: Template, d: Draft, job: PrintJob, onProg
     // Text that nothing covers is drawn as real PDF text (crisp at any size); the rest stays in the image.
     let vector = vectorTextIndexes(side, d.values, d.photos)
     if (vector.size && !(await prepareFonts(doc, textElements(side, vector)))) vector = new Set()
+    vector = coveredIndexes(doc, side, vector, d.values)
     let img = await renderSide(t, side, d.values, d.photos, { mode: 'print', ppi, mimeType: 'image/jpeg', quality, skip: vector })
     if (oneColor) img = await toGray(img, quality)
     const x0 = (SLUG - BLEED) * PT

@@ -20,6 +20,21 @@ export type FontFamily =
   | 'Playfair Display'
   | 'Great Vibes'
   | 'Montserrat'
+  // Kemp's own fonts, from their InDesign packages
+  | 'Adobe Garamond Pro'
+  | 'Minion Pro'
+  | 'adelia'
+  | 'Andalusia'
+  | 'Mission Script'
+  | 'Dayland'
+  | 'Kurnia'
+  | 'Aston Script'
+  | 'Blacksword'
+  | 'akaDora'
+  | 'Vivace'
+  | 'Monotype Corsiva'
+  | 'Adage Script'
+  | 'Birmingham Script'
 
 export interface TextField {
   id: string

@@ -1,0 +1,28 @@
+/*
+ * Kemp & Sons' own fonts, from the InDesign packages of their original
+ * programs (licensed by Kemp). Latin subsets: WOFF2 here for the browser,
+ * matching TrueType files in /fonts/pdf for the print file.
+ */
+@font-face { font-family: 'Adobe Garamond Pro'; src: url('/fonts/kemp/adobe-garamond-pro-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: 'Adobe Garamond Pro'; src: url('/fonts/kemp/adobe-garamond-pro-400-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: block; }
+@font-face { font-family: 'Adobe Garamond Pro'; src: url('/fonts/kemp/adobe-garamond-pro-600-normal.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: block; }
+@font-face { font-family: 'Adobe Garamond Pro'; src: url('/fonts/kemp/adobe-garamond-pro-700-normal.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: block; }
+@font-face { font-family: 'Adobe Garamond Pro'; src: url('/fonts/kemp/adobe-garamond-pro-700-italic.woff2') format('woff2'); font-weight: 700; font-style: italic; font-display: block; }
+@font-face { font-family: 'Minion Pro'; src: url('/fonts/kemp/minion-pro-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: 'adelia'; src: url('/fonts/kemp/adelia-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: 'Andalusia'; src: url('/fonts/kemp/andalusia-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: 'Mission Script'; src: url('/fonts/kemp/mission-script-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: 'Dayland'; src: url('/fonts/kemp/dayland-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: 'Kurnia'; src: url('/fonts/kemp/kurnia-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: 'Aston Script'; src: url('/fonts/kemp/aston-script-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: 'Blacksword'; src: url('/fonts/kemp/blacksword-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: 'akaDora'; src: url('/fonts/kemp/akadora-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: 'Vivace'; src: url('/fonts/kemp/vivace-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: 'Monotype Corsiva'; src: url('/fonts/kemp/monotype-corsiva-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: 'Adage Script'; src: url('/fonts/kemp/adage-script-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: 'Birmingham Script'; src: url('/fonts/kemp/birmingham-script-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
+
+/* Ogirema by Manfred Klein: free for personal and commercial use. */
+@font-face { font-family: 'Ogirema'; src: url('/fonts/ogirema-regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: 'Ogirema'; src: url('/fonts/ogirema-bold.ttf') format('truetype'); font-weight: 700; font-style: normal; font-display: block; }
+@font-face { font-family: 'Ogirema'; src: url('/fonts/ogirema-italic.ttf') format('truetype'); font-weight: 400; font-style: italic; font-display: block; }
