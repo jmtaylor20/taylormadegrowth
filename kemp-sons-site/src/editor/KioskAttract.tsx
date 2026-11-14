@@ -1,35 +1,50 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { TEMPLATES } from './templates'
 import { renderThumbnail } from './render'
 
 /**
- * Kiosk screensaver: when nobody has touched the screen for a while, every
- * design scrolls across in two rows. Any tap wakes it to the product grid.
- * Also shown straight away when the designer resets after a customer leaves
- * (/in-store/?attract).
+ * Kiosk screensaver, "fresh off the press": printed pieces drift through 3D
+ * space while one design at a time swoops forward onto a press stack, lands
+ * inside crop marks that trim away, and gets a job-ticket label. Designs show
+ * public-domain sample photos instead of gray placeholders. Any tap wakes the
+ * kiosk to the product grid. Also shown right away when the designer resets
+ * after a customer leaves (/in-store/?attract).
  */
 const IDLE_SECONDS = 60
+const HERO_SECONDS = 7
 
 interface Thumb {
   id: string
   name: string
+  size: string
+  kind: string
   src: string
   ratio: number
+}
+
+const KIND: Record<string, string> = { 'funeral-programs': 'Funeral program', 'christmas-cards': 'Christmas card' }
+
+/** Small deterministic random so the floating sheets keep their places between renders. */
+function rand(seed: number) {
+  const x = Math.sin(seed * 9301 + 49297) * 233280
+  return x - Math.floor(x)
 }
 
 export default function KioskAttract() {
   const [on, setOn] = useState(() => new URLSearchParams(window.location.search).has('attract'))
   const [thumbs, setThumbs] = useState<Thumb[]>([])
+  const [hero, setHero] = useState(0)
   const last = useRef(Date.now())
 
-  // Draw every design's cover once (the grid's thumbnails share this cache).
+  // Draw every design's cover once, with sample photos in the photo spots.
   useEffect(() => {
     let alive = true
     ;(async () => {
       for (const t of TEMPLATES) {
-        const src = await renderThumbnail(t).catch(() => null)
+        const src = await renderThumbnail(t, 720, { samples: true }).catch(() => null)
         const crop = t.thumbnailCrop ?? t.trim
-        if (alive && src) setThumbs((list) => [...list, { id: t.id, name: t.name, src, ratio: crop.w / crop.h }])
+        if (alive && src)
+          setThumbs((list) => [...list, { id: t.id, name: t.name, size: t.sizeLabel, kind: KIND[t.category] ?? 'Printed piece', src, ratio: crop.w / crop.h }])
       }
     })()
     return () => {
@@ -37,6 +52,7 @@ export default function KioskAttract() {
     }
   }, [])
 
+  // Idle watch.
   useEffect(() => {
     if (new URLSearchParams(window.location.search).has('attract')) history.replaceState(null, '', window.location.pathname)
     const touch = () => {
@@ -53,45 +69,125 @@ export default function KioskAttract() {
     }
   }, [])
 
+  // Next design on the press every few seconds.
+  useEffect(() => {
+    if (!on || thumbs.length === 0) return
+    const id = setInterval(() => setHero((h) => h + 1), HERO_SECONDS * 1000)
+    return () => clearInterval(id)
+  }, [on, thumbs.length])
+
+  // Background sheets: positions and timings fixed per slot.
+  const sheets = useMemo(
+    () =>
+      Array.from({ length: 11 }, (_, i) => ({
+        // Mostly behind the stage side, clear of the headline.
+        left: (i % 4 === 0 ? 2 : 38) + rand(i + 1) * (i % 4 === 0 ? 30 : 58),
+        depth: -250 - rand(i + 21) * 900,
+        width: 9 + rand(i + 41) * 7,
+        duration: 26 + rand(i + 61) * 22,
+        delay: -rand(i + 81) * 48,
+        spin: (rand(i + 101) - 0.5) * 70,
+        tilt: (rand(i + 121) - 0.5) * 50,
+      })),
+    [],
+  )
+
   if (!on) return null
   const wake = () => {
     last.current = Date.now()
     setOn(false)
     window.scrollTo({ top: 0 })
   }
-  const rowA = thumbs
-  const rowB = [...thumbs].reverse()
+  const current = thumbs.length ? thumbs[hero % thumbs.length] : null
+  const no = thumbs.length ? (hero % thumbs.length) + 1 : 0
+  const dur = { animationDuration: `${HERO_SECONDS}s` }
+
   return (
     <div className="ka" role="button" tabIndex={0} aria-label="Tap anywhere to start" onClick={wake} onKeyDown={wake}>
-      <div className="ka-head">
-        <img src="/brand/kemp-sons-full-color.svg" alt="Kemp & Sons Printing" width="150" height="100" />
-        <p className="ka-title">Design it here. We print it here.</p>
-      </div>
-      {thumbs.length > 0 && (
-        <div className="ka-rows" aria-hidden="true">
-          <Row items={rowA} seconds={Math.max(40, thumbs.length * 7)} />
-          <Row items={rowB} seconds={Math.max(46, thumbs.length * 8)} reverse />
-        </div>
-      )}
-      <p className="ka-cta">
-        <span>Tap anywhere to start</span>
-      </p>
-    </div>
-  )
-}
+      <div className="ka-dots" aria-hidden="true" />
+      <span className="ka-reg ka-reg-tl" aria-hidden="true" />
+      <span className="ka-reg ka-reg-tr" aria-hidden="true" />
+      <span className="ka-reg ka-reg-bl" aria-hidden="true" />
+      <span className="ka-reg ka-reg-br" aria-hidden="true" />
 
-function Row({ items, seconds, reverse }: { items: Thumb[]; seconds: number; reverse?: boolean }) {
-  // Two copies side by side so the loop is seamless.
-  const loop = [...items, ...items]
-  return (
-    <div className="ka-row">
-      <div className={`ka-track ${reverse ? 'is-rev' : ''}`} style={{ animationDuration: `${seconds}s` }}>
-        {loop.map((t, i) => (
-          <figure key={`${t.id}-${i}`} className="ka-item">
-            <img src={t.src} alt="" style={{ width: `calc(var(--ka-h) * ${t.ratio})` }} />
-            <figcaption>{t.name}</figcaption>
-          </figure>
-        ))}
+      {/* Sheets drifting up through the room */}
+      <div className="ka-space" aria-hidden="true">
+        {thumbs.length > 0 &&
+          sheets.map((s, i) => {
+            const t = thumbs[(i * 5) % thumbs.length]
+            return (
+              <div
+                key={i}
+                className="ka-sheet"
+                style={
+                  {
+                    left: `${s.left}%`,
+                    width: `${s.width}vw`,
+                    aspectRatio: String(t.ratio),
+                    '--z': `${s.depth}px`,
+                    '--spin': `${s.spin}deg`,
+                    '--tilt': `${s.tilt}deg`,
+                    animationDuration: `${s.duration}s`,
+                    animationDelay: `${s.delay}s`,
+                    opacity: 0.18 + (1 + s.depth / 1150) * 0.32,
+                  } as React.CSSProperties
+                }
+              >
+                <img src={t.src} alt="" />
+              </div>
+            )
+          })}
+      </div>
+
+      <div className="ka-layout">
+        <div className="ka-copy">
+          <img className="ka-logo" src="/brand/kemp-sons-full-color.svg" alt="Kemp & Sons Printing" width="150" height="100" />
+          <p className="ka-kicker">Fresh off the press</p>
+          <p className="ka-title">
+            Design it here.
+            <br />
+            We print it here.
+          </p>
+          <p className="ka-sub">Funeral programs, Christmas cards and more. Add your photos and words on this screen, approve your proof, and we print it right here in Opelika.</p>
+        </div>
+
+        <div className="ka-stage" aria-hidden="true">
+          {current && (
+            <div key={hero} className="ka-hero" style={dur}>
+              <div className="ka-stack" style={{ aspectRatio: String(current.ratio) }}>
+                <span className="ka-under ka-under-2" />
+                <span className="ka-under ka-under-1" />
+                <div className="ka-card">
+                  <img src={current.src} alt="" />
+                  <span className="ka-shine" style={dur} />
+                </div>
+                <span className="ka-crop ka-crop-tl" style={dur} />
+                <span className="ka-crop ka-crop-tr" style={dur} />
+                <span className="ka-crop ka-crop-bl" style={dur} />
+                <span className="ka-crop ka-crop-br" style={dur} />
+              </div>
+              <div className="ka-ticket" style={dur}>
+                <span className="ka-ticket-no">Job No. {String(no).padStart(2, '0')}</span>
+                <span className="ka-ticket-name">{current.name}</span>
+                <span className="ka-ticket-meta">
+                  {current.kind}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="ka-foot">
+        <div className="ka-cmyk" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+          <span />
+        </div>
+        <p className="ka-cta">
+          <span>Tap anywhere to start</span>
+        </p>
       </div>
     </div>
   )

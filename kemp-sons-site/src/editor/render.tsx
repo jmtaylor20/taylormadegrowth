@@ -77,8 +77,36 @@ let queue: Promise<unknown> = Promise.resolve()
  * placeholders in the photo spots. Renders one at a time so a page of
  * designs never stalls a phone.
  */
-export function renderThumbnail(t: Template, width = 640): Promise<string> {
-  const hit = thumbCache.get(t.id)
+/**
+ * Public-domain sample photos (Library of Congress, see
+ * public/kiosk/samples/CREDITS.txt). Used only by the kiosk screensaver so
+ * designs show with real photos instead of gray placeholders.
+ */
+const SAMPLE_PORTRAITS = [1, 2, 3, 4, 5].map((n) => `/kiosk/samples/portrait-${n}.jpg`)
+const SAMPLE_WINTER = [1, 2, 3].map((n) => `/kiosk/samples/winter-${n}.jpg`)
+
+async function samplePhotos(t: Template, seed: number): Promise<Record<string, PhotoState>> {
+  const pool = t.category === 'funeral-programs' ? SAMPLE_PORTRAITS : SAMPLE_WINTER
+  const slots: string[] = []
+  for (const f of t.fields) {
+    if (f.type !== 'photo') continue
+    if (f.count) for (let i = 1; i <= f.count; i++) slots.push(`${f.id}_${i}`)
+    else slots.push(f.id)
+  }
+  const photos: Record<string, PhotoState> = {}
+  await Promise.all(
+    slots.map(async (slot, i) => {
+      const src = pool[(seed + i) % pool.length]
+      const img = await loadImage(src).catch(() => null)
+      if (img) photos[slot] = { src, w: img.naturalWidth, h: img.naturalHeight, ox: 0, oy: 0, zoom: 1 }
+    }),
+  )
+  return photos
+}
+
+export function renderThumbnail(t: Template, width = 640, opts: { samples?: boolean } = {}): Promise<string> {
+  const cacheKey = opts.samples ? `${t.id}:samples` : t.id
+  const hit = thumbCache.get(cacheKey)
   if (hit) return hit
   const job = (queue = queue.then(async () => {
     const { defaultDraft } = await import('./draft')
@@ -86,8 +114,8 @@ export function renderThumbnail(t: Template, width = 640): Promise<string> {
     // Folded pieces show just the cover panel.
     const crop = t.thumbnailCrop ?? { x: 0, y: 0, w: t.trim.w, h: t.trim.h }
     const ppi = width / crop.w
-    // Photo spots show the plain gray placeholder.
-    const photos: Record<string, PhotoState> = {}
+    // Photo spots show the plain gray placeholder, or sample photos for the kiosk.
+    const photos: Record<string, PhotoState> = opts.samples ? await samplePhotos(t, t.id.length) : {}
     const full = await renderSide(t, side, defaultDraft(t).values, photos, { mode: 'trim', ppi, quality: 0.86 })
     if (!t.thumbnailCrop) return full
     const img = await loadImage(full)
@@ -97,6 +125,6 @@ export function renderThumbnail(t: Template, width = 640): Promise<string> {
     c.getContext('2d')!.drawImage(img, crop.x * ppi, crop.y * ppi, c.width, c.height, 0, 0, c.width, c.height)
     return c.toDataURL('image/jpeg', 0.86)
   })) as Promise<string>
-  thumbCache.set(t.id, job)
+  thumbCache.set(cacheKey, job)
   return job
 }
