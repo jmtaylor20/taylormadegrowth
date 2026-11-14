@@ -1,5 +1,6 @@
 import type { Element, Field, Template } from '../types'
 import { BACK_SECTIONS, withFields } from './funeral-shared'
+import { kempCollage } from './collage'
 
 /**
  * Pink Floral: folded program, printed on an 11 x 8.5 in sheet.
@@ -34,7 +35,6 @@ const flourish = (cx: number, y: number): Element => ({
   type: 'line', x: cx - 0.55, y, points: [0, 0, 1.1, 0], stroke: PINK, strokeWidth: 0.75, opacity: 0.7,
 })
 
-const SNAP = { stroke: '#ffffff', strokeWidth: 3 }
 
 export const funeralPinkFloral: Template = {
   id: 'funeral-pink-floral',
@@ -124,12 +124,7 @@ export const funeralPinkFloral: Template = {
         // Inside right: photo collage, large group photo along the bottom
         veil(R + 0.35, 0.3, 4.8, 0.6, 0.72),
         { type: 'text', text: 'Treasured Memories', x: R + 0.35, y: 0.35, w: 4.8, h: 0.5, font: HEAD, weight: 400, italic: true, size: 22, minSize: 14, color: PINK, valign: 'middle' },
-        { type: 'photo', field: 'collage_1', x: R + 0.35, y: 1.05, w: 1.52, h: 2.05, ...SNAP },
-        { type: 'photo', field: 'collage_2', x: R + 1.99, y: 1.05, w: 1.52, h: 2.05, ...SNAP },
-        { type: 'photo', field: 'collage_3', x: R + 3.63, y: 1.05, w: 1.52, h: 2.05, ...SNAP },
-        { type: 'photo', field: 'collage_4', x: R + 0.35, y: 3.22, w: 2.34, h: 1.8, ...SNAP },
-        { type: 'photo', field: 'collage_5', x: R + 2.81, y: 3.22, w: 2.34, h: 1.8, ...SNAP },
-        { type: 'photo', field: 'collage_6', x: R + 0.35, y: 5.14, w: 4.8, h: 3.06, ...SNAP },
+        ...kempCollage('collage', 6, { x: R + 0.3, y: 1.0, w: 4.9, h: 7.25 }, { rows: [3, 2, 1], seed: 2 }),
       ],
     },
   ],

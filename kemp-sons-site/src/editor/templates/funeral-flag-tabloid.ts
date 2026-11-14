@@ -1,5 +1,6 @@
 import type { Element, Field, Template } from '../types'
 import { BACK_SECTIONS, withFields } from './funeral-shared'
+import { kempCollage } from './collage'
 
 /**
  * Flag & Clouds Large Trifold: printed on a 17 x 11 in sheet, folding to about 5.67 x 11 in.
@@ -40,49 +41,28 @@ const scriptHeading = (text: string, x: number, y: number, w = CW, size = 40): E
   type: 'text', text, x, y, w, h: 0.8, font: SCRIPT, size, minSize: 20, color: NAVY, maxLines: 1, valign: 'middle',
 })
 
-/** Six-photo row helper for the outside flap: three photos across, with a white border. */
-const photoRow = (y: number, first: number, h: number): Element[] => {
-  const gap = 0.12
-  const w = (CW - 2 * gap) / 3
-  const out: Element[] = []
-  for (let i = 0; i < 3; i++) {
-    const x = left(0) + i * (w + gap)
-    out.push({ type: 'rect', x: x - 0.04, y: y - 0.04, w: w + 0.08, h: h + 0.08, fill: '#ffffff' })
-    out.push({ type: 'photo', field: `outsidePhotos_${first + i}`, x, y, w, h })
-  }
-  return out
-}
+/** Three snapshots across the outside flap, Kemp style (white borders, slight tilt). */
+const photoRow = (y: number, first: number, h: number): Element[] =>
+  kempCollage('outsidePhotos', 3, { x: left(0) - 0.08, y: y - 0.08, w: CW + 0.16, h: h + 0.16 }, { start: first, rows: [3], tilt: 3.5, seed: first })
 
 /**
- * Inside collage: two photos per row, alternating wide and narrow so it reads
- * as a collage rather than a grid. A script caption band sits in the middle.
+ * Inside collage: overlapping snapshots, six above and six below a script
+ * caption band, like prints laid on a table.
  */
 const collage = (): Element[] => {
-  const x0 = P1 + 0.32
-  const cw = PW - 0.64
-  const gap = 0.09
-  const top = 0.32
-  const bottom = H - 0.32
+  const x0 = P1 + 0.3
+  const cw = PW - 0.6
+  const top = 0.3
+  const bottom = H - 0.3
   const band = 0.95
-  const rows = 6
-  const rh = (bottom - top - band - gap * (rows - 2)) / rows
-  const out: Element[] = []
-  let y = top
-  let n = 1
-  for (let r = 0; r < rows; r++) {
-    if (r === 3) {
-      out.push(veil(x0, y, cw, band - gap, 0.7))
-      out.push({ type: 'text', text: '{{collageCaption}}', x: x0 + 0.15, y: y + 0.02, w: cw - 0.3, h: band - gap - 0.04, font: SCRIPT, size: 34, minSize: 16, color: NAVY, maxLines: 1, valign: 'middle', showIf: 'collageCaption' })
-      y += band
-    }
-    const wide = (cw - gap) * 0.6
-    const narrow = cw - gap - wide
-    const [w1, w2] = r % 2 === 0 ? [wide, narrow] : [narrow, wide]
-    out.push({ type: 'photo', field: `collagePhotos_${n++}`, x: x0, y, w: w1, h: rh })
-    out.push({ type: 'photo', field: `collagePhotos_${n++}`, x: x0 + w1 + gap, y, w: w2, h: rh })
-    y += rh + gap
-  }
-  return out
+  const half = (bottom - top - band) / 2
+  const bandY = top + half
+  return [
+    ...kempCollage('collagePhotos', 6, { x: x0, y: top, w: cw, h: half }, { rows: [2, 2, 2], seed: 7 }),
+    veil(x0, bandY + 0.06, cw, band - 0.12, 0.7),
+    { type: 'text', text: '{{collageCaption}}', x: x0 + 0.15, y: bandY + 0.08, w: cw - 0.3, h: band - 0.16, font: SCRIPT, size: 34, minSize: 16, color: NAVY, maxLines: 1, valign: 'middle', showIf: 'collageCaption' },
+    ...kempCollage('collagePhotos', 6, { x: x0, y: bandY + band, w: cw, h: half }, { start: 7, rows: [2, 2, 2], seed: 8 }),
+  ]
 }
 
 const fields: Field[] = withFields('photo', [

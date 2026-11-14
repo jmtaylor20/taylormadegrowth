@@ -1,5 +1,6 @@
 import type { Element, Template } from '../types'
 import { BACK_SECTIONS, withFields } from './funeral-shared'
+import { kempCollage } from './collage'
 
 /**
  * Purple Lilacs: single-fold program, printed on a 17 x 11 in sheet that
@@ -45,14 +46,7 @@ const GRID_Y = 0.6
 const CELL_W = 1.6
 const CELL_H = 2.36
 const GAP = 0.1
-const grid: Element[] = Array.from({ length: 8 }, (_, i) => ({
-  type: 'photo' as const,
-  field: `collage_${i + 1}`,
-  x: GRID_X + (i % 2) * (CELL_W + GAP),
-  y: GRID_Y + Math.floor(i / 2) * (CELL_H + GAP),
-  w: CELL_W,
-  h: CELL_H,
-}))
+const grid: Element[] = kempCollage('collage', 8, { x: GRID_X, y: GRID_Y, w: 2 * CELL_W + GAP, h: 4 * CELL_H + 3 * GAP }, { rows: [2, 2, 2, 2], seed: 3 })
 
 export const funeralPurpleLilacs: Template = {
   id: 'funeral-purple-lilacs',

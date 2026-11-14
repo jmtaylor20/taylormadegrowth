@@ -59,12 +59,18 @@ function boxOf(el: Element): Box | null {
     case 'image':
     case 'text':
     case 'stack': {
-      if (el.rotation) {
-        // Rotated about its corner: use a circle around the corner that holds it.
-        const r = Math.hypot(el.w, el.h)
-        return { x0: el.x - r, y0: el.y - r, x1: el.x + r, y1: el.y + r }
-      }
-      return { x0: el.x, y0: el.y, x1: el.x + el.w, y1: el.y + el.h }
+      // Photo borders and shadows reach a little past the frame.
+      const pad = el.type === 'photo' ? (el.mat ?? 0) + (el.shadow ? 0.08 : 0) : 0
+      const corners = [
+        [-pad, -pad],
+        [el.w + pad, -pad],
+        [-pad, el.h + pad],
+        [el.w + pad, el.h + pad],
+      ]
+      // Rotation is about the element's top-left corner (Konva's rule).
+      const a = ((el.rotation ?? 0) * Math.PI) / 180
+      const pts = corners.map(([cx, cy]) => [el.x + cx * Math.cos(a) - cy * Math.sin(a), el.y + cx * Math.sin(a) + cy * Math.cos(a)])
+      return { x0: Math.min(...pts.map((p) => p[0])), y0: Math.min(...pts.map((p) => p[1])), x1: Math.max(...pts.map((p) => p[0])), y1: Math.max(...pts.map((p) => p[1])) }
     }
     case 'ellipse':
       return { x0: el.x - el.rx, y0: el.y - el.ry, x1: el.x + el.rx, y1: el.y + el.ry }

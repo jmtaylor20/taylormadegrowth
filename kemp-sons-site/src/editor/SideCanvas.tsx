@@ -288,6 +288,7 @@ function PhotoNode({ el, photos, images, interactive, showPlaceholderLabel, onPh
 
   return (
     <Group x={el.x * PT} y={el.y * PT} rotation={el.rotation} opacity={el.opacity}>
+      {(el.mat || el.shadow) && <Snapshot w={w} h={h} mat={(el.mat ?? 0) * PT} shadow={!!el.shadow} />}
       <Group clipFunc={clip}>
         {img && ph && lay ? (
           <KImage
@@ -315,6 +316,26 @@ function PhotoNode({ el, photos, images, interactive, showPlaceholderLabel, onPh
       {el.stroke && <Outline el={el} w={w} h={h} />}
       {highlight != null && fieldsOf(el).includes(highlight) && <Outline el={{ ...el, stroke: '#d08a3c', strokeWidth: 1.5 }} w={w} h={h} dash />}
     </Group>
+  )
+}
+
+/** White print border with a soft shadow, drawn under a collage photo. */
+function Snapshot({ w, h, mat, shadow }: { w: number; h: number; mat: number; shadow: boolean }) {
+  return (
+    <Rect
+      x={-mat}
+      y={-mat}
+      width={w + 2 * mat}
+      height={h + 2 * mat}
+      fill="#ffffff"
+      listening={false}
+      shadowEnabled={shadow}
+      shadowColor="#1a1208"
+      shadowBlur={7}
+      shadowOpacity={0.38}
+      shadowOffsetX={1.6}
+      shadowOffsetY={2.6}
+    />
   )
 }
 

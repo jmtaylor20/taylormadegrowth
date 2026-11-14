@@ -1,5 +1,6 @@
 import type { Element, Field, Template } from '../types'
 import { BACK_SECTIONS, withFields } from './funeral-shared'
+import { kempCollage } from './collage'
 
 /**
  * Gone Fishing: legal trifold, printed on a 14 x 8.5 in sheet.
@@ -111,11 +112,7 @@ export const funeralGoneFishing: Template = {
         { type: 'text', text: '{{obituary}}', x: P1 + M, y: 1.05, w: PW - 2 * M, h: 7.0, font: SERIF, weight: 600, size: 14, minSize: 7.5, color: INK, lineHeight: 1.3, align: 'left', valign: 'top' },
 
         // Inside right: column of photos bleeding off the edge
-        { type: 'photo', field: 'memoryPhotos_1', x: P2 + 0.1, y: -0.125, w: 2.55, h: 2.725 },
-        { type: 'photo', field: 'memoryPhotos_2', x: P2 + 2.73, y: -0.125, w: 14.125 - (P2 + 2.73), h: 2.725 },
-        { type: 'photo', field: 'memoryPhotos_3', x: P2 + 0.1, y: 2.68, w: 14.125 - (P2 + 0.1), h: 2.94 },
-        { type: 'photo', field: 'memoryPhotos_4', x: P2 + 0.1, y: 5.7, w: 1.99, h: 2.925 },
-        { type: 'photo', field: 'memoryPhotos_5', x: P2 + 2.17, y: 5.7, w: 14.125 - (P2 + 2.17), h: 2.925 },
+        ...kempCollage('memoryPhotos', 5, { x: P2 + 0.3, y: 0.3, w: PW - 0.6, h: 8.5 - 0.6 }, { rows: [2, 1, 2], seed: 6 }),
       ],
     },
   ],

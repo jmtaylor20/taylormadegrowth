@@ -169,6 +169,10 @@ export interface PhotoEl extends Base {
   placeholder?: string
   /** Draw nothing (no placeholder) until a photo is added, e.g. a faint background photo. */
   optional?: boolean
+  /** White print border around the photo, in inches (collage snapshots). */
+  mat?: number
+  /** Soft drop shadow under the photo (and its border). */
+  shadow?: boolean
 }
 
 /**

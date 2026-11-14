@@ -1,5 +1,6 @@
-import type { Element, Field, PhotoEl, Template } from '../types'
+import type { Element, Field, Template } from '../types'
 import { BACK_SECTIONS, FUNERAL_FIELDS } from './funeral-shared'
+import { kempCollage } from './collage'
 
 /**
  * Flag & Clouds Trifold: 16.5 x 8.5 in sheet, three 5.5 x 8.5 in panels.
@@ -27,24 +28,6 @@ const rule = (cx: number, y: number, w = 1): Element => ({
   type: 'line', x: cx - w / 2, y, points: [0, 0, w, 0], stroke: RED, strokeWidth: 0.8, opacity: 0.75,
 })
 
-/** Photo grid: rows of [width weights], filling the box with white gaps between photos. */
-function grid(field: string, x: number, y: number, w: number, h: number, rows: number[][], gap: number, start = 1): Element[] {
-  const out: Element[] = [{ type: 'rect', x: x - gap, y: y - gap, w: w + 2 * gap, h: h + 2 * gap, fill: '#ffffff' }]
-  const rh = (h - gap * (rows.length - 1)) / rows.length
-  let n = start
-  rows.forEach((row, r) => {
-    const total = row.reduce((a, b) => a + b, 0)
-    const free = w - gap * (row.length - 1)
-    let cx = x
-    row.forEach((weight) => {
-      const cw = (free * weight) / total
-      const el: PhotoEl = { type: 'photo', field: `${field}_${n++}`, x: cx, y: y + r * (rh + gap), w: cw, h: rh }
-      out.push(el)
-      cx += cw + gap
-    })
-  })
-  return out
-}
 
 const fields: Field[] = [
   ...FUNERAL_FIELDS.slice(0, 1),
@@ -102,7 +85,7 @@ export const funeralFlagTrifold: Template = {
         outsideArt,
 
         // Inside flap: photo collage
-        ...grid('collage', 0.3, 0.3, 4.9, 7.9, [[1.2, 1], [1, 1, 1], [1, 1.25], [1, 1, 1]], 0.07),
+        ...kempCollage('collage', 9, { x: 0.3, y: 0.3, w: 4.9, h: 7.9 }, { rows: [2, 3, 2, 2], seed: 4 }),
 
         // Back cover: sections close up when blank
         {
@@ -156,7 +139,7 @@ export const funeralFlagTrifold: Template = {
         { type: 'text', text: '{{orderOfService}}', x: P3 + 0.4, y: 1.12, w: 4.7, h: 3.35, font: SERIF, weight: 700, size: 13.5, minSize: 8, color: INK, lineHeight: 1.42, leaders: true, valign: 'top' },
         { type: 'text', text: 'Officiating', x: P3 + 0.4, y: 4.55, w: 4.7, h: 0.28, font: SERIF, weight: 600, italic: true, size: 12, color: SOFT, showIf: 'officiant' },
         { type: 'text', text: '{{officiant}}', x: P3 + 0.4, y: 4.82, w: 4.7, h: 0.36, font: HEAD, weight: 700, size: 14, minSize: 9, color: NAVY, showIf: 'officiant' },
-        ...grid('moments', P3 + 0.33, 5.42, 4.84, 2.78, [[1, 1.3], [1.3, 1]], 0.07),
+        ...kempCollage('moments', 4, { x: P3 + 0.33, y: 5.42, w: 4.84, h: 2.78 }, { rows: [2, 2], tilt: 3, seed: 5 }),
       ],
     },
   ],
