@@ -148,12 +148,12 @@ export const funeralGoldBooklet: Template = {
         { type: 'text', text: '{{name}}', x: P + 0.75, y: 6.32, w: 7.0, h: 1.3, font: SCRIPT, size: 48, minSize: 22, color: NAME, maxLines: 2, lineHeight: 1.0 },
         { type: 'text', text: '{{birthDate}}  to  {{deathDate}}', x: P + 0.9, y: 7.68, w: 6.7, h: 0.4, font: SERIF, weight: 700, size: 17, minSize: 10, color: BROWN, maxLines: 1 },
         ...divider(P + 4.25, 8.28),
-        { type: 'text', text: '{{serviceDate}}\n{{serviceTime}}', x: P + 0.9, y: 8.45, w: 6.7, h: 0.66, font: SERIF, weight: 700, size: 15, minSize: 9, color: BROWN, lineHeight: 1.15 },
-        { type: 'text', text: '{{location}}\n{{locationAddress}}', x: P + 0.9, y: 9.14, w: 6.7, h: 1.08, font: SERIF, weight: 600, size: 14, minSize: 8, color: BROWN, lineHeight: 1.15 },
+        { type: 'text', text: '{{serviceDate}}\n{{serviceTime}}', x: P + 0.9, y: 8.45, w: 6.7, h: 0.7, font: SERIF, weight: 700, size: 16.5, minSize: 9, color: BROWN, lineHeight: 1.15 },
+        { type: 'text', text: '{{location}}\n{{locationAddress}}', x: P + 0.9, y: 9.17, w: 6.7, h: 1.08, font: SERIF, weight: 600, size: 15, minSize: 8, color: BROWN, lineHeight: 1.15 },
 
         // Page 8: back cover
         { type: 'text', text: 'Forever in Our Hearts', x: 0.9, y: 0.8, w: 6.7, h: 0.75, font: SCRIPT, size: 34, minSize: 20, color: NAME, maxLines: 1 },
-        { type: 'text', text: '{{backMessage}}', x: 1.0, y: 1.65, w: 6.5, h: 1.75, font: SERIF, weight: 600, italic: true, size: 15, minSize: 9, color: BROWN, lineHeight: 1.3, showIf: 'backMessage' },
+        { type: 'text', text: '{{backMessage}}', x: 1.0, y: 1.6, w: 6.5, h: 1.85, font: SERIF, weight: 600, italic: true, size: 17, minSize: 9, color: BROWN, lineHeight: 1.3, showIf: 'backMessage' },
         // Ornament shown when there is no flag. The flag and its border cover it for a veteran.
         ...divider(4.25, 4.35, 1.3),
         { type: 'text', text: 'Rest in Peace', x: 2.8, y: 4.5, w: 2.9, h: 0.85, font: SCRIPT, size: 32, minSize: 18, color: GOLD, maxLines: 1 },
@@ -163,14 +163,14 @@ export const funeralGoldBooklet: Template = {
         { type: 'text', text: '{{militaryService}}', x: 0.9, y: 5.78, w: 6.7, h: 0.4, font: CAPS, weight: 400, italic: true, size: 14, minSize: 9, color: NAME, maxLines: 1, showIf: 'militaryService' },
         {
           type: 'stack', x: 0.9, y: 6.35, w: 6.7, h: 2.6, gap: 0.22, headingGap: 0.05, valign: 'middle',
-          heading: { font: CAPS, weight: 400, size: 13, color: NAME, uppercase: true, letterSpacing: 0.14, lineHeight: 1.1 },
-          body: { font: SERIF, weight: 600, size: 14, color: BROWN, lineHeight: 1.2 },
+          heading: { font: CAPS, weight: 400, size: 14, color: NAME, uppercase: true, letterSpacing: 0.14, lineHeight: 1.1 },
+          body: { font: SERIF, weight: 600, size: 16, color: BROWN, lineHeight: 1.2 },
           items: backSection('interment', 'repast'),
         },
         ...divider(4.25, 9.12, 0.8),
-        { type: 'text', text: 'Services entrusted to', x: 0.9, y: 9.2, w: 6.7, h: 0.28, font: SERIF, weight: 600, italic: true, size: 12, color: SOFT },
-        { type: 'text', text: '{{funeralHome}}', x: 0.9, y: 9.46, w: 6.7, h: 0.34, font: SERIF, weight: 700, size: 15, minSize: 9, color: NAME, maxLines: 1 },
-        { type: 'text', text: '{{funeralHomeDetails}}', x: 0.9, y: 9.8, w: 6.7, h: 0.5, font: SERIF, weight: 600, size: 12, minSize: 7, color: BROWN, lineHeight: 1.15 },
+        { type: 'text', text: 'Services entrusted to', x: 0.9, y: 9.2, w: 6.7, h: 0.28, font: SERIF, weight: 600, italic: true, size: 13, color: SOFT },
+        { type: 'text', text: '{{funeralHome}}', x: 0.9, y: 9.46, w: 6.7, h: 0.34, font: SERIF, weight: 700, size: 16, minSize: 9, color: NAME, maxLines: 1 },
+        { type: 'text', text: '{{funeralHomeDetails}}', x: 0.9, y: 9.8, w: 6.7, h: 0.52, font: SERIF, weight: 600, size: 13, minSize: 7, color: BROWN, lineHeight: 1.15 },
       ],
     },
     {
@@ -191,15 +191,15 @@ export const funeralGoldBooklet: Template = {
         { type: 'text', text: '{{name}}', x: 3.8, y: 2.05, w: 3.8, h: 1.55, font: SCRIPT, size: 34, minSize: 18, color: NAME, maxLines: 3, lineHeight: 1.05 },
         ...divider(5.7, 3.8, 1.0),
         { type: 'text', text: 'Sunrise  {{birthDate}}\nSunset  {{deathDate}}', x: 3.8, y: 3.95, w: 3.8, h: 0.75, font: SERIF, weight: 700, size: 14, minSize: 9, color: BROWN, lineHeight: 1.25 },
-        { type: 'text', text: '{{obituary}}', x: 0.9, y: 5.35, w: 6.7, h: 4.35, font: SERIF, weight: 600, size: 13.5, minSize: 8, color: BROWN, lineHeight: 1.3, align: 'left', valign: 'top' },
+        { type: 'text', text: '{{obituary}}', x: 0.9, y: 5.35, w: 6.7, h: 4.35, font: SERIF, weight: 600, size: 14.5, minSize: 8, color: BROWN, lineHeight: 1.3, align: 'left', valign: 'top' },
         { type: 'text', text: '{{closingQuote}}', x: 0.9, y: 9.78, w: 6.7, h: 0.45, font: SERIF, weight: 600, italic: true, size: 14, minSize: 9, color: NAME, maxLines: 2, showIf: 'closingQuote' },
 
         // Page 7: acknowledgments
         ...pageHeading('Acknowledgments', P),
         {
-          type: 'stack', x: P + 0.9, y: 1.75, w: 6.7, h: 5.45, gap: 0.32, headingGap: 0.07, valign: 'middle',
-          heading: { font: CAPS, weight: 400, size: 14, color: NAME, uppercase: true, letterSpacing: 0.14, lineHeight: 1.1 },
-          body: { font: SERIF, weight: 600, size: 15, color: BROWN, lineHeight: 1.25 },
+          type: 'stack', x: P + 0.9, y: 1.7, w: 6.7, h: 5.5, gap: 0.42, headingGap: 0.07, valign: 'middle',
+          heading: { font: CAPS, weight: 400, size: 15, color: NAME, uppercase: true, letterSpacing: 0.14, lineHeight: 1.1 },
+          body: { font: SERIF, weight: 600, size: 17, color: BROWN, lineHeight: 1.25 },
           items: backSection('pallbearers', 'flowerBearers', 'familyMessage'),
         },
         ...ovalPortrait('familyPhoto', P + 4.25, 7.4, 2.45),
@@ -219,7 +219,7 @@ export const funeralGoldBooklet: Template = {
         // Page 6: tribute or poem with three snapshots
         { type: 'text', text: '{{tributeTitle}}', x: 0.9, y: 0.75, w: 6.7, h: 0.8, font: SCRIPT, size: 38, minSize: 20, color: NAME, maxLines: 1 },
         ...divider(4.25, 1.68),
-        { type: 'text', text: '{{tribute}}', x: 0.9, y: 1.9, w: 6.7, h: 4.6, font: SERIF, weight: 600, italic: true, size: 15, minSize: 8, color: BROWN, lineHeight: 1.3 },
+        { type: 'text', text: '{{tribute}}', x: 0.9, y: 1.9, w: 6.7, h: 4.6, font: SERIF, weight: 600, italic: true, size: 16, minSize: 8, color: BROWN, lineHeight: 1.3 },
         ...snapshot('tributePhotos_1', 0.95, 6.95, 2.05, 2.65, -3),
         ...snapshot('tributePhotos_2', 3.22, 6.8, 2.05, 2.65, 1.5),
         ...snapshot('tributePhotos_3', 5.5, 6.85, 2.05, 2.65, 3),
@@ -227,7 +227,7 @@ export const funeralGoldBooklet: Template = {
         // Page 3: order of service
         ...pageHeading('Order of Service', P),
         { type: 'text', text: '{{serviceDate}}  at  {{serviceTime}}\n{{location}}', x: P + 0.9, y: 1.68, w: 6.7, h: 0.62, font: SERIF, weight: 600, italic: true, size: 14, minSize: 9, color: SOFT, lineHeight: 1.2 },
-        { type: 'text', text: '{{orderOfService}}', x: P + 0.9, y: 2.55, w: 6.7, h: 6.0, font: SERIF, weight: 600, size: 15, minSize: 8, color: BROWN, lineHeight: 1.6, leaders: true, valign: 'top' },
+        { type: 'text', text: '{{orderOfService}}', x: P + 0.9, y: 2.5, w: 6.7, h: 6.1, font: SERIF, weight: 600, size: 17, minSize: 8, color: BROWN, lineHeight: 1.75, leaders: true, valign: 'middle' },
         ...divider(P + 4.25, 8.85, 0.8),
         { type: 'text', text: 'Officiating', x: P + 0.9, y: 9.0, w: 6.7, h: 0.3, font: SERIF, weight: 600, italic: true, size: 13, color: SOFT, showIf: 'officiant' },
         { type: 'text', text: '{{officiant}}', x: P + 0.9, y: 9.3, w: 6.7, h: 0.6, font: SCRIPT, size: 28, minSize: 14, color: NAME, maxLines: 1, showIf: 'officiant' },
@@ -248,7 +248,7 @@ export const funeralGoldBooklet: Template = {
         ...divider(4.25, 1.55, 1.4),
         ...snapshot('memories_1', 0.75, 2.05, 3.5, 2.6, -3),
         ...snapshot('memories_2', 4.5, 1.95, 3.3, 2.55, 2.5),
-        ...snapshot('memories_3', 0.8, 5.05, 3.1, 4.3, 2),
+        ...snapshot('memories_3', 0.8, 5.0, 3.15, 4.75, 2),
         ...snapshot('memories_4', 4.3, 4.95, 3.5, 2.55, -2),
         ...snapshot('memories_5', 4.55, 7.7, 3.25, 2.45, 2.5),
 
