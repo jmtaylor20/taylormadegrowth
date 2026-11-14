@@ -13,6 +13,8 @@ export interface RenderOptions {
   ppi: number
   mimeType?: 'image/jpeg' | 'image/png'
   quality?: number
+  /** Element indexes to leave out of the image (drawn as vector text in the print file). */
+  skip?: Set<number>
 }
 
 /**
@@ -46,6 +48,7 @@ export async function renderSide(
           photos={photos}
           ppi={basePpi}
           mode={opts.mode}
+          skip={opts.skip}
           stageRef={(s: Konva.Stage | null) => {
             if (s) resolve(s)
           }}

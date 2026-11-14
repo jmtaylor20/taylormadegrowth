@@ -134,6 +134,27 @@ function PhotoInput({
     input.current?.click()
   }
 
+  // Latest photos, so a cut-out that finishes later merges with any moves made meanwhile.
+  const latest = useRef(photos)
+  latest.current = photos
+
+  const cutOut = async (slot: string, photo: PhotoState) => {
+    onFocus(slot)
+    try {
+      const { removeBackground } = await import('./bgremove')
+      const cut = await removeBackground(photo.src, setCutMsg)
+      const now = latest.current[slot]
+      // Skip if the photo was replaced or removed while this ran.
+      if (!now || now.src !== photo.src) return
+      onChange(slot, { ...now, cutout: cut.src, useCutout: true })
+    } catch (err) {
+      console.error(err)
+      alert("Sorry, the background couldn't be removed from that photo. It will print as is with its frame.")
+    } finally {
+      setCutMsg(null)
+    }
+  }
+
   const key = slots.join(',')
   useEffect(() => {
     slots.forEach((s) => register(s, () => pick(s)))
@@ -182,7 +203,11 @@ function PhotoInput({
           setBusy(true)
           try {
             const p = await readPhoto(file)
-            onChange(target.current, { ...p, ox: 0, oy: 0, zoom: 1 })
+            const slot = target.current
+            const next = { ...p, ox: 0, oy: 0, zoom: 1 }
+            onChange(slot, next)
+            // Cut-out designs set the portrait right on the artwork, so remove the background by default.
+            if (field.removeBackground) void cutOut(slot, next)
           } catch {
             alert('That photo could not be opened. Try a JPG or PNG.')
           } finally {
@@ -214,23 +239,13 @@ function PhotoInput({
               const photo = value
               if (!e.target.checked) return onChange(slot, { ...photo, useCutout: false })
               if (photo.cutout) return onChange(slot, { ...photo, useCutout: true })
-              onFocus(slot)
-              try {
-                const { removeBackground } = await import('./bgremove')
-                const cut = await removeBackground(photo.src, setCutMsg)
-                onChange(slot, { ...photo, cutout: cut.src, useCutout: true })
-              } catch (err) {
-                console.error(err)
-                alert("Sorry, the background couldn't be removed from that photo. You can still use it as is.")
-              } finally {
-                setCutMsg(null)
-              }
+              await cutOut(slot, photo)
             }}
           />
           <span>
             Remove background
             <span className="ed-hint" aria-live="polite">
-              {cutMsg ? `${cutMsg}...` : 'Works best on photos of people. Your photo stays on your device while it works.'}
+              {cutMsg ? `${cutMsg}...` : 'On by default for this design. Untick it to show your photo in a frame instead. Your photo stays on your device.'}
             </span>
           </span>
         </label>

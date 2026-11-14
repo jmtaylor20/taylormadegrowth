@@ -35,6 +35,8 @@ interface Props {
   onPhotoChange?: (fieldId: string, next: PhotoState) => void
   onPhotoTap?: (fieldId: string) => void
   stageRef?: React.Ref<Konva.Stage>
+  /** Element indexes to leave out (the print file draws this text as vector text instead). */
+  skip?: Set<number>
 }
 
 const PT = 72
@@ -60,7 +62,7 @@ export const SideCanvas = memo(function SideCanvas(p: Props) {
       <Layer>
         <Group x={offset * scale} y={offset * scale} scaleX={scale} scaleY={scale}>
           <Rect x={-bleedPt} y={-bleedPt} width={W + 2 * bleedPt} height={H + 2 * bleedPt} fill={side.background} listening={false} />
-          {side.elements.map((el, i) => (
+          {side.elements.map((el, i) => p.skip?.has(i) ? null : (
             <ElementNode
               key={i}
               el={el}

@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf'
 import { BLEED, type Template } from './types'
 import type { Draft } from './draft'
 import { renderSide } from './render'
+import { drawVectorText, embedFace, prepareFonts, textElements, vectorTextIndexes } from './pdfText'
 
 /**
  * Print-ready PDF: one page per side at the trim size plus 0.125 in bleed,
@@ -30,20 +31,28 @@ export async function buildPrintPdf(t: Template, d: Draft, job: PrintJob, onProg
   const H = t.trim.h + 2 * SLUG
   const orientation = W > H ? 'landscape' : 'portrait'
   const ppi = printPpi(t.trim.w, t.trim.h)
-  const doc = new jsPDF({ unit: 'pt', format: [W * PT, H * PT], orientation, compress: true })
+  const doc = new jsPDF({ unit: 'pt', format: [W * PT, H * PT], orientation, compress: true, putOnlyUsedFonts: true })
   doc.setProperties({ title: `${job.ref} ${t.name}`, creator: 'Kemp & Sons Printing', subject: `${t.sizeLabel}, ${ppi} ppi, 0.125 in bleed` })
 
   // One-color orders print in a single ink, so the file is grayscale too.
   const oneColor = isOneColor(job.summary)
 
+  // Slug label font, embedded so preflight finds no unembedded fonts.
+  const slugFont = await embedFace(doc, { font: 'Montserrat', weight: 500 })
+
   for (let i = 0; i < t.sides.length; i++) {
     const side = t.sides[i]
     onProgress?.(`Preparing the ${side.label.toLowerCase()} for print`)
     if (i > 0) doc.addPage([W * PT, H * PT], orientation)
-    let img = await renderSide(t, side, d.values, d.photos, { mode: 'print', ppi, mimeType: 'image/jpeg', quality })
+    // Text that nothing covers is drawn as real PDF text (crisp at any size); the rest stays in the image.
+    let vector = vectorTextIndexes(side, d.values, d.photos)
+    if (vector.size && !(await prepareFonts(doc, textElements(side, vector)))) vector = new Set()
+    let img = await renderSide(t, side, d.values, d.photos, { mode: 'print', ppi, mimeType: 'image/jpeg', quality, skip: vector })
     if (oneColor) img = await toGray(img, quality)
     const x0 = (SLUG - BLEED) * PT
     doc.addImage(img, 'JPEG', x0, x0, (t.trim.w + 2 * BLEED) * PT, (t.trim.h + 2 * BLEED) * PT, undefined, 'FAST')
+    // One-color jobs get gray text to match the grayscale image.
+    drawVectorText(doc, side, vector, d.values, SLUG * PT, SLUG * PT, oneColor)
 
     // Crop marks at the trim corners, kept outside the bleed.
     const L = SLUG * PT
@@ -70,7 +79,7 @@ export async function buildPrintPdf(t: Template, d: Draft, job: PrintJob, onProg
     doc.setLineDashPattern([], 0)
 
     // Slug line so the press operator knows what this sheet is.
-    doc.setFont('helvetica', 'normal')
+    doc.setFont(slugFont ?? 'helvetica', 'normal')
     doc.setFontSize(5)
     doc.setTextColor(60)
     doc.text(

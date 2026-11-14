@@ -3,6 +3,7 @@ import '@fontsource/cormorant-garamond/500.css'
 import '@fontsource/cormorant-garamond/600.css'
 import '@fontsource/cormorant-garamond/600-italic.css'
 import '@fontsource/cormorant-garamond/700.css'
+import '@fontsource/cormorant-garamond/700-italic.css'
 import '@fontsource/playfair-display/400.css'
 import '@fontsource/playfair-display/400-italic.css'
 import '@fontsource/playfair-display/700.css'
@@ -17,7 +18,7 @@ import { invalidateTextCache } from './textFit'
 const FACES = [
   '400 16px "Rye"',
   '400 16px "Ogirema"', '700 16px "Ogirema"', 'italic 400 16px "Ogirema"',
-  '500 16px "Cormorant Garamond"', '600 16px "Cormorant Garamond"', 'italic 600 16px "Cormorant Garamond"', '700 16px "Cormorant Garamond"',
+  '500 16px "Cormorant Garamond"', '600 16px "Cormorant Garamond"', 'italic 600 16px "Cormorant Garamond"', '700 16px "Cormorant Garamond"', 'italic 700 16px "Cormorant Garamond"',
   '400 16px "Playfair Display"', 'italic 400 16px "Playfair Display"', '700 16px "Playfair Display"',
   '400 16px "Great Vibes"',
   '400 16px "Montserrat"', '500 16px "Montserrat"', '600 16px "Montserrat"', '700 16px "Montserrat"',
