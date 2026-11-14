@@ -74,9 +74,13 @@ const SHIPPING = /* GraphQL */ `
         }
       }
     }
-    locations(first: 5) { nodes { id name isActive localPickupSettingsV2 { pickupTime instructions } } }
   }
 `
+
+// Separate query: locations need the read_locations scope. Without it the page
+// still loads prices and shipping and just hides the pickup settings.
+const LOCATIONS = /* GraphQL */ `{ locations(first: 5) { nodes { id name isActive localPickupSettingsV2 { pickupTime instructions } } } }`
+type LocationNode = { id: string; name: string; isActive: boolean; localPickupSettingsV2: { pickupTime: string; instructions: string } | null }
 
 interface MethodNode {
   id: string
@@ -96,7 +100,6 @@ interface ShippingResponse {
       }[]
     }[]
   }
-  locations: { nodes: { id: string; name: string; isActive: boolean; localPickupSettingsV2: { pickupTime: string; instructions: string } | null }[] }
 }
 
 /** The general delivery profile's first zone (the US). */
@@ -106,8 +109,17 @@ async function shippingTarget() {
   const group = profile?.profileLocationGroups[0]
   const zone = group?.locationGroupZones.nodes[0]
   if (!profile || !group || !zone) throw new Error('No shipping zone is set up in Shopify yet')
-  const location = data.locations.nodes.find((l) => l.isActive) ?? data.locations.nodes[0]
-  return { profile, group, zone, location }
+  return { profile, group, zone }
+}
+
+async function shopLocation(): Promise<LocationNode | null> {
+  try {
+    const d = await admin<{ locations: { nodes: LocationNode[] } }>(LOCATIONS)
+    return d.locations.nodes.find((l) => l.isActive) ?? d.locations.nodes[0] ?? null
+  } catch (e) {
+    console.error('locations (pickup settings hidden)', e)
+    return null
+  }
 }
 
 const amount = (m: MethodNode) => Number(m.rateProvider?.price?.amount ?? 0)
@@ -117,12 +129,13 @@ const minTotal = (m: MethodNode) => {
 }
 
 export async function readPrices() {
-  const [p, t] = await Promise.all([
+  const [p, t, location] = await Promise.all([
     admin<{ products: { nodes: { id: string; title: string; handle: string; productType: string; options: { name: string }[]; variants: { nodes: { id: string; price: string; selectedOptions: { name: string; value: string }[] }[] } }[] } }>(
       PRODUCTS,
       { q: 'status:active' },
     ),
     shippingTarget(),
+    shopLocation(),
   ])
   const products: PriceProduct[] = p.products.nodes.map((n) => ({
     id: n.id,
@@ -146,8 +159,8 @@ export async function readPrices() {
     freeOver: free ? minTotal(free) : null,
     express: express ? amount(express) : null,
   }
-  const pickup: PickupSettings | null = t.location?.localPickupSettingsV2
-    ? { pickupTime: t.location.localPickupSettingsV2.pickupTime as PickupSettings['pickupTime'], instructions: t.location.localPickupSettingsV2.instructions }
+  const pickup: PickupSettings | null = location?.localPickupSettingsV2
+    ? { pickupTime: location.localPickupSettingsV2.pickupTime as PickupSettings['pickupTime'], instructions: location.localPickupSettingsV2.instructions }
     : null
   return { products, shipping, pickup }
 }
@@ -212,11 +225,11 @@ export async function saveShipping(s: ShippingSettings) {
 
 export async function savePickup(p: PickupSettings) {
   if (!PICKUP_TIMES.includes(p.pickupTime)) throw new Error('Pick a pickup time from the list')
-  const t = await shippingTarget()
-  if (!t.location) throw new Error('No shop location in Shopify')
+  const location = await shopLocation()
+  if (!location) throw new Error('Pickup settings need the read_locations permission on the Kemp Job Board app')
   const r = await admin<{ locationLocalPickupEnable: { userErrors: { message: string }[] } }>(
     `mutation L($s: DeliveryLocationLocalPickupEnableInput!) { locationLocalPickupEnable(localPickupSettings: $s) { localPickupSettings { pickupTime } userErrors { message } } }`,
-    { s: { locationId: t.location.id, pickupTime: p.pickupTime, instructions: p.instructions.slice(0, 500) } },
+    { s: { locationId: location.id, pickupTime: p.pickupTime, instructions: p.instructions.slice(0, 500) } },
   )
   check(r.locationLocalPickupEnable, 'Save pickup')
 }

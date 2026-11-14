@@ -272,6 +272,8 @@ export default async (req: Request, context: Context) => {
       shopify,
       scopes,
       missingScopes: shopify === 'connected' ? needed.filter((n) => !scopes.includes(n)) : needed,
+      // Optional: lets the Prices page edit local pickup settings.
+      pickupSettings: scopes.includes('read_locations') ? 'available' : 'needs read_locations',
       texting: textingEnabled() ? 'on' : 'off',
     })
   }
