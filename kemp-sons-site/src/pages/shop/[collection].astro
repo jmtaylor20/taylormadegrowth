@@ -36,7 +36,7 @@ const pad = (n: number) => String(n).padStart(2, '0')
           {templates.map(({ t, from }, i) => (
             <li>
               <a class="card" href={`/design/${t.id}/`}>
-                <div class="thumb crop" style={`aspect-ratio: ${t.trim.w} / ${t.trim.h}`}>
+                <div class="thumb crop" style={`aspect-ratio: ${(t.thumbnailCrop ?? t.trim).w} / ${(t.thumbnailCrop ?? t.trim).h}`}>
                   <TemplateThumb client:idle id={t.id} />
                 </div>
                 <div class="meta">

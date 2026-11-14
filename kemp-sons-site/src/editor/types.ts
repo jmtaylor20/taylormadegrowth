@@ -15,6 +15,7 @@ export type CategoryId = 'funeral-programs' | 'christmas-cards' | 'business-card
 
 export type FontFamily =
   | 'Rye'
+  | 'Cormorant Garamond'
   | 'Playfair Display'
   | 'Great Vibes'
   | 'Montserrat'

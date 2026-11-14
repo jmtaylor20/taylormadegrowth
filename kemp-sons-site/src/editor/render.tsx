@@ -84,12 +84,21 @@ export function renderThumbnail(t: Template, width = 640): Promise<string> {
     const { defaultDraft } = await import('./draft')
     const { SCENES, sampleScene } = await import('./samples')
     const side = t.sides.find((s) => s.id === t.thumbnailSide) ?? t.sides[0]
-    const ppi = width / t.trim.w
+    // Folded pieces show just the cover panel.
+    const crop = t.thumbnailCrop ?? { x: 0, y: 0, w: t.trim.w, h: t.trim.h }
+    const ppi = width / crop.w
     const photos: Record<string, PhotoState> = {}
     let i = t.category === 'christmas-cards' ? 1 : 0
     for (const el of side.elements)
       if (el.type === 'photo' && !el.optional) photos[el.field] = { src: sampleScene(SCENES[i++ % SCENES.length]), w: 800, h: 800, ox: 0, oy: 0, zoom: 1 }
-    return renderSide(t, side, defaultDraft(t).values, photos, { mode: 'trim', ppi, quality: 0.86 })
+    const full = await renderSide(t, side, defaultDraft(t).values, photos, { mode: 'trim', ppi, quality: 0.86 })
+    if (!t.thumbnailCrop) return full
+    const img = await loadImage(full)
+    const c = document.createElement('canvas')
+    c.width = Math.round(crop.w * ppi)
+    c.height = Math.round(crop.h * ppi)
+    c.getContext('2d')!.drawImage(img, crop.x * ppi, crop.y * ppi, c.width, c.height, 0, 0, c.width, c.height)
+    return c.toDataURL('image/jpeg', 0.86)
   })) as Promise<string>
   thumbCache.set(t.id, job)
   return job
