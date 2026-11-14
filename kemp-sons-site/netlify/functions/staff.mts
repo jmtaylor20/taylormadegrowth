@@ -256,15 +256,24 @@ export default async (req: Request, context: Context) => {
   // Setup check, safe without signing in: reports only whether things are connected, never data.
   if (path === '/api/staff/status' && req.method === 'GET') {
     let shopify: 'not configured' | 'connected' | 'error' = adminConfigured() ? 'error' : 'not configured'
+    let scopes: string[] = []
     if (adminConfigured()) {
       try {
-        await admin<{ shop: { id: string } }>(`{ shop { id } }`)
+        const d = await admin<{ currentAppInstallation: { accessScopes: { handle: string }[] } }>(`{ currentAppInstallation { accessScopes { handle } } }`)
+        scopes = d.currentAppInstallation.accessScopes.map((s) => s.handle).sort()
         shopify = 'connected'
       } catch (e) {
         console.error('status check', e)
       }
     }
-    return json({ login: staffConfigured() ? 'configured' : 'not configured', shopify, texting: textingEnabled() ? 'on' : 'off' })
+    const needed = ['read_orders', 'write_orders', 'read_merchant_managed_fulfillment_orders', 'write_merchant_managed_fulfillment_orders', 'read_products', 'write_products', 'read_shipping', 'write_shipping']
+    return json({
+      login: staffConfigured() ? 'configured' : 'not configured',
+      shopify,
+      scopes,
+      missingScopes: shopify === 'connected' ? needed.filter((n) => !scopes.includes(n)) : needed,
+      texting: textingEnabled() ? 'on' : 'off',
+    })
   }
 
   if (!isStaff(req)) return json({ error: 'Sign in required' }, 401)

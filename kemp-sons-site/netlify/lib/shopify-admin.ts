@@ -42,7 +42,11 @@ export async function admin<T>(query: string, variables: Record<string, unknown>
     })
     if (res.status === 401 && !force) continue // token revoked or rotated: get a fresh one
     const json = (await res.json()) as { data?: T; errors?: { message: string }[] }
-    if (!res.ok || json.errors?.length) throw new Error(json.errors?.map((e) => e.message).join('; ') || `Shopify ${res.status}`)
+    const message = json.errors?.map((e) => e.message).join('; ') ?? ''
+    // Tokens are cached for 24 hours. After new scopes are approved the cached token still
+    // carries the old ones, so an access-denied error gets one retry with a fresh token.
+    if (!force && /access denied/i.test(message)) continue
+    if (!res.ok || json.errors?.length) throw new Error(message || `Shopify ${res.status}`)
     return json.data as T
   }
   throw new Error('Shopify rejected the access token')
