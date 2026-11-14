@@ -144,9 +144,13 @@ export default function KioskAttract() {
           <img className="ka-logo" src="/brand/kemp-sons-white.svg" alt="Kemp & Sons Printing" width="300" height="200" />
           <p className="ka-kicker">Fresh off the press</p>
           <p className="ka-title">
-            Design it here.
+            Design it
             <br />
-            We print it here.
+            here.
+            <br />
+            We print it
+            <br />
+            here.
           </p>
           <p className="ka-sub">Funeral programs, Christmas cards and more. Add your photos and words on this screen, approve your proof, and we print it right here in Opelika.</p>
         </div>
