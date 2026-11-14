@@ -540,7 +540,7 @@ function KioskIdle() {
       const remaining = Math.ceil(IDLE_SECONDS + WARN_SECONDS - idle)
       if (remaining > 0) return setLeft(remaining)
       clearInterval(tick)
-      clearAllDrafts().finally(() => window.location.replace(KIOSK_HOME))
+      clearAllDrafts().finally(() => window.location.replace(`${KIOSK_HOME}?attract`))
     }, 1000)
     return () => {
       clearInterval(tick)

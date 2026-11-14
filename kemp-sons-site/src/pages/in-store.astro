@@ -8,6 +8,7 @@
 import Base from '../layouts/Base.astro'
 import LivePrices from '../components/LivePrices.astro'
 import TemplateThumb from '../editor/TemplateThumb'
+import KioskAttract from '../editor/KioskAttract'
 import { productLines, business } from '../config/site'
 import { templatesIn } from '../editor/templates'
 import { getStartingPrice, formatPrice } from '../lib/shopify'
@@ -69,6 +70,7 @@ const lines = (
       <p>Questions? Ask us at the counter, or call {business.phone}.</p>
     </footer>
   </div>
+  <KioskAttract client:only="react" />
   <LivePrices />
 </Base>
 
@@ -83,6 +85,26 @@ const lines = (
   // No long-press menus or accidental text selection on a touch screen.
   document.addEventListener('contextmenu', (e) => e.preventDefault())
 </script>
+
+<style is:global>
+  /* Screensaver (KioskAttract) */
+  .ka { position: fixed; inset: 0; z-index: 100; background: var(--navy-deep); color: var(--white); display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; cursor: pointer; user-select: none; -webkit-user-select: none; }
+  .ka-head { display: flex; align-items: center; justify-content: center; gap: 28px; padding: 4vh 4vw 2vh; }
+  .ka-head img { width: clamp(90px, 10vw, 150px); height: auto; background: var(--white); padding: 10px 14px; }
+  .ka-title { font-size: clamp(28px, 4.2vw, 64px); font-weight: 800; text-transform: uppercase; line-height: 1; letter-spacing: 0.01em; }
+  .ka-rows { display: grid; grid-template-rows: 1fr 1fr; gap: 3vh; min-height: 0; padding: 1vh 0; }
+  .ka-row { overflow: hidden; min-height: 0; display: flex; }
+  .ka-track { display: flex; height: 100%; width: max-content; animation: ka-scroll linear infinite; will-change: transform; }
+  .ka-track.is-rev { animation-direction: reverse; }
+  .ka-item { height: 100%; margin: 0 3vw 0 0; display: grid; grid-template-rows: 1fr auto; gap: 8px; }
+  .ka-item img { height: 100%; width: auto; min-height: 0; object-fit: cover; display: block; box-shadow: 0 22px 40px -18px rgba(0, 0, 0, 0.7); }
+  .ka-item figcaption { font-family: var(--mono); font-size: clamp(12px, 1.1vw, 16px); text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.85; text-align: center; }
+  .ka-cta { text-align: center; padding: 2vh 4vw 5vh; }
+  .ka-cta span { display: inline-block; background: var(--red); color: var(--white); padding: 18px 40px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; animation: ka-pulse 2.4s ease-in-out infinite; }
+  @keyframes ka-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @keyframes ka-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  @media (prefers-reduced-motion: reduce) { .ka-track { animation-duration: 240s !important; } .ka-cta span { animation: none; } }
+</style>
 
 <style>
   .kiosk { min-height: 100svh; background: var(--stock); display: grid; grid-template-rows: auto auto 1fr auto; user-select: none; -webkit-user-select: none; }
