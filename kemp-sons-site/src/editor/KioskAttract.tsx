@@ -80,8 +80,8 @@ export default function KioskAttract() {
   const sheets = useMemo(
     () =>
       Array.from({ length: 11 }, (_, i) => ({
-        // Mostly behind the stage side, clear of the headline.
-        left: (i % 4 === 0 ? 2 : 38) + rand(i + 1) * (i % 4 === 0 ? 30 : 58),
+        // Behind the stage side only, so the headline stays easy to read.
+        left: 42 + rand(i + 1) * 54,
         depth: -250 - rand(i + 21) * 900,
         width: 9 + rand(i + 41) * 7,
         duration: 26 + rand(i + 61) * 22,
@@ -141,7 +141,7 @@ export default function KioskAttract() {
 
       <div className="ka-layout">
         <div className="ka-copy">
-          <img className="ka-logo" src="/brand/kemp-sons-full-color.svg" alt="Kemp & Sons Printing" width="150" height="100" />
+          <img className="ka-logo" src="/brand/kemp-sons-white.svg" alt="Kemp & Sons Printing" width="300" height="200" />
           <p className="ka-kicker">Fresh off the press</p>
           <p className="ka-title">
             Design it here.

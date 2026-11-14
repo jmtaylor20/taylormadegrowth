@@ -115,8 +115,9 @@ const lines = (
   }
 
   .ka-layout { position: relative; z-index: 2; display: grid; grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); align-items: center; padding: 6vh 6vw 0; min-height: 0; }
-  .ka-copy { display: grid; gap: 2.2vh; justify-items: start; max-width: 40vw; }
-  .ka-logo { width: clamp(110px, 9vw, 160px); height: auto; background: var(--white); padding: 10px 14px; box-shadow: 0 16px 30px -18px rgba(0,0,0,0.8); }
+  .ka-copy { display: grid; gap: 2.2vh; justify-items: start; width: fit-content; max-width: 40vw; }
+  /* White logo, centered over the headline */
+  .ka-logo { justify-self: center; width: clamp(220px, 18vw, 320px); height: auto; filter: drop-shadow(0 10px 24px rgba(0,0,0,0.45)); margin-bottom: 1vh; }
   .ka-kicker { font-family: var(--mono); font-size: clamp(13px, 1.1vw, 17px); text-transform: uppercase; letter-spacing: 0.22em; color: #9fd8ef;
     display: flex; align-items: center; gap: 12px; }
   .ka-kicker::before { content: ''; width: 34px; height: 2px; background: var(--red); }
