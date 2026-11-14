@@ -88,21 +88,25 @@ let queue: Promise<unknown> = Promise.resolve()
  */
 const SAMPLE_PORTRAITS = ['/kiosk/samples/portrait.jpg']
 const SAMPLE_HOLIDAY = [1, 2, 3].map((n) => `/kiosk/samples/holiday-${n}.jpg`)
+const SAMPLE_CUTOUT = '/kiosk/samples/portrait-cutout.png'
 
 async function samplePhotos(t: Template, seed: number): Promise<Record<string, PhotoState>> {
   const pool = t.category === 'funeral-programs' ? SAMPLE_PORTRAITS : SAMPLE_HOLIDAY
-  const slots: string[] = []
+  const slots: { slot: string; cutout: boolean }[] = []
   for (const f of t.fields) {
     if (f.type !== 'photo') continue
-    if (f.count) for (let i = 1; i <= f.count; i++) slots.push(`${f.id}_${i}`)
-    else slots.push(f.id)
+    if (f.count) for (let i = 1; i <= f.count; i++) slots.push({ slot: `${f.id}_${i}`, cutout: false })
+    else slots.push({ slot: f.id, cutout: !!f.removeBackground && t.category === 'funeral-programs' })
   }
   const photos: Record<string, PhotoState> = {}
   await Promise.all(
-    slots.map(async (slot, i) => {
+    slots.map(async ({ slot, cutout }, i) => {
       const src = pool[(seed + i) % pool.length]
       const img = await loadImage(src).catch(() => null)
-      if (img) photos[slot] = { src, w: img.naturalWidth, h: img.naturalHeight, ox: 0, oy: 0, zoom: 1 }
+      if (!img) return
+      // Cut-out designs show the portrait cut out, as customers now get by default.
+      if (cutout) await loadImage(SAMPLE_CUTOUT).catch(() => null)
+      photos[slot] = { src, w: img.naturalWidth, h: img.naturalHeight, ox: 0, oy: 0, zoom: 1, ...(cutout ? { cutout: SAMPLE_CUTOUT, useCutout: true } : {}) }
     }),
   )
   return photos

@@ -91,6 +91,13 @@ export async function putDesignFile(id: string, kind: string, blob: Blob) {
   if (!res.ok) throw new Error(`Upload failed (${kind}, ${res.status})`)
 }
 
+/** Staff only: replace a file on an order's saved design (needs the staff sign-in). */
+export async function putStaffFile(id: string, kind: string, blob: Blob) {
+  const res = await fetch(`/api/staff/designs/${id}/${kind}`, { method: 'PUT', body: blob, credentials: 'same-origin', headers: { 'Content-Type': blob.type || 'application/octet-stream' } })
+  if (res.status === 401) throw new Error('Sign in to the staff board in this browser first, then try again.')
+  if (!res.ok) throw new Error(`Saving ${kind} failed (${res.status})`)
+}
+
 export const designFileUrl = (id: string, kind: string) => `${window.location.origin}/api/designs/${id}/${kind}`
 
 const CART_FIELDS = /* GraphQL */ `

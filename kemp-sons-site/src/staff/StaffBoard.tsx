@@ -17,6 +17,8 @@ interface Item {
   printUrl: string | null
   proofUrl: string | null
   envelopesUrl: string | null
+  designId?: string | null
+  template?: string | null
 }
 interface Job {
   id: string
@@ -37,6 +39,17 @@ interface Job {
   tracking: { number: string | null; url: string | null; company: string | null } | null
   items: Item[]
   rush?: boolean
+}
+
+/**
+ * Opens the customer's saved design in the designer for final staff tweaks.
+ * The print options travel along so the new print file is labeled and
+ * colored (one color = grayscale) the same as the order.
+ */
+function adjustUrl(j: Job, i: Item) {
+  const opts = [(i.variant ?? '').split(' / ').join(', '), j.rush ? 'Rush' : ''].filter(Boolean).join(', ')
+  const q = new URLSearchParams({ from: i.designId!, staff: j.name, opts })
+  return `/design/${i.template}/?${q}`
 }
 
 const COLUMNS: { stage: Stage; label: string; hint: string }[] = [
@@ -352,6 +365,11 @@ function Detail({ job: j, texting, onClose, onAct }: { job: Job; texting: boolea
                 {i.printUrl && <a href={i.printUrl} target="_blank" rel="noopener">Print file (PDF)</a>}
                 {i.proofUrl && <a href={i.proofUrl} target="_blank" rel="noopener">Approved proof</a>}
                 {i.envelopesUrl && <a href={i.envelopesUrl} target="_blank" rel="noopener">Envelopes (PDF)</a>}
+                {i.designId && i.template && (
+                  <a href={adjustUrl(j, i)} target="_blank" rel="noopener">
+                    Adjust design before printing
+                  </a>
+                )}
               </p>
             </div>
           ))}

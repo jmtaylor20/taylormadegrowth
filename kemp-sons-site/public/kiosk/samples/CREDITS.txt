@@ -6,3 +6,4 @@ portrait.jpg   Fictional "Mrs. Margaret Ellen Hayes" (funeral program samples)
 holiday-1.jpg  Fictional family by a Christmas tree (Christmas card samples)
 holiday-2.jpg  Fictional children decorating a tree
 holiday-3.jpg  Fictional couple in the snow
+portrait-cutout.png  The same portrait with its background removed by the site's own remover

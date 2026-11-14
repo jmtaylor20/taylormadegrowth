@@ -1,3 +1,4 @@
+import { getStore } from '@netlify/blobs'
 import type { Config, Context } from '@netlify/functions'
 import { checkPassword, clearCookie, isStaff, sessionCookie, staffConfigured } from '../lib/staff-auth'
 import { admin, adminConfigured, check } from '../lib/shopify-admin'
@@ -116,6 +117,9 @@ function toJob(o: OrderNode) {
       printUrl: attr(li, '_Print file'),
       proofUrl: attr(li, '_Proof'),
       envelopesUrl: attr(li, '_Envelopes file'),
+      // For "Adjust design": reopen the saved design in the designer.
+      designId: attr(li, '_Design ID'),
+      template: attr(li, '_Template'),
     })),
   }
 }
@@ -281,6 +285,14 @@ export default async (req: Request, context: Context) => {
   }
 
   if (!isStaff(req)) return json({ error: 'Sign in required' }, 401)
+
+  // Staff final tweaks: replace an order's print file, proof or saved design.
+  const dm = path.match(/^\/api\/staff\/designs\/([0-9a-f-]{36})\/([a-z0-9_-]{1,48})$/)
+  if (dm && req.method === 'PUT') {
+    const origin = req.headers.get('origin')
+    if (origin && origin !== new URL(req.url).origin) return json({ error: 'Bad origin' }, 403)
+    return replaceDesignFile(dm[1], dm[2], new Uint8Array(await req.arrayBuffer()))
+  }
   if (!adminConfigured()) return json({ error: 'Shopify is not connected to the staff board yet (SHOPIFY_ADMIN_CLIENT_ID and SHOPIFY_ADMIN_CLIENT_SECRET).' }, 503)
 
   try {
@@ -332,6 +344,43 @@ export default async (req: Request, context: Context) => {
       )
     return json({ error: msg }, 502)
   }
+}
+
+const MB = 1024 * 1024
+/** What staff may replace, with the same size and type checks as customer uploads. */
+function staffSpec(kind: string): { max: number; magic: number[] } | null {
+  const PDF = [0x25, 0x50, 0x44, 0x46]
+  const JPEG = [0xff, 0xd8, 0xff]
+  const PNG = [0x89, 0x50, 0x4e, 0x47]
+  if (kind === 'pdf') return { max: 6 * MB, magic: PDF }
+  if (kind === 'proof') return { max: 2 * MB, magic: JPEG }
+  if (kind === 'draft') return { max: 256 * 1024, magic: [0x7b] }
+  if (/^photo-[a-z0-9_]{1,40}$/.test(kind)) return { max: 6 * MB, magic: JPEG }
+  if (/^cut-[a-z0-9_]{1,40}$/.test(kind)) return { max: 6 * MB, magic: PNG }
+  return null
+}
+
+/**
+ * Overwrites one file of a saved design. The first time a file is replaced,
+ * the customer's approved version is kept as "<kind>.customer", so the
+ * original is never lost.
+ */
+async function replaceDesignFile(id: string, kind: string, body: Uint8Array) {
+  const spec = staffSpec(kind)
+  if (!spec) return json({ error: 'Not found' }, 404)
+  if (body.byteLength === 0 || body.byteLength > spec.max) return json({ error: 'Bad size' }, 413)
+  if (!spec.magic.every((b, i) => body[i] === b)) return json({ error: 'Bad file type' }, 415)
+  const store = getStore({ name: 'designs', consistency: 'strong' })
+  if (!(await store.getMetadata(`${id}/meta`))) return json({ error: 'Design not found' }, 404)
+  const key = `${id}/${kind}`
+  const backup = `${key}.customer`
+  if (!(await store.getMetadata(backup))) {
+    const original = await store.get(key, { type: 'arrayBuffer' })
+    if (original) await store.set(backup, original)
+  }
+  await store.set(key, body.buffer as ArrayBuffer)
+  await store.setJSON(`${id}/staff-edit`, { at: new Date().toISOString() })
+  return json({ ok: true })
 }
 
 export const config: Config = { path: ['/api/staff/*'] }

@@ -11,7 +11,7 @@ import { loadFonts } from './fonts'
 import { buildPrintPdf, isOneColor } from './pdf'
 import { RUSH_HANDLE, rushFormatFor } from '../../netlify/lib/price-groups'
 import { IDLE_SECONDS, KIOSK_HOME, WARN_SECONDS, isKiosk } from './kiosk'
-import { addToCart, createDesign, designFileUrl, getProduct, money, putDesignFile, type CartLine, type ShopConfig, type ShopProduct, type Variant } from './shop'
+import { addToCart, createDesign, designFileUrl, getProduct, money, putDesignFile, putStaffFile, type CartLine, type ShopConfig, type ShopProduct, type Variant } from './shop'
 import { EnvelopePanel } from './EnvelopePanel'
 import { buildEnvelopePdf, emptyEnvelopes, type EnvelopeState } from './envelopes'
 import { cutoutKind, dataUrlToBlob, draftJson, loadDesign, photoKind, rememberDesign, reorderUrl } from './saved'
@@ -80,6 +80,13 @@ function useProduct(t: Template, shop: ShopConfig | null) {
 
 function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template } & Props) {
   const [kiosk] = useState(isKiosk)
+  // Staff final tweaks: /design/<t>/?from=<design id>&staff=<order name>&opts=<print options>
+  const [staff] = useState<StaffEdit | null>(() => {
+    const q = new URLSearchParams(window.location.search)
+    const order = q.get('staff')
+    const from = q.get('from')
+    return order && from ? { order, designId: from, summary: q.get('opts') ?? '' } : null
+  })
   const backHref = kiosk ? KIOSK_HOME : siteBack
   const [draft, setDraft, loaded] = useDraft(t)
   const [sideId, setSideId] = useState(t.sides[0].id)
@@ -122,7 +129,11 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
       .then(({ templateId, draft }) => {
         if (templateId !== t.id) throw new Error('wrong template')
         setDraft(draft)
-        setNotice('Your saved design is loaded. Update anything you like (the year, a new photo), then review your proof.')
+        setNotice(
+          staff
+            ? `Staff edit for order ${staff.order}. This is the customer's approved design. Make your changes, then open the proof and save the print file.`
+            : 'Your saved design is loaded. Update anything you like (the year, a new photo), then review your proof.',
+        )
       })
       .catch(() => setNotice(`We couldn't open that saved design. It may have expired. Call us at ${phone} and we'll help.`))
       .finally(() => history.replaceState(null, '', window.location.pathname))
@@ -171,13 +182,13 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
 
   const rushOn = rush && !!rushVariant
   const price = variant ? money(variant.price + envTotal + (rushOn ? rushVariant!.price : 0)) : null
-  const summary = [...Object.values(choice), rushOn ? 'Rush' : ''].filter(Boolean).join(', ')
+  const summary = staff ? staff.summary : [...Object.values(choice), rushOn ? 'Rush' : ''].filter(Boolean).join(', ')
   const canOrder = !!variant && variant.available
   const status =
     product === 'loading' ? 'Loading prices...' : product === 'error' || product === null ? 'Online ordering opens soon' : !variant ? 'Choose your options' : !variant.available ? 'Sold out' : null
 
   return (
-    <div className={`ed ${isOneColor(Object.values(choice).join(', ')) ? 'is-onecolor' : ''}`}>
+    <div className={`ed ${isOneColor(staff ? staff.summary : Object.values(choice).join(', ')) ? 'is-onecolor' : ''}`}>
       <header className="ed-top">
         <a className="ed-back" href={backHref}>
           <span aria-hidden="true">&larr;</span> Back
@@ -290,7 +301,7 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
       <div className={`ed-bar ${!desktop && typing ? 'is-hidden' : ''}`}>
         <div className="ed-bar-in">
           <div className="ed-total">
-            <span className="mono">{status ?? [...Object.values(choice), rushOn ? 'Rush' : '', envCount ? `${envCount} envelopes` : ''].filter(Boolean).join(' / ')}</span>
+            <span className="mono">{staff ? `Staff edit / order ${staff.order} / ${staff.summary}` : status ?? [...Object.values(choice), rushOn ? 'Rush' : '', envCount ? `${envCount} envelopes` : ''].filter(Boolean).join(' / ')}</span>
             <strong>{price ?? ' '}</strong>
           </div>
           <button type="button" className="btn btn-primary" onClick={() => setProofOpen(true)}>
@@ -309,6 +320,7 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
           envVariant={envCount && envVariant ? envVariant : null}
           rushVariant={rushOn ? rushVariant : null}
           summary={summary}
+          staff={staff}
           orderStatus={status}
           phone={phone}
           phoneHref={phoneHref}
@@ -317,6 +329,14 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
       )}
     </div>
   )
+}
+
+interface StaffEdit {
+  /** Shopify order name, e.g. #1003. */
+  order: string
+  designId: string
+  /** Print options from the order, used for the slug label and one-color grayscale. */
+  summary: string
 }
 
 const CHECKS = ['Names and spelling are correct', 'Photos look the way I want', 'I approve this proof for printing'] as const
@@ -329,6 +349,7 @@ function Proof({
   envVariant,
   rushVariant,
   summary,
+  staff,
   orderStatus,
   phone,
   phoneHref,
@@ -341,6 +362,7 @@ function Proof({
   envVariant: Variant | null
   rushVariant: Variant | null
   summary: string
+  staff: StaffEdit | null
   orderStatus: string | null
   phone: string
   phoneHref: string
@@ -381,6 +403,35 @@ function Proof({
 
   const env = t.envelope && draft.envelopes?.on && draft.envelopes.recipients.length ? draft.envelopes : null
   const total = variant ? variant.price + (env && envVariant ? envVariant.price * env.recipients.length : 0) + (rushVariant?.price ?? 0) : 0
+
+  const [savedForStaff, setSavedForStaff] = useState(false)
+
+  /** Staff: rebuild the print file from the adjusted design and replace it on the order. */
+  const saveForStaff = async () => {
+    if (!staff) return
+    setError(null)
+    try {
+      const job = { ref: `Order ${staff.order} (adjusted)`, summary: staff.summary }
+      let pdf = await buildPrintPdf(t, draft, job, setWork)
+      if (pdf.size > 5.6 * 1024 * 1024) pdf = await buildPrintPdf(t, draft, job, setWork, 0.82)
+      setWork('Saving to the order')
+      const id = staff.designId
+      const proofUrl = await renderSide(t, t.sides[0], draft.values, draft.photos, { mode: 'trim', ppi: 600 / Math.max(t.trim.w, t.trim.h), quality: 0.85 })
+      await putStaffFile(id, 'pdf', pdf)
+      await putStaffFile(id, 'proof', await dataUrlToBlob(proofUrl))
+      await putStaffFile(id, 'draft', draftJson(t.id, draft))
+      for (const [slot, p] of Object.entries(draft.photos)) {
+        await putStaffFile(id, photoKind(slot), await dataUrlToBlob(p.src))
+        if (p.useCutout && p.cutout) await putStaffFile(id, cutoutKind(slot), await dataUrlToBlob(p.cutout))
+      }
+      setSavedForStaff(true)
+    } catch (e) {
+      console.error(e)
+      setError(`Not saved: ${(e as Error).message}`)
+    } finally {
+      setWork(null)
+    }
+  }
 
   const approve = async () => {
     if (!allChecked || missingPhotos || !variant || !shop) return
@@ -504,6 +555,11 @@ function Proof({
               {orderStatus ?? 'Online ordering opens soon.'} To order this design now, call us at <a href={phoneHref}>{phone}</a>.
             </p>
           )}
+          {staff && savedForStaff && (
+            <p className="ed-proof-note" role="status">
+              Saved. The print file, proof and saved design on order {staff.order} now include your changes. The customer's approved original is kept as a backup.
+            </p>
+          )}
           {error && <p className="ed-error" role="alert">{error}</p>}
         </div>
       </div>
@@ -512,9 +568,21 @@ function Proof({
         <p className="mono" aria-live="polite">
           {work ?? (missingPhotos ? 'Add your photos to continue' : allChecked ? `Ready / ${summary}` : `${checked.filter(Boolean).length} of ${CHECKS.length} checked`)}
         </p>
-        <button type="button" className="btn btn-primary" disabled={!allChecked || missingPhotos || !variant || !!work} onClick={approve}>
-          {work ? 'Working...' : variant ? `Approve & checkout ${money(total)}` : 'Approve proof'}
-        </button>
+        {staff ? (
+          savedForStaff ? (
+            <a className="btn btn-primary" href="/staff/">
+              Saved. Back to the job board
+            </a>
+          ) : (
+            <button type="button" className="btn btn-primary" disabled={!!work} onClick={saveForStaff}>
+              {work ? 'Working...' : `Save print file for order ${staff.order}`}
+            </button>
+          )
+        ) : (
+          <button type="button" className="btn btn-primary" disabled={!allChecked || missingPhotos || !variant || !!work} onClick={approve}>
+            {work ? 'Working...' : variant ? `Approve & checkout ${money(total)}` : 'Approve proof'}
+          </button>
+        )}
       </div>
     </div>
   )
