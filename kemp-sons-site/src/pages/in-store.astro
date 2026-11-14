@@ -1,0 +1,111 @@
+---
+/**
+ * In-store kiosk: every product on one touch-friendly screen, nothing else.
+ * Not linked from the site and kept out of search results. Opening it turns
+ * on kiosk mode for the tab (see src/editor/kiosk.ts): the designer comes
+ * back here, and a customer's work is cleared when they check out or walk away.
+ */
+import Base from '../layouts/Base.astro'
+import LivePrices from '../components/LivePrices.astro'
+import TemplateThumb from '../editor/TemplateThumb'
+import { productLines, business } from '../config/site'
+import { templatesIn } from '../editor/templates'
+import { getStartingPrice, formatPrice } from '../lib/shopify'
+
+const lines = (
+  await Promise.all(
+    productLines.map(async (line) => ({
+      line,
+      items: await Promise.all(templatesIn(line.collection).map(async (t) => ({ t, from: formatPrice(await getStartingPrice(t.shopifyHandle)) }))),
+    })),
+  )
+).filter((l) => l.items.length > 0)
+---
+<Base title={`Order here | ${business.name}`} description="In-store ordering." noindex>
+  <div class="kiosk">
+    <header class="k-top">
+      <img src="/brand/kemp-sons-full-color.svg" alt={business.name} width="120" height="80" />
+      <div class="k-title">
+        <h1>Design your order</h1>
+        <p>Tap a design to start. Add your photos and words, approve your proof, and we'll print it here.</p>
+      </div>
+      <button type="button" class="k-full" id="k-full" aria-label="Full screen">Full screen</button>
+    </header>
+
+    {lines.length > 1 && (
+      <nav class="k-tabs" aria-label="Products">
+        {lines.map(({ line }) => <a href={`#${line.collection}`}>{line.name}</a>)}
+      </nav>
+    )}
+
+    <main class="k-main">
+      {lines.map(({ line, items }) => (
+        <section id={line.collection} class="k-line" aria-label={line.name}>
+          <h2>{line.name}</h2>
+          <ol class="k-grid">
+            {items.map(({ t, from }) => (
+              <li>
+                <a class="k-card" href={`/design/${t.id}/`}>
+                  <div class="k-thumb" style={`aspect-ratio: ${(t.thumbnailCrop ?? t.trim).w} / ${(t.thumbnailCrop ?? t.trim).h}`}>
+                    <TemplateThumb client:idle id={t.id} />
+                  </div>
+                  <div class="k-meta">
+                    <p class="k-name">{t.name}</p>
+                    <p class="k-size">{t.sizeLabel}</p>
+                    <p class="k-row">
+                      <span data-live-price={`product:${t.shopifyHandle}`}>{from ? `From ${from}` : ''}</span>
+                      <span class="k-go">Start <span aria-hidden="true">&rarr;</span></span>
+                    </p>
+                  </div>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))}
+    </main>
+
+    <footer class="k-foot">
+      <p>Questions? Ask us at the counter, or call {business.phone}.</p>
+    </footer>
+  </div>
+  <LivePrices />
+</Base>
+
+<script>
+  import { enterKiosk } from '../editor/kiosk'
+  enterKiosk()
+  const btn = document.getElementById('k-full')
+  btn?.addEventListener('click', () => {
+    if (document.fullscreenElement) document.exitFullscreen()
+    else document.documentElement.requestFullscreen?.().catch(() => undefined)
+  })
+  // No long-press menus or accidental text selection on a touch screen.
+  document.addEventListener('contextmenu', (e) => e.preventDefault())
+</script>
+
+<style>
+  .kiosk { min-height: 100svh; background: var(--stock); display: grid; grid-template-rows: auto auto 1fr auto; user-select: none; -webkit-user-select: none; }
+  .k-top { display: flex; align-items: center; gap: 28px; padding: 24px var(--gutter); background: var(--white); border-bottom: 3px solid var(--ink); }
+  .k-top img { width: 120px; height: auto; flex: none; }
+  .k-title { display: grid; gap: 4px; flex: 1; }
+  .k-title h1 { font-size: clamp(28px, 3.6vw, 44px); font-weight: 800; text-transform: uppercase; line-height: 1; }
+  .k-title p { font-size: clamp(16px, 1.6vw, 20px); color: var(--ink-2); }
+  .k-full { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; background: none; border: 1px solid var(--rule); color: var(--ink-2); padding: 8px 10px; cursor: pointer; align-self: flex-start; }
+  .k-tabs { display: flex; gap: 12px; flex-wrap: wrap; padding: 16px var(--gutter); background: var(--white); border-bottom: 1px solid var(--rule); position: sticky; top: 0; z-index: 5; }
+  .k-tabs a { padding: 14px 22px; border: 2px solid var(--ink); font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; font-size: 17px; text-decoration: none; color: var(--ink); }
+  .k-tabs a:active { background: var(--ink); color: var(--white); }
+  .k-main { padding: 28px var(--gutter) 48px; display: grid; gap: 44px; align-content: start; }
+  .k-line { display: grid; gap: 18px; scroll-margin-top: 90px; }
+  .k-line h2 { font-size: 26px; font-weight: 800; text-transform: uppercase; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
+  .k-grid { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 28px; }
+  .k-card { display: grid; gap: 12px; text-decoration: none; color: var(--ink); background: var(--white); border: 2px solid var(--ink); padding: 14px; height: 100%; align-content: start; transition: transform 0.15s var(--ease); }
+  .k-card:active { transform: scale(0.98); }
+  .k-thumb { background: var(--stock-2); overflow: hidden; }
+  .k-meta { display: grid; gap: 4px; }
+  .k-name { font-size: 21px; font-weight: 800; line-height: 1.15; }
+  .k-size { font-family: var(--mono); font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2); }
+  .k-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 17px; font-weight: 600; }
+  .k-go { background: var(--red); color: var(--white); padding: 10px 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; font-size: 15px; }
+  .k-foot { padding: 18px var(--gutter); background: var(--ink); color: var(--white); font-size: 18px; text-align: center; }
+</style>

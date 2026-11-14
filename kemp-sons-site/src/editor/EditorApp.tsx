@@ -2,13 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Template } from './types'
 import { templateById } from './templates'
 import { fieldsOf } from './textFit'
-import { clearDraft, defaultDraft, useDraft, type Draft, type PhotoState } from './draft'
+import { clearAllDrafts, clearDraft, defaultDraft, useDraft, type Draft, type PhotoState } from './draft'
 import { FieldForm } from './FieldForm'
 import { PreviewPane } from './PreviewPane'
 import { preflight } from './preflight'
 import { proofPpi, renderSide } from './render'
 import { loadFonts } from './fonts'
-import { buildPrintPdf } from './pdf'
+import { buildPrintPdf, isOneColor } from './pdf'
+import { RUSH_HANDLE, rushFormatFor } from '../../netlify/lib/price-groups'
+import { IDLE_SECONDS, KIOSK_HOME, WARN_SECONDS, isKiosk } from './kiosk'
 import { addToCart, createDesign, designFileUrl, getProduct, money, putDesignFile, type CartLine, type ShopConfig, type ShopProduct, type Variant } from './shop'
 import { EnvelopePanel } from './EnvelopePanel'
 import { buildEnvelopePdf, emptyEnvelopes, type EnvelopeState } from './envelopes'
@@ -76,7 +78,9 @@ function useProduct(t: Template, shop: ShopConfig | null) {
   return { product, choice, setChoice, variant }
 }
 
-function Editor({ t, shop, backHref, phone, phoneHref }: { t: Template } & Props) {
+function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template } & Props) {
+  const [kiosk] = useState(isKiosk)
+  const backHref = kiosk ? KIOSK_HOME : siteBack
   const [draft, setDraft, loaded] = useDraft(t)
   const [sideId, setSideId] = useState(t.sides[0].id)
   const [showGuides, setShowGuides] = useState(false)
@@ -88,6 +92,10 @@ function Editor({ t, shop, backHref, phone, phoneHref }: { t: Template } & Props
   const { product, choice, setChoice, variant } = useProduct(t, shop)
   const [fontsReady, setFontsReady] = useState(false)
   const [envVariant, setEnvVariant] = useState<Variant | null>(null)
+  // Rush is a separate fee product with one price per format.
+  const rushFormat = rushFormatFor(t.shopifyHandle)
+  const [rushVariant, setRushVariant] = useState<Variant | null>(null)
+  const [rush, setRush] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
 
   useEffect(() => {
@@ -96,6 +104,13 @@ function Editor({ t, shop, backHref, phone, phoneHref }: { t: Template } & Props
       .then((p) => setEnvVariant(p?.variants.find((v) => v.available) ?? null))
       .catch(() => setEnvVariant(null))
   }, [t, shop])
+
+  useEffect(() => {
+    if (!shop || !rushFormat) return
+    getProduct(shop, RUSH_HANDLE)
+      .then((p) => setRushVariant(p?.variants.find((v) => v.options.Format === rushFormat && v.available) ?? null))
+      .catch(() => setRushVariant(null))
+  }, [shop, rushFormat])
 
   // Reorder: /design/<template>/?from=<design id> opens a stored design.
   useEffect(() => {
@@ -154,13 +169,15 @@ function Editor({ t, shop, backHref, phone, phoneHref }: { t: Template } & Props
     return () => clearTimeout(h)
   }, [focused])
 
-  const price = variant ? money(variant.price + envTotal) : null
+  const rushOn = rush && !!rushVariant
+  const price = variant ? money(variant.price + envTotal + (rushOn ? rushVariant!.price : 0)) : null
+  const summary = [...Object.values(choice), rushOn ? 'Rush' : ''].filter(Boolean).join(', ')
   const canOrder = !!variant && variant.available
   const status =
     product === 'loading' ? 'Loading prices...' : product === 'error' || product === null ? 'Online ordering opens soon' : !variant ? 'Choose your options' : !variant.available ? 'Sold out' : null
 
   return (
-    <div className="ed">
+    <div className={`ed ${isOneColor(Object.values(choice).join(', ')) ? 'is-onecolor' : ''}`}>
       <header className="ed-top">
         <a className="ed-back" href={backHref}>
           <span aria-hidden="true">&larr;</span> Back
@@ -233,6 +250,15 @@ function Editor({ t, shop, backHref, phone, phoneHref }: { t: Template } & Props
                 {product !== 'loading' && <a href={phoneHref}>{phone}</a>}
               </p>
             )}
+            {rushVariant && product && typeof product === 'object' && (
+              <label className="ed-rush">
+                <input type="checkbox" checked={rush} onChange={(e) => setRush(e.target.checked)} />
+                <span>
+                  <strong>Rush printing</strong> (+{money(rushVariant.price)}). We move your order to the front of the line. Call us at <a href={phoneHref}>{phone}</a> if you need it by a certain time.
+                </span>
+              </label>
+            )}
+            {isOneColor(Object.values(choice).join(', ')) && <p className="ed-hint">One color prints in a single ink, so your preview and proof show it in black and white.</p>}
           </fieldset>
 
           {t.envelope && (
@@ -264,7 +290,7 @@ function Editor({ t, shop, backHref, phone, phoneHref }: { t: Template } & Props
       <div className={`ed-bar ${!desktop && typing ? 'is-hidden' : ''}`}>
         <div className="ed-bar-in">
           <div className="ed-total">
-            <span className="mono">{status ?? [...Object.values(choice), envCount ? `${envCount} envelopes` : ''].filter(Boolean).join(' / ')}</span>
+            <span className="mono">{status ?? [...Object.values(choice), rushOn ? 'Rush' : '', envCount ? `${envCount} envelopes` : ''].filter(Boolean).join(' / ')}</span>
             <strong>{price ?? ' '}</strong>
           </div>
           <button type="button" className="btn btn-primary" onClick={() => setProofOpen(true)}>
@@ -273,6 +299,7 @@ function Editor({ t, shop, backHref, phone, phoneHref }: { t: Template } & Props
         </div>
       </div>
 
+      {kiosk && <KioskIdle />}
       {proofOpen && (
         <Proof
           t={t}
@@ -280,7 +307,8 @@ function Editor({ t, shop, backHref, phone, phoneHref }: { t: Template } & Props
           shop={shop}
           variant={canOrder ? variant! : null}
           envVariant={envCount && envVariant ? envVariant : null}
-          summary={Object.values(choice).join(', ')}
+          rushVariant={rushOn ? rushVariant : null}
+          summary={summary}
           orderStatus={status}
           phone={phone}
           phoneHref={phoneHref}
@@ -299,6 +327,7 @@ function Proof({
   shop,
   variant,
   envVariant,
+  rushVariant,
   summary,
   orderStatus,
   phone,
@@ -310,6 +339,7 @@ function Proof({
   shop: ShopConfig | null
   variant: Variant | null
   envVariant: Variant | null
+  rushVariant: Variant | null
   summary: string
   orderStatus: string | null
   phone: string
@@ -350,7 +380,7 @@ function Proof({
   }, [t, draft])
 
   const env = t.envelope && draft.envelopes?.on && draft.envelopes.recipients.length ? draft.envelopes : null
-  const total = variant ? variant.price + (env && envVariant ? envVariant.price * env.recipients.length : 0) : 0
+  const total = variant ? variant.price + (env && envVariant ? envVariant.price * env.recipients.length : 0) + (rushVariant?.price ?? 0) : 0
 
   const approve = async () => {
     if (!allChecked || missingPhotos || !variant || !shop) return
@@ -400,9 +430,12 @@ function Proof({
           quantity: env.recipients.length,
           attributes: { For: `${t.name} cards`, _Reference: ref, '_Envelopes file': designFileUrl(id, 'envelopes') },
         })
+      if (rushVariant) items.push({ variantId: rushVariant.id, quantity: 1, attributes: { For: t.name, _Reference: ref } })
       const checkoutUrl = await addToCart(shop, items)
       rememberDesign({ id, templateId: t.id, name: t.name, ref, summary, savedAt: new Date().toISOString(), thumb })
       setWork('Opening checkout')
+      // On the shop kiosk, nothing of this customer's stays behind for the next one.
+      if (isKiosk()) await clearAllDrafts()
       window.location.href = checkoutUrl
     } catch (e) {
       console.error(e)
@@ -482,6 +515,45 @@ function Proof({
         <button type="button" className="btn btn-primary" disabled={!allChecked || missingPhotos || !variant || !!work} onClick={approve}>
           {work ? 'Working...' : variant ? `Approve & checkout ${money(total)}` : 'Approve proof'}
         </button>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Kiosk only: after a few idle minutes, ask whether the customer is still
+ * there, then clear their work and go back to the kiosk start screen.
+ */
+function KioskIdle() {
+  const [left, setLeft] = useState<number | null>(null)
+  const last = useRef(Date.now())
+  useEffect(() => {
+    const touch = () => {
+      last.current = Date.now()
+      setLeft(null)
+    }
+    const events = ['pointerdown', 'keydown', 'input', 'wheel', 'touchstart'] as const
+    events.forEach((e) => window.addEventListener(e, touch, { passive: true, capture: true }))
+    const tick = setInterval(() => {
+      const idle = (Date.now() - last.current) / 1000
+      if (idle < IDLE_SECONDS) return
+      const remaining = Math.ceil(IDLE_SECONDS + WARN_SECONDS - idle)
+      if (remaining > 0) return setLeft(remaining)
+      clearInterval(tick)
+      clearAllDrafts().finally(() => window.location.replace(KIOSK_HOME))
+    }, 1000)
+    return () => {
+      clearInterval(tick)
+      events.forEach((e) => window.removeEventListener(e, touch, { capture: true }))
+    }
+  }, [])
+  if (left == null) return null
+  return (
+    <div className="ed-idle" role="alertdialog" aria-modal="true" aria-label="Are you still there?">
+      <div className="ed-idle-box">
+        <p className="ed-idle-h">Still working on this?</p>
+        <p>To keep things private, this design clears in {left} second{left === 1 ? '' : 's'}.</p>
+        <button type="button" className="btn btn-primary">Keep going</button>
       </div>
     </div>
   )

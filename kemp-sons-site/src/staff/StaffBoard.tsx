@@ -36,6 +36,7 @@ interface Job {
   doneAt: string | null
   tracking: { number: string | null; url: string | null; company: string | null } | null
   items: Item[]
+  rush?: boolean
 }
 
 const COLUMNS: { stage: Stage; label: string; hint: string }[] = [
@@ -242,6 +243,7 @@ function Card({ job: j, onOpen, onAct }: { job: Job; onOpen: () => void; onAct: 
       <button type="button" className="sb-card-main" onClick={onOpen}>
         <span className="sb-card-row">
           <strong>{j.name}</strong>
+          {j.rush && <span className="sb-badge m-rush">Rush</span>}
           <MethodBadge m={j.method} />
         </span>
         <span className="sb-cust">{j.customer}</span>

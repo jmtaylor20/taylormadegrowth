@@ -225,7 +225,8 @@ export async function readPrices() {
       options: names,
       variants,
       inSync,
-      weightKeys: paper ? [...new Set(variants.map((v) => v.options[paper]))] : ['Each'],
+      // Fees (rush) don't ship, so they have nothing to weigh.
+      weightKeys: /fee/i.test(lead.productType) ? [] : paper ? [...new Set(variants.map((v) => v.options[paper]))] : ['Each'],
       weights: weights.groups[id] ?? {},
       hasQuantity: !!quantityOption(names),
     }

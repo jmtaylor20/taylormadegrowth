@@ -544,10 +544,10 @@ function GroupPrices({
 }) {
   const [open, setOpen] = useState(false)
   const changed = g.variants.filter((v) => v.id in edits).length + g.weightKeys.filter((k) => `${g.id}|${k}` in wEdits).length
-  const [rowOpt, ...colOpts] = g.options
-  const rows = rowOpt ? [...new Set(g.variants.map((v) => v.options[rowOpt]))] : ['']
-  const cols = [...new Set(g.variants.map((v) => colOpts.map((o) => v.options[o]).join(' / ')))]
-  const cell = (r: string, c: string) => g.variants.find((v) => (rowOpt ? v.options[rowOpt] === r : true) && colOpts.map((o) => v.options[o]).join(' / ') === c)
+  // One table per color (full color, one color) when there is a color option.
+  const colorOpt = g.options.find((o) => /colou?r|ink/i.test(o))
+  const [rowOpt, ...colOpts] = g.options.filter((o) => o !== colorOpt)
+  const tables = colorOpt ? [...new Set(g.variants.map((v) => v.options[colorOpt]))] : [null]
   const min = Math.min(...g.variants.map((v) => v.price))
   const noWeight = g.weightKeys.some((k) => pieceOz(k) == null)
 
@@ -577,39 +577,19 @@ function GroupPrices({
       {open && (
         <div className="pm-body">
           {!g.inSync && <p className="pm-note">The designs in this format have different prices right now. Saving any change here gives every design the prices shown below.</p>}
-          <div className="pm-table-wrap">
-            <table className="pm-table">
-              <thead>
-                <tr>
-                  <th>{rowOpt ?? ''}</th>
-                  {cols.map((c) => (
-                    <th key={c}>{c || 'Price'}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r}>
-                    <th>{r}</th>
-                    {cols.map((c) => {
-                      const v = cell(r, c)
-                      if (!v) return <td key={c} />
-                      const raw = edits[v.id] ?? v.price.toFixed(2)
-                      const bad = v.id in edits && (!Number.isFinite(num(raw)) || num(raw) < 0.5)
-                      return (
-                        <td key={c}>
-                          <span className={`pm-money ${v.id in edits ? 'is-changed' : ''} ${bad ? 'is-bad' : ''}`}>
-                            <span>$</span>
-                            <input className="sb-input" inputMode="decimal" aria-label={`${g.label} ${r} ${c}`} value={raw} onChange={(e) => setEdit(v.id, e.target.value)} />
-                          </span>
-                        </td>
-                      )
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {tables.map((color) => (
+            <PriceTable
+              key={color ?? 'all'}
+              title={color}
+              label={g.label}
+              variants={color == null ? g.variants : g.variants.filter((v) => v.options[colorOpt!] === color)}
+              rowOpt={rowOpt}
+              colOpts={colOpts}
+              edits={edits}
+              setEdit={setEdit}
+            />
+          ))}
+          {g.weightKeys.length > 0 && (
           <div className="pm-weights">
             <h3>Weight of one finished {g.hasQuantity ? 'piece' : 'item'}</h3>
             <div className="pm-ship">
@@ -629,13 +609,74 @@ function GroupPrices({
             </div>
             {bigOz != null && band && biggest && (
               <p className="sb-hint">
-                Example: {Object.values(biggest.options).filter((x) => !/^(rush|standard)$/i.test(x)).join(', ')} weighs about {lbText(bigOz / 16)}
+                Example: {Object.values(biggest.options).join(', ')} weighs about {lbText(bigOz / 16)}
                 {g.hasQuantity && packOz > 0 ? ' packed' : ''} and ships for {money(band.standard)} standard.
               </p>
             )}
           </div>
+          )}
         </div>
       )}
     </article>
+  )
+}
+
+function PriceTable({
+  title,
+  label,
+  variants,
+  rowOpt,
+  colOpts,
+  edits,
+  setEdit,
+}: {
+  title: string | null
+  label: string
+  variants: Variant[]
+  rowOpt: string | undefined
+  colOpts: string[]
+  edits: Record<string, string>
+  setEdit: (id: string, raw: string) => void
+}) {
+  const rows = rowOpt ? [...new Set(variants.map((v) => v.options[rowOpt]))] : ['']
+  const cols = [...new Set(variants.map((v) => colOpts.map((o) => v.options[o]).join(' / ')))]
+  const cell = (r: string, c: string) => variants.find((v) => (rowOpt ? v.options[rowOpt] === r : true) && colOpts.map((o) => v.options[o]).join(' / ') === c)
+  return (
+    <div className="pm-table-block">
+      {title && <h3>{title}</h3>}
+      <div className="pm-table-wrap">
+        <table className="pm-table">
+          <thead>
+            <tr>
+              <th>{rowOpt ?? ''}</th>
+              {cols.map((c) => (
+                <th key={c}>{c || 'Price'}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r}>
+                <th>{r}</th>
+                {cols.map((c) => {
+                  const v = cell(r, c)
+                  if (!v) return <td key={c} />
+                  const raw = edits[v.id] ?? v.price.toFixed(2)
+                  const bad = v.id in edits && (!Number.isFinite(num(raw)) || num(raw) < 0.5)
+                  return (
+                    <td key={c}>
+                      <span className={`pm-money ${v.id in edits ? 'is-changed' : ''} ${bad ? 'is-bad' : ''}`}>
+                        <span>$</span>
+                        <input className="sb-input" inputMode="decimal" aria-label={`${label} ${title ? title + ' ' : ''}${r} ${c}`} value={raw} onChange={(e) => setEdit(v.id, e.target.value)} />
+                      </span>
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   )
 }

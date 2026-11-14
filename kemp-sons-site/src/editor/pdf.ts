@@ -33,11 +33,15 @@ export async function buildPrintPdf(t: Template, d: Draft, job: PrintJob, onProg
   const doc = new jsPDF({ unit: 'pt', format: [W * PT, H * PT], orientation, compress: true })
   doc.setProperties({ title: `${job.ref} ${t.name}`, creator: 'Kemp & Sons Printing', subject: `${t.sizeLabel}, ${ppi} ppi, 0.125 in bleed` })
 
+  // One-color orders print in a single ink, so the file is grayscale too.
+  const oneColor = isOneColor(job.summary)
+
   for (let i = 0; i < t.sides.length; i++) {
     const side = t.sides[i]
     onProgress?.(`Preparing the ${side.label.toLowerCase()} for print`)
     if (i > 0) doc.addPage([W * PT, H * PT], orientation)
-    const img = await renderSide(t, side, d.values, d.photos, { mode: 'print', ppi, mimeType: 'image/jpeg', quality })
+    let img = await renderSide(t, side, d.values, d.photos, { mode: 'print', ppi, mimeType: 'image/jpeg', quality })
+    if (oneColor) img = await toGray(img, quality)
     const x0 = (SLUG - BLEED) * PT
     doc.addImage(img, 'JPEG', x0, x0, (t.trim.w + 2 * BLEED) * PT, (t.trim.h + 2 * BLEED) * PT, undefined, 'FAST')
 
@@ -78,4 +82,29 @@ export async function buildPrintPdf(t: Template, d: Draft, job: PrintJob, onProg
 
   onProgress?.('Saving your print file')
   return doc.output('blob')
+}
+
+/** True when the chosen print options include one-color printing. */
+export const isOneColor = (summary: string) => /\bone[ -]colou?r\b/i.test(summary)
+
+/** Grayscale copy of a JPEG data URL (luminance, so tones match the preview). */
+async function toGray(src: string, quality: number): Promise<string> {
+  const img = new Image()
+  img.src = src
+  await img.decode()
+  const c = document.createElement('canvas')
+  c.width = img.naturalWidth
+  c.height = img.naturalHeight
+  const ctx = c.getContext('2d')!
+  ctx.drawImage(img, 0, 0)
+  const data = ctx.getImageData(0, 0, c.width, c.height)
+  const px = data.data
+  for (let i = 0; i < px.length; i += 4) {
+    const y = 0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2]
+    px[i] = px[i + 1] = px[i + 2] = y
+  }
+  ctx.putImageData(data, 0, 0)
+  const out = c.toDataURL('image/jpeg', quality)
+  c.width = c.height = 0
+  return out
 }

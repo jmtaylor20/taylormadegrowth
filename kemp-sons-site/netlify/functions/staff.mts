@@ -105,6 +105,8 @@ function toJob(o: OrderNode) {
     note: o.note ?? '',
     doneAt: fulfilled ? lastFulfillment?.createdAt ?? null : null,
     tracking: lastFulfillment?.trackingInfo[0] ?? null,
+    // Rush is its own fee line (the Rush turnaround product).
+    rush: o.lineItems.nodes.some((li) => /^rush/i.test(li.title)),
     items: o.lineItems.nodes.map((li) => ({
       title: li.title,
       variant: li.variantTitle,

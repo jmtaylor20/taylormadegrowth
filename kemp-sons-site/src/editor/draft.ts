@@ -95,3 +95,8 @@ export function useDraft(t: Template) {
 
   return [draft, setDraft, loaded] as const
 }
+
+/** Removes every saved draft (the in-store kiosk does this between customers). */
+export function clearAllDrafts() {
+  return idb('readwrite', (s) => s.clear()).catch(() => undefined)
+}
