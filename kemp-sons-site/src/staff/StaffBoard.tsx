@@ -150,6 +150,7 @@ export default function StaffBoard() {
         </div>
         <input className="sb-search" type="search" placeholder="Search name, order #, phone, design" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search jobs" />
         <div className="sb-meta">
+          <a className="sb-btn sb-navlink" href="/staff/prices/">Prices</a>
           <button type="button" className="sb-btn" onClick={load}>Refresh</button>
           {!demo && (
             <button
@@ -428,7 +429,7 @@ function Detail({ job: j, texting, onClose, onAct }: { job: Job; texting: boolea
   )
 }
 
-function SignIn({ onDone }: { onDone: () => void }) {
+export function SignIn({ onDone }: { onDone: () => void }) {
   const [pw, setPw] = useState('')
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)

@@ -2,6 +2,7 @@ import type { Config, Context } from '@netlify/functions'
 import { checkPassword, clearCookie, isStaff, sessionCookie, staffConfigured } from '../lib/staff-auth'
 import { admin, adminConfigured, check } from '../lib/shopify-admin'
 import { sendText, textingEnabled, toE164 } from '../lib/notify'
+import { readPrices, savePickup, savePrices, saveShipping, type PickupSettings, type ShippingSettings } from '../lib/prices'
 
 /**
  * Staff job board API (used by /staff/).
@@ -271,6 +272,29 @@ export default async (req: Request, context: Context) => {
 
   try {
     if (path === '/api/staff/jobs' && req.method === 'GET') return json({ jobs: await listJobs(), texting: textingEnabled() })
+
+    // Prices page: every product price, shipping rates and pickup settings, saved straight to Shopify.
+    if (path === '/api/staff/prices' && req.method === 'GET') return json(await readPrices())
+    if (path === '/api/staff/prices' && req.method === 'POST') {
+      const origin = req.headers.get('origin')
+      if (origin && origin !== new URL(req.url).origin) return json({ error: 'Bad origin' }, 403)
+      const body = (await req.json().catch(() => ({}))) as {
+        variants?: { productId: string; variantId: string; price: number }[]
+        shipping?: ShippingSettings
+        pickup?: PickupSettings
+      }
+      const done: string[] = []
+      if (body.variants?.length) done.push(`${await savePrices(body.variants)} product(s) updated`)
+      if (body.shipping) {
+        await saveShipping(body.shipping)
+        done.push('shipping updated')
+      }
+      if (body.pickup) {
+        await savePickup(body.pickup)
+        done.push('pickup updated')
+      }
+      return json({ ok: true, message: done.length ? `Saved: ${done.join(', ')}.` : 'Nothing to save.', ...(await readPrices()) })
+    }
     const m = path.match(/^\/api\/staff\/jobs\/(\d+)$/)
     if (m && req.method === 'POST') {
       // Same-origin requests only (the cookie is SameSite=Strict too).

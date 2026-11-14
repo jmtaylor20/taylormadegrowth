@@ -1,0 +1,50 @@
+---
+/**
+ * Keeps "From $X" labels current without a rebuild. Any element with
+ * data-live-price="product:<handle>" or "collection:<handle>" gets its text
+ * replaced with the lowest current Shopify price on page load. The build-time
+ * price stays in place if Shopify can't be reached. Optional
+ * data-live-format, e.g. "From {price}", sets the wording.
+ */
+const domain = import.meta.env.SHOPIFY_STORE_DOMAIN
+const token = import.meta.env.SHOPIFY_STOREFRONT_TOKEN
+---
+{domain && token && <script type="application/json" id="storefront-config" set:html={JSON.stringify({ domain, token })} />}
+<script>
+  const cfgEl = document.getElementById('storefront-config')
+  const els = Array.from(document.querySelectorAll<HTMLElement>('[data-live-price]'))
+  if (cfgEl && els.length) {
+    const { domain, token } = JSON.parse(cfgEl.textContent || '{}') as { domain: string; token: string }
+    const products = [...new Set(els.map((e) => e.dataset.livePrice!).filter((v) => v.startsWith('product:')).map((v) => v.slice(8)))]
+    const collections = [...new Set(els.map((e) => e.dataset.livePrice!).filter((v) => v.startsWith('collection:')).map((v) => v.slice(11)))]
+    const alias = (s: string) => s.replace(/[^a-zA-Z0-9]/g, '_')
+    const q = [
+      ...products.map((h) => `p_${alias(h)}: product(handle: ${JSON.stringify(h)}) { priceRange { minVariantPrice { amount } } }`),
+      ...collections.map((h) => `c_${alias(h)}: collection(handle: ${JSON.stringify(h)}) { products(first: 50) { nodes { priceRange { minVariantPrice { amount } } } } }`),
+    ].join(' ')
+    fetch(`https://${domain}/api/2026-10/graphql.json`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Shopify-Storefront-Access-Token': token },
+      body: JSON.stringify({ query: `{ ${q} }` }),
+    })
+      .then((r) => r.json())
+      .then(({ data }) => {
+        if (!data) return
+        const money = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
+        for (const el of els) {
+          const [kind, handle] = el.dataset.livePrice!.split(':')
+          let min: number | null = null
+          if (kind === 'product') {
+            const p = data[`p_${alias(handle)}`]
+            if (p) min = Number(p.priceRange.minVariantPrice.amount)
+          } else {
+            const c = data[`c_${alias(handle)}`]
+            const prices = (c?.products.nodes ?? []).map((n: { priceRange: { minVariantPrice: { amount: string } } }) => Number(n.priceRange.minVariantPrice.amount)).filter((n: number) => n > 0)
+            if (prices.length) min = Math.min(...prices)
+          }
+          if (min != null && min > 0) el.textContent = (el.dataset.liveFormat ?? 'From {price}').replace('{price}', money(min))
+        }
+      })
+      .catch(() => {})
+  }
+</script>

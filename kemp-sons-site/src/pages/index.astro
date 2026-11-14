@@ -5,6 +5,7 @@ import Footer from '../components/Footer.astro'
 import QuoteForm from '../components/QuoteForm.astro'
 import RegMark from '../components/RegMark.astro'
 import ColorBar from '../components/ColorBar.astro'
+import LivePrices from '../components/LivePrices.astro'
 import { business, shop, productLines, services, capabilities } from '../config/site'
 import { getCollection, formatPrice } from '../lib/shopify'
 
@@ -87,7 +88,7 @@ const SHEETS = 5
                     <span class="pl-name">{l.title}</span>
                     <span class="pl-blurb">{l.blurb}</span>
                   </span>
-                  <span class="pl-price mono">{l.from ? `From ${l.from}` : 'Design'} <span aria-hidden="true">&rarr;</span></span>
+                  <span class="pl-price mono"><span data-live-price={`collection:${l.collection}`}>{l.from ? `From ${l.from}` : 'Design'}</span> <span aria-hidden="true">&rarr;</span></span>
                 </a>
               </li>
             ))}
@@ -172,6 +173,7 @@ const SHEETS = 5
   </main>
 
   <Footer />
+  <LivePrices />
 </Base>
 
 <script>
