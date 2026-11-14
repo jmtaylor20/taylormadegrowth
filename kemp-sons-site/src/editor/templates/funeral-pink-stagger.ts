@@ -128,8 +128,8 @@ export const funeralPinkStagger: Template = {
         { type: 'line', x: OUT_FOLD + 2.1, y: 2.3, points: [0, 0, 0.9, 0], stroke: PINK, strokeWidth: 0.75, opacity: 0.8 },
         { type: 'text', text: '{{serviceDate}}, {{serviceTime}}\n{{location}}\n{{locationAddress}}', x: OUT_FOLD + 0.35, y: 2.38, w: 4.4, h: 0.88, font: SERIF, weight: 600, size: 12.5, minSize: 8, color: INK, lineHeight: 1.15 },
         // White border, dropped when the background is removed so the portrait stands on the flowers.
-        { type: 'rect', x: OUT_FOLD + 0.78, y: 3.36, w: 4.04, h: 4.89, fill: '#ffffff', stroke: PINK, strokeWidth: 1, hideWhenCutout: 'photo' },
-        { type: 'photo', field: 'photo', x: OUT_FOLD + 0.85, y: 3.43, w: 3.9, h: 4.75 },
+        { type: 'rect', x: OUT_FOLD + 0.53, y: 3.36, w: 4.04, h: 4.89, fill: '#ffffff', stroke: PINK, strokeWidth: 1, hideWhenCutout: 'photo' },
+        { type: 'photo', field: 'photo', x: OUT_FOLD + 0.6, y: 3.43, w: 3.9, h: 4.75 },
       ],
     },
     {
