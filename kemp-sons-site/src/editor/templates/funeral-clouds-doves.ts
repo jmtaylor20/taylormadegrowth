@@ -5,7 +5,7 @@ import { BACK_SECTIONS, withFields } from './funeral-shared'
  * Clouds & Doves: folded program, printed on an 11 x 8.5 in sheet.
  * Outside spread: back cover (left), front cover (right).
  * Inside spread: obituary (left), order of service (right).
- * Layout follows Kemp & Sons' own InDesign program; the sky is original art.
+ * Layout and artwork (sky and doves) from Kemp & Sons' own InDesign program.
  */
 
 const SKY = '/templates/clouds-doves/sky.jpg'
@@ -82,6 +82,10 @@ export const funeralCloudsDoves: Template = {
       panels: ['Inside left', 'Inside right'],
       elements: [
         sky,
+
+        // Doves in opposite corners, as in Kemp's original program
+        { type: 'image', src: '/templates/clouds-doves/dove-left.png', x: 0.15, y: 0.12, w: 1.25, h: 0.97 },
+        { type: 'image', src: '/templates/clouds-doves/dove-right.png', x: 9.55, y: 6.95, w: 1.2, h: 1.0 },
 
         // Inside left: obituary
         heading('Obituary', 0.7, 0.5),
