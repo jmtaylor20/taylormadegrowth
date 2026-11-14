@@ -1,37 +1,76 @@
+import { getStore } from '@netlify/blobs'
 import { admin, check } from './shopify-admin'
+import { PRICE_GROUPS } from './price-groups'
 
 /**
- * Prices, shipping and pickup for the staff Prices page. Everything is read
- * from and written to Shopify, which the website, the designer and checkout
- * all read live, so one save updates the whole site.
+ * Prices, weights, shipping and pickup for the staff Prices page. Prices and
+ * weights are written to Shopify, which the website, the designer and
+ * checkout all read live, so one save updates the whole site.
  *
- * Needs these scopes on the Kemp Job Board app: read_products, write_products,
- * read_shipping, write_shipping (plus read/write locations for pickup, covered
- * by write_shipping).
+ * Prices are set per price group (one printed format), not per design: see
+ * price-groups.ts. Shipping is charged by order weight. Staff enter the
+ * weight of one finished piece per paper, and each variant's weight is
+ * worked out from its quantity plus the packing weight.
+ *
+ * Scopes: read_products, write_products, read_shipping, write_shipping, and
+ * read_locations for the pickup settings (optional).
  */
 
-export interface PriceVariant {
+interface RawVariant {
+  id: string
+  price: string
+  selectedOptions: { name: string; value: string }[]
+}
+interface RawProduct {
+  id: string
+  title: string
+  handle: string
+  productType: string
+  options: { name: string }[]
+  variants: { nodes: RawVariant[] }
+}
+
+export interface GroupVariant {
+  /** `<groupId>::<option combination>` */
   id: string
   price: number
   options: Record<string, string>
 }
 
-export interface PriceProduct {
+export interface Group {
   id: string
-  title: string
-  handle: string
+  label: string
   type: string
+  /** Designs sharing this price table (empty for products priced on their own). */
+  designs: string[]
   options: string[]
-  variants: PriceVariant[]
+  variants: GroupVariant[]
+  /** False when the designs in the group have different prices today. */
+  inSync: boolean
+  /** Paper names to weigh (or ['Each'] when the product has no paper option). */
+  weightKeys: string[]
+  /** Weight of one finished piece, in ounces, by weight key. */
+  weights: Record<string, number>
+  /** Units per variant come from the Quantity option (false for things sold one at a time). */
+  hasQuantity: boolean
 }
 
-export interface ShippingSettings {
-  /** Flat standard shipping price. */
+export interface ShippingRate {
+  /** Upper end of this weight band in pounds. Null = and up (the last band). */
+  upToLb: number | null
   standard: number
-  /** Free standard shipping at or above this order total. Null = never free. */
-  freeOver: number | null
-  /** Express price. Null = no express option. */
+  /** Null = no express option for this band. */
   express: number | null
+}
+export interface ShippingSettings {
+  rates: ShippingRate[]
+}
+
+export interface WeightSettings {
+  /** Box, padding and invoice per order, in ounces. Added to every variant that has a quantity. */
+  packagingOz: number
+  /** groupId -> weight key -> ounces per piece. */
+  groups: Record<string, Record<string, number>>
 }
 
 export const PICKUP_TIMES = ['ONE_HOUR', 'TWO_HOURS', 'FOUR_HOURS', 'TWENTY_FOUR_HOURS', 'TWO_TO_FOUR_DAYS', 'FIVE_OR_MORE_DAYS'] as const
@@ -62,11 +101,11 @@ const SHIPPING = /* GraphQL */ `
           locationGroupZones(first: 10) {
             nodes {
               zone { id name }
-              methodDefinitions(first: 20) {
+              methodDefinitions(first: 50) {
                 nodes {
                   id name active
                   rateProvider { ... on DeliveryRateDefinition { price { amount } } }
-                  methodConditions { field operator conditionCriteria { ... on MoneyV2 { amount } } }
+                  methodConditions { field operator conditionCriteria { ... on MoneyV2 { amount } ... on Weight { value unit } } }
                 }
               }
             }
@@ -87,7 +126,7 @@ interface MethodNode {
   name: string
   active: boolean
   rateProvider: { price?: { amount: string } } | null
-  methodConditions: { field: string; operator: string; conditionCriteria: { amount?: string } }[]
+  methodConditions: { field: string; operator: string; conditionCriteria: { amount?: string; value?: number; unit?: string } }[]
 }
 interface ShippingResponse {
   deliveryProfiles: {
@@ -100,6 +139,13 @@ interface ShippingResponse {
       }[]
     }[]
   }
+}
+
+const store = () => getStore({ name: 'staff', consistency: 'strong' })
+
+async function readWeights(): Promise<WeightSettings> {
+  const w = (await store().get('weights', { type: 'json' }).catch(() => null)) as WeightSettings | null
+  return { packagingOz: w?.packagingOz ?? 0, groups: w?.groups ?? {} }
 }
 
 /** The general delivery profile's first zone (the US). */
@@ -122,91 +168,208 @@ async function shopLocation(): Promise<LocationNode | null> {
   }
 }
 
-const amount = (m: MethodNode) => Number(m.rateProvider?.price?.amount ?? 0)
-const minTotal = (m: MethodNode) => {
-  const c = m.methodConditions.find((x) => x.field === 'TOTAL_PRICE' && x.operator === 'GREATER_THAN_OR_EQUAL_TO')
-  return c?.conditionCriteria.amount != null ? Number(c.conditionCriteria.amount) : null
+async function rawProducts() {
+  const p = await admin<{ products: { nodes: RawProduct[] } }>(PRODUCTS, { q: 'status:active' })
+  return p.products.nodes
+}
+
+const optionNames = (p: RawProduct) => p.options.map((o) => o.name).filter((o) => o !== 'Title')
+const optionsOf = (v: RawVariant) => Object.fromEntries(v.selectedOptions.filter((o) => o.name !== 'Title').map((o) => [o.name, o.value])) as Record<string, string>
+const comboKey = (names: string[], opts: Record<string, string>) => names.map((n) => `${n}=${opts[n] ?? ''}`).join('|')
+const paperOption = (names: string[]) => names.find((n) => /paper|stock/i.test(n))
+const quantityOption = (names: string[]) => names.find((n) => /quantity|qty/i.test(n))
+
+/** Products sorted into price groups. Ungrouped products get a group of their own. */
+function groupProducts(products: RawProduct[]) {
+  const byHandle = new Map(products.map((p) => [p.handle, p]))
+  const used = new Set<string>()
+  const groups: { id: string; label: string; listed: boolean; members: RawProduct[] }[] = []
+  for (const g of PRICE_GROUPS) {
+    const members = g.handles.map((h) => byHandle.get(h)).filter((p): p is RawProduct => !!p)
+    if (!members.length) continue
+    members.forEach((m) => used.add(m.handle))
+    groups.push({ id: g.id, label: g.label, listed: true, members })
+  }
+  for (const p of products) if (!used.has(p.handle)) groups.push({ id: p.handle, label: p.title, listed: false, members: [p] })
+  return groups
+}
+
+const shortTitle = (t: string) => t.replace(/^[^:]+:\s*/, '')
+
+function toLb(value: number, unit: string) {
+  if (unit === 'OUNCES') return value / 16
+  if (unit === 'GRAMS') return value / 453.592
+  if (unit === 'KILOGRAMS') return value * 2.20462
+  return value
 }
 
 export async function readPrices() {
-  const [p, t, location] = await Promise.all([
-    admin<{ products: { nodes: { id: string; title: string; handle: string; productType: string; options: { name: string }[]; variants: { nodes: { id: string; price: string; selectedOptions: { name: string; value: string }[] }[] } }[] } }>(
-      PRODUCTS,
-      { q: 'status:active' },
-    ),
-    shippingTarget(),
-    shopLocation(),
-  ])
-  const products: PriceProduct[] = p.products.nodes.map((n) => ({
-    id: n.id,
-    title: n.title,
-    handle: n.handle,
-    type: n.productType,
-    options: n.options.map((o) => o.name).filter((o) => o !== 'Title'),
-    variants: n.variants.nodes.map((v) => ({
-      id: v.id,
-      price: Number(v.price),
-      options: Object.fromEntries(v.selectedOptions.filter((o) => o.name !== 'Title').map((o) => [o.name, o.value])),
-    })),
-  }))
+  const [products, t, location, weights] = await Promise.all([rawProducts(), shippingTarget(), shopLocation(), readWeights()])
 
-  const methods = t.zone.methodDefinitions.nodes.filter((m) => m.active)
-  const free = methods.find((m) => amount(m) === 0 && minTotal(m) != null)
-  const standard = methods.find((m) => /standard/i.test(m.name) && amount(m) > 0) ?? methods.find((m) => amount(m) > 0 && !/express/i.test(m.name))
-  const express = methods.find((m) => /express/i.test(m.name))
-  const shipping: ShippingSettings = {
-    standard: standard ? amount(standard) : 0,
-    freeOver: free ? minTotal(free) : null,
-    express: express ? amount(express) : null,
+  const groups: Group[] = groupProducts(products).map(({ id, label, listed, members }) => {
+    const lead = members[0]
+    const names = optionNames(lead)
+    const variants = lead.variants.nodes.map((v) => {
+      const options = optionsOf(v)
+      return { id: `${id}::${comboKey(names, options)}`, price: Number(v.price), options }
+    })
+    const inSync = members.every((m) =>
+      variants.every((gv) => Number(m.variants.nodes.find((v) => `${id}::${comboKey(names, optionsOf(v))}` === gv.id)?.price ?? NaN) === gv.price),
+    )
+    const paper = paperOption(names)
+    return {
+      id,
+      label,
+      type: lead.productType || 'Other',
+      designs: listed ? members.map((m) => shortTitle(m.title)) : [],
+      options: names,
+      variants,
+      inSync,
+      weightKeys: paper ? [...new Set(variants.map((v) => v.options[paper]))] : ['Each'],
+      weights: weights.groups[id] ?? {},
+      hasQuantity: !!quantityOption(names),
+    }
+  })
+
+  // Shipping bands from the zone's rates. Standard rates are everything not named Express.
+  const methods = t.zone.methodDefinitions.nodes.filter((m) => m.active && !m.methodConditions.some((x) => x.field === 'TOTAL_PRICE'))
+  const amount = (m: MethodNode) => Number(m.rateProvider?.price?.amount ?? 0)
+  const maxLb = (m: MethodNode) => {
+    const c = m.methodConditions.find((x) => x.field === 'TOTAL_WEIGHT' && x.operator === 'LESS_THAN_OR_EQUAL_TO')
+    return c?.conditionCriteria.value != null ? Math.round(toLb(c.conditionCriteria.value, c.conditionCriteria.unit ?? 'POUNDS') * 100) / 100 : null
   }
+  const rates: ShippingRate[] = methods
+    .filter((m) => !/express/i.test(m.name))
+    .map((m) => ({ upToLb: maxLb(m), standard: amount(m), express: null as number | null }))
+    .sort((a, b) => (a.upToLb ?? Infinity) - (b.upToLb ?? Infinity))
+  if (!rates.length) rates.push({ upToLb: null, standard: 0, express: null })
+  for (const e of methods.filter((m) => /express/i.test(m.name))) {
+    const hasWeight = e.methodConditions.some((x) => x.field === 'TOTAL_WEIGHT')
+    // A flat express rate (no weight band) applies to every band.
+    for (const r of rates) if (!hasWeight || r.upToLb === maxLb(e)) r.express = amount(e)
+  }
+
   const pickup: PickupSettings | null = location?.localPickupSettingsV2
     ? { pickupTime: location.localPickupSettingsV2.pickupTime as PickupSettings['pickupTime'], instructions: location.localPickupSettingsV2.instructions }
     : null
-  return { products, shipping, pickup }
+  const shipping: ShippingSettings = { rates }
+  return { groups, shipping, packagingOz: weights.packagingOz, pickup }
 }
 
 const MIN_PRICE = 0.5
 const MAX_PRICE = 20000
 
-/** Product price changes, grouped by product. */
-export async function savePrices(changes: { productId: string; variantId: string; price: number }[]) {
-  const byProduct = new Map<string, { id: string; price: string }[]>()
-  for (const c of changes) {
-    if (!/^gid:\/\/shopify\/Product\/\d+$/.test(c.productId) || !/^gid:\/\/shopify\/ProductVariant\/\d+$/.test(c.variantId)) throw new Error('Bad product id')
-    const price = Math.round(Number(c.price) * 100) / 100
-    if (!Number.isFinite(price) || price < MIN_PRICE || price > MAX_PRICE) throw new Error(`Prices must be between $${MIN_PRICE} and $${MAX_PRICE}`)
-    const list = byProduct.get(c.productId) ?? []
-    list.push({ id: c.variantId, price: price.toFixed(2) })
-    byProduct.set(c.productId, list)
-  }
-  for (const [productId, variants] of byProduct) {
-    const r = await admin<{ productVariantsBulkUpdate: { userErrors: { message: string }[] } }>(
-      `mutation U($p: ID!, $v: [ProductVariantsBulkInput!]!) { productVariantsBulkUpdate(productId: $p, variants: $v) { userErrors { message } } }`,
-      { p: productId, v: variants },
-    )
-    check(r.productVariantsBulkUpdate, 'Save prices')
-  }
-  return byProduct.size
+async function bulkUpdate(productId: string, variants: Record<string, unknown>[], label: string) {
+  const r = await admin<{ productVariantsBulkUpdate: { userErrors: { message: string }[] } }>(
+    `mutation U($p: ID!, $v: [ProductVariantsBulkInput!]!) { productVariantsBulkUpdate(productId: $p, variants: $v) { userErrors { message } } }`,
+    { p: productId, v: variants },
+  )
+  check(r.productVariantsBulkUpdate, label)
 }
 
 /**
- * Rewrites the US zone's rates to match: Standard (paid, below the free
- * threshold when there is one), Free shipping (at or above the threshold),
- * and Express (when set). Other zones and profiles are left alone.
+ * Price changes by group. Every design in a touched group gets the group's
+ * full price table (edited cells plus the current ones), so the designs in a
+ * group always end up matching.
+ */
+export async function savePrices(changes: { variantId: string; price: number }[]) {
+  const edits = new Map<string, number>()
+  for (const c of changes) {
+    const price = Math.round(Number(c.price) * 100) / 100
+    if (!Number.isFinite(price) || price < MIN_PRICE || price > MAX_PRICE) throw new Error(`Prices must be between $${MIN_PRICE} and $${MAX_PRICE}`)
+    edits.set(String(c.variantId), price)
+  }
+  const touched = new Set([...edits.keys()].map((k) => k.split('::')[0]))
+  const groups = groupProducts(await rawProducts()).filter((g) => touched.has(g.id))
+  let count = 0
+  for (const g of groups) {
+    const names = optionNames(g.members[0])
+    const table = new Map(g.members[0].variants.nodes.map((v) => [comboKey(names, optionsOf(v)), Number(v.price)]))
+    for (const [k, price] of edits) if (k.startsWith(`${g.id}::`)) table.set(k.slice(g.id.length + 2), price)
+    for (const m of g.members) {
+      const variants = m.variants.nodes.flatMap((v) => {
+        const price = table.get(comboKey(names, optionsOf(v)))
+        return price == null ? [] : [{ id: v.id, price: price.toFixed(2) }]
+      })
+      if (!variants.length) continue
+      await bulkUpdate(m.id, variants, 'Save prices')
+      count++
+    }
+  }
+  return count
+}
+
+/**
+ * Saves piece weights and packing weight, then writes each variant's
+ * shipping weight to Shopify: pieces x weight per piece + packing.
+ */
+export async function saveWeights(w: WeightSettings) {
+  const ok = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 1000
+  if (!ok(w.packagingOz)) throw new Error('Packing weight looks wrong')
+  const clean: WeightSettings = { packagingOz: Math.round(w.packagingOz * 100) / 100, groups: {} }
+  for (const [g, keys] of Object.entries(w.groups ?? {})) {
+    clean.groups[g] = {}
+    for (const [k, oz] of Object.entries(keys ?? {})) {
+      if (!ok(oz)) throw new Error('Piece weights must be between 0 and 1000 oz')
+      if (oz > 0) clean.groups[g][k] = Math.round(oz * 1000) / 1000
+    }
+  }
+  await store().setJSON('weights', clean)
+
+  let count = 0
+  for (const g of groupProducts(await rawProducts())) {
+    const per = clean.groups[g.id]
+    if (!per || !Object.keys(per).length) continue
+    for (const m of g.members) {
+      const names = optionNames(m)
+      const paper = paperOption(names)
+      const qty = quantityOption(names)
+      const variants = m.variants.nodes.flatMap((v) => {
+        const o = optionsOf(v)
+        const piece = per[paper ? o[paper] : 'Each']
+        if (!piece) return []
+        const pieces = qty ? parseInt((o[qty] ?? '').replace(/,/g, ''), 10) || 1 : 1
+        const oz = piece * pieces + (qty ? clean.packagingOz : 0)
+        return [{ id: v.id, inventoryItem: { measurement: { weight: { value: Math.round(oz * 100) / 100, unit: 'OUNCES' } } } }]
+      })
+      if (!variants.length) continue
+      await bulkUpdate(m.id, variants, 'Save weights')
+      count++
+    }
+  }
+  return count
+}
+
+/**
+ * Rewrites the US zone's rates as weight bands: one Standard rate per band
+ * and, where set, one Express rate. The first band starts at 0 (so anything
+ * without a weight still gets a rate) and the last has no upper limit, so
+ * every order can check out. Other zones and profiles are left alone.
  */
 export async function saveShipping(s: ShippingSettings) {
-  const ok = (n: number | null, allowZero = false) => n == null || (Number.isFinite(n) && n >= (allowZero ? 0 : MIN_PRICE) && n <= 1000)
-  if (!ok(s.standard, true) || !ok(s.express) || !ok(s.freeOver)) throw new Error('Shipping amounts look wrong')
+  const rates = s.rates ?? []
+  if (!rates.length || rates.length > 12) throw new Error('Add between 1 and 12 shipping bands')
+  const price = (n: number | null, allowNull: boolean) => (n == null ? allowNull : Number.isFinite(n) && n >= 0 && n <= 1000)
+  for (const [i, r] of rates.entries()) {
+    const last = i === rates.length - 1
+    if (!price(r.standard, false) || !price(r.express, true)) throw new Error('Shipping amounts look wrong')
+    if (last ? r.upToLb != null : !(r.upToLb != null && r.upToLb > 0 && r.upToLb <= 1000)) throw new Error('Each band needs an upper weight, except the last')
+    if (i > 0 && !last && r.upToLb! <= rates[i - 1].upToLb!) throw new Error('Weight bands must go from lightest to heaviest')
+  }
   const t = await shippingTarget()
   const money = (n: number) => ({ amount: n.toFixed(2), currencyCode: 'USD' })
+  const lb = (n: number) => ({ value: n, unit: 'POUNDS' })
   const create: Record<string, unknown>[] = []
-  if (s.freeOver != null) {
-    create.push({ name: 'Standard', active: true, rateDefinition: { price: money(s.standard) }, priceConditionsToCreate: [{ criteria: money(Math.max(0, s.freeOver - 0.01)), operator: 'LESS_THAN_OR_EQUAL_TO' }] })
-    create.push({ name: 'Free shipping', active: true, rateDefinition: { price: money(0) }, priceConditionsToCreate: [{ criteria: money(s.freeOver), operator: 'GREATER_THAN_OR_EQUAL_TO' }] })
-  } else {
-    create.push({ name: 'Standard', active: true, rateDefinition: { price: money(s.standard) } })
-  }
-  if (s.express != null) create.push({ name: 'Express', active: true, rateDefinition: { price: money(s.express) } })
+  rates.forEach((r, i) => {
+    const from = i > 0 ? rates[i - 1].upToLb! : null
+    const weightConditionsToCreate = [
+      ...(from != null ? [{ criteria: lb(from), operator: 'GREATER_THAN_OR_EQUAL_TO' }] : []),
+      ...(r.upToLb != null ? [{ criteria: lb(r.upToLb), operator: 'LESS_THAN_OR_EQUAL_TO' }] : []),
+    ]
+    const cond = weightConditionsToCreate.length ? { weightConditionsToCreate } : {}
+    create.push({ name: 'Standard', active: true, rateDefinition: { price: money(r.standard) }, ...cond })
+    if (r.express != null) create.push({ name: 'Express', active: true, rateDefinition: { price: money(r.express) }, ...cond })
+  })
 
   // Real method ids only (rate-range rows share their parent's id with a ?source suffix).
   const toDelete = [...new Set(t.zone.methodDefinitions.nodes.map((m) => m.id.split('?')[0]))]

@@ -2,7 +2,7 @@ import type { Config, Context } from '@netlify/functions'
 import { checkPassword, clearCookie, isStaff, sessionCookie, staffConfigured } from '../lib/staff-auth'
 import { admin, adminConfigured, check } from '../lib/shopify-admin'
 import { sendText, textingEnabled, toE164 } from '../lib/notify'
-import { readPrices, savePickup, savePrices, saveShipping, type PickupSettings, type ShippingSettings } from '../lib/prices'
+import { readPrices, savePickup, savePrices, saveShipping, saveWeights, type PickupSettings, type ShippingSettings, type WeightSettings } from '../lib/prices'
 
 /**
  * Staff job board API (used by /staff/).
@@ -290,19 +290,21 @@ export default async (req: Request, context: Context) => {
       const origin = req.headers.get('origin')
       if (origin && origin !== new URL(req.url).origin) return json({ error: 'Bad origin' }, 403)
       const body = (await req.json().catch(() => ({}))) as {
-        variants?: { productId: string; variantId: string; price: number }[]
+        variants?: { variantId: string; price: number }[]
+        weights?: WeightSettings
         shipping?: ShippingSettings
         pickup?: PickupSettings
       }
       const done: string[] = []
-      if (body.variants?.length) done.push(`${await savePrices(body.variants)} product(s) updated`)
+      if (body.variants?.length) done.push(`prices on ${await savePrices(body.variants)} design(s)`)
+      if (body.weights) done.push(`weights on ${await saveWeights(body.weights)} design(s)`)
       if (body.shipping) {
         await saveShipping(body.shipping)
-        done.push('shipping updated')
+        done.push('shipping rates')
       }
       if (body.pickup) {
         await savePickup(body.pickup)
-        done.push('pickup updated')
+        done.push('pickup')
       }
       return json({ ok: true, message: done.length ? `Saved: ${done.join(', ')}.` : 'Nothing to save.', ...(await readPrices()) })
     }
