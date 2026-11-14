@@ -252,6 +252,20 @@ export default async (req: Request, context: Context) => {
   }
   if (path === '/api/staff/logout' && req.method === 'POST') return json({ ok: true }, 200, { 'Set-Cookie': clearCookie() })
 
+  // Setup check, safe without signing in: reports only whether things are connected, never data.
+  if (path === '/api/staff/status' && req.method === 'GET') {
+    let shopify: 'not configured' | 'connected' | 'error' = adminConfigured() ? 'error' : 'not configured'
+    if (adminConfigured()) {
+      try {
+        await admin<{ shop: { id: string } }>(`{ shop { id } }`)
+        shopify = 'connected'
+      } catch (e) {
+        console.error('status check', e)
+      }
+    }
+    return json({ login: staffConfigured() ? 'configured' : 'not configured', shopify, texting: textingEnabled() ? 'on' : 'off' })
+  }
+
   if (!isStaff(req)) return json({ error: 'Sign in required' }, 401)
   if (!adminConfigured()) return json({ error: 'Shopify is not connected to the staff board yet (SHOPIFY_ADMIN_CLIENT_ID and SHOPIFY_ADMIN_CLIENT_SECRET).' }, 503)
 
