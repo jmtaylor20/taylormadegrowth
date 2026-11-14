@@ -146,9 +146,9 @@ export const funeralFlagTrifold: Template = {
         // Inside middle: faded feature photo with a tribute over it
         { type: 'photo', field: 'servicePhoto', x: P2 + 0.3, y: 0.3, w: 4.9, h: 7.9, opacity: 0.55, optional: true },
         // Soft white panel keeps the tribute readable over the photo.
-        { type: 'rect', x: P2 + 0.55, y: 3.95, w: 4.4, h: 4.0, fill: '#ffffff', opacity: 0.62, radius: 0.08, showIf: 'tribute' },
+        { type: 'rect', x: P2 + 0.55, y: 3.95, w: 4.4, h: 3.75, fill: '#ffffff', opacity: 0.62, radius: 0.08, showIf: 'tribute' },
         { type: 'text', text: '{{tributeTitle}}', x: P2 + 0.65, y: 4.05, w: 4.2, h: 0.75, font: 'Great Vibes', size: 34, minSize: 18, color: NAVY, maxLines: 1, showIf: 'tributeTitle' },
-        { type: 'text', text: '{{tribute}}', x: P2 + 0.7, y: 4.85, w: 4.1, h: 2.95, font: SERIF, weight: 700, italic: true, size: 14, minSize: 8, color: INK, lineHeight: 1.3, valign: 'top', showIf: 'tribute' },
+        { type: 'text', text: '{{tribute}}', x: P2 + 0.7, y: 4.85, w: 4.1, h: 2.75, font: SERIF, weight: 700, italic: true, size: 14, minSize: 8, color: INK, lineHeight: 1.3, valign: 'top', showIf: 'tribute' },
 
         // Inside right: order of service and a small collage
         heading('Order of Service', P3 + 0.45, 0.4, 4.6),
