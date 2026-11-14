@@ -141,6 +141,11 @@ export const funeralPinkStagger: Template = {
       elements: [
         // Inside left: lilac border fading to white, and the tribute column
         { type: 'image', src: `${ART}/lilac-panel.jpg`, x: -0.125, y: -0.125, w: 3.6, h: 8.75 },
+        // The art's top right corner has a faint green haze that ends in a hard edge; feather it to white.
+        ...[0.15, 0.3, 0.45, 0.6, 0.75, 0.9].map((opacity, i): Element => ({
+          type: 'rect', x: 3.0 + i * 0.08, y: -0.125, w: 0.08, h: 1.5, fill: '#ffffff', opacity,
+        })),
+        { type: 'rect', x: 3.47, y: -0.125, w: 0.1, h: 1.5, fill: '#ffffff' },
         { type: 'text', text: '{{poem}}', x: 2.3, y: 0.6, w: 2.4, h: 5.9, font: SERIF, weight: 600, italic: true, size: 13.5, minSize: 8, color: INK, lineHeight: 1.3, align: 'right', valign: 'middle', showIf: 'poem' },
         { type: 'image', src: `${ART}/roses.png`, x: 3.05, y: 6.6, w: 1.6, h: 1.61 },
 
