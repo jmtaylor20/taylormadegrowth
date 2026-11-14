@@ -12,7 +12,14 @@ export interface PhotoState {
   oy: number
   /** 1 = the smallest size that fully covers the frame. */
   zoom: number
+  /** Same photo with the background removed (PNG data URL), once made. */
+  cutout?: string
+  /** Print the cut-out instead of the original. */
+  useCutout?: boolean
 }
+
+/** The image a photo slot actually prints: the cut-out when it's switched on. */
+export const activeSrc = (p: PhotoState) => (p.useCutout && p.cutout ? p.cutout : p.src)
 
 export interface Draft {
   values: Record<string, string>

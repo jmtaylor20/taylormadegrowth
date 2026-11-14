@@ -2,7 +2,7 @@ import { createRoot } from 'react-dom/client'
 import type Konva from 'konva'
 import type { Side, Template } from './types'
 import { SideCanvas } from './SideCanvas'
-import type { PhotoState } from './draft'
+import { activeSrc, type PhotoState } from './draft'
 import { loadImage } from './images'
 import { loadFonts } from './fonts'
 
@@ -27,7 +27,7 @@ export async function renderSide(
   opts: RenderOptions,
 ): Promise<string> {
   await loadFonts()
-  const srcs = [...side.elements.flatMap((el) => (el.type === 'image' ? [el.src] : [])), ...Object.values(photos).map((p) => p.src)]
+  const srcs = [...side.elements.flatMap((el) => (el.type === 'image' ? [el.src] : [])), ...Object.values(photos).map(activeSrc)]
   await Promise.all(srcs.map((s) => loadImage(s).catch(() => null)))
 
   const host = document.createElement('div')
@@ -73,8 +73,8 @@ const thumbCache = new Map<string, Promise<string>>()
 let queue: Promise<unknown> = Promise.resolve()
 
 /**
- * Gallery thumbnail drawn from the template's sample text, with soft
- * illustrated scenes in the photo frames. Renders one at a time so a page of
+ * Gallery thumbnail drawn from the template's sample text, with gray
+ * placeholders in the photo spots. Renders one at a time so a page of
  * designs never stalls a phone.
  */
 export function renderThumbnail(t: Template, width = 640): Promise<string> {
@@ -82,15 +82,12 @@ export function renderThumbnail(t: Template, width = 640): Promise<string> {
   if (hit) return hit
   const job = (queue = queue.then(async () => {
     const { defaultDraft } = await import('./draft')
-    const { SCENES, sampleScene } = await import('./samples')
     const side = t.sides.find((s) => s.id === t.thumbnailSide) ?? t.sides[0]
     // Folded pieces show just the cover panel.
     const crop = t.thumbnailCrop ?? { x: 0, y: 0, w: t.trim.w, h: t.trim.h }
     const ppi = width / crop.w
+    // Photo spots show the plain gray placeholder.
     const photos: Record<string, PhotoState> = {}
-    let i = t.category === 'christmas-cards' ? 1 : 0
-    for (const el of side.elements)
-      if (el.type === 'photo' && !el.optional) photos[el.field] = { src: sampleScene(SCENES[i++ % SCENES.length]), w: 800, h: 800, ox: 0, oy: 0, zoom: 1 }
     const full = await renderSide(t, side, defaultDraft(t).values, photos, { mode: 'trim', ppi, quality: 0.86 })
     if (!t.thumbnailCrop) return full
     const img = await loadImage(full)

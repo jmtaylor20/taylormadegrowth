@@ -58,12 +58,13 @@ export const reorderUrl = (templateId: string, id: string) => `${window.location
 /** The design as JSON (photos travel as separate files). */
 export function draftJson(templateId: string, d: Draft): Blob {
   const photos: StoredDraft['photos'] = {}
-  for (const [slot, p] of Object.entries(d.photos)) photos[slot] = { w: p.w, h: p.h, ox: p.ox, oy: p.oy, zoom: p.zoom }
+  for (const [slot, p] of Object.entries(d.photos)) photos[slot] = { w: p.w, h: p.h, ox: p.ox, oy: p.oy, zoom: p.zoom, useCutout: !!(p.useCutout && p.cutout) }
   const body: StoredDraft = { v: 1, templateId, values: d.values, photos, envelopes: d.envelopes }
   return new Blob([JSON.stringify(body)], { type: 'application/json' })
 }
 
 export const photoKind = (slot: string) => `photo-${slot.toLowerCase()}`
+export const cutoutKind = (slot: string) => `cut-${slot.toLowerCase()}`
 
 async function blobToDataUrl(b: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -83,7 +84,14 @@ export async function loadDesign(id: string): Promise<{ templateId: string; draf
   await Promise.all(
     Object.entries(stored.photos).map(async ([slot, p]) => {
       const r = await fetch(`/api/designs/${encodeURIComponent(id)}/${photoKind(slot)}`)
-      if (r.ok) photos[slot] = { ...p, src: await blobToDataUrl(await r.blob()) }
+      if (!r.ok) return
+      const photo: PhotoState = { ...p, src: await blobToDataUrl(await r.blob()) }
+      if (p.useCutout) {
+        const c = await fetch(`/api/designs/${encodeURIComponent(id)}/${cutoutKind(slot)}`)
+        if (c.ok) photo.cutout = await blobToDataUrl(await c.blob())
+        else photo.useCutout = false
+      }
+      photos[slot] = photo
     }),
   )
   return { templateId: stored.templateId, draft: { values: stored.values, photos, envelopes: stored.envelopes } }

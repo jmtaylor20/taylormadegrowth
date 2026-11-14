@@ -56,7 +56,6 @@ export const christmasVeryMerry: Template = {
           y: M,
           w: PHOTO_W,
           h: PHOTO_H,
-          placeholder: '#dcd8d3',
         })),
         { type: 'text', text: '{{lead}}', x: 0.45, y: 3.2, w: 4.6, h: 0.3, font: 'Playfair Display', weight: 700, size: 12.5, minSize: 7, uppercase: true, letterSpacing: 0.16, color: RED },
         { type: 'text', text: '{{greeting}}', x: 0.3, y: 3.48, w: 4.95, h: 1.22, font: 'Rye', size: 46, minSize: 18, uppercase: true, lineHeight: 1.0, color: RED },

@@ -120,6 +120,7 @@ function PhotoInput({
   const slots = field.count ? Array.from({ length: field.count }, (_, i) => `${field.id}_${i + 1}`) : [field.id]
   const [active, setActive] = useState(slots[0])
   const [busy, setBusy] = useState(false)
+  const [cutMsg, setCutMsg] = useState<string | null>(null)
   const input = useRef<HTMLInputElement | null>(null)
   const target = useRef(slots[0])
   const value = photos[active]
@@ -202,6 +203,38 @@ function PhotoInput({
           aria-label="Photo zoom"
         />
       </div>
+      {field.removeBackground && value && (
+        <label className={`ed-check ed-check-light ${value.useCutout ? 'is-on' : ''}`}>
+          <input
+            type="checkbox"
+            checked={!!value.useCutout}
+            disabled={!!cutMsg}
+            onChange={async (e) => {
+              const slot = active
+              const photo = value
+              if (!e.target.checked) return onChange(slot, { ...photo, useCutout: false })
+              if (photo.cutout) return onChange(slot, { ...photo, useCutout: true })
+              onFocus(slot)
+              try {
+                const { removeBackground } = await import('./bgremove')
+                const cut = await removeBackground(photo.src, setCutMsg)
+                onChange(slot, { ...photo, cutout: cut.src, useCutout: true })
+              } catch (err) {
+                console.error(err)
+                alert("Sorry, the background couldn't be removed from that photo. You can still use it as is.")
+              } finally {
+                setCutMsg(null)
+              }
+            }}
+          />
+          <span>
+            Remove background
+            <span className="ed-hint" aria-live="polite">
+              {cutMsg ? `${cutMsg}...` : 'Works best on photos of people. Your photo stays on your device while it works.'}
+            </span>
+          </span>
+        </label>
+      )}
       {field.hint && <span className="ed-hint">{field.hint}</span>}
     </div>
   )

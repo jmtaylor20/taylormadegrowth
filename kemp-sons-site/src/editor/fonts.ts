@@ -16,6 +16,7 @@ import { invalidateTextCache } from './textFit'
 /** Every face the templates use. Add new faces here and in FontFamily (types.ts). */
 const FACES = [
   '400 16px "Rye"',
+  '400 16px "Ogirema"', '700 16px "Ogirema"', 'italic 400 16px "Ogirema"',
   '500 16px "Cormorant Garamond"', '600 16px "Cormorant Garamond"', 'italic 600 16px "Cormorant Garamond"', '700 16px "Cormorant Garamond"',
   '400 16px "Playfair Display"', 'italic 400 16px "Playfair Display"', '700 16px "Playfair Display"',
   '400 16px "Great Vibes"',

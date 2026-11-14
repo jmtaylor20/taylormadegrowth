@@ -11,7 +11,8 @@ import type { Config, Context } from '@netlify/functions'
  *
  * Kinds: pdf (print file), proof (preview image), envelopes (addressed
  * envelopes PDF), draft (the editable design as JSON, for reorders) and
- * photo-<slot> (the customer's photos, for reorders).
+ * photo-<slot> (the customer's photos, for reorders) and cut-<slot> (a
+ * photo with its background removed).
  *
  * Ids are random UUIDs, so links can't be guessed. Uploads are only accepted
  * for an hour after the id is created, and never overwrite.
@@ -21,12 +22,15 @@ interface Spec { type: string; max: number; magic: number[]; file: string; inlin
 const MB = 1024 * 1024
 const PDF = [0x25, 0x50, 0x44, 0x46] // %PDF
 const JPEG = [0xff, 0xd8, 0xff]
+const PNG = [0x89, 0x50, 0x4e, 0x47]
 function specFor(kind: string): Spec | null {
   if (kind === 'pdf') return { type: 'application/pdf', max: 6 * MB, magic: PDF, file: 'print.pdf', inline: false }
   if (kind === 'envelopes') return { type: 'application/pdf', max: 6 * MB, magic: PDF, file: 'envelopes.pdf', inline: false }
   if (kind === 'proof') return { type: 'image/jpeg', max: 2 * MB, magic: JPEG, file: 'proof.jpg', inline: true }
   if (kind === 'draft') return { type: 'application/json', max: 256 * 1024, magic: [0x7b], file: 'design.json', inline: true } // {
   if (/^photo-[a-z0-9_]{1,40}$/.test(kind)) return { type: 'image/jpeg', max: 6 * MB, magic: JPEG, file: `${kind}.jpg`, inline: true }
+  // A photo with its background removed (transparent PNG)
+  if (/^cut-[a-z0-9_]{1,40}$/.test(kind)) return { type: 'image/png', max: 6 * MB, magic: PNG, file: `${kind}.png`, inline: true }
   return null
 }
 

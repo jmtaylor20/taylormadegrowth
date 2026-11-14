@@ -1,4 +1,4 @@
-import type { Element, Template } from '../types'
+import type { Element, Field, Template } from '../types'
 import { BACK_SECTIONS, withFields } from './funeral-shared'
 
 /**
@@ -14,11 +14,12 @@ const INK = '#1f2733' // body copy
 const SOFT = '#3f5370'
 const R = 5.5 // x of the right-hand panel
 const SERIF = 'Cormorant Garamond' as const
+const HEAD = 'Ogirema' as const // the original program's heading face (Manfred Klein, free for commercial use)
 
 const sky: Element = { type: 'image', src: SKY, x: -0.125, y: -0.125, w: 11.25, h: 8.75 }
 
 const heading = (text: string, x: number, y: number, w = 4.1): Element => ({
-  type: 'text', text, x, y, w, h: 0.5, font: SERIF, weight: 700, size: 19, minSize: 12, uppercase: true, letterSpacing: 0.12, color: NAVY,
+  type: 'text', text, x, y, w, h: 0.5, font: HEAD, weight: 700, size: 18, minSize: 12, uppercase: true, letterSpacing: 0.1, color: NAVY,
 })
 
 export const funeralCloudsDoves: Template = {
@@ -32,7 +33,11 @@ export const funeralCloudsDoves: Template = {
   safeMargin: 0.25,
   fields: withFields('name', [
     { id: 'coverLead', type: 'text', label: 'Line above the name', default: 'Celebrating the Life of', section: 'Front cover' },
-  ]),
+  ]).map((f): Field =>
+    f.type === 'photo'
+      ? { ...f, removeBackground: true, hint: 'Drag the photo to reposition it. Turn on Remove background to place them right on the clouds.' }
+      : f,
+  ),
   thumbnailSide: 'outside',
   thumbnailCrop: { x: 5.5, y: 0, w: 5.5, h: 8.5 },
   sides: [
@@ -46,11 +51,12 @@ export const funeralCloudsDoves: Template = {
         sky,
 
         // Front cover
-        { type: 'text', text: '{{coverLead}}', x: R + 0.5, y: 0.5, w: 4.5, h: 0.4, font: SERIF, weight: 700, size: 15, minSize: 9, uppercase: true, letterSpacing: 0.16, color: NAVY },
+        { type: 'text', text: '{{coverLead}}', x: R + 0.5, y: 0.5, w: 4.5, h: 0.4, font: HEAD, weight: 400, size: 14, minSize: 9, uppercase: true, letterSpacing: 0.14, color: NAVY },
         { type: 'text', text: '{{name}}', x: R + 0.35, y: 0.9, w: 4.8, h: 1.05, font: 'Great Vibes', size: 40, minSize: 18, color: NAVY, maxLines: 2, lineHeight: 1.0 },
         { type: 'text', text: 'Sunrise {{birthDate}}  |  Sunset {{deathDate}}', x: R + 0.4, y: 1.98, w: 4.7, h: 0.34, font: SERIF, weight: 700, size: 13, minSize: 8, color: SOFT },
-        { type: 'rect', x: R + 0.83, y: 2.43, w: 3.84, h: 3.94, fill: '#ffffff' },
-        { type: 'photo', field: 'photo', x: R + 0.9, y: 2.5, w: 3.7, h: 3.8, placeholder: '#b9cde2' },
+        // White border, dropped when the background is removed so the portrait sits on the sky.
+        { type: 'rect', x: R + 0.83, y: 2.43, w: 3.84, h: 3.94, fill: '#ffffff', hideWhenCutout: 'photo' },
+        { type: 'photo', field: 'photo', x: R + 0.9, y: 2.5, w: 3.7, h: 3.8 },
         { type: 'rect', x: R + 0.35, y: 6.55, w: 4.8, h: 1.6, fill: '#ffffff', opacity: 0.86 },
         { type: 'text', text: '{{serviceDate}}\n{{serviceTime}}', x: R + 0.5, y: 6.68, w: 4.5, h: 0.62, font: SERIF, weight: 700, size: 15, minSize: 9, color: INK, lineHeight: 1.15 },
         { type: 'text', text: '{{location}}\n{{locationAddress}}', x: R + 0.5, y: 7.3, w: 4.5, h: 0.78, font: SERIF, weight: 600, size: 12.5, minSize: 8, color: INK, lineHeight: 1.15 },
@@ -58,7 +64,7 @@ export const funeralCloudsDoves: Template = {
         // Back cover: sections stack and close up when one is left blank
         {
           type: 'stack', x: 0.6, y: 0.5, w: 4.3, h: 5.9, gap: 0.26, headingGap: 0.05, valign: 'middle',
-          heading: { font: SERIF, weight: 700, size: 15, color: NAVY, uppercase: true, letterSpacing: 0.12, lineHeight: 1.1 },
+          heading: { font: HEAD, weight: 700, size: 14, color: NAVY, uppercase: true, letterSpacing: 0.1, lineHeight: 1.1 },
           body: { font: SERIF, weight: 600, size: 13.5, color: INK, lineHeight: 1.22 },
           items: BACK_SECTIONS,
         },

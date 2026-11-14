@@ -16,6 +16,7 @@ export type CategoryId = 'funeral-programs' | 'christmas-cards' | 'business-card
 export type FontFamily =
   | 'Rye'
   | 'Cormorant Garamond'
+  | 'Ogirema'
   | 'Playfair Display'
   | 'Great Vibes'
   | 'Montserrat'
@@ -44,6 +45,8 @@ export interface PhotoField {
   count?: number
   hint?: string
   section?: string
+  /** Offer "Remove background" for this photo (works best on photos of people). */
+  removeBackground?: boolean
 }
 
 export type Field = TextField | PhotoField
@@ -55,6 +58,8 @@ interface Base {
   opacity?: number
   /** Hide this element when the named field is left blank. */
   showIf?: string
+  /** Hide this element when the named photo has its background removed (e.g. a photo's white border). */
+  hideWhenCutout?: string
 }
 
 export interface RectEl extends Base {
@@ -160,7 +165,7 @@ export interface PhotoEl extends Base {
   radius?: number
   stroke?: string
   strokeWidth?: number
-  /** Placeholder tint when no photo is uploaded yet. */
+  /** Unused: empty photo spots all show the same gray placeholder. */
   placeholder?: string
   /** Draw nothing (no placeholder) until a photo is added, e.g. a faint background photo. */
   optional?: boolean

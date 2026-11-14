@@ -4,7 +4,7 @@ import type Konva from 'konva'
 import type { Context } from 'konva/lib/Context'
 import { BLEED, type Element, type PhotoEl, type Side, type StackEl, type Template, type TextEl } from './types'
 import { fieldsOf, fillTokens, fitStack, fitText, konvaFontStyle } from './textFit'
-import type { PhotoState } from './draft'
+import { activeSrc, type PhotoState } from './draft'
 import { useImages } from './images'
 
 /**
@@ -50,7 +50,7 @@ export const SideCanvas = memo(function SideCanvas(p: Props) {
   const scale = ppi / PT
   const offset = mode === 'trim' ? 0 : BLEED * PT
   const artSrcs = side.elements.flatMap((el) => (el.type === 'image' ? [el.src] : []))
-  const images = useImages([...artSrcs, ...Object.values(p.photos).map((ph) => ph.src)])
+  const images = useImages([...artSrcs, ...Object.values(p.photos).map(activeSrc)])
   const bleedPt = BLEED * PT
   const W = t.trim.w * PT
   const H = t.trim.h * PT
@@ -105,6 +105,10 @@ interface NodeProps {
 
 function ElementNode({ el, ...rest }: NodeProps) {
   if (el.showIf && !(rest.values[el.showIf] ?? '').trim()) return null
+  if (el.hideWhenCutout) {
+    const ph = rest.photos[el.hideWhenCutout]
+    if (ph?.useCutout && ph.cutout) return null
+  }
   const common = { rotation: el.rotation, opacity: el.opacity, listening: false }
   switch (el.type) {
     case 'rect':
@@ -273,7 +277,7 @@ export function photoLayout(img: { width: number; height: number }, frameW: numb
 
 function PhotoNode({ el, photos, images, interactive, showPlaceholderLabel, onPhotoChange, onPhotoTap, highlight }: NodeProps & { el: PhotoEl }) {
   const ph = photos[el.field]
-  const img = ph ? images[ph.src] : undefined
+  const img = ph ? images[activeSrc(ph)] : undefined
   const w = el.w * PT
   const h = el.h * PT
   const clip = useMemo(() => clipFor(el), [el])
@@ -328,25 +332,33 @@ function Outline({ el, w, h, dash }: { el: PhotoEl; w: number; h: number; dash?:
   return <Rect {...common} width={w} height={h} cornerRadius={(el.radius ?? 0) * PT} />
 }
 
-function Placeholder({ w, h, tint, label, onTap }: { w: number; h: number; tint: string; label: boolean; onTap?: () => void }) {
-  const r = Math.min(w, h, 260) * 0.16
+/** Empty photo spot: plain neutral gray with a simple photo icon, the same in every template. */
+function Placeholder({ w, h, label, onTap }: { w: number; h: number; tint?: string; label: boolean; onTap?: () => void }) {
+  const u = Math.min(w, h)
+  const iw = u * 0.34
+  const ih = iw * 0.74
   const cx = w / 2
-  const cy = h / 2 - r * 0.6
+  const cy = h / 2 - (label ? u * 0.05 : 0)
+  const x0 = cx - iw / 2
+  const y0 = cy - ih / 2
+  const sw = Math.max(0.8, u * 0.018)
+  const icon = '#a9a9a9'
   return (
     <Group onClick={onTap} onTap={onTap} listening={!!onTap}>
-      <Rect width={w} height={h} fill={tint} />
-      <Circle x={cx} y={cy} radius={r} fill="#ffffff" opacity={0.55} listening={false} />
-      <Ellipse x={cx} y={cy + r * 2.5} radiusX={r * 1.9} radiusY={r * 1.25} fill="#ffffff" opacity={0.55} listening={false} />
+      <Rect width={w} height={h} fill="#dcdcdc" />
+      <Rect x={x0} y={y0} width={iw} height={ih} stroke={icon} strokeWidth={sw} cornerRadius={sw} listening={false} />
+      <Circle x={x0 + iw * 0.7} y={y0 + ih * 0.3} radius={iw * 0.08} fill={icon} listening={false} />
+      <Line points={[x0 + iw * 0.08, y0 + ih * 0.86, x0 + iw * 0.38, y0 + ih * 0.48, x0 + iw * 0.58, y0 + ih * 0.7, x0 + iw * 0.7, y0 + ih * 0.58, x0 + iw * 0.92, y0 + ih * 0.86]} stroke={icon} strokeWidth={sw} lineJoin="round" lineCap="round" listening={false} />
       {label && (
         <Text
-          y={h - Math.min(h * 0.18, 30)}
+          y={y0 + ih + u * 0.07}
           width={w}
           align="center"
-          text="Tap to add photo"
+          text="Add photo"
           fontFamily="Montserrat"
           fontStyle="600"
           fontSize={Math.max(6, Math.min(11, w / 11))}
-          fill="#6f685d"
+          fill="#7a7a7a"
           listening={false}
         />
       )}

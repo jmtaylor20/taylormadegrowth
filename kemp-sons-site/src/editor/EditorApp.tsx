@@ -12,7 +12,7 @@ import { buildPrintPdf } from './pdf'
 import { addToCart, createDesign, designFileUrl, getProduct, money, putDesignFile, type CartLine, type ShopConfig, type ShopProduct, type Variant } from './shop'
 import { EnvelopePanel } from './EnvelopePanel'
 import { buildEnvelopePdf, emptyEnvelopes, type EnvelopeState } from './envelopes'
-import { dataUrlToBlob, draftJson, loadDesign, photoKind, rememberDesign, reorderUrl } from './saved'
+import { cutoutKind, dataUrlToBlob, draftJson, loadDesign, photoKind, rememberDesign, reorderUrl } from './saved'
 import './editor.css'
 
 interface Props {
@@ -368,7 +368,10 @@ function Proof({
       await putDesignFile(id, 'proof', await dataUrlToBlob(proofUrl))
       // Saved for reorders: the editable design and its photos.
       await putDesignFile(id, 'draft', draftJson(t.id, draft))
-      for (const [slot, p] of Object.entries(draft.photos)) await putDesignFile(id, photoKind(slot), await dataUrlToBlob(p.src))
+      for (const [slot, p] of Object.entries(draft.photos)) {
+        await putDesignFile(id, photoKind(slot), await dataUrlToBlob(p.src))
+        if (p.useCutout && p.cutout) await putDesignFile(id, cutoutKind(slot), await dataUrlToBlob(p.cutout))
+      }
       if (env && t.envelope) {
         setWork('Preparing your envelopes')
         await putDesignFile(id, 'envelopes', buildEnvelopePdf(t.envelope, env, ref))
