@@ -88,7 +88,7 @@ function Row({ items, seconds, reverse }: { items: Thumb[]; seconds: number; rev
       <div className={`ka-track ${reverse ? 'is-rev' : ''}`} style={{ animationDuration: `${seconds}s` }}>
         {loop.map((t, i) => (
           <figure key={`${t.id}-${i}`} className="ka-item">
-            <img src={t.src} alt="" style={{ aspectRatio: String(t.ratio) }} />
+            <img src={t.src} alt="" style={{ width: `calc(var(--ka-h) * ${t.ratio})` }} />
             <figcaption>{t.name}</figcaption>
           </figure>
         ))}
