@@ -306,7 +306,16 @@ export default async (req: Request, context: Context) => {
     return json({ error: 'Not found' }, 404)
   } catch (e) {
     console.error(e)
-    return json({ error: (e as Error).message }, 502)
+    const msg = (e as Error).message
+    if (/access denied/i.test(msg))
+      return json(
+        {
+          error:
+            "Shopify hasn't given this page permission yet. In the Dev Dashboard, the Kemp Job Board app needs read_products, write_products, read_shipping and write_shipping, released and approved on the store.",
+        },
+        403,
+      )
+    return json({ error: msg }, 502)
   }
 }
 
