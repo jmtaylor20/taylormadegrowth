@@ -47,8 +47,8 @@ const lines = (
             {items.map(({ t, from }) => (
               <li>
                 <a class="k-card" href={`/design/${t.id}/`}>
-                  <div class="k-thumb" style={`aspect-ratio: ${(t.thumbnailCrop ?? t.trim).w} / ${(t.thumbnailCrop ?? t.trim).h}`}>
-                    <TemplateThumb client:idle id={t.id} />
+                  <div class="k-thumb">
+                    <TemplateThumb client:idle id={t.id} fit="contain" />
                   </div>
                   <div class="k-meta">
                     <p class="k-name">{t.name}</p>
@@ -207,7 +207,8 @@ const lines = (
   .k-grid { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 28px; }
   .k-card { display: grid; gap: 12px; text-decoration: none; color: var(--ink); background: var(--white); border: 2px solid var(--ink); padding: 14px; height: 100%; align-content: start; transition: transform 0.15s var(--ease); }
   .k-card:active { transform: scale(0.98); }
-  .k-thumb { background: var(--stock-2); overflow: hidden; }
+  /* Same frame for every design (covers differ in shape), so names and prices line up across each row */
+  .k-thumb { aspect-ratio: 3 / 4; background: var(--stock-2); padding: 18px; overflow: hidden; }
   .k-meta { display: grid; gap: 4px; }
   .k-name { font-size: 21px; font-weight: 800; line-height: 1.15; }
   .k-size { font-family: var(--mono); font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2); }
