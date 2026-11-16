@@ -57,7 +57,11 @@ create table if not exists public.clients (
   bill_frequency text not null default 'monthly',
   bill_weekly_amount numeric,
   weekly_start date,
-  autosend boolean not null default false
+  autosend boolean not null default false,
+  -- Client Margin: billing status (active | dormant | inactive). Active and
+  -- dormant clients share the overhead pool; inactive clients are excluded.
+  status text not null default 'active',
+  end_date date
 );
 
 -- ---- Tasks ----------------------------------------------------------------
@@ -272,7 +276,12 @@ create table if not exists public.expenses (
   vendor text,
   amount numeric default 0,
   notes text,
-  receipt_url text
+  receipt_url text,
+  -- Client Margin: how this expense is allocated (shared | client) and whether
+  -- its amount is billed monthly or annually (annual is normalized to monthly
+  -- in margin calculations). client_id above carries the client for 'client'.
+  allocation_type text not null default 'shared',
+  billing_period text not null default 'monthly'
 );
 
 -- ---- App settings (key/value) ---------------------------------------------

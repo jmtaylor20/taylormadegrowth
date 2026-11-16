@@ -10,7 +10,8 @@ import {
 } from './ui.js';
 import { openInvoiceForm } from './invoices.js';
 import { openPaymentForm } from './client-detail.js';
-import { openExpenseForm } from './tracker.js';
+import { openExpenseForm, openCostEditor } from './tracker.js';
+import { normalizeMonthly } from './margin-calc.js';
 import { queueDoc, docBadges } from './docs.js';
 
 const nameFor = (list, id) => (list.find((c) => c.id === id) || {}).business_name || '—';
@@ -164,11 +165,11 @@ export async function renderFinancials(root) {
       const fullMo = stillToSaveMo / ml;
       const taxMo = taxMode === 'full' ? fullMo : afterCole * ALLOCATION.tax;
       const taxLabel = taxMode === 'full' ? 'Tax reserve' : 'Tax (30%)';
-      const recurTotal = recurExp.reduce((s, x) => s + n(x.amount), 0);
+      const recurTotal = recurExp.reduce((s, x) => s + normalizeMonthly(n(x.amount), x.billing_period), 0);
       const available = afterCole - taxMo - recurTotal;
       summary.append(el('div.section-title', {}, [
         el('h3', { text: 'Projected monthly (from MRR)' }),
-        el('button.btn.btn-ghost.btn-sm', { html: `${iconSvg('wallet', 14)} Recurring expenses`, onclick: () => openRecurringExpenses() }),
+        el('button.btn.btn-ghost.btn-sm', { html: `${iconSvg('wallet', 14)} Recurring expenses`, onclick: () => openCostEditor(async () => { const r = await getSetting('recurring_expenses', { items: [] }); recurExp = Array.isArray(r.items) ? r.items : []; refresh(); }, list) }),
       ]));
       summary.append(el('div.grid.grid-4', {}, [
         el('div.stat', {}, [el('div.stat-value', { text: money(coleMo) }), el('div.stat-label', { text: 'Cole’s cut' })]),
@@ -265,49 +266,6 @@ export async function renderFinancials(root) {
     );
     render();
     const { close } = openSheet({ title: 'Contractors', body, actions: [{ label: 'Done', tone: 'primary', onClick: () => close() }] });
-  }
-
-  // View / edit / add your fixed recurring monthly expenses. Saved to the
-  // 'recurring_expenses' setting and subtracted from the projection.
-  function openRecurringExpenses() {
-    const items = recurExp.map((x) => ({ name: x.name, amount: n(x.amount) }));
-    const body = el('div.form');
-    const listWrap = el('div');
-    const totalEl = el('b');
-    const retotal = () => { totalEl.textContent = money(items.reduce((s, x) => s + n(x.amount), 0)); };
-    const render = () => {
-      clear(listWrap);
-      items.forEach((it, idx) => {
-        const nameIn = el('input.input', { value: it.name || '', placeholder: 'e.g. Adobe, Canva', style: 'flex:1' });
-        const amtIn = numberInput('', it.amount ?? '', { step: '0.01' }); amtIn.style.maxWidth = '110px';
-        nameIn.addEventListener('input', () => { it.name = nameIn.value; });
-        amtIn.addEventListener('input', () => { it.amount = Number(amtIn.value || 0); retotal(); });
-        listWrap.append(el('div.field-row', { style: 'gap:8px;align-items:center;margin-bottom:8px' }, [
-          nameIn, el('span.field-hint', { text: '$/mo' }), amtIn,
-          el('button.icon-btn', { type: 'button', html: iconSvg('trash', 15), onclick: () => { items.splice(idx, 1); render(); retotal(); } }),
-        ]));
-      });
-    };
-    body.append(
-      el('div.field-hint.mb-8', { text: 'Fixed monthly costs subtracted from your projected take-home. For annual tools, enter the monthly equivalent (yearly ÷ 12).' }),
-      listWrap,
-      el('div.field-row', { style: 'justify-content:space-between;align-items:center;margin-top:6px' }, [
-        el('button.btn.btn-gold.btn-sm', { type: 'button', html: iconSvg('plus', 14) + ' Add expense', onclick: () => { items.push({ name: '', amount: 0 }); render(); } }),
-        el('div', {}, [el('span.field-hint', { text: 'Total ' }), totalEl]),
-      ]),
-    );
-    render(); retotal();
-    const { close } = openSheet({
-      title: 'Recurring monthly expenses', body,
-      actions: [
-        { label: 'Cancel', tone: 'ghost', onClick: () => close() },
-        { label: 'Save', tone: 'primary', onClick: async () => {
-          const clean = items.filter((x) => (x.name || '').trim()).map((x) => ({ name: x.name.trim(), amount: n(x.amount) }));
-          try { await setSetting('recurring_expenses', { items: clean }); recurExp = clean; toast('Saved'); close(); refresh(); }
-          catch (e) { toast(e.message, 'err'); }
-        } },
-      ],
-    });
   }
 
   // Rolling tax estimate: net profit (income − deductions) × effective rate.

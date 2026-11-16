@@ -38,6 +38,7 @@ by the main site at **taylormadegrowth.com/app**.
 | Client detail hub | `assets/js/client-detail.js` |
 | Client onboarding (More → Onboarding) | `assets/js/onboarding.js` |
 | Monthly report generator | `assets/js/report.js` |
+| Client Margin (page + calculation service) | `assets/js/margin.js`, `assets/js/margin-calc.js` |
 | Database schema (reference) | `../../db/schema.sql` |
 | Demo/starter data (reference) | `../../db/seed.sql` |
 
@@ -72,6 +73,36 @@ throwaway database, and checks the consequences rather than the clicks: that
 switching a section off keeps the answers, that assignment is what the client's
 portal then shows, and that each invitation carries the address that actually
 signs that person in.
+
+## Client Margin
+
+**More → Client Margin.** Shows what each client actually keeps once the cost of
+running the agency is spread across them, and flags anyone who is underwater or
+below your minimum acceptable margin.
+
+How allocation works (the math lives in `assets/js/margin-calc.js`, never in the
+UI):
+
+- The cost pool is your **recurring costs** (the "Recurring expenses" list, edited
+  from either Money or Client Margin → **Manage costs**). Each cost is either
+  **shared** (overhead) or tied to one **client**, and is billed **monthly** or
+  **annual**. Annual costs are divided by 12 so everything compares per month.
+- **Shared monthly cost** = the sum of all shared costs, normalized to monthly.
+- **Allocated shared per client** = shared monthly cost ÷ the number of clients
+  whose status is **active** or **dormant**. Inactive clients are left out of the
+  split entirely.
+- **Client total cost** = that allocated share plus the client's own
+  client-specific costs.
+- **Margin** = the client's monthly rate (`mrr`) minus their total cost; the page
+  also shows margin percent and the break-even rate (the rate that would cover
+  their cost exactly).
+- **Minimum acceptable margin** is configurable on the page (default $60). Any
+  client below it, or below zero, is highlighted.
+
+A client's **status** (active / dormant / inactive) is set from the per-client
+breakdown on this page. One-off expenses logged in Money also carry an
+allocation type and billing period, so they can be tagged to a client, but the
+margin figures above are driven by the recurring cost pool.
 
 ## Everyday tuning (no code)
 

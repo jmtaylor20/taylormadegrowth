@@ -444,3 +444,19 @@ body.locked { background: radial-gradient(120% 120% at 50% 0%, #16305a 0%, var(-
   background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm);
   padding: 14px; margin-top: 10px; color: var(--ink);
 }
+
+/* ---- Client Margin table ------------------------------------------------- */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.margin-table { width: 100%; min-width: 520px; border-collapse: collapse; font-size: .86rem; background: #fff; }
+.margin-table th, .margin-table td { padding: 11px 12px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+.margin-table tbody tr:last-child td { border-bottom: 0; }
+.margin-table th { color: var(--muted); font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+.margin-table th.num, .margin-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.margin-table tbody tr { cursor: pointer; }
+.margin-table tbody tr:hover td { background: #f7f8fb; }
+.margin-table .margin-name { font-weight: 600; color: var(--ink); }
+.margin-table td .badge { margin-top: 4px; }
+.margin-table tr.margin-low td { background: #fff8ec; }
+.margin-table tr.margin-low:hover td { background: #fdf0d8; }
+.margin-table tr.margin-neg td { background: #fdecec; }
+.margin-table tr.margin-neg:hover td { background: #fbdede; }
