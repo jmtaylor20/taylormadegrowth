@@ -87,7 +87,7 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
     const from = q.get('from')
     return order && from ? { order, designId: from, summary: q.get('opts') ?? '' } : null
   })
-  const backHref = kiosk ? KIOSK_HOME : siteBack
+  const backHref = kiosk ? `${KIOSK_HOME}#${t.category}` : siteBack
   const [draft, setDraft, loaded] = useDraft(t)
   const [sideId, setSideId] = useState(t.sides[0].id)
   const [showGuides, setShowGuides] = useState(false)

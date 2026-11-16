@@ -97,6 +97,8 @@ export default function KioskAttract() {
     last.current = Date.now()
     setOn(false)
     window.scrollTo({ top: 0 })
+    // A new customer starts at the choose-a-product screen.
+    window.dispatchEvent(new Event('kiosk:choose'))
   }
   const current = thumbs.length ? thumbs[hero % thumbs.length] : null
   const no = thumbs.length ? (hero % thumbs.length) + 1 : 0
