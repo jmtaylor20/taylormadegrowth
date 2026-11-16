@@ -19,6 +19,16 @@ const templates = await Promise.all(
 )
 const others = productLines.filter((l) => l.collection !== line.collection)
 const pad = (n: number) => String(n).padStart(2, '0')
+
+/**
+ * Every piece is drawn at the same scale (the widest folded piece, 8.5 in,
+ * fills the frame), standing on a shared baseline, so sizes compare at a glance.
+ */
+const SCALE_W = 8.5
+const scaleStyle = (t: (typeof templates)[number]['t']) => {
+  const c = t.thumbnailCrop ?? t.trim
+  return `width: ${((c.w / SCALE_W) * 100).toFixed(2)}%; aspect-ratio: ${c.w} / ${c.h};`
+}
 ---
 <Base title={`${line.name} | Order online | ${business.name}, Opelika AL`} description={`${line.intro} ${line.blurb}`}>
   <Header />
@@ -31,14 +41,17 @@ const pad = (n: number) => String(n).padStart(2, '0')
       </div>
     </section>
 
-    <section class="wrap designs" aria-label={`${line.name} designs`}>
+    <section class="warm" aria-label={`${line.name} designs`}>
+    <div class="wrap designs">
       {templates.length > 0 ? (
         <ol class="grid">
           {templates.map(({ t, from }, i) => (
             <li>
               <a class="card" href={`/design/${t.id}/`}>
-                <div class="thumb crop" style={`aspect-ratio: ${(t.thumbnailCrop ?? t.trim).w} / ${(t.thumbnailCrop ?? t.trim).h}`}>
-                  <TemplateThumb client:idle id={t.id} />
+                <div class="thumb">
+                  <div class="scale" style={scaleStyle(t)}>
+                    <TemplateThumb client:idle id={t.id} samples />
+                  </div>
                 </div>
                 <div class="meta">
                   <p class="mono no">No. {pad(i + 1)} / {t.sizeLabel}</p>
@@ -64,6 +77,7 @@ const pad = (n: number) => String(n).padStart(2, '0')
         </div>
       )}
       <p class="help">Need something different? <a href="/#custom">Send us a custom job</a> and we'll quote it within one business day.</p>
+    </div>
     </section>
 
     <section class="more">
@@ -84,17 +98,24 @@ const pad = (n: number) => String(n).padStart(2, '0')
   .shop { padding-top: var(--header-h); }
   .intro { padding: 64px 0 40px; border-bottom: 2px solid var(--ink); }
   .intro .wrap { display: grid; gap: 18px; }
-  .designs { padding-top: 48px; padding-bottom: 72px; display: grid; gap: 36px; }
-  .grid { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 40px 32px; }
-  .card { display: grid; gap: 18px; text-decoration: none; }
-  .thumb { background: var(--stock-2); box-shadow: 0 18px 34px -22px rgba(17, 17, 17, 0.55); transition: transform 0.25s var(--ease); }
-  .card:hover .thumb { transform: translateY(-4px) rotate(-0.4deg); }
-  .meta { display: grid; gap: 6px; border-top: 2px solid var(--ink); padding-top: 12px; }
-  .no { color: var(--ink-2); }
-  .desc { color: var(--ink-2); font-size: 15.5px; }
-  .row { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
-  .go { font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 14px; color: var(--red-ink); }
-  .card:hover .go { text-decoration: underline; text-underline-offset: 4px; }
+  /* Warm "proof table": designs drawn to scale on cream, soft shadows, no boxes (matches the in-store kiosk) */
+  .warm { background: radial-gradient(120% 70% at 50% 0%, #fffaf2 0%, #f5ede1 55%, #efe4d4 100%); border-bottom: 2px solid var(--ink); }
+  .designs { padding-top: 56px; padding-bottom: 72px; display: grid; gap: 40px; }
+  .grid { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 52px 40px; }
+  .grid > li { display: flex; }
+  .card { flex: 1; display: grid; grid-template-rows: auto 1fr; gap: 18px; text-decoration: none; color: var(--ink); }
+  .thumb { aspect-ratio: 8.5 / 11; display: flex; align-items: flex-end; justify-content: center; position: relative; }
+  .thumb::after { content: ''; position: absolute; left: 8%; right: 8%; bottom: -10px; height: 18px; border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(60, 40, 20, 0.22), transparent); }
+  .scale { position: relative; z-index: 1; flex: none; background: #fff;
+    box-shadow: 0 1px 2px rgba(60, 40, 20, 0.12), 0 14px 28px -12px rgba(60, 40, 20, 0.45); transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease); }
+  .card:hover .scale, .card:focus-visible .scale { transform: translateY(-6px) rotate(-0.4deg); box-shadow: 0 2px 4px rgba(60, 40, 20, 0.12), 0 26px 40px -16px rgba(60, 40, 20, 0.5); }
+  .meta { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+  .no { color: #6b5d4d; }
+  .desc { color: #4a3f33; font-size: 15px; max-width: 34ch; }
+  .row { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: auto; padding-top: 10px; color: #4a3f33; }
+  .go { background: var(--red); color: var(--white); padding: 10px 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; font-size: 13px; border-radius: 2px; box-shadow: 0 8px 16px -10px rgba(237, 28, 36, 0.7); }
+  .card:hover .go, .card:focus-visible .go { background: var(--red-ink); }
   .soon { border: 2px solid var(--ink); background: var(--white); padding: 28px; display: grid; gap: 14px; max-width: 760px; }
   .help { color: var(--ink-2); }
   .help a { color: var(--red-ink); font-weight: 700; }
