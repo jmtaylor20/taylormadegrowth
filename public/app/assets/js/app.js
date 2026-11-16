@@ -17,6 +17,7 @@ import { renderClients } from './clients.js';
 import { renderLeads } from './leads.js';
 import { renderTasks } from './tasks.js';
 import { renderFinancials } from './financials.js';
+import { renderMargin } from './margin.js';
 import { renderProposals } from './proposals.js';
 import { renderReports } from './reports.js';
 import { renderTracker } from './tracker.js';
@@ -33,6 +34,7 @@ export const NAV = [
   { id: 'leads',      label: 'Leads',     icon: 'funnel',   render: renderLeads,      primary: true },
   { id: 'tasks',      label: 'Tasks',     icon: 'tasks',    render: renderTasks,      primary: true },
   { id: 'financials', label: 'Money',     icon: 'wallet',   render: renderFinancials, primary: true },
+  { id: 'margin',     label: 'Client Margin', icon: 'money', render: renderMargin },
   { id: 'proposals',  label: 'Proposals', icon: 'proposal', render: renderProposals },
   { id: 'onboarding', label: 'Onboarding', icon: 'send',     render: renderOnboarding },
   { id: 'reports',    label: 'Reports',   icon: 'report',   render: renderReports },
@@ -142,7 +144,7 @@ function tabLink(n) {
     html: `<span class="tab-ic">${navGlyph(n, 24)}</span><span>${n.label}</span>`,
   });
 }
-const BUILD = 'v56';
+const BUILD = 'v57';
 function moreTab() {
   const overflow = NAV.filter((n) => !n.primary);
   const tab = el('a.tab.tab-more', {

@@ -1,7 +1,7 @@
 // Tracker — mileage log (with IRS-rate deduction) + meeting log. One tab, two
 // views. Both can be tied to a client and filed newest-first.
-import { Trips, Meetings, Clients, Expenses, TimeEntries } from './db.js';
-import { MILEAGE_RATE, mileageRateFor, TRIP_PURPOSES, MEETING_TYPES, EXPENSE_CATEGORIES, TRIP_LOCATIONS, tripDistanceBetween, EXPENSE_PRESETS } from './config.js';
+import { Trips, Meetings, Clients, Expenses, TimeEntries, getSetting, setSetting } from './db.js';
+import { MILEAGE_RATE, mileageRateFor, TRIP_PURPOSES, MEETING_TYPES, EXPENSE_CATEGORIES, TRIP_LOCATIONS, tripDistanceBetween, EXPENSE_PRESETS, ALLOCATION_TYPE, BILLING_PERIOD } from './config.js';
 import {
   el, clear, iconSvg, pageHeader, badge, fmtDate, fmtHours, relDue, daysUntil, money, todayISO, emptyState, primaryBtn,
   field, textInput, numberInput, textArea, selectInput, dateInput, readForm, hoursSelect,
@@ -365,6 +365,12 @@ export function openExpenseForm(existing = {}, onSaved, list) {
         const amt = node.querySelector('[name=amount]'); if (amt && p.amount == null) amt.focus();
       },
     })));
+  // Allocation: shared overhead vs client-specific. The client picker only
+  // appears for client-specific expenses (see Client Margin).
+  const allocSel = selectInput('allocation_type', ALLOCATION_TYPE, existing.allocation_type || 'shared');
+  const clientField = field('Client', selectInput('client_id', clientOptions(list), existing.client_id || ''));
+  const syncAlloc = () => { clientField.style.display = allocSel.value === 'client' ? '' : 'none'; };
+  allocSel.addEventListener('change', syncAlloc);
   const node = el('div.form', {}, [
     isNew ? el('div', {}, [el('div.field-hint', { text: 'Quick fill', style: 'margin-bottom:4px' }), presetChips]) : null,
     el('div.form-grid.cols-2', {}, [
@@ -372,8 +378,10 @@ export function openExpenseForm(existing = {}, onSaved, list) {
       field('Date', dateInput('expense_date', existing.expense_date || todayISO())),
       field('Category', selectInput('category', EXPENSE_CATEGORIES, existing.category || EXPENSE_CATEGORIES[0])),
       field('Vendor', textInput('vendor', existing.vendor, { placeholder: 'e.g. Canva, Google Ads' })),
-      field('Client (optional)', selectInput('client_id', clientOptions(list), existing.client_id || '')),
+      field('Allocation', allocSel),
+      field('Billing period', selectInput('billing_period', BILLING_PERIOD, existing.billing_period || 'monthly')),
     ]),
+    clientField,
     field('Notes', textInput('notes', existing.notes, { placeholder: 'What was it for?' })),
     el('div.field-row.mt-8', { style: 'align-items:center;gap:10px' }, [
       el('button.btn.btn-ghost.btn-sm', { type: 'button', html: iconSvg('camera', 15) + ' Receipt photo', onclick: () => fileInput.click() }),
@@ -381,7 +389,15 @@ export function openExpenseForm(existing = {}, onSaved, list) {
     ]),
     fileInput, receipt,
   ]);
-  const collect = () => { const v = readForm(node); v.amount = Number(v.amount || 0); if (!v.client_id) v.client_id = null; return v; };
+  syncAlloc();
+  const collect = () => {
+    const v = readForm(node);
+    v.amount = Number(v.amount || 0);
+    v.allocation_type = v.allocation_type || 'shared';
+    v.billing_period = v.billing_period || 'monthly';
+    if (v.allocation_type !== 'client' || !v.client_id) v.client_id = null;
+    return v;
+  };
   const { close } = openSheet({
     title: isNew ? 'Log expense' : 'Edit expense', body: node,
     actions: [
@@ -393,6 +409,74 @@ export function openExpenseForm(existing = {}, onSaved, list) {
         catch (e) { toast(e.message, 'err'); }
       } },
       ...(isNew ? [] : [{ label: 'Delete', tone: 'danger', onClick: async () => { if (await confirmDialog('Delete this expense?')) { await Expenses.remove(existing.id); toast('Deleted'); close(); onSaved?.(); } } }]),
+    ],
+  });
+}
+
+// Shared recurring-cost editor. These monthly (or annual) subscriptions are the
+// cost pool the Client Margin page allocates: 'shared' items fund overhead and
+// are split across active clients; 'client' items are billed to one client.
+// Saved to the `recurring_expenses` setting. `onSaved(cleanItems)` runs after a
+// successful save; `clients` feeds each item's client picker.
+export async function openCostEditor(onSaved, clients = []) {
+  const cfg = await getSetting('recurring_expenses', { items: [] });
+  const items = (Array.isArray(cfg.items) ? cfg.items : []).map((x) => ({
+    name: x.name || '', amount: n(x.amount),
+    billing_period: x.billing_period === 'annual' ? 'annual' : 'monthly',
+    allocation_type: x.allocation_type === 'client' ? 'client' : 'shared',
+    client_id: x.client_id || null,
+  }));
+  const monthly = (x) => (x.billing_period === 'annual' ? n(x.amount) / 12 : n(x.amount));
+  const body = el('div.form');
+  const listWrap = el('div');
+  const totalEl = el('b');
+  const retotal = () => { totalEl.textContent = money(items.reduce((s, x) => s + monthly(x), 0)); };
+  const render = () => {
+    clear(listWrap);
+    items.forEach((it, idx) => {
+      const nameIn = el('input.input', { value: it.name || '', placeholder: 'e.g. Adobe, hosting', style: 'flex:1 1 140px' });
+      const amtIn = numberInput('', it.amount ?? '', { step: '0.01' }); amtIn.style.maxWidth = '92px';
+      const billIn = selectInput('', BILLING_PERIOD, it.billing_period); billIn.style.maxWidth = '110px';
+      const allocIn = selectInput('', ALLOCATION_TYPE, it.allocation_type); allocIn.style.maxWidth = '150px';
+      const clientIn = selectInput('', clientOptions(clients), it.client_id || ''); clientIn.style.flex = '1 1 150px';
+      const syncC = () => { clientIn.style.display = allocIn.value === 'client' ? '' : 'none'; };
+      nameIn.addEventListener('input', () => { it.name = nameIn.value; });
+      amtIn.addEventListener('input', () => { it.amount = Number(amtIn.value || 0); retotal(); });
+      billIn.addEventListener('change', () => { it.billing_period = billIn.value; retotal(); });
+      allocIn.addEventListener('change', () => { it.allocation_type = allocIn.value; if (allocIn.value !== 'client') { it.client_id = null; clientIn.value = ''; } syncC(); });
+      clientIn.addEventListener('change', () => { it.client_id = clientIn.value || null; });
+      syncC();
+      listWrap.append(el('div.card.card-pad', { style: 'margin-bottom:8px' }, [
+        el('div.field-row', { style: 'gap:8px;align-items:center;flex-wrap:wrap' }, [
+          nameIn, el('span.field-hint', { text: '$' }), amtIn, billIn, allocIn, clientIn,
+          el('button.icon-btn', { type: 'button', title: 'Remove', html: iconSvg('trash', 15), onclick: () => { items.splice(idx, 1); render(); retotal(); } }),
+        ]),
+      ]));
+    });
+  };
+  body.append(
+    el('div.field-hint.mb-8', { text: 'Your recurring costs. The Client Margin page splits these: shared costs fund overhead (divided across active and dormant clients), client-specific costs hit one client. Annual amounts are normalized to a monthly figure.' }),
+    listWrap,
+    el('div.field-row', { style: 'justify-content:space-between;align-items:center;margin-top:6px' }, [
+      el('button.btn.btn-gold.btn-sm', { type: 'button', html: iconSvg('plus', 14) + ' Add cost', onclick: () => { items.push({ name: '', amount: 0, billing_period: 'monthly', allocation_type: 'shared', client_id: null }); render(); } }),
+      el('div', {}, [el('span.field-hint', { text: 'Total / mo ' }), totalEl]),
+    ]),
+  );
+  render(); retotal();
+  const { close } = openSheet({
+    title: 'Recurring costs', body, wide: true,
+    actions: [
+      { label: 'Cancel', tone: 'ghost', onClick: () => close() },
+      { label: 'Save', tone: 'primary', onClick: async () => {
+        const clean = items.filter((x) => (x.name || '').trim()).map((x) => ({
+          name: x.name.trim(), amount: n(x.amount),
+          billing_period: x.billing_period === 'annual' ? 'annual' : 'monthly',
+          allocation_type: x.allocation_type === 'client' ? 'client' : 'shared',
+          client_id: x.allocation_type === 'client' ? (x.client_id || null) : null,
+        }));
+        try { await setSetting('recurring_expenses', { items: clean }); toast('Saved'); close(); onSaved?.(clean); }
+        catch (e) { toast(e.message, 'err'); }
+      } },
     ],
   });
 }

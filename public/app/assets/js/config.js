@@ -480,6 +480,28 @@ export const EXPENSE_PRESETS = [
 
 // ---- Expenses & invoicing --------------------------------------------------
 export const EXPENSE_CATEGORIES = ['Software / SaaS', 'Advertising', 'Subcontractor', 'Equipment', 'Office', 'Travel', 'Meals', 'Domains / Hosting', 'Fees', 'Other'];
+
+// ---- Client Margin --------------------------------------------------------
+// How a cost is allocated, and how often its amount is billed. 'annual' amounts
+// are divided to a monthly figure in the margin math (see margin-calc.js).
+export const ALLOCATION_TYPE = [
+  { key: 'shared', label: 'Shared overhead' },
+  { key: 'client', label: 'Client-specific' },
+];
+export const BILLING_PERIOD = [
+  { key: 'monthly', label: 'Monthly' },
+  { key: 'annual',  label: 'Annual' },
+];
+// A client's billing status. Active and dormant clients share the overhead pool
+// on the Client Margin page; inactive clients are excluded from the split.
+export const CLIENT_STATUS = [
+  { key: 'active',   label: 'Active',   tone: 'green' },
+  { key: 'dormant',  label: 'Dormant',  tone: 'amber' },
+  { key: 'inactive', label: 'Inactive', tone: 'gray' },
+];
+// Minimum acceptable monthly margin per client (dollars). Configurable on the
+// Client Margin page; this is the fallback default.
+export const MIN_MARGIN_DEFAULT = 60;
 // Net terms (days until due) for auto-generated monthly retainer invoices.
 export const INVOICE_NET_DAYS = 15;
 
