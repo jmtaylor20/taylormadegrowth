@@ -35,40 +35,49 @@ const lines = (
 
 /** For the choose screen: each line with a few designs spread through its list to fan out. */
 const chooserLines = lines.map(({ line, items }) => {
-  const ids = items.map((i) => i.t.id)
-  const picks = ids.length <= 3 ? ids : [ids[1], ids[Math.floor(ids.length / 2)], ids[ids.length - 1]]
-  return { id: line.collection, name: line.name, count: ids.length, sample: picks }
+  const ts = items.map((i) => i.t)
+  const size = (t: (typeof ts)[number]) => t.thumbnailCrop ?? t.trim
+  let picks = ts.map((t) => t.id)
+  if (ts.length > 3) {
+    // Biggest cover in the middle, two covers of the same shape either side, so the fan is symmetric.
+    const middle = [...ts].sort((a, b) => size(b).w * size(b).h - size(a).w * size(a).h)[0]
+    const rest = ts.filter((t) => t !== middle)
+    const key = (t: (typeof ts)[number]) => `${size(t).w}x${size(t).h}`
+    const pair = rest.find((t, i) => rest.slice(i + 1).some((u) => key(u) === key(t)))
+    const outer = pair ? [pair, rest.find((u) => u !== pair && key(u) === key(pair))!] : [rest[0], rest[rest.length - 1]]
+    picks = [outer[0].id, middle.id, outer[1].id]
+  }
+  return { id: line.collection, name: line.name, count: ts.length, sample: picks }
 })
 ---
 <Base title={`Order here | ${business.name}`} description="In-store ordering." noindex>
   <div class="kiosk">
     <header class="k-top">
-      <img src="/brand/kemp-sons-full-color.svg" alt={business.name} width="120" height="80" />
+      <img src="/brand/kemp-sons-white.svg" alt={business.name} width="150" height="100" />
       <div class="k-title">
-        <h1>Design your order</h1>
-        <p>Tap a design to start. Add your photos and words, approve your proof, and we'll print it here.</p>
+        <p class="k-kicker">Design it here. We print it here.</p>
+        <h1 id="k-current">Design your order</h1>
+        <p class="k-sub">Tap a design to start. Each one is shown to scale.</p>
       </div>
-      <button type="button" class="k-full" id="k-full" aria-label="Full screen">Full screen</button>
+      <div class="k-actions">
+        <button type="button" class="k-back" id="k-back">
+          <span aria-hidden="true">&larr;</span> Choose a different product
+        </button>
+        <button type="button" class="k-full" id="k-full" aria-label="Full screen">Full screen</button>
+      </div>
     </header>
-
-    <nav class="k-tabs" aria-label="Products">
-      <button type="button" class="k-back" id="k-back">
-        <span aria-hidden="true">&larr;</span> Choose a different product
-      </button>
-      <p class="k-current" id="k-current"></p>
-    </nav>
 
     <main class="k-main">
       {lines.map(({ line, items }) => (
         <section id={line.collection} class="k-line" aria-label={line.name}>
-          <h2>{line.name}</h2>
+          <h2 class="k-sr">{line.name}</h2>
           <ol class="k-grid">
             {items.map(({ t, from }) => (
               <li>
                 <a class="k-card" href={`/design/${t.id}/`}>
                   <div class="k-thumb">
                     <div class="k-scale" style={scaleStyle(t)}>
-                      <TemplateThumb client:idle id={t.id} />
+                      <TemplateThumb client:idle id={t.id} samples />
                     </div>
                   </div>
                   <div class="k-meta">
@@ -238,8 +247,8 @@ const chooserLines = lines.map(({ line, items }) => {
   .kc-crop-tr { top: -30px; right: -30px; border-left-width: 1.5px; border-bottom-width: 1.5px; }
   .kc-crop-bl { bottom: -30px; left: -30px; border-right-width: 1.5px; border-top-width: 1.5px; }
   .kc-crop-br { bottom: -30px; right: -30px; border-left-width: 1.5px; border-top-width: 1.5px; }
-  .kc-fan { display: flex; justify-content: center; align-items: flex-end; height: clamp(190px, 30vh, 330px); width: 78%; margin-bottom: 8px; }
-  .kc-fan-item { position: relative; height: 80%; margin: 0 -11%; background: #fff; box-shadow: 0 14px 24px -12px rgba(0,0,0,0.6); transform-origin: 50% 100%; }
+  .kc-fan { position: relative; display: block; height: clamp(170px, min(30vh, 22vw), 330px); width: 100%; margin-bottom: 8px; }
+  .kc-fan-item { position: absolute; left: 50%; bottom: 0; background: #fff; box-shadow: 0 14px 24px -12px rgba(0,0,0,0.6); transform-origin: 50% 100%; }
   .kc-fan-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .kc-name { max-width: 100%; text-wrap: balance; font-size: clamp(22px, 1.9vw, 32px); font-weight: 800; text-transform: uppercase; line-height: 1.05; }
   .kc-count { font-family: var(--mono); font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); }
@@ -285,33 +294,38 @@ const chooserLines = lines.map(({ line, items }) => {
 </style>
 
 <style>
-  .kiosk { min-height: 100svh; background: var(--stock); display: grid; grid-template-rows: auto auto 1fr auto; user-select: none; -webkit-user-select: none; }
-  .k-top { display: flex; align-items: center; gap: 28px; padding: 24px var(--gutter); background: var(--white); border-bottom: 3px solid var(--ink); }
-  .k-top img { width: 120px; height: auto; flex: none; }
-  .k-title { display: grid; gap: 4px; flex: 1; }
-  .k-title h1 { font-size: clamp(28px, 3.6vw, 44px); font-weight: 800; text-transform: uppercase; line-height: 1; }
-  .k-title p { font-size: clamp(16px, 1.6vw, 20px); color: var(--ink-2); }
-  .k-full { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; background: none; border: 1px solid var(--rule); color: var(--ink-2); padding: 8px 10px; cursor: pointer; align-self: flex-start; }
-  .k-tabs { display: flex; gap: 12px; flex-wrap: wrap; padding: 16px var(--gutter); background: var(--white); border-bottom: 1px solid var(--rule); position: sticky; top: 0; z-index: 5; }
-  .k-tabs { align-items: center; }
-  .k-back { padding: 14px 22px; border: 2px solid var(--ink); background: var(--white); font: inherit; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; font-size: 17px; color: var(--ink); cursor: pointer; }
-  .k-back:active { background: var(--ink); color: var(--white); }
-  .k-current { font-weight: 800; text-transform: uppercase; font-size: 22px; letter-spacing: 0.02em; margin-left: 8px; }
-  .k-main { padding: 28px var(--gutter) 48px; display: grid; gap: 44px; align-content: start; }
-  .k-line { display: grid; gap: 18px; scroll-margin-top: 90px; }
-  .k-line h2 { font-size: 26px; font-weight: 800; text-transform: uppercase; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
-  .k-grid { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 28px; }
-  .k-card { display: grid; gap: 12px; text-decoration: none; color: var(--ink); background: var(--white); border: 2px solid var(--ink); padding: 14px; height: 100%; align-content: start; transition: transform 0.15s var(--ease); }
-  .k-card:active { transform: scale(0.98); }
-  /* Same frame for every design (covers differ in shape), so names and prices line up across each row */
-  /* Same frame for every card; each piece is drawn to one shared scale and stands on the same baseline,
-     so a 5.5 x 8.5 program looks smaller than an 8.5 x 11 booklet, just like in the hand */
-  .k-thumb { aspect-ratio: 3 / 4; background: var(--stock-2); padding: 18px; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; }
-  .k-scale { flex: none; box-shadow: 0 12px 20px -10px rgba(17, 17, 17, 0.45); background: #fff; }
-  .k-meta { display: grid; gap: 4px; }
-  .k-name { font-size: 21px; font-weight: 800; line-height: 1.15; }
-  .k-size { font-family: var(--mono); font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2); }
-  .k-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 17px; font-weight: 600; }
-  .k-go { background: var(--red); color: var(--white); padding: 10px 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; font-size: 15px; }
-  .k-foot { padding: 18px var(--gutter); background: var(--ink); color: var(--white); font-size: 18px; text-align: center; }
+  /* Warm, professional "proof table": cream paper, the pieces drawn to scale with soft shadows, no boxes */
+  .kiosk { min-height: 100svh; display: grid; grid-template-rows: auto 1fr auto; user-select: none; -webkit-user-select: none;
+    background: radial-gradient(120% 70% at 50% 0%, #fffaf2 0%, #f5ede1 55%, #efe4d4 100%); color: var(--ink); }
+  .k-top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: clamp(18px, 2.5vw, 40px); padding: 18px var(--gutter);
+    background: linear-gradient(180deg, #17496a 0%, var(--navy-deep) 100%); color: var(--white); box-shadow: 0 10px 30px -18px rgba(0,0,0,0.6); }
+  .k-top img { width: clamp(110px, 8vw, 150px); height: auto; flex: none; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.35)); }
+  .k-title { display: grid; gap: 4px; flex: 1; min-width: 0; }
+  .k-kicker { font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.2em; color: #9fd8ef; }
+  .k-title h1 { font-size: clamp(28px, 3.2vw, 46px); font-weight: 800; text-transform: uppercase; line-height: 1; }
+  .k-sub { font-size: clamp(15px, 1.3vw, 18px); color: rgba(255,255,255,0.8); }
+  .k-actions { display: grid; justify-items: end; gap: 10px; }
+  .k-back { padding: 14px 22px; border: 2px solid rgba(255,255,255,0.85); background: transparent; color: var(--white); font: inherit; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; font-size: 16px; cursor: pointer; }
+  .k-back:active { background: var(--white); color: var(--navy-deep); }
+  .k-full { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; background: none; border: 0; color: rgba(255,255,255,0.55); padding: 2px 0; cursor: pointer; }
+  .k-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .k-main { padding: clamp(28px, 4vh, 48px) var(--gutter) 56px; display: grid; align-content: start; }
+  .k-line { display: grid; }
+  .k-grid { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: clamp(30px, 4vh, 48px) clamp(24px, 2.6vw, 44px); }
+  .k-grid > li { display: flex; }
+  /* Picture on top, caption below; Start buttons line up across a row even when a name wraps */
+  .k-card { flex: 1; display: grid; grid-template-rows: auto 1fr; gap: 14px; text-decoration: none; color: var(--ink); -webkit-tap-highlight-color: transparent; }
+  /* Every piece drawn to one scale (the 8.5 in widest piece fills the width) and standing on the same baseline */
+  .k-thumb { aspect-ratio: 8.5 / 11; display: flex; align-items: flex-end; justify-content: center; position: relative; }
+  .k-thumb::after { content: ''; position: absolute; left: 8%; right: 8%; bottom: -10px; height: 18px; border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(60, 40, 20, 0.22), transparent); z-index: 0; }
+  .k-scale { position: relative; z-index: 1; flex: none; background: #fff;
+    box-shadow: 0 1px 2px rgba(60, 40, 20, 0.12), 0 14px 28px -12px rgba(60, 40, 20, 0.45); transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease); }
+  .k-card:active .k-scale { transform: translateY(-6px) scale(1.02); box-shadow: 0 2px 4px rgba(60, 40, 20, 0.12), 0 24px 36px -14px rgba(60, 40, 20, 0.5); }
+  .k-meta { display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; }
+  .k-name { font-size: clamp(18px, 1.35vw, 22px); font-weight: 800; line-height: 1.15; }
+  .k-size { font-size: 13.5px; color: #6b5d4d; }
+  .k-row { display: flex; justify-content: center; align-items: center; gap: 14px; margin-top: auto; padding-top: 10px; font-size: 16px; font-weight: 600; color: #4a3f33; }
+  .k-go { background: var(--red); color: var(--white); padding: 9px 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; font-size: 14px; border-radius: 2px; box-shadow: 0 8px 16px -10px rgba(237, 28, 36, 0.7); }
+  .k-foot { padding: 16px var(--gutter); background: var(--navy-deep); color: rgba(255,255,255,0.85); font-size: 17px; text-align: center; }
 </style>

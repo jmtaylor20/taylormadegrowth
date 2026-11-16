@@ -137,16 +137,27 @@ function Fan({ ids }: { ids: string[] }) {
     }
   }, [ids])
   const angles = ids.length === 1 ? [0] : ids.length === 2 ? [-6, 6] : [-9, 0, 9]
+  const mid = (ids.length - 1) / 2
   return (
     <span className="kc-fan" aria-hidden="true">
       {ids.map((id, i) => {
         const t = templateById(id)
         const c = t ? (t.thumbnailCrop ?? t.trim) : { w: 3, h: 4 }
+        const wide = c.w > c.h
+        // Each design is placed from the card's center line, so the fan is always centered.
+        const shift = (i - mid) * 24
+        const lift = i === Math.round(mid) && ids.length > 1 ? -5 : 0
         return (
           <span
             key={id}
             className="kc-fan-item"
-            style={{ aspectRatio: `${c.w} / ${c.h}`, transform: `rotate(${angles[i]}deg) translateY(${i === Math.floor(ids.length / 2) && ids.length > 1 ? -5 : 0}%)`, zIndex: i === Math.floor(ids.length / 2) ? 3 : 1 }}
+            style={{
+              aspectRatio: `${c.w} / ${c.h}`,
+              ...(wide ? { width: '86%' } : { height: '84%' }),
+              left: `calc(50% + ${shift}%)`,
+              transform: `translateX(-50%) translateY(${lift}%) rotate(${angles[i]}deg)`,
+              zIndex: i === Math.round(mid) ? 3 : 1,
+            }}
           >
             {srcs[i] && <img src={srcs[i]!} alt="" />}
           </span>
