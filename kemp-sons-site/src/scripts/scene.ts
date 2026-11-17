@@ -176,6 +176,10 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
   world.add(program, card, veryMerry, booklet, navyCard, stack, cards)
   scene.add(world)
 
+  // The fan (stage 2) is laid out like proofs on a table: every piece shares
+  // the same tilt, so their planes are parallel and none can pass through
+  // another; each is only turned within its own plane and stacked with a gap.
+  const FAN_X = 0.04, FAN_Y = -0.2
   // Poses per stage, in local units around the stage anchor.
   const objects: { obj: THREE.Object3D; poses: Pose[] }[] = [
     {
@@ -183,26 +187,26 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
       poses: [
         { p: [0, 0, 0.3], r: [-0.12, -0.5, 0.06], s: 1.25, o: 1, fold: 1 },
         { p: [0, 0, 0], r: [0.08, 0.32, -0.03], s: 0.95, o: 1, fold: 0 },
-        { p: [-0.55, 0.2, 0.4], r: [0.02, 0.28, 0.06], s: 0.95, o: 1, fold: 1 },
+        { p: [-0.1, 0.05, 0.3], r: [FAN_X, FAN_Y, 0.03], s: 0.95, o: 1, fold: 1 },
         { ...HIDE_UP, fold: 1 },
         { ...HIDE_UP, fold: 1 },
       ],
     },
     {
       obj: card,
-      poses: [HIDE_DOWN, HIDE_DOWN, { p: [1.15, 1.1, -0.5], r: [0.05, -0.3, -0.12], s: 0.95, o: 1 }, HIDE_UP, HIDE_UP],
+      poses: [HIDE_DOWN, HIDE_DOWN, { p: [1.3, 1.1, -0.6], r: [FAN_X, FAN_Y, -0.1], s: 0.95, o: 1 }, HIDE_UP, HIDE_UP],
     },
     {
       obj: veryMerry,
-      poses: [HIDE_DOWN, HIDE_DOWN, { p: [1.45, -1.05, 0.6], r: [-0.06, -0.38, 0.05], s: 1, o: 1 }, HIDE_UP, HIDE_UP],
+      poses: [HIDE_DOWN, HIDE_DOWN, { p: [1.5, -1.1, -0.1], r: [FAN_X, FAN_Y, -0.06], s: 1, o: 1 }, HIDE_UP, HIDE_UP],
     },
     {
       obj: booklet,
-      poses: [HIDE_DOWN, HIDE_DOWN, { p: [-1.75, -1.35, -0.4], r: [0.1, 0.42, 0.12], s: 0.95, o: 1 }, HIDE_UP, HIDE_UP],
+      poses: [HIDE_DOWN, HIDE_DOWN, { p: [-1.7, -1.2, -0.25], r: [FAN_X, FAN_Y, 0.12], s: 0.95, o: 1 }, HIDE_UP, HIDE_UP],
     },
     {
       obj: navyCard,
-      poses: [HIDE_DOWN, HIDE_DOWN, { p: [-1.95, 1.05, -0.9], r: [0.04, 0.36, 0.1], s: 0.9, o: 1 }, HIDE_UP, HIDE_UP],
+      poses: [HIDE_DOWN, HIDE_DOWN, { p: [-1.85, 1.0, -0.75], r: [FAN_X, FAN_Y, 0.1], s: 0.9, o: 1 }, HIDE_UP, HIDE_UP],
     },
     {
       obj: stack,
@@ -267,7 +271,16 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
   // Horizontal extent (px) of the text on each stage, set from the page.
   let copyEls: (HTMLElement | null)[] = []
   let copyBounds: ({ left: number; right: number } | null)[] = []
+  /** The page's content column (the .wrap around each stage's text), so the 3D lines up with it on wide screens. */
+  let colBounds: ({ left: number; right: number } | null)[] = []
   function measureCopy() {
+    colBounds = copyEls.map((el) => {
+      const wrap = el?.closest('.wrap') as HTMLElement | null
+      if (!wrap) return null
+      const r = wrap.getBoundingClientRect()
+      const cs = getComputedStyle(wrap)
+      return { left: r.left + parseFloat(cs.paddingLeft || '0'), right: r.right - parseFloat(cs.paddingRight || '0') }
+    })
     copyBounds = copyEls.map((el) => {
       if (!el) return null
       let left = Infinity, right = -Infinity
@@ -324,8 +337,11 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
     const toWorld = (px: number) => (px - w / 2) / pxPerUnit
     const gap = 28
     // The free strip beside the text, or the screen half when there's no text.
-    const freeL = copy ? (sides[i] > 0 ? copy.right + gap : gap) : sides[i] > 0 ? w / 2 : gap
-    const freeR = copy ? (sides[i] > 0 ? w - gap : copy.left - gap) : sides[i] > 0 ? w - gap : w / 2
+    // Inside the content column, like the text (falls back to the window edges).
+    const colL = Math.max(gap, colBounds[i]?.left ?? gap)
+    const colR = Math.min(w - gap, colBounds[i]?.right ?? w - gap)
+    const freeL = copy ? (sides[i] > 0 ? copy.right + gap : colL) : sides[i] > 0 ? w / 2 : colL
+    const freeR = copy ? (sides[i] > 0 ? colR : copy.left - gap) : sides[i] > 0 ? colR : w / 2
     if (!fp || fp.w <= 0) return { x: sides[i] * viewW * 0.25, y: 0, scale }
     const freeW = Math.max(0, freeR - freeL) / pxPerUnit
     const fit = Math.max(scale * 0.4, Math.min(scale, freeW / (fp.w * 1.1)))
@@ -359,7 +375,8 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
     for (const { obj, poses } of objects) {
       const A = poses[i0], B = poses[i1]
       obj.position.set(lerp(A.p[0], B.p[0], k), lerp(A.p[1], B.p[1], k) + Math.sin(t * 0.9 + obj.id) * 0.06 * idle, lerp(A.p[2], B.p[2], k))
-      obj.rotation.set(lerp(A.r[0], B.r[0], k), lerp(A.r[1], B.r[1], k) + Math.sin(t * 0.5 + obj.id) * 0.03 * idle, lerp(A.r[2], B.r[2], k))
+      // One shared sway, so pieces that sit parallel stay parallel.
+      obj.rotation.set(lerp(A.r[0], B.r[0], k), lerp(A.r[1], B.r[1], k) + Math.sin(t * 0.5) * 0.03 * idle, lerp(A.r[2], B.r[2], k))
       obj.scale.setScalar(Math.max(0.0001, lerp(A.s, B.s, k)))
       setOpacity(obj, lerp(A.o, B.o, k))
       if (obj === program) setFold(lerp(A.fold ?? 0, B.fold ?? 0, k))
