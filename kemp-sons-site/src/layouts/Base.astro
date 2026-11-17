@@ -16,7 +16,7 @@ const {
 } = Astro.props
 const canonical = new URL(Astro.url.pathname, Astro.site)
 // Staff pages are never tracked.
-const tracked = !Astro.url.pathname.startsWith('/staff')
+const tracked = tracking.enabled && !Astro.url.pathname.startsWith('/staff')
 
 // Structured data so Google shows the right business details.
 const jsonLd = {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Field, PhotoField, Template } from './types'
-import type { Draft, PhotoState } from './draft'
+import type { Draft, PhotoState, PhotoTone } from './draft'
 import { readPhoto } from './images'
 import { fieldsOf, fillTokens, fitStack, fitText } from './textFit'
 
@@ -249,6 +249,25 @@ function PhotoInput({
             </span>
           </span>
         </label>
+      )}
+      {value && (
+        <div className="ed-tones" role="group" aria-label="Photo color">
+          {(
+            [
+              ['bw', 'Black & white'],
+              ['sepia', 'Sepia'],
+            ] as [PhotoTone, string][]
+          ).map(([tone, label]) => (
+            <label key={tone} className={`ed-check ed-check-light ${value.tone === tone ? 'is-on' : ''}`}>
+              <input
+                type="checkbox"
+                checked={value.tone === tone}
+                onChange={(e) => onChange(active, { ...value, tone: e.target.checked ? tone : undefined })}
+              />
+              <span>{label}</span>
+            </label>
+          ))}
+        </div>
       )}
       {field.hint && <span className="ed-hint">{field.hint}</span>}
     </div>

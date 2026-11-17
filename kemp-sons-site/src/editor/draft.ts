@@ -16,10 +16,54 @@ export interface PhotoState {
   cutout?: string
   /** Print the cut-out instead of the original. */
   useCutout?: boolean
+  /** Black & white or sepia. The original stays in src (and cutout), so it can be switched back. */
+  tone?: PhotoTone
+  /** The photo with the tone applied, and what it was made from (see toneKey). */
+  toned?: string
+  tonedKey?: string
 }
 
-/** The image a photo slot actually prints: the cut-out when it's switched on. */
-export const activeSrc = (p: PhotoState) => (p.useCutout && p.cutout ? p.cutout : p.src)
+export type PhotoTone = 'bw' | 'sepia'
+
+/** The photo before any tone: the cut-out when it's switched on. */
+export const baseSrc = (p: PhotoState) => (p.useCutout && p.cutout ? p.cutout : p.src)
+
+/** Identifies the toned image a photo needs right now ('' when no tone). */
+export const toneKey = (p: PhotoState) => {
+  if (!p.tone) return ''
+  const b = baseSrc(p)
+  return `${p.tone}|${b.length}|${b.slice(-48)}`
+}
+
+/** The image a photo slot actually prints: toned when a tone is on (and ready), else the cut-out or original. */
+export const activeSrc = (p: PhotoState) => (p.tone && p.toned && p.tonedKey === toneKey(p) ? p.toned : baseSrc(p))
+
+/** Makes a black & white or sepia copy of an image (keeps transparency for cut-outs). */
+export async function toneImage(src: string, tone: PhotoTone): Promise<string> {
+  const img = new Image()
+  img.src = src
+  await img.decode()
+  const c = document.createElement('canvas')
+  c.width = img.naturalWidth
+  c.height = img.naturalHeight
+  const ctx = c.getContext('2d')!
+  ctx.drawImage(img, 0, 0)
+  const data = ctx.getImageData(0, 0, c.width, c.height)
+  const px = data.data
+  for (let i = 0; i < px.length; i += 4) {
+    const r = px[i], g = px[i + 1], b = px[i + 2]
+    if (tone === 'bw') {
+      const y = 0.299 * r + 0.587 * g + 0.114 * b
+      px[i] = px[i + 1] = px[i + 2] = y
+    } else {
+      px[i] = Math.min(255, 0.393 * r + 0.769 * g + 0.189 * b)
+      px[i + 1] = Math.min(255, 0.349 * r + 0.686 * g + 0.168 * b)
+      px[i + 2] = Math.min(255, 0.272 * r + 0.534 * g + 0.131 * b)
+    }
+  }
+  ctx.putImageData(data, 0, 0)
+  return src.startsWith('data:image/png') ? c.toDataURL('image/png') : c.toDataURL('image/jpeg', 0.93)
+}
 
 export interface Draft {
   values: Record<string, string>

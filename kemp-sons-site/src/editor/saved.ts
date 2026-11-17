@@ -58,7 +58,7 @@ export const reorderUrl = (templateId: string, id: string) => `${window.location
 /** The design as JSON (photos travel as separate files). */
 export function draftJson(templateId: string, d: Draft): Blob {
   const photos: StoredDraft['photos'] = {}
-  for (const [slot, p] of Object.entries(d.photos)) photos[slot] = { w: p.w, h: p.h, ox: p.ox, oy: p.oy, zoom: p.zoom, useCutout: !!(p.useCutout && p.cutout) }
+  for (const [slot, p] of Object.entries(d.photos)) photos[slot] = { w: p.w, h: p.h, ox: p.ox, oy: p.oy, zoom: p.zoom, useCutout: !!(p.useCutout && p.cutout), ...(p.tone ? { tone: p.tone } : {}) }
   const body: StoredDraft = { v: 1, templateId, values: d.values, photos, envelopes: d.envelopes }
   return new Blob([JSON.stringify(body)], { type: 'application/json' })
 }

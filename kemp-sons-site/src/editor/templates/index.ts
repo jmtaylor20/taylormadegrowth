@@ -1,5 +1,6 @@
 import type { Template } from '../types'
 import { christmasVeryMerry } from './christmas-very-merry'
+import { christmasPhotoFrames } from './christmas-photo-frames'
 import { funeralCloudsDoves } from './funeral-clouds-doves'
 import { funeralFlagTabloid } from './funeral-flag-tabloid'
 import { funeralGoneFishing } from './funeral-gone-fishing'
@@ -15,6 +16,7 @@ import { withKempFonts } from './kemp-fonts'
 /** Every template on the site. Add new ones here. */
 export const TEMPLATES: Template[] = [
   christmasVeryMerry,
+  ...christmasPhotoFrames,
   // Funeral programs
   funeralCloudsDoves,
   funeralRedRoses,

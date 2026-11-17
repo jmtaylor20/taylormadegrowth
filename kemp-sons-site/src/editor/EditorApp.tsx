@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Template } from './types'
 import { templateById } from './templates'
 import { fieldsOf } from './textFit'
-import { clearAllDrafts, clearDraft, defaultDraft, useDraft, type Draft, type PhotoState } from './draft'
+import { baseSrc, clearAllDrafts, clearDraft, defaultDraft, toneImage, toneKey, useDraft, type Draft, type PhotoState } from './draft'
 import { FieldForm } from './FieldForm'
 import { PreviewPane } from './PreviewPane'
 import { preflight } from './preflight'
@@ -16,6 +16,7 @@ import { EnvelopePanel } from './EnvelopePanel'
 import { buildEnvelopePdf, emptyEnvelopes, envelopeCount, envelopeKind, envelopePrinting, type EnvelopeKind, type EnvelopeState } from './envelopes'
 import { cutoutKind, dataUrlToBlob, draftJson, loadDesign, photoKind, rememberDesign, reorderUrl } from './saved'
 import { adClick, flushAnalytics, isKioskVisit, track, withLinker } from '../scripts/tracking'
+import { tracking } from '../config/tracking'
 import './editor.css'
 
 interface Props {
@@ -90,6 +91,26 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
   })
   const backHref = kiosk ? `${KIOSK_HOME}#${t.category}` : siteBack
   const [draft, setDraft, loaded] = useDraft(t)
+
+  // Black & white or sepia photos: make the toned copy whenever a photo (or its cut-out) or tone changes.
+  const toning = useRef(new Set<string>())
+  useEffect(() => {
+    for (const [slot, p] of Object.entries(draft.photos)) {
+      const key = toneKey(p)
+      if (!key || p.tonedKey === key || toning.current.has(slot + key)) continue
+      toning.current.add(slot + key)
+      toneImage(baseSrc(p), p.tone!)
+        .then((url) =>
+          setDraft((d) => {
+            const cur = d.photos[slot]
+            if (!cur || toneKey(cur) !== key) return d
+            return { ...d, photos: { ...d.photos, [slot]: { ...cur, toned: url, tonedKey: key } } }
+          }),
+        )
+        .catch(() => {})
+        .finally(() => toning.current.delete(slot + key))
+    }
+  }, [draft.photos])
   const [sideId, setSideId] = useState(t.sides[0].id)
   const [showGuides, setShowGuides] = useState(false)
   const [focused, setFocused] = useState<string | null>(null)
@@ -496,7 +517,7 @@ function Proof({
       if (rushVariant) items.push({ variantId: rushVariant.id, quantity: 1, attributes: { For: t.name, _Reference: ref } })
       // Where the order came from, shown on the Shopify order under Additional details.
       const click = adClick()
-      const orderAttrs: Record<string, string> = isKioskVisit() ? { source: 'kiosk' } : { ...(click ?? {}) }
+      const orderAttrs: Record<string, string> = !tracking.enabled ? {} : isKioskVisit() ? { source: 'kiosk' } : { ...(click ?? {}) }
       const checkoutUrl = await addToCart(shop, items, orderAttrs)
       const gaItems = [
         { item_id: variant.id, item_name: t.name, item_variant: summary, price: variant.price, quantity: 1 },

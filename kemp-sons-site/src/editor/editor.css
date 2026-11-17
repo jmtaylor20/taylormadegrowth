@@ -189,3 +189,6 @@
 .ed-idle { position: fixed; inset: 0; z-index: 200; background: rgba(17, 17, 17, 0.6); display: grid; place-items: center; padding: 20px; }
 .ed-idle-box { background: var(--white); border: 2px solid var(--ink); padding: 32px; max-width: 460px; display: grid; gap: 14px; text-align: center; font-size: 18px; }
 .ed-idle-h { font-weight: 800; font-size: 28px; text-transform: uppercase; }
+
+/* Black & white / sepia ticks under a photo */
+.ed-tones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }

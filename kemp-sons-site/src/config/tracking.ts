@@ -6,6 +6,8 @@
  * is simply off: GA4 still runs, and the website call-number swap stays off.
  */
 export const tracking = {
+  /** Master switch. Off until the tracking has been checked on a preview and approved for the live site. */
+  enabled: false,
   /** GA4 measurement ID. */
   ga4: 'G-CRKJS4F8XB',
   /** Google Ads tag ID, like AW-123456789. */
