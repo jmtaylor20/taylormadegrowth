@@ -162,3 +162,15 @@
 .pm-log td, .pm-log th { white-space: normal; vertical-align: top; border-bottom: 1px solid var(--rule); padding: 8px 12px 8px 0; }
 .pm-log td:first-child { white-space: nowrap; font-size: 12px; }
 .pm-log td:nth-child(2) { font-weight: 700; white-space: nowrap; }
+.sb-home { font-size: 11px; color: #103750; background: #e3ecf3; padding: 2px 6px; justify-self: start; }
+
+/* Funeral home partners */
+.hm-link { border-color: #103750; background: #eef4f9; }
+.hm-link-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.hm-link-row .sb-input { flex: 1 1 320px; font-family: var(--mono); font-size: 13px; }
+.hm-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.hm-home { grid-template-columns: 1fr auto; align-items: start; }
+@media (max-width: 700px) { .hm-home { grid-template-columns: 1fr; } }
+.hm-home h3 { font-weight: 800; font-size: 18px; margin-bottom: 4px; }
+.hm-home p { font-size: 14px; }
+.hm-home.is-off { opacity: 0.6; }

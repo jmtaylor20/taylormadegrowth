@@ -3,6 +3,7 @@ import type { Config, Context } from '@netlify/functions'
 import { checkPassword, clearCookie, isStaff, sessionCookie, staffConfigured } from '../lib/staff-auth'
 import { admin, adminConfigured, check } from '../lib/shopify-admin'
 import { sendText, textingEnabled, toE164 } from '../lib/notify'
+import { listHomes, publicHome, resetKey, saveHome, type HomeInput } from '../lib/portal'
 import { appendLog, readLog, readPrices, savePickup, savePrices, saveShipping, saveWeights, type PickupSettings, type PriceLogChange, type ShippingSettings, type WeightSettings } from '../lib/prices'
 
 /**
@@ -46,6 +47,7 @@ const ORDERS = /* GraphQL */ `
         id legacyResourceId name createdAt note tags closed
         displayFulfillmentStatus displayFinancialStatus
         email phone
+        customAttributes { key value }
         totalPriceSet { shopMoney { amount } }
         customer { displayName defaultPhoneNumber { phoneNumber } }
         shippingAddress { name address1 address2 city provinceCode zip phone }
@@ -69,6 +71,7 @@ interface OrderNode {
   displayFinancialStatus: string | null
   email: string | null
   phone: string | null
+  customAttributes: { key: string; value: string | null }[]
   totalPriceSet: { shopMoney: { amount: string } }
   customer: { displayName: string; defaultPhoneNumber: { phoneNumber: string } | null } | null
   shippingAddress: { name: string | null; address1: string | null; address2: string | null; city: string | null; provinceCode: string | null; zip: string | null; phone: string | null } | null
@@ -102,6 +105,8 @@ function toJob(o: OrderNode) {
       ? [o.shippingAddress.address1, o.shippingAddress.address2, [o.shippingAddress.city, o.shippingAddress.provinceCode, o.shippingAddress.zip].filter(Boolean).join(' ')].filter(Boolean).join(', ')
       : null,
     paid: o.displayFinancialStatus,
+    // Ordered through the funeral home portal.
+    home: (o.customAttributes ?? []).find((a) => a.key === 'Funeral home')?.value ?? null,
     total: Number(o.totalPriceSet.shopMoney.amount),
     note: o.note ?? '',
     doneAt: fulfilled ? lastFulfillment?.createdAt ?? null : null,
@@ -141,7 +146,7 @@ async function listJobs() {
 
 async function getOrder(id: string) {
   const data = await admin<{ order: OrderNode | null }>(
-    `query One($id: ID!) { order(id: $id) { id legacyResourceId name createdAt note tags closed displayFulfillmentStatus displayFinancialStatus email phone
+    `query One($id: ID!) { order(id: $id) { id legacyResourceId name createdAt note tags closed displayFulfillmentStatus displayFinancialStatus email phone customAttributes { key value }
       totalPriceSet { shopMoney { amount } } customer { displayName defaultPhoneNumber { phoneNumber } }
       shippingAddress { name address1 address2 city provinceCode zip phone }
       fulfillmentOrders(first: 10) { nodes { id status deliveryMethod { methodType } } }
@@ -293,6 +298,29 @@ export default async (req: Request, context: Context) => {
     if (origin && origin !== new URL(req.url).origin) return json({ error: 'Bad origin' }, 403)
     return replaceDesignFile(dm[1], dm[2], new Uint8Array(await req.arrayBuffer()))
   }
+  // Funeral home partners (the portal). Notes stay staff-only; keys are shown once.
+  if (path === '/api/staff/homes' && req.method === 'GET') return json({ homes: (await listHomes()).map((h) => ({ ...publicHome(h), notes: h.notes })) })
+  if (path === '/api/staff/homes' && req.method === 'POST') {
+    const origin = req.headers.get('origin')
+    if (origin && origin !== new URL(req.url).origin) return json({ error: 'Bad origin' }, 403)
+    try {
+      const { home, key } = await saveHome((await req.json().catch(() => ({}))) as HomeInput)
+      return json({ home: { ...publicHome(home), notes: home.notes }, key })
+    } catch (e) {
+      return json({ error: (e as Error).message }, 400)
+    }
+  }
+  const hk = path.match(/^\/api\/staff\/homes\/([a-z0-9-]{1,64})\/key$/)
+  if (hk && req.method === 'POST') {
+    const origin = req.headers.get('origin')
+    if (origin && origin !== new URL(req.url).origin) return json({ error: 'Bad origin' }, 403)
+    try {
+      return json({ key: await resetKey(hk[1]) })
+    } catch (e) {
+      return json({ error: (e as Error).message }, 400)
+    }
+  }
+
   if (!adminConfigured()) return json({ error: 'Shopify is not connected to the staff board yet (SHOPIFY_ADMIN_CLIENT_ID and SHOPIFY_ADMIN_CLIENT_SECRET).' }, 503)
 
   try {

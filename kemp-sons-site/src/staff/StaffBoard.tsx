@@ -33,6 +33,8 @@ interface Job {
   phone: string | null
   address: string | null
   paid: string | null
+  /** Funeral home that ordered through the portal. */
+  home?: string | null
   total: number
   note: string
   doneAt: string | null
@@ -165,6 +167,7 @@ export default function StaffBoard() {
         <input className="sb-search" type="search" placeholder="Search name, order #, phone, design" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search jobs" />
         <div className="sb-meta">
           <a className="sb-btn sb-navlink" href="/staff/prices/">Prices</a>
+          <a className="sb-btn sb-navlink" href="/staff/homes/">Funeral homes</a>
           <button type="button" className="sb-btn" onClick={load}>Refresh</button>
           {!demo && (
             <button
@@ -260,6 +263,7 @@ function Card({ job: j, onOpen, onAct }: { job: Job; onOpen: () => void; onAct: 
           <MethodBadge m={j.method} />
         </span>
         <span className="sb-cust">{j.customer}</span>
+        {j.home && <span className="sb-home mono">Via {j.home}</span>}
         <span className="sb-items">
           {j.items.map((i, k) => (
             <span key={k}>

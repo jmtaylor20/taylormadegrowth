@@ -1,0 +1,11 @@
+---
+import Base from '../layouts/Base.astro'
+import PortalApp from '../portal/PortalApp'
+import { business } from '../config/site'
+// Funeral home partner ordering page. Private: reached by the link Kemp & Sons sends.
+---
+<Base title="Partner ordering | Kemp & Sons Printing" noindex>
+  <main id="main">
+    <PortalApp client:only="react" phone={business.phone} phoneHref={business.phoneHref} />
+  </main>
+</Base>

@@ -36,6 +36,16 @@ interface Props {
 }
 
 const ADVANCED_KEY = 'kemp-proto-advanced'
+const HOME_KEY = 'kemp-home'
+
+/** A partner funeral home signed in to the portal. */
+interface PortalHome {
+  slug: string
+  name: string
+  address: string
+  city: string
+  phone: string
+}
 
 function useMedia(q: string) {
   const [on, setOn] = useState(() => typeof window !== 'undefined' && window.matchMedia(q).matches)
@@ -117,10 +127,54 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref, prototype = fal
     const from = q.get('from')
     return order && from ? { order, designId: from, summary: q.get('opts') ?? '' } : null
   })
+  // Funeral home portal: ?home=1 (remembered for the visit) opens the designer for a signed-in partner home.
+  const [home, setHome] = useState<PortalHome | null>(null)
+  useEffect(() => {
+    let on = false
+    try {
+      on = new URLSearchParams(window.location.search).has('home') || sessionStorage.getItem(HOME_KEY) === '1'
+      if (on) sessionStorage.setItem(HOME_KEY, '1')
+    } catch {
+      /* private window */
+    }
+    if (!on) return
+    fetch('/api/portal/me', { credentials: 'same-origin' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((b) => {
+        if (b?.home) return setHome(b.home)
+        try {
+          sessionStorage.removeItem(HOME_KEY)
+        } catch {
+          /* ignore */
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   // Prototype: back returns to wherever in the picker the design was chosen.
   const [protoBack] = useState(() => (prototype && document.referrer.includes('/prototype/') && !document.referrer.includes('/prototype/design/') ? document.referrer : null))
-  const backHref = kiosk ? `${KIOSK_HOME}#${t.category}` : (protoBack ?? siteBack)
+  const backHref = home ? '/portal/' : kiosk ? `${KIOSK_HOME}#${t.category}` : (protoBack ?? siteBack)
   const [draft, setDraft, loaded] = useDraft(t)
+
+  // Partner home: fill in its details wherever the template's sample text is still there.
+  useEffect(() => {
+    if (!home || !loaded) return
+    const defs = defaultDraft(t).values
+    const want: Record<string, string> = {
+      funeralHome: home.name,
+      funeralHomeDetails: [[home.address, home.city].filter(Boolean).join(', '), home.phone].filter(Boolean).join('\n'),
+    }
+    setDraft((d) => {
+      const values = { ...d.values }
+      let changed = false
+      for (const [k, v] of Object.entries(want))
+        if (v && k in defs && (values[k] ?? defs[k]) === defs[k]) {
+          values[k] = v
+          changed = true
+        }
+      return changed ? { ...d, values } : d
+    })
+  }, [home, loaded])
 
   // Photo fixes (brighten, black & white, sepia, vintage): make the fixed copy whenever a photo, its cut-out or a fix changes.
   const toning = useRef(new Set<string>())
@@ -301,6 +355,7 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref, prototype = fal
         </div>
 
         <div className="ed-side">
+          {home && <p className="ed-notice">Ordering for {home.name}. Your funeral home's details are filled in.</p>}
           {notice && <p className="ed-notice" role="status">{notice}</p>}
           {!loaded ? (
             <p className="ed-hint">Loading your design...</p>
@@ -443,6 +498,7 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref, prototype = fal
           phoneHref={phoneHref}
           onClose={() => setProofOpen(false)}
           prototype={prototype}
+          home={home}
         />
       )}
     </div>
@@ -473,6 +529,7 @@ function Proof({
   phoneHref,
   onClose,
   prototype = false,
+  home = null,
 }: {
   t: Template
   draft: Draft
@@ -487,6 +544,7 @@ function Proof({
   phoneHref: string
   onClose: () => void
   prototype?: boolean
+  home?: PortalHome | null
 }) {
   // Prototype: what would be sent, shown instead of going to checkout.
   const [sent, setSent] = useState(false)
@@ -612,7 +670,11 @@ function Proof({
       if (rushVariant) items.push({ variantId: rushVariant.id, quantity: 1, attributes: { For: t.name, _Reference: ref } })
       // Where the order came from, shown on the Shopify order under Additional details.
       const click = adClick()
-      const orderAttrs: Record<string, string> = !tracking.enabled ? {} : isKioskVisit() ? { source: 'kiosk' } : { ...(click ?? {}) }
+      const orderAttrs: Record<string, string> = {
+        ...(!tracking.enabled ? {} : isKioskVisit() ? { source: 'kiosk' } : { ...(click ?? {}) }),
+        // Funeral home portal: shows on the order, the job board and the home's order list.
+        ...(home ? { 'Funeral home': home.name, '_Home ID': home.slug } : {}),
+      }
       const checkoutUrl = await addToCart(shop, items, orderAttrs)
       const gaItems = [
         { item_id: variant.id, item_name: t.name, item_variant: summary, price: variant.price, quantity: 1 },

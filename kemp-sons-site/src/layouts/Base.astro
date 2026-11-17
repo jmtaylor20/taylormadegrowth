@@ -15,8 +15,8 @@ const {
   description = 'Order funeral programs, Christmas cards, business cards, stickers and more online, or request a quote for custom print work. Printed in Opelika, Alabama.',
 } = Astro.props
 const canonical = new URL(Astro.url.pathname, Astro.site)
-// Staff pages are never tracked.
-const tracked = tracking.enabled && !Astro.url.pathname.startsWith('/staff')
+// Staff pages and the funeral home portal (its sign-in link carries a private key) are never tracked.
+const tracked = tracking.enabled && !Astro.url.pathname.startsWith('/staff') && !Astro.url.pathname.startsWith('/portal')
 
 // Structured data so Google shows the right business details.
 const jsonLd = {
