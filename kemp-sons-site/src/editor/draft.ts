@@ -16,30 +16,37 @@ export interface PhotoState {
   cutout?: string
   /** Print the cut-out instead of the original. */
   useCutout?: boolean
-  /** Black & white or sepia. The original stays in src (and cutout), so it can be switched back. */
+  /** Black & white, sepia or soft vintage. The original stays in src (and cutout), so it can be switched back. */
   tone?: PhotoTone
-  /** The photo with the tone applied, and what it was made from (see toneKey). */
+  /** Brighten / auto-fix: evens out dark, flat or yellowed photos. Works with or without a tone. */
+  enhance?: boolean
+  /** The photo with the fixes applied, and what it was made from (see toneKey). */
   toned?: string
   tonedKey?: string
 }
 
-export type PhotoTone = 'bw' | 'sepia'
+export type PhotoTone = 'bw' | 'sepia' | 'vintage'
 
-/** The photo before any tone: the cut-out when it's switched on. */
+/** The photo before any fixes: the cut-out when it's switched on. */
 export const baseSrc = (p: PhotoState) => (p.useCutout && p.cutout ? p.cutout : p.src)
 
-/** Identifies the toned image a photo needs right now ('' when no tone). */
+/** Identifies the processed image a photo needs right now ('' when none). */
 export const toneKey = (p: PhotoState) => {
-  if (!p.tone) return ''
+  if (!p.tone && !p.enhance) return ''
   const b = baseSrc(p)
-  return `${p.tone}|${b.length}|${b.slice(-48)}`
+  return `${p.tone ?? ''}|${p.enhance ? 'fix' : ''}|${b.length}|${b.slice(-48)}`
 }
 
-/** The image a photo slot actually prints: toned when a tone is on (and ready), else the cut-out or original. */
-export const activeSrc = (p: PhotoState) => (p.tone && p.toned && p.tonedKey === toneKey(p) ? p.toned : baseSrc(p))
+/** The image a photo slot actually prints: processed when a fix is on (and ready), else the cut-out or original. */
+export const activeSrc = (p: PhotoState) => (toneKey(p) && p.toned && p.tonedKey === toneKey(p) ? p.toned : baseSrc(p))
 
-/** Makes a black & white or sepia copy of an image (keeps transparency for cut-outs). */
-export async function toneImage(src: string, tone: PhotoTone): Promise<string> {
+/**
+ * Applies the photo fixes (keeps transparency for cut-outs):
+ * - enhance: per-channel levels (also removes a yellow or blue cast), then
+ *   brightens the midtones if the photo is dark overall;
+ * - tone: black & white, sepia, or soft vintage (faded, warm, lifted blacks).
+ */
+export async function toneImage(src: string, tone: PhotoTone | undefined, enhance = false): Promise<string> {
   const img = new Image()
   img.src = src
   await img.decode()
@@ -50,17 +57,72 @@ export async function toneImage(src: string, tone: PhotoTone): Promise<string> {
   ctx.drawImage(img, 0, 0)
   const data = ctx.getImageData(0, 0, c.width, c.height)
   const px = data.data
-  for (let i = 0; i < px.length; i += 4) {
-    const r = px[i], g = px[i + 1], b = px[i + 2]
-    if (tone === 'bw') {
-      const y = 0.299 * r + 0.587 * g + 0.114 * b
-      px[i] = px[i + 1] = px[i + 2] = y
-    } else {
-      px[i] = Math.min(255, 0.393 * r + 0.769 * g + 0.189 * b)
-      px[i + 1] = Math.min(255, 0.349 * r + 0.686 * g + 0.168 * b)
-      px[i + 2] = Math.min(255, 0.272 * r + 0.534 * g + 0.131 * b)
+
+  if (enhance) {
+    // Histogram per channel, ignoring transparent pixels (cut-outs).
+    const hist = [new Uint32Array(256), new Uint32Array(256), new Uint32Array(256)]
+    let n = 0
+    let lumSum = 0
+    for (let i = 0; i < px.length; i += 4) {
+      if (px[i + 3] < 128) continue
+      hist[0][px[i]]++
+      hist[1][px[i + 1]]++
+      hist[2][px[i + 2]]++
+      lumSum += 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]
+      n++
+    }
+    if (n > 0) {
+      const level = (h: Uint32Array, frac: number) => {
+        let acc = 0
+        for (let v = 0; v < 256; v++) if ((acc += h[v]) >= n * frac) return v
+        return 255
+      }
+      // Stretch each channel from its 0.5% to 99.5% point, but never more than 2.2x.
+      const luts = hist.map((h) => {
+        let lo = level(h, 0.005)
+        let hi = level(h, 0.995)
+        if (hi - lo < 116) {
+          const mid = (hi + lo) / 2
+          lo = Math.max(0, mid - 58)
+          hi = Math.min(255, mid + 58)
+        }
+        return { lo, k: 255 / Math.max(1, hi - lo) }
+      })
+      // Brighten midtones when the photo is dark overall (mean luminance under ~45%).
+      const mean = lumSum / n / 255
+      const gamma = mean < 0.45 ? Math.max(0.7, Math.log(0.5) / Math.log(Math.max(0.05, mean))) : 1
+      const lut = luts.map(({ lo, k }) => {
+        const t = new Uint8ClampedArray(256)
+        for (let v = 0; v < 256; v++) t[v] = 255 * Math.pow(Math.min(1, Math.max(0, ((v - lo) * k) / 255)), gamma)
+        return t
+      })
+      for (let i = 0; i < px.length; i += 4) {
+        px[i] = lut[0][px[i]]
+        px[i + 1] = lut[1][px[i + 1]]
+        px[i + 2] = lut[2][px[i + 2]]
+      }
     }
   }
+
+  if (tone)
+    for (let i = 0; i < px.length; i += 4) {
+      const r = px[i], g = px[i + 1], b = px[i + 2]
+      const y = 0.299 * r + 0.587 * g + 0.114 * b
+      if (tone === 'bw') {
+        px[i] = px[i + 1] = px[i + 2] = y
+      } else if (tone === 'sepia') {
+        px[i] = Math.min(255, 0.393 * r + 0.769 * g + 0.189 * b)
+        px[i + 1] = Math.min(255, 0.349 * r + 0.686 * g + 0.168 * b)
+        px[i + 2] = Math.min(255, 0.272 * r + 0.534 * g + 0.131 * b)
+      } else {
+        // Soft vintage: 35% less color, softer contrast with lifted blacks, a warm cast.
+        const de = (v: number) => y + (v - y) * 0.65
+        const fade = (v: number) => 22 + v * 0.84
+        px[i] = Math.min(255, fade(de(r)) * 1.04 + 6)
+        px[i + 1] = Math.min(255, fade(de(g)) * 1.0 + 2)
+        px[i + 2] = Math.min(255, fade(de(b)) * 0.88)
+      }
+    }
   ctx.putImageData(data, 0, 0)
   return src.startsWith('data:image/png') ? c.toDataURL('image/png') : c.toDataURL('image/jpeg', 0.93)
 }

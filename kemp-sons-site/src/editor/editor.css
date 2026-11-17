@@ -192,3 +192,6 @@
 
 /* Black & white / sepia ticks under a photo */
 .ed-tones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ed-tones { grid-template-columns: repeat(3, 1fr); }
+.ed-tones-wide { grid-column: 1 / -1; }
+@media (max-width: 420px) { .ed-tones { grid-template-columns: 1fr 1fr; } }

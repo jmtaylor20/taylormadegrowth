@@ -251,11 +251,19 @@ function PhotoInput({
         </label>
       )}
       {value && (
-        <div className="ed-tones" role="group" aria-label="Photo color">
+        <div className="ed-tones" role="group" aria-label="Photo look">
+          <label className={`ed-check ed-check-light ed-tones-wide ${value.enhance ? 'is-on' : ''}`}>
+            <input type="checkbox" checked={!!value.enhance} onChange={(e) => onChange(active, { ...value, enhance: e.target.checked || undefined })} />
+            <span>
+              Brighten / auto-fix
+              <span className="ed-hint"> For dark, faded or yellowed photos.</span>
+            </span>
+          </label>
           {(
             [
               ['bw', 'Black & white'],
               ['sepia', 'Sepia'],
+              ['vintage', 'Soft vintage'],
             ] as [PhotoTone, string][]
           ).map(([tone, label]) => (
             <label key={tone} className={`ed-check ed-check-light ${value.tone === tone ? 'is-on' : ''}`}>

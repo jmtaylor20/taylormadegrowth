@@ -92,14 +92,14 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
   const backHref = kiosk ? `${KIOSK_HOME}#${t.category}` : siteBack
   const [draft, setDraft, loaded] = useDraft(t)
 
-  // Black & white or sepia photos: make the toned copy whenever a photo (or its cut-out) or tone changes.
+  // Photo fixes (brighten, black & white, sepia, vintage): make the fixed copy whenever a photo, its cut-out or a fix changes.
   const toning = useRef(new Set<string>())
   useEffect(() => {
     for (const [slot, p] of Object.entries(draft.photos)) {
       const key = toneKey(p)
       if (!key || p.tonedKey === key || toning.current.has(slot + key)) continue
       toning.current.add(slot + key)
-      toneImage(baseSrc(p), p.tone!)
+      toneImage(baseSrc(p), p.tone, !!p.enhance)
         .then((url) =>
           setDraft((d) => {
             const cur = d.photos[slot]
