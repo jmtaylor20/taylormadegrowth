@@ -13,7 +13,7 @@ import { RUSH_HANDLE, rushFormatFor } from '../../netlify/lib/price-groups'
 import { IDLE_SECONDS, KIOSK_HOME, WARN_SECONDS, isKiosk } from './kiosk'
 import { addToCart, createDesign, designFileUrl, getProduct, money, putDesignFile, putStaffFile, type CartLine, type ShopConfig, type ShopProduct, type Variant } from './shop'
 import { EnvelopePanel } from './EnvelopePanel'
-import { buildEnvelopePdf, emptyEnvelopes, type EnvelopeState } from './envelopes'
+import { buildEnvelopePdf, emptyEnvelopes, envelopeCount, envelopeKind, envelopePrinting, type EnvelopeKind, type EnvelopeState } from './envelopes'
 import { cutoutKind, dataUrlToBlob, draftJson, loadDesign, photoKind, rememberDesign, reorderUrl } from './saved'
 import './editor.css'
 
@@ -98,7 +98,7 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
   const desktop = useMedia('(min-width: 1024px)')
   const { product, choice, setChoice, variant } = useProduct(t, shop)
   const [fontsReady, setFontsReady] = useState(false)
-  const [envVariant, setEnvVariant] = useState<Variant | null>(null)
+  const [envVariants, setEnvVariants] = useState<Variant[]>([])
   // Rush is a separate fee product with one price per format.
   const rushFormat = rushFormatFor(t.shopifyHandle)
   const [rushVariant, setRushVariant] = useState<Variant | null>(null)
@@ -108,8 +108,8 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
   useEffect(() => {
     if (!shop || !t.envelope) return
     getProduct(shop, t.envelope.shopifyHandle)
-      .then((p) => setEnvVariant(p?.variants.find((v) => v.available) ?? null))
-      .catch(() => setEnvVariant(null))
+      .then((p) => setEnvVariants(p?.variants.filter((v) => v.available) ?? []))
+      .catch(() => setEnvVariants([]))
   }, [t, shop])
 
   useEffect(() => {
@@ -140,9 +140,13 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
   }, [loaded])
 
   const env: EnvelopeState = draft.envelopes ?? emptyEnvelopes
-  const envCount = t.envelope && env.on ? env.recipients.length : 0
-  const envTotal = envCount && envVariant ? envVariant.price * envCount : 0
   const cardQty = Number((Object.entries(choice).find(([k]) => /quantity/i.test(k))?.[1] ?? '').match(/\d+/)?.[0] ?? NaN)
+  // Envelopes are priced per envelope by how they're printed (Kemp's list: blank, one side, both sides).
+  const envPrinting = t.envelope ? envelopePrinting(env) : null
+  const envVariant = envPrinting ? (envVariants.find((v) => v.options.Printing === envPrinting) ?? null) : null
+  const envCount = envVariant ? envelopeCount(env, Number.isFinite(cardQty) ? cardQty : null) : 0
+  const envTotal = envCount && envVariant ? envVariant.price * envCount : 0
+  const envPrices = Object.fromEntries(envVariants.map((v) => [v.options.Printing, v.price]))
 
   useEffect(() => {
     loadFonts(t).then(() => setFontsReady(true))
@@ -277,7 +281,7 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
               spec={t.envelope}
               value={draft.envelopes}
               onChange={(next) => setDraft((d) => ({ ...d, envelopes: next }))}
-              each={envVariant?.price ?? null}
+              prices={envPrices}
               cardQty={Number.isFinite(cardQty) ? cardQty : null}
               sectionNo={String.fromCharCode(66 + new Set(t.fields.map((f) => f.section ?? 'Details')).size)}
             />
@@ -317,7 +321,7 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
           draft={draft}
           shop={shop}
           variant={canOrder ? variant! : null}
-          envVariant={envCount && envVariant ? envVariant : null}
+          envOrder={envCount && envVariant ? { variant: envVariant, count: envCount, kind: envelopeKind(env)! } : null}
           rushVariant={rushOn ? rushVariant : null}
           summary={summary}
           staff={staff}
@@ -346,7 +350,7 @@ function Proof({
   draft,
   shop,
   variant,
-  envVariant,
+  envOrder,
   rushVariant,
   summary,
   staff,
@@ -359,7 +363,7 @@ function Proof({
   draft: Draft
   shop: ShopConfig | null
   variant: Variant | null
-  envVariant: Variant | null
+  envOrder: { variant: Variant; count: number; kind: EnvelopeKind } | null
   rushVariant: Variant | null
   summary: string
   staff: StaffEdit | null
@@ -401,8 +405,9 @@ function Proof({
     }
   }, [t, draft])
 
-  const env = t.envelope && draft.envelopes?.on && draft.envelopes.recipients.length ? draft.envelopes : null
-  const total = variant ? variant.price + (env && envVariant ? envVariant.price * env.recipients.length : 0) + (rushVariant?.price ?? 0) : 0
+  const env = t.envelope && envOrder && draft.envelopes ? draft.envelopes : null
+  const envVariant = envOrder?.variant ?? null
+  const total = variant ? variant.price + (envOrder ? envOrder.variant.price * envOrder.count : 0) + (rushVariant?.price ?? 0) : 0
 
   const [savedForStaff, setSavedForStaff] = useState(false)
 
@@ -453,7 +458,7 @@ function Proof({
         await putDesignFile(id, photoKind(slot), await dataUrlToBlob(p.src))
         if (p.useCutout && p.cutout) await putDesignFile(id, cutoutKind(slot), await dataUrlToBlob(p.cutout))
       }
-      if (env && t.envelope) {
+      if (env && t.envelope && envOrder && envOrder.kind !== 'blank') {
         setWork('Preparing your envelopes')
         await putDesignFile(id, 'envelopes', buildEnvelopePdf(t.envelope, env, ref))
       }
@@ -475,11 +480,15 @@ function Proof({
           },
         },
       ]
-      if (env && envVariant)
+      if (env && envOrder)
         items.push({
-          variantId: envVariant.id,
-          quantity: env.recipients.length,
-          attributes: { For: `${t.name} cards`, _Reference: ref, '_Envelopes file': designFileUrl(id, 'envelopes') },
+          variantId: envOrder.variant.id,
+          quantity: envOrder.count,
+          attributes: {
+            For: `${t.name} cards`,
+            _Reference: ref,
+            ...(envOrder.kind !== 'blank' ? { '_Envelopes file': designFileUrl(id, 'envelopes') } : {}),
+          },
         })
       if (rushVariant) items.push({ variantId: rushVariant.id, quantity: 1, attributes: { For: t.name, _Reference: ref } })
       const checkoutUrl = await addToCart(shop, items)
@@ -545,7 +554,10 @@ function Proof({
             <section className="ed-proof-side">
               <p className="mono">Envelopes</p>
               <p className="ed-proof-note" style={{ textAlign: 'left' }}>
-                {env.recipients.length} addressed {t.envelope!.label}s{envVariant ? `, ${money(envVariant.price * env.recipients.length)}` : ''}. First one: {env.recipients[0].join(', ')}
+                {envOrder!.count} {envOrder!.kind === 'blank' ? 'blank' : envOrder!.kind === 'return' ? 'return address' : 'addressed'} {t.envelope!.label}s
+                {envVariant ? `, ${money(envVariant.price * envOrder!.count)}` : ''}.
+                {envOrder!.kind === 'addressed' && env.recipients[0] ? ` First one: ${env.recipients[0].join(', ')}` : ''}
+                {envOrder!.kind === 'return' ? ` Return address: ${env.returnAddress.split('\n').filter(Boolean).join(', ')}` : ''}
               </p>
             </section>
           )}

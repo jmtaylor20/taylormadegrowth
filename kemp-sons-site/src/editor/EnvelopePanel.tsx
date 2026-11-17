@@ -1,19 +1,19 @@
 import { useRef, useState } from 'react'
-import { emptyEnvelopes, incomplete, parseFile, parsePasted, type EnvelopeSpec, type EnvelopeState } from './envelopes'
+import { emptyEnvelopes, envelopeKind, incomplete, parseFile, parsePasted, type EnvelopeKind, type EnvelopeSpec, type EnvelopeState } from './envelopes'
 import { money } from './shop'
 
 interface Props {
   spec: EnvelopeSpec
   value: EnvelopeState | undefined
   onChange: (next: EnvelopeState) => void
-  /** Price per addressed envelope from Shopify, if loaded. */
-  each: number | null
+  /** Price per envelope from Shopify for each Printing choice, if loaded. */
+  prices: Record<string, number>
   /** Cards in the selected quantity, to warn when there are more addresses than cards. */
   cardQty: number | null
   sectionNo: string
 }
 
-export function EnvelopePanel({ spec, value, onChange, each, cardQty, sectionNo }: Props) {
+export function EnvelopePanel({ spec, value, onChange, prices, cardQty, sectionNo }: Props) {
   const env = value ?? emptyEnvelopes
   const [mode, setMode] = useState<'upload' | 'paste'>('upload')
   const [paste, setPaste] = useState('')
@@ -23,6 +23,19 @@ export function EnvelopePanel({ spec, value, onChange, each, cardQty, sectionNo 
   const bad = incomplete(env.recipients)
   const n = env.recipients.length
   const sample = env.recipients[0]
+  const kind = envelopeKind(env)
+  const p = (k: string) => (prices[k] != null ? `${money(prices[k])} each` : '')
+  const choices: { id: EnvelopeKind | 'none'; label: string; note: string }[] = [
+    { id: 'none', label: 'No envelopes', note: '' },
+    { id: 'blank', label: 'Blank envelopes', note: [p('Blank'), 'one per card'].filter(Boolean).join(', ') },
+    { id: 'return', label: 'Return address printed', note: [p('Printed one side'), 'one per card'].filter(Boolean).join(', ') },
+    {
+      id: 'addressed',
+      label: "Addressed to each person on your list",
+      note: [prices['Printed both sides'] != null ? `${money(prices['Printed both sides'])} each with a return address` : '', prices['Printed one side'] != null ? `${money(prices['Printed one side'])} without` : ''].filter(Boolean).join(', '),
+    },
+  ]
+  const each = env.returnAddress.trim() ? prices['Printed both sides'] : prices['Printed one side']
 
   const load = (recipients: string[][], source: string) => {
     if (!recipients.length) {
@@ -39,18 +52,30 @@ export function EnvelopePanel({ spec, value, onChange, each, cardQty, sectionNo 
         <span className="ed-section-no">{sectionNo}</span>
         Envelopes
       </legend>
-      <label className={`ed-check ed-check-light ${env.on ? 'is-on' : ''}`}>
-        <input type="checkbox" checked={env.on} onChange={(e) => set({ on: e.target.checked })} />
-        <span>
-          Print the addresses on my envelopes
-          <span className="ed-hint">
-            {' '}
-            {each != null ? `${money(each)} per envelope. ` : ''}Blank {spec.label}s are included with your cards either way.
-          </span>
-        </span>
-      </label>
+      <div className="ed-env-kinds" role="radiogroup" aria-label={`${spec.label}s`}>
+        {choices.map((c) => {
+          const on = (kind ?? 'none') === c.id
+          return (
+            <label key={c.id} className={`ed-check ed-check-light ${on ? 'is-on' : ''}`}>
+              <input type="radio" name="env-kind" checked={on} onChange={() => set(c.id === 'none' ? { on: false } : { on: true, kind: c.id })} />
+              <span>
+                {c.label}
+                {c.note && <span className="ed-hint"> {c.note}.</span>}
+              </span>
+            </label>
+          )
+        })}
+      </div>
 
-      {env.on && (
+      {kind === 'return' && (
+        <label className="ed-field">
+          <span className="ed-label">Return address</span>
+          <textarea className="ed-input" rows={3} value={env.returnAddress} placeholder={'The Hayes Family\n412 Maple Street\nOpelika, AL 36801'} onChange={(e) => set({ returnAddress: e.target.value })} />
+          {!env.returnAddress.trim() && <span className="ed-hint">Type the address to print on every envelope.</span>}
+        </label>
+      )}
+
+      {kind === 'addressed' && (
         <>
           <label className="ed-field">
             <span className="ed-label">Return address (optional)</span>

@@ -270,7 +270,7 @@ export default function PriceManager() {
                 <tr>
                   <th>Order weight</th>
                   <th>Standard</th>
-                  <th>Express (blank for none)</th>
+                  <th>Overnight (blank for none)</th>
                   <th />
                 </tr>
               </thead>
@@ -291,7 +291,7 @@ export default function PriceManager() {
                       <Num value={r.standard} onChange={(n) => setRate(i, { standard: n ?? 0 })} prefix="$" label={`Band ${i + 1} standard rate`} />
                     </td>
                     <td>
-                      <Num value={r.express} onChange={(n) => setRate(i, { express: n })} prefix="$" allowBlank label={`Band ${i + 1} express rate`} />
+                      <Num value={r.express} onChange={(n) => setRate(i, { express: n })} prefix="$" allowBlank label={`Band ${i + 1} overnight rate`} />
                     </td>
                     <td>
                       {rates.length > 1 && (
@@ -409,7 +409,7 @@ export default function PriceManager() {
                     <li key={i}>
                       <span>{bandName(rates, i)}</span>
                       <span>
-                        Standard <strong>{money(r.standard)}</strong>, Express <strong>{r.express != null ? money(r.express) : 'none'}</strong>
+                        Standard <strong>{money(r.standard)}</strong>, Overnight <strong>{r.express != null ? money(r.express) : 'none'}</strong>
                       </span>
                     </li>
                   ))}

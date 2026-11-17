@@ -59,7 +59,7 @@ export interface ShippingRate {
   /** Upper end of this weight band in pounds. Null = and up (the last band). */
   upToLb: number | null
   standard: number
-  /** Null = no express option for this band. */
+  /** Null = no overnight option for this band. */
   express: number | null
 }
 export interface ShippingSettings {
@@ -232,7 +232,7 @@ export async function readPrices() {
     }
   })
 
-  // Shipping bands from the zone's rates. Standard rates are everything not named Express.
+  // Shipping bands from the zone's rates. Standard rates are everything not named Overnight (or the older Express).
   const methods = t.zone.methodDefinitions.nodes.filter((m) => m.active && !m.methodConditions.some((x) => x.field === 'TOTAL_PRICE'))
   const amount = (m: MethodNode) => Number(m.rateProvider?.price?.amount ?? 0)
   const maxLb = (m: MethodNode) => {
@@ -240,13 +240,13 @@ export async function readPrices() {
     return c?.conditionCriteria.value != null ? Math.round(toLb(c.conditionCriteria.value, c.conditionCriteria.unit ?? 'POUNDS') * 100) / 100 : null
   }
   const rates: ShippingRate[] = methods
-    .filter((m) => !/express/i.test(m.name))
+    .filter((m) => !FAST.test(m.name))
     .map((m) => ({ upToLb: maxLb(m), standard: amount(m), express: null as number | null }))
     .sort((a, b) => (a.upToLb ?? Infinity) - (b.upToLb ?? Infinity))
   if (!rates.length) rates.push({ upToLb: null, standard: 0, express: null })
-  for (const e of methods.filter((m) => /express/i.test(m.name))) {
+  for (const e of methods.filter((m) => FAST.test(m.name))) {
     const hasWeight = e.methodConditions.some((x) => x.field === 'TOTAL_WEIGHT')
-    // A flat express rate (no weight band) applies to every band.
+    // A flat overnight rate (no weight band) applies to every band.
     for (const r of rates) if (!hasWeight || r.upToLb === maxLb(e)) r.express = amount(e)
   }
 
@@ -256,6 +256,9 @@ export async function readPrices() {
   const shipping: ShippingSettings = { rates }
   return { groups, shipping, packagingOz: weights.packagingOz, pickup }
 }
+
+/** The paid fast option. Named Overnight at checkout; older stores called it Express. */
+const FAST = /overnight|express/i
 
 const MIN_PRICE = 0.5
 const MAX_PRICE = 20000
@@ -343,7 +346,7 @@ export async function saveWeights(w: WeightSettings) {
 
 /**
  * Rewrites the US zone's rates as weight bands: one Standard rate per band
- * and, where set, one Express rate. The first band starts at 0 (so anything
+ * and, where set, one Overnight rate. A $0 standard rate shows as Free shipping. The first band starts at 0 (so anything
  * without a weight still gets a rate) and the last has no upper limit, so
  * every order can check out. Other zones and profiles are left alone.
  */
@@ -368,8 +371,8 @@ export async function saveShipping(s: ShippingSettings) {
       ...(r.upToLb != null ? [{ criteria: lb(r.upToLb), operator: 'LESS_THAN_OR_EQUAL_TO' }] : []),
     ]
     const cond = weightConditionsToCreate.length ? { weightConditionsToCreate } : {}
-    create.push({ name: 'Standard', active: true, rateDefinition: { price: money(r.standard) }, ...cond })
-    if (r.express != null) create.push({ name: 'Express', active: true, rateDefinition: { price: money(r.express) }, ...cond })
+    create.push({ name: r.standard === 0 ? 'Free shipping' : 'Standard', active: true, rateDefinition: { price: money(r.standard) }, ...cond })
+    if (r.express != null) create.push({ name: 'Overnight', active: true, rateDefinition: { price: money(r.express) }, ...cond })
   })
 
   // Real method ids only (rate-range rows share their parent's id with a ?source suffix).

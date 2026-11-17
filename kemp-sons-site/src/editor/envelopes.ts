@@ -14,8 +14,13 @@ export interface EnvelopeSpec {
   shopifyHandle: string
 }
 
+/** Blank envelopes, a printed return address, or each envelope addressed to someone. */
+export type EnvelopeKind = 'blank' | 'return' | 'addressed'
+
 export interface EnvelopeState {
   on: boolean
+  /** Older saved designs have no kind; they were addressed envelopes. */
+  kind?: EnvelopeKind
   returnAddress: string
   /** Each recipient is a list of lines: name, street, city/state/zip. */
   recipients: string[][]
@@ -23,6 +28,31 @@ export interface EnvelopeState {
 }
 
 export const emptyEnvelopes: EnvelopeState = { on: false, returnAddress: '', recipients: [], source: '' }
+
+/** What the customer chose, or null for no envelopes. */
+export function envelopeKind(env: EnvelopeState | undefined): EnvelopeKind | null {
+  return env?.on ? (env.kind ?? 'addressed') : null
+}
+
+/**
+ * The Shopify "Printing" value for the order, matching Kemp's price list:
+ * blank, printed one side (return address, or the recipient only), or both
+ * sides (return address and recipient).
+ */
+export function envelopePrinting(env: EnvelopeState): 'Blank' | 'Printed one side' | 'Printed both sides' | null {
+  const kind = envelopeKind(env)
+  if (kind === 'blank') return 'Blank'
+  if (kind === 'return') return env.returnAddress.trim() ? 'Printed one side' : null
+  if (kind === 'addressed') return env.recipients.length ? (env.returnAddress.trim() ? 'Printed both sides' : 'Printed one side') : null
+  return null
+}
+
+/** How many envelopes to charge for: one per address, or one per card. */
+export function envelopeCount(env: EnvelopeState, cardQty: number | null): number {
+  const kind = envelopeKind(env)
+  if (kind === 'addressed') return env.recipients.length
+  return kind && cardQty && Number.isFinite(cardQty) ? cardQty : 0
+}
 
 /* ---------- Parsing ---------- */
 
@@ -128,9 +158,15 @@ export function buildEnvelopePdf(spec: EnvelopeSpec, env: EnvelopeState, ref: st
   const W = spec.w * PT
   const H = spec.h * PT
   const doc = new jsPDF({ unit: 'pt', format: [W, H], orientation: W > H ? 'landscape' : 'portrait', compress: true })
-  doc.setProperties({ title: `${ref} envelopes`, creator: 'Kemp & Sons Printing', subject: `${env.recipients.length} addressed ${spec.label}s` })
   const ret = env.returnAddress.split('\n').map((l) => l.trim()).filter(Boolean)
-  env.recipients.forEach((lines, i) => {
+  // Return address only: one page, printed on every envelope.
+  const pages = envelopeKind(env) === 'return' ? [[] as string[]] : env.recipients
+  doc.setProperties({
+    title: `${ref} envelopes`,
+    creator: 'Kemp & Sons Printing',
+    subject: envelopeKind(env) === 'return' ? `Return address for every ${spec.label}` : `${env.recipients.length} addressed ${spec.label}s`,
+  })
+  pages.forEach((lines, i) => {
     if (i > 0) doc.addPage([W, H], W > H ? 'landscape' : 'portrait')
     doc.setTextColor(30)
     if (ret.length) {
@@ -138,6 +174,7 @@ export function buildEnvelopePdf(spec: EnvelopeSpec, env: EnvelopeState, ref: st
       doc.setFontSize(9)
       ret.forEach((l, j) => doc.text(l, 0.35 * PT, 0.5 * PT + j * 11))
     }
+    if (!lines.length) return
     doc.setFont('times', 'normal')
     doc.setFontSize(13)
     const lh = 17

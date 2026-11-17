@@ -20,6 +20,10 @@ export const RUSH_HANDLE = 'rush-turnaround'
 /** Rush format for a product, or null when rush isn't offered for it. */
 export const rushFormatFor = (handle: string) => PRICE_GROUPS.find((g) => g.handles.includes(handle))?.rush ?? null
 
+// Kemp's price list (Nov 2026) by line: 8.5x11 half fold and tri-fold = the
+// 11 x 8.5 groups; 11x17 half fold and tri-fold = the 17 x 11 groups; 8 page
+// 11x17 = the booklet. Legal (14 x 8.5) and 16.5 x 8.5 trifolds weren't on the
+// list and use the 11x17 prices until Kemp sets their own here.
 export const PRICE_GROUPS: PriceGroup[] = [
   {
     id: 'program-11x8.5-fold', rush: '11 x 8.5 folded',
@@ -31,5 +35,6 @@ export const PRICE_GROUPS: PriceGroup[] = [
   { id: 'program-14x8.5-trifold', rush: '14 x 8.5 trifold', label: 'Funeral program, 14 x 8.5 trifold (6 panels)', handles: ['funeral-program-gone-fishing'] },
   { id: 'program-16.5x8.5-trifold', rush: '16.5 x 8.5 trifold', label: 'Funeral program, 16.5 x 8.5 trifold (6 panels)', handles: ['funeral-program-flag-trifold'] },
   { id: 'program-17x11-trifold', rush: '17 x 11 trifold', label: 'Funeral program, 17 x 11 trifold (6 panels)', handles: ['funeral-program-flag-tabloid'] },
+  { id: 'card-5x7-2side', label: 'Christmas card, 5 x 7 flat, printed both sides', handles: ['christmas-card-very-merry'] },
   { id: 'program-booklet-8', rush: '8-page booklet', label: 'Funeral program, 8.5 x 11 booklet (8 pages)', handles: ['funeral-program-gold-booklet'] },
 ]
