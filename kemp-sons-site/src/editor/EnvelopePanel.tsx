@@ -32,10 +32,10 @@ export function EnvelopePanel({ spec, value, onChange, prices, cardQty, sectionN
     {
       id: 'addressed',
       label: "Addressed to each person on your list",
-      note: [prices['Printed both sides'] != null ? `${money(prices['Printed both sides'])} each with a return address` : '', prices['Printed one side'] != null ? `${money(prices['Printed one side'])} without` : ''].filter(Boolean).join(', '),
+      note: [p('Printed one side'), 'return address optional'].filter(Boolean).join(', '),
     },
   ]
-  const each = env.returnAddress.trim() ? prices['Printed both sides'] : prices['Printed one side']
+  const each = prices['Printed one side']
 
   const load = (recipients: string[][], source: string) => {
     if (!recipients.length) {

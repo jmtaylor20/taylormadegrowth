@@ -35,15 +35,16 @@ export function envelopeKind(env: EnvelopeState | undefined): EnvelopeKind | nul
 }
 
 /**
- * The Shopify "Printing" value for the order, matching Kemp's price list:
- * blank, printed one side (return address, or the recipient only), or both
- * sides (return address and recipient).
+ * The Shopify "Printing" value for the order, matching Kemp's price list.
+ * The return address and the recipient both print on the address side, so
+ * either is "Printed one side". "Printed both sides" (a design on the flap
+ * side) stays in Shopify for when flap designs are added.
  */
-export function envelopePrinting(env: EnvelopeState): 'Blank' | 'Printed one side' | 'Printed both sides' | null {
+export function envelopePrinting(env: EnvelopeState): 'Blank' | 'Printed one side' | null {
   const kind = envelopeKind(env)
   if (kind === 'blank') return 'Blank'
   if (kind === 'return') return env.returnAddress.trim() ? 'Printed one side' : null
-  if (kind === 'addressed') return env.recipients.length ? (env.returnAddress.trim() ? 'Printed both sides' : 'Printed one side') : null
+  if (kind === 'addressed') return env.recipients.length ? 'Printed one side' : null
   return null
 }
 
