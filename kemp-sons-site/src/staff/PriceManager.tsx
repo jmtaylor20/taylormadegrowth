@@ -167,7 +167,7 @@ export default function PriceManager() {
       return { group, v, next: num(raw) }
     })
     .filter((c) => Number.isFinite(c.next) && Math.round(c.next * 100) !== Math.round(c.v.price * 100))
-  const badPrices = Object.values(edits).filter((raw) => !Number.isFinite(num(raw)) || num(raw) < 0.5)
+  const badPrices = Object.values(edits).filter((raw) => !Number.isFinite(num(raw)) || num(raw) < 0.01)
   const badWeights = Object.values(wEdits).filter((raw) => raw.trim() !== '' && !(num(raw) >= 0))
   const problems = [
     ...(badPrices.length ? [`${badPrices.length} price${badPrices.length === 1 ? ' needs' : 's need'} fixing (minimum $0.50)`] : []),
@@ -662,7 +662,7 @@ function PriceTable({
                   const v = cell(r, c)
                   if (!v) return <td key={c} />
                   const raw = edits[v.id] ?? v.price.toFixed(2)
-                  const bad = v.id in edits && (!Number.isFinite(num(raw)) || num(raw) < 0.5)
+                  const bad = v.id in edits && (!Number.isFinite(num(raw)) || num(raw) < 0.01)
                   return (
                     <td key={c}>
                       <span className={`pm-money ${v.id in edits ? 'is-changed' : ''} ${bad ? 'is-bad' : ''}`}>

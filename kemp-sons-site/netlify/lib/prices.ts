@@ -260,7 +260,8 @@ export async function readPrices() {
 /** The paid fast option. Named Overnight at checkout; older stores called it Express. */
 const FAST = /overnight|express/i
 
-const MIN_PRICE = 0.5
+// Envelopes are priced per envelope (20 to 50 cents), so the floor is a penny.
+const MIN_PRICE = 0.01
 const MAX_PRICE = 20000
 
 async function bulkUpdate(productId: string, variants: Record<string, unknown>[], label: string) {
