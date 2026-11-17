@@ -734,6 +734,13 @@ const pillars = [
     /* Desktop-only helpers hidden by default */
     .scene-steps, .scroll-hint { display: none; }
 
+    /* Stacked mode on a wide screen (reduced motion, no JS): keep the sticky
+       window clear of the copy by parking it on the right. */
+    @media (min-width: 981px) {
+      .window-wrap { margin-inline: auto 0; }
+      .chapter, .hero-copy { max-width: 600px; }
+    }
+
     /* ---------- Desktop with JS: pinned 3D scene ---------- */
     @media (min-width: 981px) and (prefers-reduced-motion: no-preference) {
       :global(.js) .scene-pin {
