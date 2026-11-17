@@ -170,7 +170,7 @@ export default function PriceManager() {
   const badPrices = Object.values(edits).filter((raw) => !Number.isFinite(num(raw)) || num(raw) < 0.01)
   const badWeights = Object.values(wEdits).filter((raw) => raw.trim() !== '' && !(num(raw) >= 0))
   const problems = [
-    ...(badPrices.length ? [`${badPrices.length} price${badPrices.length === 1 ? ' needs' : 's need'} fixing (minimum $0.50)`] : []),
+    ...(badPrices.length ? [`${badPrices.length} price${badPrices.length === 1 ? ' needs' : 's need'} fixing (enter a dollar amount)`] : []),
     ...(badWeights.length ? ['A weight needs fixing'] : []),
     ...bandErrors,
   ]
