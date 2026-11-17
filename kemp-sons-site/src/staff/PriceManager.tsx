@@ -3,10 +3,11 @@ import { SignIn } from './StaffBoard'
 import './staff.css'
 
 /**
- * Prices & shipping. Prices are set per printed format (every design in the
- * format shares one table), each format has a weight per piece, and shipping
- * is charged by order weight. Saving writes straight to Shopify, which the
- * website, the designer and checkout read live.
+ * Prices & shipping, laid out as one big price list: every price is a box
+ * you click and retype. Prices are set per printed format (every design in
+ * the format shares one table). Saving asks for your name, writes straight to
+ * Shopify (which the website, the designer and checkout read live) and adds
+ * a line to the change history at the bottom of the page.
  */
 
 interface Variant {
@@ -35,7 +36,13 @@ interface Pickup {
   pickupTime: string
   instructions: string
 }
+interface LogEntry {
+  at: string
+  by: string
+  changes: { item: string; from: string; to: string }[]
+}
 interface Data {
+  log?: LogEntry[]
   groups: Group[]
   shipping: { rates: Rate[] }
   packagingOz: number
@@ -62,6 +69,18 @@ const paperOf = (g: Group, v: Variant) => {
   const p = g.options.find((o) => /paper|stock/i.test(o))
   return p ? v.options[p] : 'Each'
 }
+const NAME_KEY = 'kemp-staff-name'
+const savedName = () => {
+  try {
+    return localStorage.getItem(NAME_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+const when = (iso: string) =>
+  new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+const rateText = (r: Rate) => `${r.standard === 0 ? 'free' : money(r.standard)} standard, ${r.express != null ? `${money(r.express)} overnight` : 'no overnight'}`
+
 const bandName = (rates: Rate[], i: number) =>
   rates.length === 1
     ? 'Any weight'
@@ -84,6 +103,7 @@ export default function PriceManager() {
   const [review, setReview] = useState(false)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const [name, setName] = useState(savedName)
 
   const apply = (d: Data) => {
     setData(d)
@@ -193,7 +213,26 @@ export default function PriceManager() {
     sections.set(g.type, [...(sections.get(g.type) ?? []), g])
   }
 
+  /** Plain-words list of this save, for the change history. */
+  const logChanges = [
+    ...priceChanges.map((c) => ({ item: `${c.group.label}: ${Object.values(c.v.options).join(' / ')}`, from: money(c.v.price), to: money(c.next) })),
+    ...(shipChanged
+      ? rates.map((r, i) => ({ item: `Shipping, ${bandName(rates, i)}`, from: data.shipping.rates[i] ? rateText(data.shipping.rates[i]) : 'none', to: rateText(r) }))
+      : []),
+    ...weightChanges.map((c) => ({ item: `${c.g.label}: weight${c.key !== 'Each' ? ` (${c.key})` : ''}`, from: c.before != null ? `${c.before} oz` : 'none', to: c.after != null ? `${c.after} oz` : 'none' })),
+    ...(packChanged ? [{ item: 'Packing weight per order', from: `${data.packagingOz} oz`, to: `${packOz} oz` }] : []),
+    ...(pickupChanged && pickup && data.pickup
+      ? [{ item: 'Local pickup', from: `${PICKUP_LABELS[data.pickup.pickupTime]}. ${data.pickup.instructions}`, to: `${PICKUP_LABELS[pickup.pickupTime]}. ${pickup.instructions}` }]
+      : []),
+  ]
+
   const save = async () => {
+    if (!name.trim()) return
+    try {
+      localStorage.setItem(NAME_KEY, name.trim())
+    } catch {
+      /* private window: name just isn't remembered */
+    }
     setSaving(true)
     try {
       const weights = weightsChanged
@@ -211,6 +250,8 @@ export default function PriceManager() {
           weights,
           shipping: shipChanged ? { rates } : undefined,
           pickup: pickupChanged ? pickup : undefined,
+          by: name.trim(),
+          changes: logChanges,
         }),
       })
       if (res.status === 401) return setState('signin')
@@ -256,11 +297,48 @@ export default function PriceManager() {
 
       <main className="pm-main">
         <p className="pm-intro">
-          Prices are set by format: every design in a format shares one price table. Change anything and press <strong>Review &amp; save</strong>. Saved changes show on the website, in the designer and at checkout right away.
+          Click any price, type the new amount, then press <strong>Review &amp; save</strong> at the bottom. Changed boxes turn yellow until they're saved. Every design in a format shares one price table, and saved prices show on the website, in the designer and at checkout right away. Each save is recorded in the change history at the bottom of this page.
         </p>
 
+        {[...sections.entries()].map(([type, groups]) => (
+          <section key={type} className="pm-group">
+            <h2 className="pm-group-h">{type}</h2>
+            {groups.map((g) => (
+              <GroupPrices
+                key={g.id}
+                g={g}
+                edits={edits}
+                setEdit={(id, raw) =>
+                  setEdits((e) => {
+                    const v = g.variants.find((x) => x.id === id)!
+                    const n = { ...e }
+                    if (num(raw) === v.price) delete n[id]
+                    else n[id] = raw
+                    return n
+                  })
+                }
+                wEdits={wEdits}
+                setWeight={(key, raw) =>
+                  setWEdits((e) => {
+                    const k = `${g.id}|${key}`
+                    const n = { ...e }
+                    const saved = g.weights[key]
+                    if ((raw.trim() === '' && saved == null) || num(raw) === saved) delete n[k]
+                    else n[k] = raw
+                    return n
+                  })
+                }
+                pieceOz={(key) => pieceOz(g, key)}
+                packOz={packOz}
+                rates={rates}
+              />
+            ))}
+          </section>
+        ))}
+        {sections.size === 0 && <p className="sb-hint">Nothing matches "{filter}".</p>}
+
         <section className="pm-card">
-          <h2>Shipping by weight</h2>
+          <h2>Shipping &amp; pickup</h2>
           <p className="sb-hint">
             Checkout adds up the weight of everything in the order and charges the rate for that band. Weights come from the weight per piece you enter on each format below.
           </p>
@@ -335,46 +413,13 @@ export default function PriceManager() {
           )}
           {missingWeights.length > 0 && (
             <p className="pm-note">
-              {missingWeights.length} format{missingWeights.length === 1 ? ' has' : 's have'} no weight yet, so {missingWeights.length === 1 ? 'it ships' : 'they ship'} at the lightest band. Weigh one finished piece and enter it in the format below.
+              {missingWeights.length} format{missingWeights.length === 1 ? ' has' : 's have'} no weight yet, so {missingWeights.length === 1 ? 'it ships' : 'they ship'} at the lightest band. Weigh one finished piece and enter it under Shipping weight on that format above.
             </p>
           )}
         </section>
 
-        {[...sections.entries()].map(([type, groups]) => (
-          <section key={type} className="pm-group">
-            <h2 className="pm-group-h">{type}</h2>
-            {groups.map((g) => (
-              <GroupPrices
-                key={g.id}
-                g={g}
-                edits={edits}
-                setEdit={(id, raw) =>
-                  setEdits((e) => {
-                    const v = g.variants.find((x) => x.id === id)!
-                    const n = { ...e }
-                    if (num(raw) === v.price) delete n[id]
-                    else n[id] = raw
-                    return n
-                  })
-                }
-                wEdits={wEdits}
-                setWeight={(key, raw) =>
-                  setWEdits((e) => {
-                    const k = `${g.id}|${key}`
-                    const n = { ...e }
-                    const saved = g.weights[key]
-                    if ((raw.trim() === '' && saved == null) || num(raw) === saved) delete n[k]
-                    else n[k] = raw
-                    return n
-                  })
-                }
-                pieceOz={(key) => pieceOz(g, key)}
-                packOz={packOz}
-                rates={rates}
-              />
-            ))}
-          </section>
-        ))}
+
+        <History log={data.log ?? []} />
       </main>
 
       <div className={`pm-bar ${changeCount || problems.length ? 'is-on' : ''}`}>
@@ -468,7 +513,11 @@ export default function PriceManager() {
                 {priceChanges.some((c) => c.group.designs.length > 1) && <p className="sb-hint">Formats with several designs get the same prices on every design.</p>}
               </section>
             )}
-            <button type="button" className="sb-btn sb-btn-go" disabled={saving} onClick={save}>
+            <label className="pm-field">
+              <span>Your name (for the change history)</span>
+              <input className="sb-input" value={name} autoComplete="name" placeholder="First and last name" onChange={(e) => setName(e.target.value)} />
+            </label>
+            <button type="button" className="sb-btn sb-btn-go" disabled={saving || !name.trim()} onClick={save}>
               {saving ? 'Saving...' : `Save ${changeCount} change${changeCount === 1 ? '' : 's'}`}
             </button>
           </aside>
@@ -542,13 +591,11 @@ function GroupPrices({
   packOz: number
   rates: Rate[]
 }) {
-  const [open, setOpen] = useState(false)
   const changed = g.variants.filter((v) => v.id in edits).length + g.weightKeys.filter((k) => `${g.id}|${k}` in wEdits).length
   // One table per color (full color, one color) when there is a color option.
   const colorOpt = g.options.find((o) => /colou?r|ink/i.test(o))
   const [rowOpt, ...colOpts] = g.options.filter((o) => o !== colorOpt)
   const tables = colorOpt ? [...new Set(g.variants.map((v) => v.options[colorOpt]))] : [null]
-  const min = Math.min(...g.variants.map((v) => v.price))
   const noWeight = g.weightKeys.some((k) => pieceOz(k) == null)
 
   // Example: the biggest order in this format, and which shipping band it lands in.
@@ -558,23 +605,19 @@ function GroupPrices({
   const band = bigOz != null ? rates.find((r) => r.upToLb == null || bigOz / 16 <= r.upToLb) : null
 
   return (
-    <article className={`pm-product ${open ? 'is-open' : ''}`}>
-      <button type="button" className="pm-product-h" onClick={() => setOpen(!open)} aria-expanded={open}>
-        <span className="pm-head">
-          <span className="pm-title">{g.label}</span>
+    <article className="pm-sheet" id={`fmt-${g.id}`}>
+      <header className="pm-sheet-h">
+        <div className="pm-head">
+          <h3 className="pm-title">{g.label}</h3>
           {g.designs.length > 0 && (
             <span className="pm-designs">
               {g.designs.length} design{g.designs.length === 1 ? '' : 's'}: {g.designs.join(', ')}
             </span>
           )}
-        </span>
-        <span className="mono">
-          {changed ? <span className="pm-dot">{changed} changed</span> : `From ${money(min)}`}
-          {noWeight && <span className="pm-dot pm-dot-warn">No weight</span>}
-        </span>
-        <span aria-hidden="true">{open ? 'Close' : 'Edit'}</span>
-      </button>
-      {open && (
+        </div>
+        {changed > 0 && <span className="pm-dot mono">{changed} unsaved</span>}
+      </header>
+      {(
         <div className="pm-body">
           {!g.inSync && <p className="pm-note">The designs in this format have different prices right now. Saving any change here gives every design the prices shown below.</p>}
           {tables.map((color) => (
@@ -590,8 +633,11 @@ function GroupPrices({
             />
           ))}
           {g.weightKeys.length > 0 && (
-          <div className="pm-weights">
-            <h3>Weight of one finished {g.hasQuantity ? 'piece' : 'item'}</h3>
+          <details className="pm-weights" open={noWeight ? false : undefined}>
+            <summary>
+              Shipping weight{noWeight ? <span className="pm-dot pm-dot-warn">not set</span> : ''}
+            </summary>
+            <p className="sb-hint">Weight of one finished {g.hasQuantity ? 'piece' : 'item'}. Only used for weight-based shipping rates.</p>
             <div className="pm-ship">
               {g.weightKeys.map((k) => {
                 const key = `${g.id}|${k}`
@@ -613,7 +659,7 @@ function GroupPrices({
                 {g.hasQuantity && packOz > 0 ? ' packed' : ''} and ships for {money(band.standard)} standard.
               </p>
             )}
-          </div>
+          </details>
           )}
         </div>
       )}
@@ -645,7 +691,7 @@ function PriceTable({
     <div className="pm-table-block">
       {title && <h3>{title}</h3>}
       <div className="pm-table-wrap">
-        <table className="pm-table">
+        <table className="pm-table pm-grid">
           <thead>
             <tr>
               <th>{rowOpt ?? ''}</th>
@@ -664,11 +710,21 @@ function PriceTable({
                   const raw = edits[v.id] ?? v.price.toFixed(2)
                   const bad = v.id in edits && (!Number.isFinite(num(raw)) || num(raw) < 0.01)
                   return (
-                    <td key={c}>
-                      <span className={`pm-money ${v.id in edits ? 'is-changed' : ''} ${bad ? 'is-bad' : ''}`}>
-                        <span>$</span>
-                        <input className="sb-input" inputMode="decimal" aria-label={`${label} ${title ? title + ' ' : ''}${r} ${c}`} value={raw} onChange={(e) => setEdit(v.id, e.target.value)} />
-                      </span>
+                    <td key={c} className={`pm-cell ${v.id in edits ? 'is-changed' : ''} ${bad ? 'is-bad' : ''}`}>
+                      <label>
+                        <span aria-hidden="true">$</span>
+                        <input
+                          inputMode="decimal"
+                          aria-label={`${label} ${title ? title + ' ' : ''}${r} ${c}`}
+                          value={raw}
+                          onFocus={(e) => e.target.select()}
+                          onChange={(e) => setEdit(v.id, e.target.value)}
+                          onBlur={(e) => {
+                            const n = num(e.target.value)
+                            if (Number.isFinite(n)) setEdit(v.id, n.toFixed(2))
+                          }}
+                        />
+                      </label>
                     </td>
                   )
                 })}
@@ -678,5 +734,66 @@ function PriceTable({
         </table>
       </div>
     </div>
+  )
+}
+
+/** Every saved change, newest first: when, who, and what changed. */
+function History({ log }: { log: LogEntry[] }) {
+  const [shown, setShown] = useState(25)
+  return (
+    <section className="pm-card pm-history" id="history">
+      <h2>Change history</h2>
+      {log.length === 0 ? (
+        <p className="sb-hint">Nothing saved yet. Every save from this page will be listed here with the date, the name typed when saving, and the old and new values.</p>
+      ) : (
+        <>
+          <div className="pm-table-wrap">
+            <table className="pm-table pm-log">
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>Who</th>
+                  <th>What changed</th>
+                </tr>
+              </thead>
+              <tbody>
+                {log.slice(0, shown).map((e, i) => (
+                  <tr key={`${e.at}-${i}`}>
+                    <td className="mono">{when(e.at)}</td>
+                    <td>{e.by}</td>
+                    <td>
+                      <LogChanges changes={e.changes} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {log.length > shown && (
+            <button type="button" className="sb-btn sb-btn-ghost" onClick={() => setShown(shown + 50)}>
+              Show older changes
+            </button>
+          )}
+        </>
+      )}
+    </section>
+  )
+}
+
+function LogChanges({ changes }: { changes: LogEntry['changes'] }) {
+  const line = (c: LogEntry['changes'][number], i: number) => (
+    <li key={i}>
+      {c.item}: {c.from} to <strong>{c.to}</strong>
+    </li>
+  )
+  if (changes.length <= 4) return <ul>{changes.map(line)}</ul>
+  return (
+    <>
+      <ul>{changes.slice(0, 3).map(line)}</ul>
+      <details>
+        <summary>and {changes.length - 3} more</summary>
+        <ul>{changes.slice(3).map(line)}</ul>
+      </details>
+    </>
   )
 }

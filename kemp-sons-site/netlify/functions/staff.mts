@@ -3,7 +3,7 @@ import type { Config, Context } from '@netlify/functions'
 import { checkPassword, clearCookie, isStaff, sessionCookie, staffConfigured } from '../lib/staff-auth'
 import { admin, adminConfigured, check } from '../lib/shopify-admin'
 import { sendText, textingEnabled, toE164 } from '../lib/notify'
-import { readPrices, savePickup, savePrices, saveShipping, saveWeights, type PickupSettings, type ShippingSettings, type WeightSettings } from '../lib/prices'
+import { appendLog, readLog, readPrices, savePickup, savePrices, saveShipping, saveWeights, type PickupSettings, type PriceLogChange, type ShippingSettings, type WeightSettings } from '../lib/prices'
 
 /**
  * Staff job board API (used by /staff/).
@@ -299,7 +299,7 @@ export default async (req: Request, context: Context) => {
     if (path === '/api/staff/jobs' && req.method === 'GET') return json({ jobs: await listJobs(), texting: textingEnabled() })
 
     // Prices page: every product price, shipping rates and pickup settings, saved straight to Shopify.
-    if (path === '/api/staff/prices' && req.method === 'GET') return json(await readPrices())
+    if (path === '/api/staff/prices' && req.method === 'GET') return json({ ...(await readPrices()), log: await readLog() })
     if (path === '/api/staff/prices' && req.method === 'POST') {
       const origin = req.headers.get('origin')
       if (origin && origin !== new URL(req.url).origin) return json({ error: 'Bad origin' }, 403)
@@ -308,7 +308,12 @@ export default async (req: Request, context: Context) => {
         weights?: WeightSettings
         shipping?: ShippingSettings
         pickup?: PickupSettings
+        /** Who is saving (typed on the page) and a plain-words list of what changed, for the history. */
+        by?: string
+        changes?: PriceLogChange[]
       }
+      const by = (body.by ?? '').trim()
+      if (!by) return json({ error: 'Type your name so the change history shows who made this change.' }, 400)
       const done: string[] = []
       if (body.variants?.length) done.push(`prices on ${await savePrices(body.variants)} design(s)`)
       if (body.weights) done.push(`weights on ${await saveWeights(body.weights)} design(s)`)
@@ -320,7 +325,8 @@ export default async (req: Request, context: Context) => {
         await savePickup(body.pickup)
         done.push('pickup')
       }
-      return json({ ok: true, message: done.length ? `Saved: ${done.join(', ')}.` : 'Nothing to save.', ...(await readPrices()) })
+      if (done.length) await appendLog(by, body.changes ?? [])
+      return json({ ok: true, message: done.length ? `Saved: ${done.join(', ')}.` : 'Nothing to save.', ...(await readPrices()), log: await readLog() })
     }
     const m = path.match(/^\/api\/staff\/jobs\/(\d+)$/)
     if (m && req.method === 'POST') {

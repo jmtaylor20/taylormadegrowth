@@ -143,6 +143,37 @@ interface ShippingResponse {
 
 const store = () => getStore({ name: 'staff', consistency: 'strong' })
 
+/* ---------- Change history ---------- */
+
+export interface PriceLogChange {
+  item: string
+  from: string
+  to: string
+}
+export interface PriceLogEntry {
+  at: string
+  by: string
+  changes: PriceLogChange[]
+}
+
+const LOG_KEY = 'price-log'
+const LOG_MAX = 2000
+
+/** Every saved change on the Prices page, newest first. */
+export async function readLog(): Promise<PriceLogEntry[]> {
+  return ((await store().get(LOG_KEY, { type: 'json' })) as PriceLogEntry[] | null) ?? []
+}
+
+/** Records who saved what. Names are typed by staff when saving. */
+export async function appendLog(by: string, changes: PriceLogChange[]) {
+  const clip = (v: unknown, n: number) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, n)
+  const clean = changes.slice(0, 500).map((c) => ({ item: clip(c.item, 200), from: clip(c.from, 120), to: clip(c.to, 120) })).filter((c) => c.item)
+  if (!clean.length) return
+  const log = await readLog()
+  log.unshift({ at: new Date().toISOString(), by: clip(by, 60), changes: clean })
+  await store().setJSON(LOG_KEY, log.slice(0, LOG_MAX))
+}
+
 async function readWeights(): Promise<WeightSettings> {
   const w = (await store().get('weights', { type: 'json' }).catch(() => null)) as WeightSettings | null
   return { packagingOz: w?.packagingOz ?? 0, groups: w?.groups ?? {} }
