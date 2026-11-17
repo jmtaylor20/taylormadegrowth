@@ -1,16 +1,25 @@
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
-import {
-  programTextures, christmasTexture, sampleBusinessCardFront, sampleBusinessCardBack,
-  stickerSheetTexture, thankYouTexture, letterheadTexture, plainPaper, businessCardFront, businessCardBack,
-} from './textures'
+import { letterheadTexture, plainPaper, businessCardFront, businessCardBack } from './textures'
+
+/**
+ * Kemp's real templates, rendered with sample photos (public/scene, made from
+ * the designer's own renderer). Regenerate them when the lineup changes.
+ */
+const loader = new THREE.TextureLoader()
+function photoTexture(r: THREE.WebGLRenderer, url: string) {
+  const t = loader.load(url)
+  t.colorSpace = THREE.SRGBColorSpace
+  t.anisotropy = Math.min(8, r.capabilities.getMaxAnisotropy())
+  return t
+}
 
 /**
  * The scroll story. `stage` is a continuous value from 0 to 4 driven by
  * scroll position:
  *   0 sheet      an open printed sheet floats in
- *   1 fold       it folds into a finished funeral program
- *   2 fan        the rest of the online lineup joins it
+ *   1 fold       it folds into a finished funeral program (Red Roses)
+ *   2 fan        Kemp's Christmas cards and the Gold booklet join it
  *   3 stack      fresh sheets stack up off the press
  *   4 cards      Kemp & Sons business cards, full-color logo
  */
@@ -83,8 +92,9 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
   const edge = plainPaper(renderer, '#f3f0e8')
   const paperBack = plainPaper(renderer, '#f6f3ec')
 
-  // --- Funeral program: right half fixed, left half folds behind it ---
-  const prog = programTextures(renderer)
+  // --- Funeral program (Red Roses): right half fixed, left half folds behind it ---
+  const tex = (name: string) => photoTexture(renderer, `/scene/${name}.jpg`)
+  const prog = { front: tex('program-front'), back: tex('program-back'), insideLeft: tex('program-inside-left'), insideRight: tex('program-inside-right') }
   const pw = 5.5 * S, ph = 8.5 * S
   const program = new THREE.Group()
   const right = sheet(pw, ph, prog.front, prog.insideLeft, edge)
@@ -97,20 +107,11 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
   programInner.add(right, leftPivot)
   program.add(programInner)
 
-  // --- The rest of the lineup ---
-  const card = sheet(5 * S, 7 * S, christmasTexture(renderer), paperBack, edge)
-  // A customer's business cards: one face up, one showing the back
-  const signGroup = new THREE.Group()
-  const bcw = 3.5 * S * 1.75, bch = 2 * S * 1.75
-  const bcFront = sampleBusinessCardFront(renderer), bcBack = sampleBusinessCardBack(renderer)
-  const bcTop = sheet(bcw, bch, bcFront, bcBack, edge)
-  const bcUnder = sheet(bcw, bch, bcBack, bcFront, edge)
-  bcUnder.position.set(0.35, -0.5, -0.08)
-  bcUnder.rotation.z = -0.12
-  bcTop.rotation.z = 0.05
-  signGroup.add(bcUnder, bcTop)
-  const stickers = sheet(8.5 * S * 0.62, 11 * S * 0.62, stickerSheetTexture(renderer), paperBack, edge)
-  const sports = sheet(5 * S, 7 * S, thankYouTexture(renderer), paperBack, edge)
+  // --- The rest of the lineup: real Christmas cards and the 8-page booklet ---
+  const card = sheet(5 * S, 7 * S, tex('pine-garland'), paperBack, edge)
+  const veryMerry = sheet(7 * S, 5 * S, tex('very-merry'), paperBack, edge)
+  const booklet = sheet(8.5 * S * 0.62, 11 * S * 0.62, tex('gold-booklet'), paperBack, edge)
+  const navyCard = sheet(5 * S, 7 * S, tex('navy-ornaments'), paperBack, edge)
 
   // --- Press stack: a pile of sheets, letterhead on top ---
   const stack = new THREE.Group()
@@ -161,7 +162,7 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
   cards.add(cardFan)
 
   const world = new THREE.Group()
-  world.add(program, card, signGroup, stickers, sports, stack, cards)
+  world.add(program, card, veryMerry, booklet, navyCard, stack, cards)
   scene.add(world)
 
   // Poses per stage, in local units around the stage anchor.
@@ -181,15 +182,15 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
       poses: [HIDE_DOWN, HIDE_DOWN, { p: [1.15, 1.1, -0.5], r: [0.05, -0.3, -0.12], s: 0.95, o: 1 }, HIDE_UP, HIDE_UP],
     },
     {
-      obj: signGroup,
+      obj: veryMerry,
       poses: [HIDE_DOWN, HIDE_DOWN, { p: [1.45, -1.05, 0.6], r: [-0.06, -0.38, 0.05], s: 1, o: 1 }, HIDE_UP, HIDE_UP],
     },
     {
-      obj: stickers,
+      obj: booklet,
       poses: [HIDE_DOWN, HIDE_DOWN, { p: [-1.75, -1.35, -0.4], r: [0.1, 0.42, 0.12], s: 0.95, o: 1 }, HIDE_UP, HIDE_UP],
     },
     {
-      obj: sports,
+      obj: navyCard,
       poses: [HIDE_DOWN, HIDE_DOWN, { p: [-1.95, 1.05, -0.9], r: [0.04, 0.36, 0.1], s: 0.9, o: 1 }, HIDE_UP, HIDE_UP],
     },
     {
