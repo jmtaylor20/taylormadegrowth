@@ -21,13 +21,13 @@ Gloss and matte are the same price. Questions: Austin, 334-707-2173.
 | 250 | 250.55 | 258.44 | 432.14 | 447.89 | 451.02 | 466.45 | 794.68 | 890.01 |
 | 300 | 269.99 | 298.15 | 506.64 | 525.55 | 527.20 | 545.72 | 942.86 | 1055.66 |
 | 400 | 365.00 | 377.61 | 655.67 | 680.89 | 679.62 | 704.31 | 1239.44 | 1386.98 |
-| 500 | 441.32 | 457.67 | 790.70 | 836.22 | 831.5? | 862.80 | 1535.55 | 1718.27 |
-| 1000 | 821.70 | 853.22 | 1150.90 | 1409.65 | 1389.3? | 1451.06 | 2415.89 | 2972.64 |
+| 500 | 441.32 | 457.67 | 790.70 | 836.22 | 831.93 | 862.80 | 1535.55 | 1718.27 |
+| 1000 | 821.70 | 853.22 | 1150.90 | 1409.65 | 1389.30 | 1451.06 | 2415.89 | 2972.64 |
 
 On the site: 8.5x11 = the 11 x 8.5 folded and stagger designs; 11x17 = Purple
-Lilacs and the large Flag trifold; 8 page 11x17 = the Gold booklet. Not on the
-list, using 11x17 prices for now: 14 x 8.5 (Gone Fishing) and 16.5 x 8.5 (Flag
-trifold). No template yet: 8 page 8.5x11 (two values marked ? need checking).
+Lilacs and the large Flag trifold; 8 page 11x17 = the Gold booklet. 14 x 8.5 (Gone
+Fishing) and 16.5 x 8.5 (Flag trifold) use the 11x17 prices (confirmed by
+Austin, Nov 17). No template yet: 8 page 8.5x11 (500 and 1000 confirmed by Austin, Nov 17).
 
 ## Christmas cards, 5 x 7
 

@@ -22,8 +22,8 @@ export const rushFormatFor = (handle: string) => PRICE_GROUPS.find((g) => g.hand
 
 // Kemp's price list (Nov 2026) by line: 8.5x11 half fold and tri-fold = the
 // 11 x 8.5 groups; 11x17 half fold and tri-fold = the 17 x 11 groups; 8 page
-// 11x17 = the booklet. Legal (14 x 8.5) and 16.5 x 8.5 trifolds weren't on the
-// list and use the 11x17 prices until Kemp sets their own here.
+// 11x17 = the booklet. Legal (14 x 8.5) and 16.5 x 8.5 trifolds use the 11x17
+// prices (confirmed by Austin, Nov 17 2026).
 export const PRICE_GROUPS: PriceGroup[] = [
   {
     id: 'program-11x8.5-fold', rush: '11 x 8.5 folded',
