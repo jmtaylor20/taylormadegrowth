@@ -68,11 +68,11 @@ const scaleStyle = (t: (typeof templates)[number]['t']) => {
         </ol>
       ) : (
         <div class="soon">
-          <p class="sub">Online designs are on the way.</p>
-          <p>We're setting up {line.name.toLowerCase()} you can design yourself. Until then, call us or send a quote request and we'll take care of it.</p>
+          <p class="sub">We print {line.name.toLowerCase()} to order.</p>
+          <p>Tell us what you need, send your logo or artwork if you have it, and we'll quote it within one business day. Our team can design it for you, too.</p>
           <div class="btn-row">
-            <a class="btn btn-primary" href={business.phoneHref}>Call {business.phone}</a>
-            <a class="btn" href="/#custom">Request a quote</a>
+            <a class="btn btn-primary" href={`/?job=${encodeURIComponent('quoteJob' in line ? line.quoteJob : 'Something else')}#custom`}>Get a quote</a>
+            <a class="btn" href={business.phoneHref}>Call {business.phone}</a>
           </div>
         </div>
       )}

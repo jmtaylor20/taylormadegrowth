@@ -154,6 +154,10 @@ import RegMark from './RegMark.astro'
   const file = form.querySelector<HTMLInputElement>('[data-file]')!
   const err = form.querySelector<HTMLElement>('[data-form-error]')!
   const MAX = 8 * 1024 * 1024
+  // Arriving from a product line (/?job=...#custom): that job type is already picked.
+  const job = new URLSearchParams(location.search).get('job')
+  const type = form.querySelector<HTMLSelectElement>('#qf-type')
+  if (job && type && [...type.options].some((o) => o.value === job || o.text === job)) type.value = job
   const show = (msg: string) => { err.textContent = msg; err.hidden = false; err.scrollIntoView({ block: 'center', behavior: 'smooth' }) }
   file.addEventListener('change', () => {
     err.hidden = true

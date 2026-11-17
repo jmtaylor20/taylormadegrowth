@@ -64,6 +64,9 @@ export const productLines = [
   {
     collection: 'business-cards',
     name: 'Business Cards',
+    /** Until online designs exist, this line is a quote request with this job type picked. */
+    quoteJob: 'Business cards or stationery',
+    quoteBlurb: 'Crisp cards on heavy stock with your logo. Tell us what you need and we will quote it.',
     blurb: 'Crisp cards on heavy stock, from our layouts or your own logo. Reorder in a few clicks.',
     tone: 'navy',
     intro: 'Start from one of our layouts or bring your own logo. Approve your proof online and pick up your cards in Opelika, or have them shipped.',
@@ -71,6 +74,8 @@ export const productLines = [
   {
     collection: 'thank-you-cards',
     name: 'Thank You Cards',
+    quoteJob: 'Invitations or announcements',
+    quoteBlurb: 'Sympathy, wedding, shower and graduation cards, printed to match your program or invitation.',
     blurb: 'For sympathy, weddings, showers and graduations, printed to match your program or invitation.',
     tone: 'gray',
     intro: 'Sympathy, wedding, shower and graduation thank you cards, printed to match your program or invitation.',
@@ -78,6 +83,8 @@ export const productLines = [
   {
     collection: 'stickers',
     name: 'Stickers',
+    quoteJob: 'Labels or stickers',
+    quoteBlurb: 'Round, square or custom stickers for favors, packaging and promotions.',
     blurb: 'Sheets of six 3-inch circles, sized for party cups, favors and packaging.',
     tone: 'red',
     intro: 'Round 3-inch stickers printed six to a sheet, sized for party cups, favors and packaging.',
