@@ -94,6 +94,10 @@ function isShown(el: Element, values: Record<string, string>, photos: Record<str
     const ph = photos[el.hideWhenCutout]
     if (ph?.useCutout && ph.cutout) return false
   }
+  if (el.showWhenCutout) {
+    const ph = photos[el.showWhenCutout]
+    if (!(ph?.useCutout && ph.cutout)) return false
+  }
   if (el.type === 'photo' && el.optional && !photos[el.field]) return false
   return true
 }

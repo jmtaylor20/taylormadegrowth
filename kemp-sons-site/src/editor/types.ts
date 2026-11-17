@@ -75,6 +75,8 @@ interface Base {
   showIf?: string
   /** Hide this element when the named photo has its background removed (e.g. a photo's white border). */
   hideWhenCutout?: string
+  /** Show this element only when the named photo has its background removed (e.g. a cut-out's own placement). */
+  showWhenCutout?: string
 }
 
 export interface RectEl extends Base {

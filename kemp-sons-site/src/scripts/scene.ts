@@ -17,9 +17,9 @@ function photoTexture(r: THREE.WebGLRenderer, url: string) {
 /**
  * The scroll story. `stage` is a continuous value from 0 to 4 driven by
  * scroll position:
- *   0 sheet      an open printed sheet floats in
- *   1 fold       it folds into a finished funeral program (Red Roses)
- *   2 fan        Kemp's Christmas cards and the Gold booklet join it
+ *   0 sheet      a folded trifold funeral program (Flag & Clouds), cover out
+ *   1 fold       it unfolds to show the inside spread
+ *   2 fan        it folds back up and Kemp's Christmas cards and the Gold booklet join it
  *   3 stack      fresh sheets stack up off the press
  *   4 cards      Kemp & Sons business cards, full-color logo
  */
@@ -92,20 +92,31 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
   const edge = plainPaper(renderer, '#f3f0e8')
   const paperBack = plainPaper(renderer, '#f6f3ec')
 
-  // --- Funeral program (Red Roses): right half fixed, left half folds behind it ---
+  // --- Trifold funeral program (Flag & Clouds), a roll fold ---
+  // Built inside-up: each panel's front face is the inside spread, its back
+  // face the outside. The right panel (inside flap) folds in first, then the
+  // left panel folds over it, so the front cover ends up facing out.
   const tex = (name: string) => photoTexture(renderer, `/scene/${name}.jpg`)
-  const prog = { front: tex('program-front'), back: tex('program-back'), insideLeft: tex('program-inside-left'), insideRight: tex('program-inside-right') }
   const pw = 5.5 * S, ph = 8.5 * S
   const program = new THREE.Group()
-  const right = sheet(pw, ph, prog.front, prog.insideLeft, edge)
-  right.position.x = pw / 2
+  const center = sheet(pw, ph, tex('trifold-inside-2'), tex('trifold-back'), edge)
+  const rightPivot = new THREE.Group()
+  rightPivot.position.x = pw / 2
+  const rightPanel = sheet(pw, ph, tex('trifold-inside-3'), tex('trifold-flap'), edge)
+  rightPanel.position.set(pw / 2, 0, -PAPER_THICK * 1.2)
+  rightPivot.add(rightPanel)
   const leftPivot = new THREE.Group()
-  const left = sheet(pw, ph, prog.back, prog.insideRight, edge)
-  left.position.set(-pw / 2, 0, PAPER_THICK * 1.2)
-  leftPivot.add(left)
-  const programInner = new THREE.Group()
-  programInner.add(right, leftPivot)
-  program.add(programInner)
+  leftPivot.position.x = -pw / 2
+  const leftPanel = sheet(pw, ph, tex('trifold-inside-1'), tex('trifold-cover'), edge)
+  leftPanel.position.set(-pw / 2, 0, -PAPER_THICK * 2.4)
+  leftPivot.add(leftPanel)
+  program.add(center, rightPivot, leftPivot)
+  /** 0 = open flat, 1 = folded with the cover out. */
+  function setFold(f: number) {
+    const clamp = (v: number) => Math.min(1, Math.max(0, v))
+    rightPivot.rotation.y = -Math.PI * smooth(clamp(f * 1.6))
+    leftPivot.rotation.y = Math.PI * smooth(clamp((f - 0.375) * 1.6))
+  }
 
   // --- The rest of the lineup: real Christmas cards and the 8-page booklet ---
   const card = sheet(5 * S, 7 * S, tex('pine-garland'), paperBack, edge)
@@ -170,9 +181,9 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
     {
       obj: program,
       poses: [
-        { p: [0, 0.1, 0], r: [-0.32, -0.42, 0.1], s: 1.05, o: 1, fold: 0 },
-        { p: [0.35, 0, 0.6], r: [0.06, 0.4, -0.05], s: 1.2, o: 1, fold: 1 },
-        { p: [-0.6, 0.25, 0.4], r: [0.02, 0.28, 0.06], s: 0.95, o: 1, fold: 1 },
+        { p: [0, 0, 0.3], r: [-0.12, -0.5, 0.06], s: 1.25, o: 1, fold: 1 },
+        { p: [0, 0, 0], r: [0.08, 0.32, -0.03], s: 0.95, o: 1, fold: 0 },
+        { p: [-0.55, 0.2, 0.4], r: [0.02, 0.28, 0.06], s: 0.95, o: 1, fold: 1 },
         { ...HIDE_UP, fold: 1 },
         { ...HIDE_UP, fold: 1 },
       ],
@@ -212,20 +223,46 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
       obj.rotation.set(...P.r)
       obj.scale.setScalar(Math.max(0.0001, P.s))
       obj.visible = P.o > 0.01
-      if (obj === program) {
-        leftPivot.rotation.y = -Math.PI * smooth(P.fold ?? 0)
-        programInner.position.x = -pw / 2 * smooth(P.fold ?? 0)
-      }
+      if (obj === program) setFold(P.fold ?? 0)
     }
   }
-  const footprints = [0, 1, 2, 3, 4].map((i) => {
+  // Each stage's footprint as it really appears on screen (perspective and
+  // tilt included), in world units at the z = 0 plane, at world scale 1.
+  const corner = new THREE.Vector3()
+  function measure(i: number) {
     poseAt(i)
+    world.position.set(0, 0, 0)
+    world.rotation.set(0, 0, 0)
+    world.scale.setScalar(1)
     world.updateMatrixWorld(true)
-    const box = new THREE.Box3()
-    for (const { obj } of objects) if (obj.visible) box.expandByObject(obj)
-    return { cx: (box.min.x + box.max.x) / 2, w: box.max.x - box.min.x }
-  })
-  for (const { obj } of objects) obj.visible = true
+    camera.updateMatrixWorld()
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+    for (const { obj } of objects) {
+      if (!obj.visible) continue
+      obj.traverse((c) => {
+        const mesh = c as THREE.Mesh
+        if (!mesh.isMesh) return
+        mesh.geometry.computeBoundingBox()
+        const bb = mesh.geometry.boundingBox!.clone()
+        // The pile is one sheet drawn many times, stacked back along z.
+        if (mesh === (pile as unknown)) bb.min.z -= COUNT * 0.032
+        for (let k = 0; k < 8; k++) {
+          corner.set(k & 1 ? bb.max.x : bb.min.x, k & 2 ? bb.max.y : bb.min.y, k & 4 ? bb.max.z : bb.min.z)
+          corner.applyMatrix4(mesh.matrixWorld).project(camera)
+          minX = Math.min(minX, corner.x); maxX = Math.max(maxX, corner.x)
+          minY = Math.min(minY, corner.y); maxY = Math.max(maxY, corner.y)
+        }
+      })
+    }
+    // NDC to world units at z = 0
+    const hw = viewW / 2, hh = viewH / 2
+    return { cx: ((minX + maxX) / 2) * hw, w: (maxX - minX) * hw, cy: ((minY + maxY) / 2) * hh, h: (maxY - minY) * hh }
+  }
+  let footprints: { cx: number; w: number; cy: number; h: number }[] = []
+  function measureAll() {
+    footprints = [0, 1, 2, 3, 4].map(measure)
+    for (const { obj } of objects) obj.visible = true
+  }
 
   // Horizontal extent (px) of the text on each stage, set from the page.
   let copyEls: (HTMLElement | null)[] = []
@@ -261,6 +298,7 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
     viewW = viewH * camera.aspect
     mobile = w < 861
     measureCopy()
+    measureAll()
   }
   resize()
   window.addEventListener('resize', resize)
@@ -272,26 +310,27 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
 
   function anchorFor(stage: number) {
     const i = Math.max(0, Math.min(4, Math.round(stage)))
-    if (mobile) return { x: 0, y: viewH * 0.25, scale: Math.min(0.85, viewW / 7) }
-    const scale = Math.min(1.15, viewW / 13)
-    const x = sides[i] * viewW * 0.25
-    // Only steps in when the object would run into the text; wide windows keep the default.
-    const copy = copyBounds[i]
     const fp = footprints[i]
-    if (!copy || fp.w <= 0) return { x, y: 0, scale }
+    // Never taller than 86% of the screen (10% allowance for sway and tilt).
+    const fitH = fp && fp.h > 0 ? (viewH * 0.86) / (fp.h * 1.1) : Infinity
+    if (mobile) {
+      const s = Math.min(0.85, viewW / 7, fp && fp.w > 0 ? (viewW * 0.92) / (fp.w * 1.1) : Infinity, fitH * 0.5)
+      return { x: -(fp?.cx ?? 0) * s, y: viewH * 0.25 - (fp?.cy ?? 0) * s, scale: s }
+    }
+    const scale = Math.min(1.15, viewW / 13, fitH)
+    const copy = copyBounds[i]
     const w = window.innerWidth
     const pxPerUnit = w / viewW
     const toWorld = (px: number) => (px - w / 2) / pxPerUnit
-    const gap = 24
-    const freeL = sides[i] > 0 ? copy.right + gap : gap
-    const freeR = sides[i] > 0 ? w - gap : copy.left - gap
-    // 10% allowance for the idle sway and pointer tilt
-    const halfPx = (fp.w * scale * 1.1 * pxPerUnit) / 2
-    const centerPx = w / 2 + (x + fp.cx * scale) * pxPerUnit
-    if (centerPx - halfPx >= freeL && centerPx + halfPx <= freeR) return { x, y: 0, scale }
+    const gap = 28
+    // The free strip beside the text, or the screen half when there's no text.
+    const freeL = copy ? (sides[i] > 0 ? copy.right + gap : gap) : sides[i] > 0 ? w / 2 : gap
+    const freeR = copy ? (sides[i] > 0 ? w - gap : copy.left - gap) : sides[i] > 0 ? w - gap : w / 2
+    if (!fp || fp.w <= 0) return { x: sides[i] * viewW * 0.25, y: 0, scale }
     const freeW = Math.max(0, freeR - freeL) / pxPerUnit
-    const fit = Math.max(scale * 0.45, Math.min(scale, freeW / (fp.w * 1.1)))
-    return { x: (toWorld(freeL) + toWorld(freeR)) / 2 - fp.cx * fit, y: 0, scale: fit }
+    const fit = Math.max(scale * 0.4, Math.min(scale, freeW / (fp.w * 1.1)))
+    // Centered in the free strip and vertically on screen.
+    return { x: (toWorld(freeL) + toWorld(freeR)) / 2 - fp.cx * fit, y: -fp.cy * fit, scale: fit }
   }
 
   const start = performance.now()
@@ -323,12 +362,7 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
       obj.rotation.set(lerp(A.r[0], B.r[0], k), lerp(A.r[1], B.r[1], k) + Math.sin(t * 0.5 + obj.id) * 0.03 * idle, lerp(A.r[2], B.r[2], k))
       obj.scale.setScalar(Math.max(0.0001, lerp(A.s, B.s, k)))
       setOpacity(obj, lerp(A.o, B.o, k))
-      if (obj === program) {
-        const fold = lerp(A.fold ?? 0, B.fold ?? 0, k)
-        leftPivot.rotation.y = -Math.PI * smooth(fold)
-        // keep the folded program centered on its spine
-        programInner.position.x = lerp(0, -pw / 2, smooth(fold))
-      }
+      if (obj === program) setFold(lerp(A.fold ?? 0, B.fold ?? 0, k))
     }
     // Cards drift gently once they're on stage.
     cardFan.rotation.y = Math.sin(t * 0.5) * 0.12 * idle

@@ -111,6 +111,10 @@ function ElementNode({ el, ...rest }: NodeProps) {
     const ph = rest.photos[el.hideWhenCutout]
     if (ph?.useCutout && ph.cutout) return null
   }
+  if (el.showWhenCutout) {
+    const ph = rest.photos[el.showWhenCutout]
+    if (!(ph?.useCutout && ph.cutout)) return null
+  }
   const common = { rotation: el.rotation, opacity: el.opacity, listening: false }
   switch (el.type) {
     case 'rect':

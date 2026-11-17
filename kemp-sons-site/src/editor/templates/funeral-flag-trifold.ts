@@ -104,7 +104,9 @@ export const funeralFlagTrifold: Template = {
         { type: 'text', text: '{{name}}', x: P3 + 0.3, y: 0.72, w: 4.9, h: 1.0, font: 'Great Vibes', size: 40, minSize: 18, color: '#111111', maxLines: 2, lineHeight: 0.95 },
         // White border, dropped when the background is removed so the portrait sits on the flag.
         { type: 'rect', x: P3 + 0.83, y: 1.88, w: 3.84, h: 4.34, fill: '#ffffff', hideWhenCutout: 'photo' },
-        { type: 'photo', field: 'photo', x: P3 + 0.9, y: 1.95, w: 3.7, h: 4.2 },
+        { type: 'photo', field: 'photo', x: P3 + 0.9, y: 1.95, w: 3.7, h: 4.2, hideWhenCutout: 'photo' },
+        // Cut out, the portrait stands on the date panel with its head where the flag starts.
+        { type: 'photo', field: 'photo', x: P3 + 0.95, y: 2.3, w: 3.6, h: 4.35, showWhenCutout: 'photo' },
         { type: 'rect', x: P3 + 0.3, y: 6.38, w: 4.9, h: 1.82, fill: '#ffffff', opacity: 0.92 },
         { type: 'text', text: '{{birthDate}}  |  {{deathDate}}', x: P3 + 0.45, y: 6.48, w: 4.6, h: 0.34, font: HEAD, weight: 400, size: 12.5, minSize: 8, color: RED },
         { type: 'text', text: '{{serviceDate}}  |  {{serviceTime}}', x: P3 + 0.45, y: 6.84, w: 4.6, h: 0.36, font: SERIF, weight: 700, size: 14, minSize: 8, color: INK },

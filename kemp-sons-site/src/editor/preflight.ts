@@ -23,6 +23,10 @@ export function preflight(t: Template, d: Draft): PreflightIssue[] {
   for (const side of t.sides)
     for (const el of side.elements) {
       if (el.showIf && !(d.values[el.showIf] ?? '').trim()) continue
+      // Elements switched by a photo's cut-out (one of two placements for the same photo).
+      const cut = (f?: string) => !!(f && d.photos[f]?.useCutout && d.photos[f]?.cutout)
+      if (el.hideWhenCutout && cut(el.hideWhenCutout)) continue
+      if (el.showWhenCutout && !cut(el.showWhenCutout)) continue
       if (el.type === 'text' && fitText(fillTokens(el.text, d.values), el).overflow) fieldsOf(el).forEach((f) => overflow.add(f))
       if (el.type === 'stack' && fitStack(el, d.values).overflow) fieldsOf(el).forEach((f) => overflow.add(f))
       if (el.type === 'photo' && !el.optional) {
