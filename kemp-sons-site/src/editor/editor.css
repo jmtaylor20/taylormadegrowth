@@ -195,3 +195,24 @@
 .ed-tones { grid-template-columns: repeat(3, 1fr); }
 .ed-tones-wide { grid-column: 1 / -1; }
 @media (max-width: 420px) { .ed-tones { grid-template-columns: 1fr 1fr; } }
+
+/* ---------- Prototype: simple mode ---------- */
+.ed-advanced { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; cursor: pointer; min-height: 44px; padding: 0 12px; border: 1.5px solid currentColor; }
+.ed-advanced input { width: 18px; height: 18px; accent-color: var(--red); }
+.ed-simple-steps { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 4px; }
+.ed-simple-steps button { all: unset; box-sizing: border-box; width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 6px; text-align: center; font-weight: 700; font-size: 14px; border: 1.5px solid var(--rule); background: var(--white); cursor: pointer; padding: 4px 6px; }
+.ed-simple-steps button .mono { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--rule); font-size: 11px; }
+.ed-simple-steps button.is-on { border-color: var(--ink); background: var(--ink); color: var(--white); }
+.ed-simple-steps button.is-on .mono { background: var(--red); color: var(--white); }
+.ed-simple-steps button.is-done .mono { background: var(--ink); color: var(--white); }
+.ed-simple-steps button:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+.ed-step-nav { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.ed-step-nav .btn { margin-left: auto; }
+.ed-btn.is-on { background: var(--ink); color: var(--white); }
+.ed-sent { position: fixed; inset: 0; z-index: 80; background: rgba(17, 17, 17, 0.6); display: grid; place-items: center; padding: 16px; overflow-y: auto; }
+.ed-sent-in { background: var(--white); color: var(--ink); max-width: 560px; width: 100%; padding: 24px; display: grid; gap: 14px; border: 2px solid var(--ink); }
+.ed-sent-in h2 { font-size: 24px; font-weight: 800; line-height: 1.1; }
+.ed-sent-in dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; font-size: 15px; }
+.ed-sent-in dt { font-weight: 700; }
+.ed-sent-in dd { white-space: pre-line; overflow-wrap: anywhere; }
+.ed-sent-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: space-between; }

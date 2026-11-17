@@ -13,6 +13,10 @@ interface Props {
   onFocusField: (id: string | null, typing?: boolean) => void
   /** Lets a tap on an empty photo frame in the preview open the picker for that slot. */
   registerPhotoPicker: (slotId: string, open: (() => void) | null) => void
+  /** Simple mode (prototype): photo adjustments tucked behind one button, black and white only. */
+  simple?: boolean
+  /** Show only the words or only the photos (one step at a time in simple mode). */
+  only?: 'text' | 'photo'
 }
 
 /** How the text for a field is fitting, for the small badge next to its label. */
@@ -28,9 +32,10 @@ function fitStatus(t: Template, values: Record<string, string>, fieldId: string)
   return status
 }
 
-export function FieldForm({ template, draft, onValue, onPhoto, onFocusField, registerPhotoPicker }: Props) {
+export function FieldForm({ template, draft, onValue, onPhoto, onFocusField, registerPhotoPicker, simple = false, only }: Props) {
   const sections: { name: string; fields: Field[] }[] = []
   for (const f of template.fields) {
+    if (only && (only === 'photo') !== (f.type === 'photo')) continue
     const name = f.section ?? 'Details'
     let s = sections.find((x) => x.name === name)
     if (!s) sections.push((s = { name, fields: [] }))
@@ -47,7 +52,7 @@ export function FieldForm({ template, draft, onValue, onPhoto, onFocusField, reg
           </legend>
           {s.fields.map((f) =>
             f.type === 'photo' ? (
-              <PhotoInput key={f.id} field={f} photos={draft.photos} onChange={onPhoto} onFocus={(slot) => onFocusField(slot, false)} register={registerPhotoPicker} />
+              <PhotoInput key={f.id} field={f} photos={draft.photos} onChange={onPhoto} onFocus={(slot) => onFocusField(slot, false)} register={registerPhotoPicker} simple={simple} />
             ) : (
               <label key={f.id} className="ed-field">
                 <span className="ed-label">
@@ -110,13 +115,16 @@ function PhotoInput({
   onChange,
   onFocus,
   register,
+  simple = false,
 }: {
   field: PhotoField
   photos: Record<string, PhotoState>
   onChange: (slotId: string, v: PhotoState | null) => void
   onFocus: (slotId: string) => void
   register: (slotId: string, open: (() => void) | null) => void
+  simple?: boolean
 }) {
+  const [adjust, setAdjust] = useState(false)
   const slots = field.count ? Array.from({ length: field.count }, (_, i) => `${field.id}_${i + 1}`) : [field.id]
   const [active, setActive] = useState(slots[0])
   const [busy, setBusy] = useState(false)
@@ -185,12 +193,18 @@ function PhotoInput({
         <button type="button" onClick={() => pick(active)} className="ed-btn" disabled={busy}>
           {busy ? 'Loading photo...' : `${value ? 'Replace' : 'Add'} photo${multi ? ` ${n}` : ''}`}
         </button>
+        {value && simple && (
+          <button type="button" onClick={() => setAdjust(!adjust)} className={`ed-btn ed-btn-ghost ${adjust ? 'is-on' : ''}`} aria-expanded={adjust}>
+            {adjust ? 'Done adjusting' : 'Adjust photo'}
+          </button>
+        )}
         {value && (
           <button type="button" onClick={() => onChange(active, null)} className="ed-btn ed-btn-ghost">
             Remove
           </button>
         )}
       </div>
+      {simple && value && !adjust && <span className="ed-hint">Your photo fills its spot automatically. Drag it on the preview to move it.</span>}
       <input
         ref={input}
         type="file"
@@ -215,6 +229,8 @@ function PhotoInput({
           }
         }}
       />
+      {(!simple || adjust) && (
+        <>
       <div className={`ed-zoom ${value ? '' : 'is-off'}`}>
         <span className="mono">Zoom</span>
         <input
@@ -252,20 +268,20 @@ function PhotoInput({
       )}
       {value && (
         <div className="ed-tones" role="group" aria-label="Photo look">
-          <label className={`ed-check ed-check-light ed-tones-wide ${value.enhance ? 'is-on' : ''}`}>
+          {!simple && <label className={`ed-check ed-check-light ed-tones-wide ${value.enhance ? 'is-on' : ''}`}>
             <input type="checkbox" checked={!!value.enhance} onChange={(e) => onChange(active, { ...value, enhance: e.target.checked || undefined })} />
             <span>
               Brighten / auto-fix
               <span className="ed-hint"> For dark, faded or yellowed photos.</span>
             </span>
-          </label>
+          </label>}
           {(
             [
               ['bw', 'Black & white'],
               ['sepia', 'Sepia'],
               ['vintage', 'Soft vintage'],
             ] as [PhotoTone, string][]
-          ).map(([tone, label]) => (
+          ).filter(([tone]) => !simple || tone === 'bw').map(([tone, label]) => (
             <label key={tone} className={`ed-check ed-check-light ${value.tone === tone ? 'is-on' : ''}`}>
               <input
                 type="checkbox"
@@ -277,7 +293,14 @@ function PhotoInput({
           ))}
         </div>
       )}
-      {field.hint && <span className="ed-hint">{field.hint}</span>}
+          {simple && value && (
+            <button type="button" className="ed-btn ed-btn-ghost" onClick={() => onChange(active, { ...value, ox: 0, oy: 0, zoom: 1, tone: undefined })}>
+              Reset photo
+            </button>
+          )}
+        </>
+      )}
+      {field.hint && !simple && <span className="ed-hint">{field.hint}</span>}
     </div>
   )
 }

@@ -1,0 +1,21 @@
+---
+import Base from '../../layouts/Base.astro'
+import Header from '../../components/Header.astro'
+import PrototypeApp from '../../prototype/PrototypeApp'
+import { business } from '../../config/site'
+// Prototype only: not linked from the site and kept out of search results.
+const domain = import.meta.env.SHOPIFY_STORE_DOMAIN
+const token = import.meta.env.SHOPIFY_STOREFRONT_TOKEN
+const shop = domain && token ? { domain, token } : null
+---
+<Base title="Start an order (prototype) | Kemp & Sons Printing" noindex>
+  <Header />
+  <p class="proto-flag mono">Prototype / not the live ordering flow / <a href="/">see the current site</a></p>
+  <main id="main">
+    <PrototypeApp client:only="react" shop={shop} phone={business.phone} phoneHref={business.phoneHref} />
+  </main>
+</Base>
+<style>
+  .proto-flag { position: relative; z-index: 5; margin: calc(var(--header-h, 70px) + 8px) auto 0; max-width: 1180px; width: calc(100% - 32px); background: #103750; color: #fff; padding: 8px 12px; font-size: 11px; }
+  .proto-flag a { color: #fff; text-decoration: underline; }
+</style>

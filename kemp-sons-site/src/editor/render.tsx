@@ -136,3 +136,13 @@ export function renderThumbnail(t: Template, width = 640, opts: { samples?: bool
   thumbCache.set(cacheKey, job)
   return job
 }
+
+/** Every side of a design drawn with the sample photos, for a larger preview (front and inside). */
+export async function renderPreviewSides(t: Template, width = 900): Promise<{ id: string; label: string; src: string }[]> {
+  const { defaultDraft } = await import('./draft')
+  const photos = await samplePhotos(t, 0)
+  const ppi = width / t.trim.w
+  const out: { id: string; label: string; src: string }[] = []
+  for (const side of t.sides) out.push({ id: side.id, label: side.label, src: await renderSide(t, side, defaultDraft(t).values, photos, { mode: 'trim', ppi, quality: 0.85 }) })
+  return out
+}

@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Template } from './types'
 import { templateById } from './templates'
 import { fieldsOf } from './textFit'
 import { baseSrc, clearAllDrafts, clearDraft, defaultDraft, toneImage, toneKey, useDraft, type Draft, type PhotoState } from './draft'
 import { FieldForm } from './FieldForm'
 import { PreviewPane } from './PreviewPane'
+import { photoLayout } from './SideCanvas'
 import { preflight } from './preflight'
 import { proofPpi, renderSide } from './render'
 import { loadFonts } from './fonts'
@@ -26,7 +27,15 @@ interface Props {
   backHref: string
   phone: string
   phoneHref: string
+  /**
+   * Prototype (/prototype/): opens in simple mode with a "More options" switch
+   * back to the full designer, and the last step shows what would be sent
+   * instead of going to checkout. Nothing is uploaded or ordered.
+   */
+  prototype?: boolean
 }
+
+const ADVANCED_KEY = 'kemp-proto-advanced'
 
 function useMedia(q: string) {
   const [on, setOn] = useState(() => typeof window !== 'undefined' && window.matchMedia(q).matches)
@@ -80,7 +89,26 @@ function useProduct(t: Template, shop: ShopConfig | null) {
   return { product, choice, setChoice, variant }
 }
 
-function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template } & Props) {
+function Editor({ t, shop, backHref: siteBack, phone, phoneHref, prototype = false }: { t: Template } & Props) {
+  // Prototype: simple mode unless "More options" is on (remembered for the visit).
+  const [simple, setSimple] = useState(() => {
+    if (!prototype) return false
+    try {
+      return sessionStorage.getItem(ADVANCED_KEY) !== '1'
+    } catch {
+      return true
+    }
+  })
+  const setAdvanced = (on: boolean) => {
+    setSimple(!on)
+    try {
+      sessionStorage.setItem(ADVANCED_KEY, on ? '1' : '0')
+    } catch {
+      /* private window */
+    }
+  }
+  const STEPS = ['Words', 'Photos', 'Print & review'] as const
+  const [step, setStep] = useState(0)
   const [kiosk] = useState(isKiosk)
   // Staff final tweaks: /design/<t>/?from=<design id>&staff=<order name>&opts=<print options>
   const [staff] = useState<StaffEdit | null>(() => {
@@ -89,7 +117,9 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
     const from = q.get('from')
     return order && from ? { order, designId: from, summary: q.get('opts') ?? '' } : null
   })
-  const backHref = kiosk ? `${KIOSK_HOME}#${t.category}` : siteBack
+  // Prototype: back returns to wherever in the picker the design was chosen.
+  const [protoBack] = useState(() => (prototype && document.referrer.includes('/prototype/') && !document.referrer.includes('/prototype/design/') ? document.referrer : null))
+  const backHref = kiosk ? `${KIOSK_HOME}#${t.category}` : (protoBack ?? siteBack)
   const [draft, setDraft, loaded] = useDraft(t)
 
   // Photo fixes (brighten, black & white, sepia, vintage): make the fixed copy whenever a photo, its cut-out or a fix changes.
@@ -193,11 +223,21 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
     (id: string, next: PhotoState | null) =>
       setDraft((d) => {
         const photos = { ...d.photos }
-        if (next) photos[id] = next
-        else delete photos[id]
+        if (next) {
+          // Simple mode: a newly added photo sits a little toward its top third, so faces aren't cut off.
+          const fresh = !d.photos[id] || d.photos[id].src !== next.src
+          if (simple && fresh && next.ox === 0 && next.oy === 0) {
+            const el = t.sides.flatMap((sd) => sd.elements).find((e) => e.type === 'photo' && e.field === id)
+            if (el && el.type === 'photo') {
+              const lay = photoLayout({ width: next.w, height: next.h }, el.w * 72, el.h * 72, next)
+              next = { ...next, oy: lay.maxY * 0.6 }
+            }
+          }
+          photos[id] = next
+        } else delete photos[id]
         return { ...d, photos }
       }),
-    [setDraft],
+    [setDraft, simple, t],
   )
   const onPhotoTap = useCallback((id: string) => photoPickers.current[id]?.(), [])
 
@@ -225,11 +265,18 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
           <p className="mono">Work order / {t.sizeLabel}</p>
           <h1>{t.name}</h1>
         </div>
-        <ol className="ed-steps mono" aria-label="Steps">
-          <li className={proofOpen ? '' : 'is-on'}>1 Design</li>
-          <li className={proofOpen ? 'is-on' : ''}>2 Proof</li>
-          <li>3 Checkout</li>
-        </ol>
+        {prototype ? (
+          <label className="ed-advanced">
+            <input type="checkbox" checked={!simple} onChange={(e) => setAdvanced(e.target.checked)} />
+            <span>More options</span>
+          </label>
+        ) : (
+          <ol className="ed-steps mono" aria-label="Steps">
+            <li className={proofOpen ? '' : 'is-on'}>1 Design</li>
+            <li className={proofOpen ? 'is-on' : ''}>2 Proof</li>
+            <li>3 Checkout</li>
+          </ol>
+        )}
       </header>
 
       <div className="ed-body">
@@ -258,9 +305,34 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
           {!loaded ? (
             <p className="ed-hint">Loading your design...</p>
           ) : (
-            <FieldForm template={t} draft={draft} onValue={onValue} onPhoto={onPhoto} onFocusField={focusField} registerPhotoPicker={(id, open) => (photoPickers.current[id] = open)} />
+            <>
+              {simple && (
+                <ol className="ed-simple-steps" aria-label="Steps">
+                  {STEPS.map((name, i) => (
+                    <li key={name}>
+                      <button type="button" className={i === step ? 'is-on' : i < step ? 'is-done' : ''} aria-current={i === step ? 'step' : undefined} onClick={() => setStep(i)}>
+                        <span className="mono">{i + 1}</span> {name}
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              )}
+              {(!simple || step < 2) && (
+                <FieldForm
+                  template={t}
+                  draft={draft}
+                  onValue={onValue}
+                  onPhoto={onPhoto}
+                  onFocusField={focusField}
+                  registerPhotoPicker={(id, open) => (photoPickers.current[id] = open)}
+                  simple={simple}
+                  only={simple ? (step === 0 ? 'text' : 'photo') : undefined}
+                />
+              )}
+            </>
           )}
 
+          {(!simple || step === 2) && (<>
           <fieldset className="ed-section">
             <legend className="ed-section-title">
               <span className="ed-section-no">{String.fromCharCode(65 + new Set(t.fields.map((f) => f.section ?? 'Details')).size)}</span>
@@ -311,6 +383,23 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
             />
           )}
 
+          </>)}
+
+          {simple && (
+            <div className="ed-step-nav">
+              {step > 0 && (
+                <button type="button" className="ed-btn ed-btn-ghost" onClick={() => setStep(step - 1)}>
+                  &larr; {STEPS[step - 1]}
+                </button>
+              )}
+              {step < 2 && (
+                <button type="button" className="btn btn-primary" onClick={() => setStep(step + 1)}>
+                  Next: {STEPS[step + 1]} <span className="arrow" aria-hidden="true">&rarr;</span>
+                </button>
+              )}
+            </div>
+          )}
+
           <button
             type="button"
             className="ed-btn ed-btn-ghost ed-reset"
@@ -353,6 +442,7 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
           phone={phone}
           phoneHref={phoneHref}
           onClose={() => setProofOpen(false)}
+          prototype={prototype}
         />
       )}
     </div>
@@ -382,6 +472,7 @@ function Proof({
   phone,
   phoneHref,
   onClose,
+  prototype = false,
 }: {
   t: Template
   draft: Draft
@@ -395,7 +486,10 @@ function Proof({
   phone: string
   phoneHref: string
   onClose: () => void
+  prototype?: boolean
 }) {
+  // Prototype: what would be sent, shown instead of going to checkout.
+  const [sent, setSent] = useState(false)
   const [images, setImages] = useState<Record<string, string>>({})
   const [checked, setChecked] = useState<boolean[]>(CHECKS.map(() => false))
   const [work, setWork] = useState<string | null>(null)
@@ -463,6 +557,7 @@ function Proof({
   }
 
   const approve = async () => {
+    if (prototype) return setSent(true)
     if (!allChecked || missingPhotos || !variant || !shop) return
     setError(null)
     try {
@@ -629,11 +724,52 @@ function Proof({
             </button>
           )
         ) : (
-          <button type="button" className="btn btn-primary" disabled={!allChecked || missingPhotos || !variant || !!work} onClick={approve}>
-            {work ? 'Working...' : variant ? `Approve & checkout ${money(total)}` : 'Approve proof'}
+          <button type="button" className="btn btn-primary" disabled={!allChecked || missingPhotos || (!variant && !prototype) || !!work} onClick={approve}>
+            {prototype ? `Send for proof${variant ? ` ${money(total)}` : ''}` : work ? 'Working...' : variant ? `Approve & checkout ${money(total)}` : 'Approve proof'}
           </button>
         )}
       </div>
+      {sent && (
+        <div className="ed-sent" role="dialog" aria-modal="true" aria-label="What would be sent">
+          <div className="ed-sent-in">
+            <p className="mono">Prototype / nothing was sent</p>
+            <h2>This is what would go to the shop</h2>
+            <dl>
+              <dt>Product</dt>
+              <dd>{t.category === 'funeral-programs' ? 'Funeral program' : t.category === 'christmas-cards' ? 'Christmas card' : t.category}</dd>
+              <dt>Size</dt>
+              <dd>{t.sizeLabel}</dd>
+              <dt>Design</dt>
+              <dd>{t.name}</dd>
+              <dt>Options</dt>
+              <dd>{summary || 'Not chosen'}</dd>
+              <dt>Total</dt>
+              <dd>{variant ? money(total) : 'Price not loaded'}</dd>
+              <dt>Photos</dt>
+              <dd>
+                {Object.keys(draft.photos).length} added
+                {Object.values(draft.photos).some((p) => p.tone === 'bw') ? ', some in black and white' : ''}
+              </dd>
+              {t.fields
+                .filter((f) => f.type !== 'photo' && (draft.values[f.id] ?? '').trim())
+                .map((f) => (
+                  <Fragment key={f.id}>
+                    <dt>{f.label}</dt>
+                    <dd>{draft.values[f.id]}</dd>
+                  </Fragment>
+                ))}
+            </dl>
+            <div className="ed-sent-actions">
+              <button type="button" className="ed-btn ed-btn-ghost" onClick={() => setSent(false)}>
+                Back to the proof
+              </button>
+              <a className="btn btn-primary" href="/prototype/">
+                Start another order
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
