@@ -20,6 +20,14 @@ import RegMark from './RegMark.astro'
   novalidate
 >
   <input type="hidden" name="form-name" value="custom-job" />
+  <!-- Where the customer came from (an ad click or campaign), filled in by the site's tracking script. -->
+  <input type="hidden" name="gclid" />
+  <input type="hidden" name="gbraid" />
+  <input type="hidden" name="wbraid" />
+  <input type="hidden" name="utm_source" />
+  <input type="hidden" name="utm_medium" />
+  <input type="hidden" name="utm_campaign" />
+  <input type="hidden" name="landing_page" />
   <p class="hp" aria-hidden="true"><label>Leave this empty <input name="company_website" tabindex="-1" autocomplete="off" /></label></p>
 
   <div class="wo-head">

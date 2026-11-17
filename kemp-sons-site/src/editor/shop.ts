@@ -120,14 +120,15 @@ export interface CartLine {
   attributes: Record<string, string>
 }
 
-export async function addToCart(cfg: ShopConfig, items: CartLine[]): Promise<string> {
+/** Order-level attributes (like the ad click an order came from) show on the order under Additional details. */
+export async function addToCart(cfg: ShopConfig, items: CartLine[], attributes: Record<string, string> = {}): Promise<string> {
   const lines = items.map((it) => ({ merchandiseId: it.variantId, quantity: it.quantity, attributes: Object.entries(it.attributes).map(([key, value]) => ({ key, value })) }))
   // A fresh cart for every approved design. The site has no cart page, so an
   // older unpaid design left in a reused cart would ride along unnoticed.
   const data = await storefront<{ cartCreate: CartResult }>(
     cfg,
     `${CART_FIELDS} mutation Create($input: CartInput!) { cartCreate(input: $input) { cart { ...CartBits } userErrors { message } } }`,
-    { input: { lines } },
+    { input: { lines, attributes: Object.entries(attributes).filter(([, v]) => v).map(([key, value]) => ({ key, value })) } },
   )
   const r = data.cartCreate
   if (!r.cart || r.userErrors.length) throw new Error(r.userErrors.map((e) => e.message).join('; ') || 'Could not create cart')

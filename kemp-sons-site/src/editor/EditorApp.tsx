@@ -15,6 +15,7 @@ import { addToCart, createDesign, designFileUrl, getProduct, money, putDesignFil
 import { EnvelopePanel } from './EnvelopePanel'
 import { buildEnvelopePdf, emptyEnvelopes, envelopeCount, envelopeKind, envelopePrinting, type EnvelopeKind, type EnvelopeState } from './envelopes'
 import { cutoutKind, dataUrlToBlob, draftJson, loadDesign, photoKind, rememberDesign, reorderUrl } from './saved'
+import { adClick, flushAnalytics, isKioskVisit, track, withLinker } from '../scripts/tracking'
 import './editor.css'
 
 interface Props {
@@ -150,6 +151,8 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
 
   useEffect(() => {
     loadFonts(t).then(() => setFontsReady(true))
+    // Staff adjusting an order isn't a customer starting a design.
+    if (!staff) track('design_start', { template: t.id, design_name: t.name, category: t.category })
   }, [])
 
   const focusField = useCallback(
@@ -491,12 +494,26 @@ function Proof({
           },
         })
       if (rushVariant) items.push({ variantId: rushVariant.id, quantity: 1, attributes: { For: t.name, _Reference: ref } })
-      const checkoutUrl = await addToCart(shop, items)
+      // Where the order came from, shown on the Shopify order under Additional details.
+      const click = adClick()
+      const orderAttrs: Record<string, string> = isKioskVisit() ? { source: 'kiosk' } : { ...(click ?? {}) }
+      const checkoutUrl = await addToCart(shop, items, orderAttrs)
+      const gaItems = [
+        { item_id: variant.id, item_name: t.name, item_variant: summary, price: variant.price, quantity: 1 },
+        ...(env && envOrder ? [{ item_id: envOrder.variant.id, item_name: `${t.envelope?.label ?? 'Envelope'}s`, price: envOrder.variant.price, quantity: envOrder.count }] : []),
+        ...(rushVariant ? [{ item_id: rushVariant.id, item_name: 'Rush turnaround', price: rushVariant.price, quantity: 1 }] : []),
+      ]
+      const value = Math.round(total * 100) / 100
+      track('proof_approved', { template: t.id, value, currency: 'USD' })
+      track('add_to_cart', { currency: 'USD', value, items: gaItems })
+      track('begin_checkout', { currency: 'USD', value, items: gaItems })
+      // GA4 holds events for a few seconds; send them now, before leaving for checkout.
+      await flushAnalytics()
       rememberDesign({ id, templateId: t.id, name: t.name, ref, summary, savedAt: new Date().toISOString(), thumb })
       setWork('Opening checkout')
       // On the shop kiosk, nothing of this customer's stays behind for the next one.
       if (isKiosk()) await clearAllDrafts()
-      window.location.href = checkoutUrl
+      window.location.href = withLinker(checkoutUrl)
     } catch (e) {
       console.error(e)
       setWork(null)
