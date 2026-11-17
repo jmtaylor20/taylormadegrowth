@@ -57,6 +57,11 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
     <CookieConsent />
 
     <script>
+      import { initSmooth } from '../scripts/smooth';
+
+      // Sitewide smooth scrolling (skipped automatically for reduced motion)
+      initSmooth();
+
       // Mobile nav
       const toggle = document.querySelector('.menu-toggle');
       const nav = document.querySelector('.site-nav');

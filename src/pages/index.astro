@@ -46,66 +46,221 @@ const pillars = [
   description="Taylormade Brands is a growth partner for owner-led businesses. Custom software, growth strategy, research, and reporting that make good businesses run and grow better."
 >
   <main>
-    <!-- HERO -->
-    <section class="ink hero grid-bg glow-gold">
-      <div class="container wide hero-inner">
-        <div class="hero-copy">
-          <p class="label">Your partner in business growth</p>
-          <h1 class="display">
-            I build the <span class="gold serif-em">systems</span> good businesses grow on.
-          </h1>
-          <p class="lead muted">
-            Taylormade Brands is a growth partner for owner-led companies. Custom software,
-            strategy, research, and reporting. Not one-off marketing tasks. The tools and systems
-            your business actually runs on.
-          </p>
-          <div class="btn-row mt-m">
-            <a href="/growth-assessment.html" class="btn btn-primary">Start with an assessment <span class="arrow">→</span></a>
-            <a href="/work.html" class="btn btn-ghost">See the work</a>
+    <!-- HERO + SCROLL STORY (one pinned scene on desktop; stacked with a sticky window on mobile) -->
+    <section class="scene" id="scene">
+      <div class="scene-pin ink grid-bg">
+        <div class="scene-glow" aria-hidden="true" style="--gx:78%;--gy:8%"></div>
+        <div class="container wide scene-grid">
+          <div class="scene-copy">
+            <!-- Frame 0: hero copy -->
+            <div class="frame hero-copy" data-frame="0">
+              <p class="label">Your partner in business growth</p>
+              <h1 class="display">
+                I build the <span class="gold serif-em">systems</span> good businesses grow on.
+              </h1>
+              <p class="lead muted">
+                Taylormade Brands is a growth partner for owner-led companies. Custom software,
+                strategy, research, and reporting. Not one-off marketing tasks. The tools and systems
+                your business actually runs on.
+              </p>
+              <div class="btn-row mt-m">
+                <a href="/growth-assessment.html" class="btn btn-primary">Start with an assessment <span class="arrow">→</span></a>
+                <a href="/work.html" class="btn btn-ghost">See the work</a>
+              </div>
+
+              <div class="hero-meta">
+                <div><span class="stat-num">New business</span><p class="stat-label">generated for local clients, and growing</p></div>
+                <div class="hero-meta-rule"></div>
+                <div><span class="stat-num">4</span><p class="stat-label">custom platforms &amp; apps in production</p></div>
+              </div>
+            </div>
+
+            <!-- Frame 1: custom software -->
+            <div class="frame chapter" data-frame="1">
+              <p class="label">01 · Custom software</p>
+              <h2>Software built around how your crews actually work.</h2>
+              <p class="lead muted">
+                The A&amp;O Tree Service app runs estimating, crew scheduling, routes, payments, and
+                reporting in one tool. Built for the field, not the boardroom.
+              </p>
+              <a href="/work.html" class="text-link mt-m">See the platforms <span class="arrow">→</span></a>
+            </div>
+
+            <!-- Frame 2: growth strategy -->
+            <div class="frame chapter" data-frame="2">
+              <p class="label">02 · Growth strategy</p>
+              <h2>A clear plan for what to fix first and what to build next.</h2>
+              <p class="lead muted">
+                I sit on your side of the table as an ongoing partner. We map the business, pick the
+                highest-leverage moves, and build them in order.
+              </p>
+              <a href="/services.html" class="text-link mt-m">How we work <span class="arrow">→</span></a>
+            </div>
           </div>
 
-          <div class="hero-meta">
-            <div><span class="stat-num">New business</span><p class="stat-label">generated for local clients, and growing</p></div>
-            <div class="hero-meta-rule"></div>
-            <div><span class="stat-num">4</span><p class="stat-label">custom platforms &amp; apps in production</p></div>
+          <div class="scene-visual">
+            <!-- The window: one shell, four faces -->
+            <div class="window-wrap" aria-hidden="true">
+              <div class="window-float">
+                <div class="app-window">
+                  <div class="faces">
+
+                    <!-- Face 0: client dashboard -->
+                    <div class="face face-dash is-active" data-face="0">
+                      <div class="app-bar">
+                        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                        <span class="app-title">growth&nbsp;·&nbsp;client dashboard</span>
+                      </div>
+                      <div class="face-body">
+                        <div class="app-kpis">
+                          <div class="kpi"><span class="kpi-label">Leads / mo</span><span class="kpi-val">148</span><span class="kpi-up">▲ 32%</span></div>
+                          <div class="kpi"><span class="kpi-label">Booked</span><span class="kpi-val">$41k</span><span class="kpi-up">▲ 18%</span></div>
+                          <div class="kpi"><span class="kpi-label">Reviews</span><span class="kpi-val">4.9★</span><span class="kpi-up">▲ 27</span></div>
+                        </div>
+                        <div class="app-chart">
+                          <div class="chart-head"><span>Pipeline value</span><span class="chart-tag">last 6 mo</span></div>
+                          <svg viewBox="0 0 320 120" preserveAspectRatio="none" class="spark">
+                            <defs>
+                              <linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="var(--growth)" stop-opacity="0.35" />
+                                <stop offset="100%" stop-color="var(--growth)" stop-opacity="0" />
+                              </linearGradient>
+                            </defs>
+                            <path d="M0,96 L53,84 L106,88 L160,58 L213,44 L266,26 L320,14 L320,120 L0,120 Z" fill="url(#fill)" />
+                            <path d="M0,96 L53,84 L106,88 L160,58 L213,44 L266,26 L320,14" fill="none" stroke="var(--growth)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                          </svg>
+                        </div>
+                        <div class="app-rows">
+                          <div class="app-row"><span class="rdot done"></span>Website + lead form live<span class="rmeta">done</span></div>
+                          <div class="app-row"><span class="rdot done"></span>Google profile optimized<span class="rmeta">done</span></div>
+                          <div class="app-row"><span class="rdot active"></span>Client portal build<span class="rmeta">in&nbsp;progress</span></div>
+                          <div class="app-row"><span class="rdot"></span>Monthly growth report<span class="rmeta">scheduled</span></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Face 1: field operations app -->
+                    <div class="face face-app" data-face="1">
+                      <div class="app-bar">
+                        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                        <span class="app-title">a&amp;o tree service&nbsp;·&nbsp;field app</span>
+                        <span class="app-pill">live</span>
+                      </div>
+                      <div class="face-body app-layout">
+                        <div class="app-side">
+                          <span class="face-label">Today · 3 crews</span>
+                          <div class="job"><span class="job-time">7:30</span><div class="job-text"><b>Oak removal</b><small>Auburn · Crew A</small></div><span class="rdot done"></span></div>
+                          <div class="job"><span class="job-time">9:15</span><div class="job-text"><b>Storm cleanup</b><small>Opelika · Crew B</small></div><span class="rdot active"></span></div>
+                          <div class="job"><span class="job-time">1:00</span><div class="job-text"><b>Stump grinding</b><small>Lake Martin · Crew A</small></div><span class="rdot"></span></div>
+                          <div class="job"><span class="job-time">3:30</span><div class="job-text"><b>Lot clearing</b><small>Dadeville · Crew C</small></div><span class="rdot"></span></div>
+                        </div>
+                        <div class="app-main">
+                          <div class="map">
+                            <svg viewBox="0 0 220 150" preserveAspectRatio="none" class="map-svg">
+                              <path d="M18,118 C50,96 62,60 98,58 S150,86 196,30" fill="none" stroke="var(--gold)" stroke-width="2" stroke-dasharray="4 5" stroke-linecap="round" />
+                              <circle cx="18" cy="118" r="6" fill="var(--growth)" />
+                              <circle cx="98" cy="58" r="6" fill="var(--gold)" />
+                              <circle cx="98" cy="58" r="12" fill="none" stroke="var(--gold)" stroke-opacity=".35" />
+                              <circle cx="196" cy="30" r="6" fill="var(--ink)" stroke="var(--d-faint)" stroke-width="2" />
+                            </svg>
+                            <span class="map-tag">Route · 42 mi · 3 stops</span>
+                          </div>
+                          <div class="estimate">
+                            <span class="face-label">Estimate #2381</span>
+                            <b class="est-val">$4,850</b>
+                            <span class="kpi-up">approved · paid online</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Face 2: growth plan -->
+                    <div class="face face-plan" data-face="2">
+                      <div class="app-bar">
+                        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                        <span class="app-title">growth plan&nbsp;·&nbsp;next 90 days</span>
+                      </div>
+                      <div class="face-body plan-layout">
+                        <div class="plan-progress">
+                          <div class="chart-head"><span>Plan progress</span><span class="plan-pct">62%</span></div>
+                          <div class="bar"><i style="width:62%"></i></div>
+                        </div>
+                        <div class="stack-cols plan-cols">
+                          <div class="stack-col">
+                            <span class="col-label">Now</span>
+                            <div class="chip chip-done">Google profile cleanup</div>
+                            <div class="chip chip-done">Lead form + call tracking</div>
+                            <div class="chip gold-chip">Review generation</div>
+                          </div>
+                          <div class="stack-col">
+                            <span class="col-label">Next</span>
+                            <div class="chip">Client portal</div>
+                            <div class="chip">Monthly value report</div>
+                            <div class="chip">Hiring page</div>
+                          </div>
+                          <div class="stack-col">
+                            <span class="col-label">Later</span>
+                            <div class="chip">Field app v2</div>
+                            <div class="chip">Second service area</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Face 3: monthly report -->
+                    <div class="face face-report" data-face="3">
+                      <div class="app-bar">
+                        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                        <span class="app-title">monthly value report&nbsp;·&nbsp;october</span>
+                      </div>
+                      <div class="face-body report-layout">
+                        <div class="app-chart report-chart">
+                          <div class="chart-head"><span>Calls from Google</span><span class="chart-tag">6 months</span></div>
+                          <svg viewBox="0 0 320 110" preserveAspectRatio="none" class="bars">
+                            <rect x="10"  y="70" width="34" height="40" rx="4" fill="var(--ink-3)" />
+                            <rect x="64"  y="58" width="34" height="52" rx="4" fill="var(--ink-3)" />
+                            <rect x="118" y="62" width="34" height="48" rx="4" fill="var(--ink-3)" />
+                            <rect x="172" y="40" width="34" height="70" rx="4" fill="var(--ink-3)" />
+                            <rect x="226" y="26" width="34" height="84" rx="4" fill="var(--ink-3)" />
+                            <rect x="280" y="6"  width="34" height="104" rx="4" fill="var(--gold)" />
+                          </svg>
+                        </div>
+                        <div class="report-rows">
+                          <div class="report-row"><span>Calls from Google</span><b>212 <small class="kpi-up">▲ 41%</small></b></div>
+                          <div class="report-row"><span>Form leads</span><b>64 <small class="kpi-up">▲ 22%</small></b></div>
+                          <div class="report-row"><span>Cost per lead</span><b>$18 <small class="kpi-up">▼ 31%</small></b></div>
+                          <div class="report-row"><span>New five-star reviews</span><b class="gold">31</b></div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Frame 3: research and reporting (sits where the window started, after it crosses the page) -->
+            <div class="frame chapter chapter-right" data-frame="3">
+              <p class="label">03 · Research &amp; reporting</p>
+              <h2>Decisions made on evidence, not guesswork.</h2>
+              <p class="lead muted">
+                Market research, competitor analysis, and a monthly report in plain language that shows
+                what worked, what did not, and what comes next.
+              </p>
+              <a href="/free-audit.html" class="text-link mt-m">Start with a free audit <span class="arrow">→</span></a>
+            </div>
           </div>
         </div>
 
-        <!-- App/dashboard motif (pure HTML/CSS) -->
-        <div class="hero-app reveal" aria-hidden="true">
-          <div class="app-window">
-            <div class="app-bar">
-              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-              <span class="app-title">growth&nbsp;·&nbsp;client dashboard</span>
-            </div>
-            <div class="app-body">
-              <div class="app-kpis">
-                <div class="kpi"><span class="kpi-label">Leads / mo</span><span class="kpi-val">148</span><span class="kpi-up">▲ 32%</span></div>
-                <div class="kpi"><span class="kpi-label">Booked</span><span class="kpi-val">$41k</span><span class="kpi-up">▲ 18%</span></div>
-                <div class="kpi"><span class="kpi-label">Reviews</span><span class="kpi-val">4.9★</span><span class="kpi-up">▲ 27</span></div>
-              </div>
-              <div class="app-chart">
-                <div class="chart-head"><span>Pipeline value</span><span class="chart-tag">last 6 mo</span></div>
-                <svg viewBox="0 0 320 120" preserveAspectRatio="none" class="spark">
-                  <defs>
-                    <linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stop-color="var(--growth)" stop-opacity="0.35" />
-                      <stop offset="100%" stop-color="var(--growth)" stop-opacity="0" />
-                    </linearGradient>
-                  </defs>
-                  <path d="M0,96 L53,84 L106,88 L160,58 L213,44 L266,26 L320,14 L320,120 L0,120 Z" fill="url(#fill)" />
-                  <path d="M0,96 L53,84 L106,88 L160,58 L213,44 L266,26 L320,14" fill="none" stroke="var(--growth)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </div>
-              <div class="app-rows">
-                <div class="app-row"><span class="rdot done"></span>Website + lead form live<span class="rmeta">done</span></div>
-                <div class="app-row"><span class="rdot done"></span>Google profile optimized<span class="rmeta">done</span></div>
-                <div class="app-row"><span class="rdot active"></span>Client portal build<span class="rmeta">in&nbsp;progress</span></div>
-                <div class="app-row"><span class="rdot"></span>Monthly growth report<span class="rmeta">scheduled</span></div>
-              </div>
-            </div>
-          </div>
+        <!-- Desktop only: progress dots and scroll hint -->
+        <div class="scene-steps" aria-hidden="true">
+          <span class="step is-on" data-step="0"></span>
+          <span class="step" data-step="1"></span>
+          <span class="step" data-step="2"></span>
+          <span class="step" data-step="3"></span>
+          <span class="step-label">Start</span>
         </div>
+        <div class="scroll-hint" aria-hidden="true"><span>Scroll</span><i></i></div>
       </div>
     </section>
 
@@ -319,19 +474,165 @@ const pillars = [
     </section>
   </main>
 
+  <script>
+    import gsap from 'gsap';
+    import { ScrollTrigger } from 'gsap/ScrollTrigger';
+    import { initSmooth } from '../scripts/smooth';
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    const scene = document.getElementById('scene');
+    if (scene) {
+      const q = (sel: string) => scene.querySelector<HTMLElement>(sel)!;
+      const qa = (sel: string) => Array.from(scene.querySelectorAll<HTMLElement>(sel));
+      const pin = q('.scene-pin');
+      const copy = q('.scene-copy');
+      const visual = q('.scene-visual');
+      const wrap = q('.window-wrap');
+      const glow = q('.scene-glow');
+      const hint = q('.scroll-hint');
+      const stepLabel = q('.step-label');
+      const faces = qa('.face');
+      const frames = qa('.frame');
+      const steps = qa('.step');
+      const STEP_NAMES = ['Start', 'Software', 'Strategy', 'Reporting'];
+
+      const lenis = initSmooth();
+      if (lenis) lenis.on('scroll', ScrollTrigger.update);
+
+      const setStep = (i: number) => {
+        steps.forEach((s, k) => s.classList.toggle('is-on', k === i));
+        stepLabel.textContent = STEP_NAMES[i];
+      };
+      const setFace = (i: number) => faces.forEach((f, k) => f.classList.toggle('is-active', k === i));
+
+      const mm = gsap.matchMedia();
+
+      // Desktop: pin the scene and scrub one timeline. The window tilts, flips
+      // through its four faces, and finally crosses to the left column.
+      mm.add('(min-width: 981px) and (prefers-reduced-motion: no-preference)', () => {
+        const headerH = () =>
+          parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 112;
+        // Distance from the visual column's center to the copy column's center.
+        const crossX = () => {
+          const c = copy.getBoundingClientRect();
+          const v = visual.getBoundingClientRect();
+          return c.left + c.width / 2 - (v.left + v.width / 2);
+        };
+
+        gsap.set(frames.slice(1), { autoAlpha: 0 });
+        gsap.set(faces, { autoAlpha: 0, transformPerspective: 1200 });
+        gsap.set(faces[0], { autoAlpha: 1 });
+        gsap.set(wrap, { rotationY: -12, rotationX: 7, transformPerspective: 1500, transformOrigin: '50% 50%' });
+
+        const tl = gsap.timeline({
+          defaults: { ease: 'none' },
+          scrollTrigger: {
+            trigger: scene,
+            pin,
+            start: () => 'top ' + headerH(),
+            end: '+=340%',
+            scrub: 0.6,
+            anticipatePin: 1,
+            invalidateOnRefresh: true,
+            onUpdate: (self) => {
+              const p = self.progress;
+              setStep(p < 0.12 ? 0 : p < 0.43 ? 1 : p < 0.76 ? 2 : 3);
+            },
+          },
+        });
+
+        const swapFace = (from: number, to: number, at: number) => {
+          tl.to(faces[from], { autoAlpha: 0, rotationY: -40, x: -60, duration: 0.4 }, at)
+            .fromTo(faces[to], { autoAlpha: 0, rotationY: 40, x: 60 }, { autoAlpha: 1, rotationY: 0, x: 0, duration: 0.5 }, at + 0.42);
+        };
+        const swapFrame = (from: number, to: number, at: number) => {
+          tl.to(frames[from], { autoAlpha: 0, y: -50, duration: 0.4 }, at)
+            .fromTo(frames[to], { autoAlpha: 0, y: 50 }, { autoAlpha: 1, y: 0, duration: 0.5 }, at + 0.45);
+        };
+
+        // 1. Hero to software
+        tl.to(hint, { autoAlpha: 0, duration: 0.2 }, 0);
+        swapFrame(0, 1, 0);
+        tl.to(wrap, { rotationY: 14, rotationX: -5, scale: 1.05, y: -24, x: -30, duration: 1 }, 0);
+        swapFace(0, 1, 0.25);
+        tl.to(glow, { '--gx': '30%', '--gy': '60%', duration: 1 }, 0);
+
+        // 2. Software to strategy
+        swapFrame(1, 2, 1.6);
+        tl.to(wrap, { rotationY: -10, rotationX: 6, scale: 1.08, y: 10, x: 20, duration: 1 }, 1.6);
+        swapFace(1, 2, 1.85);
+        tl.to(glow, { '--gx': '80%', '--gy': '70%', duration: 1 }, 1.6);
+
+        // 3. Strategy to reporting: the window crosses the page, then the copy lands behind it
+        tl.to(frames[2], { autoAlpha: 0, y: -50, duration: 0.4 }, 3.2);
+        tl.to(wrap, { x: crossX, y: 0, rotationY: 0, rotationX: 0, scale: 1, duration: 1.1, ease: 'power1.inOut' }, 3.2);
+        swapFace(2, 3, 3.5);
+        tl.to(glow, { '--gx': '20%', '--gy': '20%', duration: 1 }, 3.2);
+        tl.fromTo(frames[3], { autoAlpha: 0, y: 50 }, { autoAlpha: 1, y: 0, duration: 0.5 }, 4.1);
+
+        // Hold on the final frame before the page releases
+        tl.to({}, { duration: 0.7 }, 4.6);
+      });
+
+      // Stacked (mobile, reduced motion): the window is sticky; chapters set the face.
+      mm.add('(max-width: 980px), (prefers-reduced-motion: reduce)', () => {
+        const chapters = frames.filter((f) => f.dataset.frame !== '0');
+        const triggers = chapters.map((ch) => {
+          const i = Number(ch.dataset.frame);
+          return ScrollTrigger.create({
+            trigger: ch,
+            start: 'top 72%',
+            end: 'bottom 40%',
+            onEnter: () => setFace(i),
+            onEnterBack: () => setFace(i),
+            onLeaveBack: () => { if (i === 1) setFace(0); },
+          });
+        });
+        return () => triggers.forEach((t) => t.kill());
+      });
+    }
+  </script>
+
   <style>
-    /* HERO */
-    .hero { padding: clamp(64px, 9vw, 120px) 0 clamp(72px, 9vw, 110px); overflow: hidden; }
-    .hero-inner { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
-    .hero-copy { max-width: 620px; }
-    .hero h1 { margin: 22px 0 24px; }
-    .hero .lead { max-width: 56ch; }
+    /* =====================================================================
+       SCENE: hero + scroll story
+       Default layout is stacked (mobile, reduced motion, no JS): the window
+       sticks under the header while the chapters scroll past it.
+       Desktop with JS pins the whole scene and GSAP drives the window.
+       ===================================================================== */
+    .scene { background: var(--ink); position: relative; }
+    .scene-pin { position: relative; padding: clamp(56px, 8vw, 88px) 0 clamp(40px, 6vw, 64px); }
+    .scene-glow {
+      position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(60% 60% at var(--gx, 78%) var(--gy, 8%), rgba(201,162,74,.18), transparent 60%);
+    }
+    .scene-grid { position: relative; z-index: 1; display: flex; flex-direction: column; width: 100%; }
+    .scene-copy, .scene-visual { display: contents; }
+    .frame { max-width: 620px; }
+    .frame[data-frame="0"] { order: 0; }
+    .window-wrap { order: 1; }
+    .frame[data-frame="1"] { order: 2; }
+    .frame[data-frame="2"] { order: 3; }
+    .frame[data-frame="3"] { order: 4; }
+
+    .hero-copy h1 { margin: 22px 0 24px; }
+    .frame .lead { max-width: 56ch; }
     .hero-meta { display: flex; align-items: center; gap: 32px; margin-top: 48px; }
     .hero-meta-rule { width: 1px; height: 54px; background: var(--line-d); }
+    .chapter { position: relative; z-index: 1; padding-top: clamp(64px, 14vh, 120px); min-height: 56vh; }
+    .chapter h2 { margin: 18px 0 18px; font-size: clamp(1.8rem, 3.3vw, 2.9rem); }
+    .chapter .lead { font-size: clamp(1.02rem, 1.3vw, 1.2rem); }
 
-    /* App window motif */
-    .hero-app { position: relative; }
-    .hero-app::before {
+    /* Sticky window (stacked mode) */
+    .window-wrap {
+      position: sticky;
+      top: calc(var(--header-h) + 14px);
+      z-index: 2;
+      width: min(100%, 380px);
+      margin: 44px auto 0;
+    }
+    .window-wrap::before {
       content: "";
       position: absolute;
       inset: -14% -10% -18% -10%;
@@ -354,27 +655,137 @@ const pillars = [
         inset 0 1px 0 rgba(255,255,255,.08);
       overflow: hidden;
     }
-    .app-bar { display: flex; align-items: center; gap: 7px; padding: 13px 16px; border-bottom: 1px solid var(--line-d); }
-    .app-bar .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line-d-2); }
-    .app-title { font-family: var(--font-mono); font-size: 0.72rem; color: var(--d-faint); margin-left: 10px; letter-spacing: 0.04em; }
-    .app-body { padding: 20px; display: grid; gap: 16px; }
-    .app-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .kpi { background: var(--ink); border: 1px solid var(--line-d); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 4px; }
-    .kpi-label { font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--d-faint); }
-    .kpi-val { font-family: var(--font-display); font-size: 1.5rem; color: var(--d-text); line-height: 1; }
-    .kpi-up { font-family: var(--font-mono); font-size: 0.66rem; color: var(--growth); }
-    .app-chart { background: var(--ink); border: 1px solid var(--line-d); border-radius: 12px; padding: 14px 14px 6px; }
-    .chart-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .chart-head span { font-family: var(--font-mono); font-size: 0.68rem; color: var(--d-muted); letter-spacing: 0.04em; }
+    .faces { position: relative; aspect-ratio: 1.15 / 1; container-type: inline-size; }
+    .face {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      opacity: 0; visibility: hidden;
+      transition: opacity .55s var(--ease), visibility .55s;
+      font-size: clamp(0.8rem, 2.9cqi, 1rem); /* internal type scales with the window */
+    }
+    .face.is-active { opacity: 1; visibility: visible; }
+    .face-body { flex: 1; min-height: 0; padding: 1.1em; display: flex; flex-direction: column; gap: 0.9em; }
+
+    /* Window chrome */
+    .app-bar { display: flex; align-items: center; gap: 7px; padding: 0.8em 1em; border-bottom: 1px solid var(--line-d); }
+    .app-bar .dot { width: 0.6em; height: 0.6em; border-radius: 50%; background: var(--line-d-2); }
+    .app-title { font-family: var(--font-mono); font-size: 0.72em; color: var(--d-faint); margin-left: 0.6em; letter-spacing: 0.04em; white-space: nowrap; }
+    .app-pill { margin-left: auto; font-family: var(--font-mono); font-size: 0.6em; letter-spacing: 0.1em; text-transform: uppercase; color: var(--growth); border: 1px solid rgba(87,192,138,.4); border-radius: 999px; padding: 0.25em 0.7em; }
+    .face-label, .kpi-label, .col-label { font-family: var(--font-mono); font-size: 0.64em; letter-spacing: 0.08em; text-transform: uppercase; color: var(--d-faint); }
+
+    /* Face 0: dashboard */
+    .app-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7em; }
+    .kpi { background: var(--ink); border: 1px solid var(--line-d); border-radius: 0.75em; padding: 0.8em; display: flex; flex-direction: column; gap: 0.25em; min-width: 0; }
+    .kpi-val { font-family: var(--font-display); font-size: 1.5em; color: var(--d-text); line-height: 1; }
+    .kpi-up { font-family: var(--font-mono); font-size: 0.66em; color: var(--growth); }
+    .app-chart { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--ink); border: 1px solid var(--line-d); border-radius: 0.75em; padding: 0.8em 0.8em 0.4em; }
+    .chart-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5em; }
+    .chart-head span { font-family: var(--font-mono); font-size: 0.68em; color: var(--d-muted); letter-spacing: 0.04em; }
     .chart-tag { color: var(--d-faint) !important; }
-    .spark { width: 100%; height: 76px; display: block; }
-    .app-rows { display: grid; gap: 2px; }
-    .app-row { display: flex; align-items: center; gap: 10px; font-size: 0.82rem; color: var(--d-muted); padding: 8px 4px; border-bottom: 1px solid var(--line-d); }
+    .spark, .bars { flex: 1; width: 100%; min-height: 2.4em; height: auto; display: block; }
+    .app-rows { display: grid; gap: 0; }
+    .app-row { display: flex; align-items: center; gap: 0.6em; font-size: 0.82em; color: var(--d-muted); padding: 0.5em 0.25em; border-bottom: 1px solid var(--line-d); }
     .app-row:last-child { border-bottom: 0; }
-    .rmeta { margin-left: auto; font-family: var(--font-mono); font-size: 0.64rem; color: var(--d-faint); letter-spacing: 0.04em; }
-    .rdot { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--line-d-2); flex: none; }
+    .rmeta { margin-left: auto; font-family: var(--font-mono); font-size: 0.64em; color: var(--d-faint); letter-spacing: 0.04em; }
+    .rdot { width: 0.56em; height: 0.56em; border-radius: 50%; border: 1.5px solid var(--line-d-2); flex: none; }
     .rdot.done { background: var(--growth); border-color: var(--growth); }
-    .rdot.active { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 0 4px rgba(201,162,74,.18); }
+    .rdot.active { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 0 0.25em rgba(201,162,74,.18); }
+
+    /* Face 1: field app */
+    .app-layout { flex-direction: row; }
+    .app-side { flex: 0 0 47%; display: flex; flex-direction: column; gap: 0.5em; min-width: 0; }
+    .job { display: flex; align-items: center; gap: 0.6em; background: var(--ink); border: 1px solid var(--line-d); border-radius: 0.7em; padding: 0.55em 0.65em; min-width: 0; }
+    .job-time { font-family: var(--font-mono); font-size: 0.64em; color: var(--gold); flex: none; }
+    .job-text { min-width: 0; }
+    .job-text b { display: block; font-size: 0.8em; font-weight: 600; color: var(--d-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .job-text small { display: block; font-size: 0.64em; color: var(--d-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .job .rdot { margin-left: auto; }
+    .app-main { flex: 1; display: flex; flex-direction: column; gap: 0.7em; min-width: 0; }
+    .map {
+      flex: 1; min-height: 0; position: relative; overflow: hidden;
+      background: var(--ink); border: 1px solid var(--line-d); border-radius: 0.75em;
+      background-image: linear-gradient(var(--line-d) 1px, transparent 1px), linear-gradient(90deg, var(--line-d) 1px, transparent 1px);
+      background-size: 1.6em 1.6em;
+    }
+    .map-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .map-tag { position: absolute; left: 0.6em; bottom: 0.6em; font-family: var(--font-mono); font-size: 0.6em; color: var(--d-muted); background: rgba(12,11,11,.75); border: 1px solid var(--line-d); padding: 0.3em 0.6em; border-radius: 0.4em; }
+    .estimate { background: var(--ink); border: 1px solid var(--gold-deep); border-radius: 0.75em; padding: 0.75em 0.9em; display: flex; flex-direction: column; gap: 0.25em; }
+    .est-val { font-family: var(--font-display); font-size: 1.55em; color: var(--gold); line-height: 1; }
+
+    /* Face 2: growth plan */
+    .plan-progress { background: var(--ink); border: 1px solid var(--line-d); border-radius: 0.75em; padding: 0.8em; }
+    .plan-pct { color: var(--gold) !important; }
+    .bar { height: 0.4em; background: var(--ink-3); border-radius: 999px; overflow: hidden; margin-top: 0.5em; }
+    .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold-deep), var(--gold-soft)); border-radius: 999px; }
+    .plan-cols { flex: 1; align-content: start; }
+    .face .chip { font-size: 0.78em; padding: 0.55em 0.7em; margin-bottom: 0.5em; border-radius: 0.5em; }
+    .chip-done::before { content: "✓ "; color: var(--growth); }
+    @container (max-width: 430px) {
+      .plan-cols { grid-template-columns: 1fr 1fr; }
+      .plan-cols .stack-col:nth-child(3) { display: none; }
+    }
+
+    /* Face 3: report */
+    .report-chart { flex: 1; min-height: 7em; }
+    .face .report-row { padding: 0.6em 0; font-size: 0.9em; }
+    .face .report-row b { font-size: 1.15em; }
+    .face .report-row b small { font-family: var(--font-mono); font-size: 0.6em; margin-left: 0.3em; font-weight: 400; }
+
+    /* Desktop-only helpers hidden by default */
+    .scene-steps, .scroll-hint { display: none; }
+
+    /* ---------- Desktop with JS: pinned 3D scene ---------- */
+    @media (min-width: 981px) and (prefers-reduced-motion: no-preference) {
+      :global(.js) .scene-pin {
+        min-height: calc(100vh - var(--header-h));
+        display: flex; align-items: center;
+        padding: clamp(20px, 3vh, 48px) 0 clamp(44px, 6vh, 64px);
+        overflow: hidden;
+      }
+      /* The hero frame has to fit inside one pinned viewport, so it scales with height too */
+      :global(.js) .hero-copy h1 { font-size: clamp(2.4rem, min(6.2vw, 7.4vh), 5rem); margin: 16px 0 18px; }
+      :global(.js) .hero-copy .lead { font-size: clamp(1.02rem, 1.3vw, 1.2rem); max-width: 52ch; }
+      :global(.js) .hero-meta { margin-top: clamp(20px, 3.6vh, 40px); }
+      :global(.js) .hero-meta .stat-num { font-size: clamp(1.6rem, 3vh + 0.4rem, 2.5rem); }
+      :global(.js) .hero-meta .stat-label { font-size: 0.9rem; margin-top: 6px; }
+      :global(.js) .hero-meta-rule { height: 44px; }
+      :global(.js) .scene-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
+      :global(.js) .scene-copy { display: grid; align-items: center; }
+      :global(.js) .scene-copy .frame { grid-area: 1 / 1; }
+      :global(.js) .scene-visual { display: grid; align-items: center; justify-items: center; }
+      :global(.js) .scene-visual > * { grid-area: 1 / 1; }
+      :global(.js) .frame { order: 0; }
+      :global(.js) .chapter { padding-top: 0; min-height: 0; }
+      :global(.js) .chapter-right { max-width: 540px; justify-self: start; }
+      /* Hidden until GSAP shows them, so nothing stacks before the script runs */
+      :global(.js) .frame[data-frame="1"],
+      :global(.js) .frame[data-frame="2"],
+      :global(.js) .frame[data-frame="3"] { opacity: 0; visibility: hidden; }
+      :global(.js) .window-wrap {
+        position: relative; top: auto; margin: 0;
+        width: min(100%, calc((100vh - var(--header-h) - 150px) * 1.15), 580px);
+        will-change: transform;
+      }
+      :global(.js) .window-float { animation: float 7s ease-in-out infinite; }
+      :global(.js) .face { transition: none; }
+
+      :global(.js) .scene-steps {
+        display: flex; flex-direction: column; align-items: center; gap: 12px;
+        position: absolute; right: clamp(16px, 2.5vw, 36px); top: 50%; transform: translateY(-50%); z-index: 3;
+      }
+      .step { width: 6px; height: 6px; border-radius: 50%; background: var(--line-d-2); transition: background .3s var(--ease), transform .3s var(--ease); }
+      .step.is-on { background: var(--gold); transform: scale(1.6); }
+      .step-label { writing-mode: vertical-rl; font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--d-faint); margin-top: 10px; }
+
+      :global(.js) .scroll-hint {
+        display: flex; flex-direction: column; align-items: center; gap: 8px;
+        position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 3;
+        font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--d-faint);
+      }
+      .scroll-hint i { width: 1px; height: 34px; background: linear-gradient(var(--gold), transparent); transform-origin: top; animation: hint 1.8s ease-in-out infinite; }
+    }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+    @keyframes hint { 0% { transform: scaleY(0); opacity: 0; } 40% { opacity: 1; } 100% { transform: scaleY(1); opacity: 0; } }
 
     /* TRUST */
     /* Extra bottom padding so the white logo plates sit well inside the dark
@@ -435,8 +846,7 @@ const pillars = [
     .disclaimer { margin-top: 36px; color: var(--d-faint); font-size: 0.8rem; max-width: 70ch; }
 
     @media (max-width: 980px) {
-      .hero-inner, .software-grid, .results-grid { grid-template-columns: 1fr; }
-      .hero-app { order: 2; max-width: 460px; }
+      .software-grid, .results-grid { grid-template-columns: 1fr; }
       .pillar-grid { grid-template-columns: 1fr; }
       .process-grid { grid-template-columns: 1fr 1fr; }
       .stack-card.offset { margin-left: 0; }
@@ -444,7 +854,6 @@ const pillars = [
     @media (max-width: 560px) {
       .hero-meta { flex-wrap: wrap; gap: 20px; }
       .process-grid { grid-template-columns: 1fr; }
-      .app-kpis { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </Base>
