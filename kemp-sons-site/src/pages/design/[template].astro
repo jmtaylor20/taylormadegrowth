@@ -1,11 +1,12 @@
 ---
 import Base from '../../layouts/Base.astro'
 import EditorApp from '../../editor/EditorApp'
-import { TEMPLATES } from '../../editor/templates'
+import { ALL_TEMPLATES } from '../../editor/templates'
 import { business } from '../../config/site'
 
 export function getStaticPaths() {
-  return TEMPLATES.map((t) => ({ params: { template: t.id }, props: { name: t.name, description: t.description } }))
+  // Memorial add-ons get pages too, so staff can adjust one before printing.
+  return ALL_TEMPLATES.map((t) => ({ params: { template: t.id }, props: { name: t.name, description: t.description } }))
 }
 
 const { template } = Astro.params

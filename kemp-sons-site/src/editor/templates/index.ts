@@ -12,6 +12,7 @@ import { funeralPinkTulips } from './funeral-pink-tulips'
 import { funeralPinkFloral } from './funeral-pink-floral'
 import { funeralRedRoses } from './funeral-red-roses'
 import { withKempFonts } from './kemp-fonts'
+import { ADDON_TEMPLATES } from './memorial-addons'
 
 /** Every template on the site. Add new ones here. */
 export const TEMPLATES: Template[] = [
@@ -30,5 +31,8 @@ export const TEMPLATES: Template[] = [
   funeralFlagTabloid,
 ].map(withKempFonts) // Kemp's own fonts, matched to each original program
 
-export const templateById = (id: string) => TEMPLATES.find((t) => t.id === id)
+/** Every template, including memorial add-ons (made from a program, never listed in galleries). */
+export const ALL_TEMPLATES: Template[] = [...TEMPLATES, ...ADDON_TEMPLATES]
+
+export const templateById = (id: string) => ALL_TEMPLATES.find((t) => t.id === id)
 export const templatesIn = (category: Template['category']) => TEMPLATES.filter((t) => t.category === category)

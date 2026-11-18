@@ -1,6 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Template } from './types'
 import { templateById } from './templates'
+import { addonDraft, addonsFor, type AddonKind } from './templates/memorial-addons'
 import { fieldsOf } from './textFit'
 import { baseSrc, clearAllDrafts, clearDraft, defaultDraft, toneImage, toneKey, useDraft, type Draft, type PhotoState } from './draft'
 import { FieldForm } from './FieldForm'
@@ -646,7 +647,52 @@ function Proof({
 
   const env = t.envelope && envOrder && draft.envelopes ? draft.envelopes : null
   const envVariant = envOrder?.variant ?? null
-  const total = variant ? variant.price + (envOrder ? envOrder.variant.price * envOrder.count : 0) + (rushVariant?.price ?? 0) : 0
+
+  // Matching memorial add-ons (prayer cards, bookmarks, portrait, thank-you cards), laid out from this program.
+  // Only offered once Kemp has priced them and put them on the website (until then the store doesn't return them).
+  const addons = useMemo(() => (staff || prototype || !shop ? [] : addonsFor(t.id)), [t.id])
+  const [addonOffers, setAddonOffers] = useState<{ kind: AddonKind; name: string; blurb: string; template: Template; variants: Variant[]; preview: string | null }[]>([])
+  const [addonPick, setAddonPick] = useState<Partial<Record<AddonKind, string>>>({})
+  useEffect(() => {
+    if (!addons.length || !shop) return
+    let alive = true
+    ;(async () => {
+      for (const a of addons) {
+        const p = await getProduct(shop, a.handle).catch(() => null)
+        const variants = p?.variants.filter((v) => v.available) ?? []
+        if (!variants.length || !alive) continue
+        const d = addonDraft(draft, a.template)
+        const side = a.template.sides.find((x) => x.id === a.template.thumbnailSide) ?? a.template.sides[0]
+        const crop = a.template.thumbnailCrop ?? { x: 0, y: 0, ...a.template.trim }
+        const ppi = 260 / Math.max(crop.w, crop.h)
+        let preview = await renderSide(a.template, side, d.values, d.photos, { mode: 'trim', ppi, quality: 0.8 }).catch(() => null)
+        // Folded pieces (the thank-you card) show just their front.
+        if (preview && a.template.thumbnailCrop) {
+          const img = await new Promise<HTMLImageElement>((ok, bad) => {
+            const i = new Image()
+            i.onload = () => ok(i)
+            i.onerror = bad
+            i.src = preview!
+          })
+          const cv = document.createElement('canvas')
+          cv.width = Math.round(crop.w * ppi)
+          cv.height = Math.round(crop.h * ppi)
+          cv.getContext('2d')!.drawImage(img, crop.x * ppi, crop.y * ppi, cv.width, cv.height, 0, 0, cv.width, cv.height)
+          preview = cv.toDataURL('image/jpeg', 0.8)
+        }
+        if (alive) setAddonOffers((o) => [...o.filter((x) => x.kind !== a.kind), { kind: a.kind, name: a.name, blurb: a.blurb, template: a.template, variants, preview }])
+      }
+    })()
+    return () => {
+      alive = false
+    }
+  }, [addons])
+  const addonLines = addonOffers.flatMap((o) => {
+    const v = o.variants.find((x) => x.id === addonPick[o.kind])
+    return v ? [{ offer: o, variant: v }] : []
+  })
+
+  const total = variant ? variant.price + (envOrder ? envOrder.variant.price * envOrder.count : 0) + (rushVariant?.price ?? 0) + addonLines.reduce((n, l) => n + l.variant.price, 0) : 0
 
   const [savedForStaff, setSavedForStaff] = useState(false)
 
@@ -731,6 +777,21 @@ function Proof({
           },
         })
       if (rushVariant) items.push({ variantId: rushVariant.id, quantity: 1, attributes: { For: t.name, _Reference: ref } })
+      // Memorial add-ons: each gets its own print file, laid out from this program.
+      for (const { offer, variant: av } of addonLines) {
+        setWork(`Preparing your ${offer.name.toLowerCase()}`)
+        const d = addonDraft(draft, offer.template)
+        const ph = d.photos.photo
+        if (ph?.tone || ph?.enhance) d.photos.photo = { ...ph, toned: await toneImage(ph.src, ph.tone, !!ph.enhance), tonedKey: toneKey(ph) }
+        const pdf = await buildPrintPdf(offer.template, d, { ref: `${ref} ${offer.name}`, summary: `${offer.name}, ${av.title}` }, setWork)
+        await putDesignFile(id, `addon-${offer.kind}`, pdf)
+        await putDesignFile(id, `addon-${offer.kind}-draft`, draftJson(offer.template.id, d))
+        items.push({
+          variantId: av.id,
+          quantity: 1,
+          attributes: { Design: `${offer.name} to match ${t.name}`, For: t.name, _Reference: ref, '_Print file': designFileUrl(id, `addon-${offer.kind}`), _Template: offer.template.id },
+        })
+      }
       // Where the order came from, shown on the Shopify order under Additional details.
       const click = adClick()
       const orderAttrs: Record<string, string> = {
@@ -795,6 +856,38 @@ function Proof({
                 ))}
               </ul>
               <p className="ed-hint">{missingPhotos ? 'Go back and add a photo to every spot before approving.' : 'You can still approve, or go back and fix them.'}</p>
+            </section>
+          )}
+
+          {addonOffers.length > 0 && (
+            <section className="ed-addons">
+              <p className="ed-checks-h">Add matching memorial items</p>
+              <p className="ed-hint">Made from this program's photo, name and dates, in the same design. Nothing else to fill in.</p>
+              <div className="ed-addon-list">
+                {addonOffers
+                  .slice()
+                  .sort((a, b) => ['prayer', 'bookmark', 'portrait', 'thankyou'].indexOf(a.kind) - ['prayer', 'bookmark', 'portrait', 'thankyou'].indexOf(b.kind))
+                  .map((o) => {
+                    const pick = addonPick[o.kind] ?? ''
+                    return (
+                      <div key={o.kind} className={`ed-addon ${pick ? 'is-on' : ''}`}>
+                        <span className="ed-addon-art">{o.preview && <img src={o.preview} alt={`${o.name} preview`} />}</span>
+                        <span className="ed-addon-body">
+                          <strong>{o.name}</strong>
+                          <span className="ed-hint">{o.blurb}</span>
+                          <select className="ed-input" value={pick} onChange={(e) => setAddonPick((m) => ({ ...m, [o.kind]: e.target.value || undefined }))} aria-label={`${o.name} quantity`}>
+                            <option value="">No thanks</option>
+                            {o.variants.map((v) => (
+                              <option key={v.id} value={v.id}>
+                                {v.title} / {money(v.price)}
+                              </option>
+                            ))}
+                          </select>
+                        </span>
+                      </div>
+                    )
+                  })}
+              </div>
             </section>
           )}
 
