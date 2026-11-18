@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Template } from './types'
 import { templateById } from './templates'
-import { addonDraft, addonsFor, type AddonKind } from './templates/memorial-addons'
+import { addonDraft, addonsFor, frontOnly, printsOneSide, type AddonKind } from './templates/memorial-addons'
 import { fieldsOf } from './textFit'
 import { baseSrc, clearAllDrafts, clearDraft, defaultDraft, toneImage, toneKey, useDraft, type Draft, type PhotoState } from './draft'
 import { FieldForm } from './FieldForm'
@@ -33,6 +33,67 @@ interface Props {
 }
 
 const ADVANCED_KEY = 'kemp-advanced'
+const ADDON_ORDER: AddonKind[] = ['prayer', 'bookmark', 'bookmarkSmall', 'portrait', 'thankyou']
+
+/**
+ * Add-on choice: a quantity list (with "No thanks"), then a small list for
+ * each other option the product has (one or two sides, matte or gloss).
+ */
+function AddonPicker({ variants, name, pick, onPick }: { variants: Variant[]; name: string; pick: string; onPick: (id: string) => void }) {
+  const names = Object.keys(variants[0]?.options ?? {}).filter((n) => n !== 'Title')
+  const qtyName = names.find((n) => /quantity/i.test(n)) ?? names[0]
+  const others = names.filter((n) => n !== qtyName)
+  const current = variants.find((v) => v.id === pick)
+  const [choice, setChoice] = useState<Record<string, string>>(() => Object.fromEntries(others.map((n) => [n, current?.options[n] ?? variants[0].options[n]])))
+  const valuesOf = (n: string) => [...new Set(variants.map((v) => v.options[n]))]
+  const find = (qty: string, ch: Record<string, string>) => variants.find((v) => v.options[qtyName] === qty && others.every((n) => v.options[n] === ch[n]))
+  const qty = current?.options[qtyName] ?? ''
+  if (!qtyName)
+    return (
+      <select className="ed-input" value={pick} onChange={(e) => onPick(e.target.value)} aria-label={`${name} quantity`}>
+        <option value="">No thanks</option>
+        {variants.map((v) => (
+          <option key={v.id} value={v.id}>
+            {v.title} / {money(v.price)}
+          </option>
+        ))}
+      </select>
+    )
+  return (
+    <>
+      <select className="ed-input" value={qty} onChange={(e) => onPick(e.target.value ? find(e.target.value, choice)?.id ?? '' : '')} aria-label={`${name} quantity`}>
+        <option value="">No thanks</option>
+        {valuesOf(qtyName).map((q) => {
+          const v = find(q, choice)
+          return v ? (
+            <option key={q} value={q}>
+              {q} / {money(v.price)}
+            </option>
+          ) : null
+        })}
+      </select>
+      {others.map((n) => (
+        <select
+          key={n}
+          className="ed-input"
+          value={choice[n]}
+          aria-label={`${name} ${n.toLowerCase()}`}
+          onChange={(e) => {
+            const ch = { ...choice, [n]: e.target.value }
+            setChoice(ch)
+            if (qty) onPick(find(qty, ch)?.id ?? '')
+          }}
+        >
+          {valuesOf(n).map((val) => (
+            <option key={val} value={val}>
+              {val}
+            </option>
+          ))}
+        </select>
+      ))}
+    </>
+  )
+}
 const HOME_KEY = 'kemp-home'
 
 /** A partner funeral home signed in to the portal. */
@@ -780,7 +841,7 @@ function Proof({
         const d = addonDraft(draft, offer.template)
         const ph = d.photos.photo
         if (ph?.tone || ph?.enhance) d.photos.photo = { ...ph, toned: await toneImage(ph.src, ph.tone, !!ph.enhance), tonedKey: toneKey(ph) }
-        const pdf = await buildPrintPdf(offer.template, d, { ref: `${ref} ${offer.name}`, summary: `${offer.name}, ${av.title}` }, setWork)
+        const pdf = await buildPrintPdf(printsOneSide(av.options) ? frontOnly(offer.template) : offer.template, d, { ref: `${ref} ${offer.name}`, summary: `${offer.name}, ${av.title}` }, setWork)
         await putDesignFile(id, `addon-${offer.kind}`, pdf)
         await putDesignFile(id, `addon-${offer.kind}-draft`, draftJson(offer.template.id, d))
         items.push({
@@ -863,7 +924,7 @@ function Proof({
               <div className="ed-addon-list">
                 {addonOffers
                   .slice()
-                  .sort((a, b) => ['prayer', 'bookmark', 'portrait', 'thankyou'].indexOf(a.kind) - ['prayer', 'bookmark', 'portrait', 'thankyou'].indexOf(b.kind))
+                  .sort((a, b) => ADDON_ORDER.indexOf(a.kind) - ADDON_ORDER.indexOf(b.kind))
                   .map((o) => {
                     const pick = addonPick[o.kind] ?? ''
                     return (
@@ -872,14 +933,7 @@ function Proof({
                         <span className="ed-addon-body">
                           <strong>{o.name}</strong>
                           <span className="ed-hint">{o.blurb}</span>
-                          <select className="ed-input" value={pick} onChange={(e) => setAddonPick((m) => ({ ...m, [o.kind]: e.target.value || undefined }))} aria-label={`${o.name} quantity`}>
-                            <option value="">No thanks</option>
-                            {o.variants.map((v) => (
-                              <option key={v.id} value={v.id}>
-                                {v.title} / {money(v.price)}
-                              </option>
-                            ))}
-                          </select>
+                          <AddonPicker variants={o.variants} name={o.name} pick={pick} onPick={(id) => setAddonPick((m) => ({ ...m, [o.kind]: id || undefined }))} />
                         </span>
                       </div>
                     )

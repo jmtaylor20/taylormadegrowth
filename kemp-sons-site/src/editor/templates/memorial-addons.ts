@@ -53,12 +53,13 @@ const PROGRAM_STYLE: Record<string, string> = {
   'funeral-gone-fishing': 'fishing',
 }
 
-export type AddonKind = 'prayer' | 'bookmark' | 'portrait' | 'thankyou'
+export type AddonKind = 'prayer' | 'bookmark' | 'bookmarkSmall' | 'portrait' | 'thankyou'
 
 /** paused: built but not offered (Kemp isn't doing easel portraits for now, Nov 2026). Remove the flag to bring it back. */
 export const ALL_ADDON_KINDS: { kind: AddonKind; name: string; handle: string; blurb: string; paused?: boolean }[] = [
-  { kind: 'prayer', name: 'Prayer cards', handle: 'memorial-prayer-cards', blurb: '2.75 x 4.25 in, photo on the front, verse on the back' },
-  { kind: 'bookmark', name: 'Memorial bookmarks', handle: 'memorial-bookmarks', blurb: '2.5 x 8.5 in, printed both sides' },
+  { kind: 'prayer', name: 'Prayer cards', handle: 'memorial-prayer-cards', blurb: '3.5 x 5 in. One side: photo, name and dates. Two sides adds a verse on the back.' },
+  { kind: 'bookmark', name: 'Memorial bookmarks, 2 x 8', handle: 'memorial-bookmarks', blurb: '2 x 8 in. One side: photo, name and dates. Two sides adds a verse on the back.' },
+  { kind: 'bookmarkSmall', name: 'Memorial bookmarks, 2 x 6', handle: 'memorial-bookmarks-small', blurb: '2 x 6 in. One side: photo, name and dates. Two sides adds a verse on the back.' },
   { kind: 'portrait', name: 'Easel portrait', handle: 'memorial-easel-portrait', blurb: '16 x 20 in portrait for the service', paused: true },
   { kind: 'thankyou', name: 'Thank-you cards', handle: 'memorial-thank-you-cards', blurb: 'Folded 4.25 x 5.5 in, for after the service' },
 ]
@@ -106,7 +107,7 @@ const FIELDS: Template['fields'] = [
 ]
 
 function prayer(s: Style): Template['sides'] {
-  const W = 2.75, H = 4.25
+  const W = 3.5, H = 5
   return [
     {
       id: 'front',
@@ -114,10 +115,10 @@ function prayer(s: Style): Template['sides'] {
       background: '#ffffff',
       elements: [
         fullArt(s, W, H),
-        { type: 'photo', field: 'photo', shape: 'ellipse', x: 0.5, y: 0.32, w: 1.75, h: 2.2, stroke: '#ffffff', strokeWidth: 2 },
-        panel(0.2, 2.68, 2.35, 1.37),
-        { type: 'text', text: '{{name}}', x: 0.25, y: 2.74, w: 2.25, h: 0.78, font: SCRIPT, size: 20, minSize: 10, lineHeight: 0.95, color: s.ink },
-        { type: 'text', text: '{{birthDate}}  |  {{deathDate}}', x: 0.25, y: 3.56, w: 2.25, h: 0.36, font: SERIF, weight: 700, size: 8, minSize: 5.5, color: s.accent },
+        { type: 'photo', field: 'photo', shape: 'ellipse', x: 0.6, y: 0.35, w: 2.3, h: 2.8, stroke: '#ffffff', strokeWidth: 2 },
+        panel(0.25, 3.32, 3.0, 1.43),
+        { type: 'text', text: '{{name}}', x: 0.3, y: 3.37, w: 2.9, h: 0.85, font: SCRIPT, size: 24, minSize: 11, lineHeight: 0.95, color: s.ink },
+        { type: 'text', text: '{{birthDate}}  |  {{deathDate}}', x: 0.3, y: 4.25, w: 2.9, h: 0.4, font: SERIF, weight: 700, size: 9.5, minSize: 6, color: s.accent },
       ],
     },
     {
@@ -126,18 +127,25 @@ function prayer(s: Style): Template['sides'] {
       background: '#ffffff',
       elements: [
         fullArt(s, W, H),
-        panel(0.18, 0.18, 2.39, 3.89, 0.92),
-        { type: 'text', text: '{{verse}}', x: 0.33, y: 0.38, w: 2.09, h: 2.9, font: SERIF, weight: 600, italic: true, size: 9.5, minSize: 6, lineHeight: 1.3, color: s.ink },
-        { type: 'line', x: 1.075, y: 3.38, points: [0, 0, 0.6, 0], stroke: s.accent, strokeWidth: 0.6 },
-        { type: 'text', text: '{{name}}', x: 0.3, y: 3.46, w: 2.15, h: 0.28, font: SERIF, weight: 700, size: 7.5, minSize: 5, uppercase: true, letterSpacing: 0.08, color: s.ink },
-        { type: 'text', text: '{{birthDate}}  |  {{deathDate}}', x: 0.3, y: 3.72, w: 2.15, h: 0.24, font: SERIF, weight: 600, size: 6.5, minSize: 4.5, color: s.accent },
+        panel(0.22, 0.22, 3.06, 4.56, 0.92),
+        { type: 'text', text: '{{verse}}', x: 0.4, y: 0.45, w: 2.7, h: 3.35, font: SERIF, weight: 600, italic: true, size: 11, minSize: 6.5, lineHeight: 1.3, color: s.ink },
+        { type: 'line', x: 1.45, y: 3.95, points: [0, 0, 0.6, 0], stroke: s.accent, strokeWidth: 0.6 },
+        { type: 'text', text: '{{name}}', x: 0.35, y: 4.04, w: 2.8, h: 0.3, font: SERIF, weight: 700, size: 8.5, minSize: 5, uppercase: true, letterSpacing: 0.08, color: s.ink },
+        { type: 'text', text: '{{birthDate}}  |  {{deathDate}}', x: 0.35, y: 4.35, w: 2.8, h: 0.26, font: SERIF, weight: 600, size: 7.5, minSize: 5, color: s.accent },
       ],
     },
   ]
 }
 
-function bookmark(s: Style): Template['sides'] {
-  const W = 2.5, H = 8.5
+/** Bookmarks, 2 in wide: 8 in (bookmark) or 6 in (bookmarkSmall) tall. */
+function bookmarkSides(s: Style, H: number): Template['sides'] {
+  const W = 2
+  const tall = H >= 8
+  const ph = tall ? 2.05 : 1.7
+  const pw = ph * 0.78
+  const nameH = tall ? 1.0 : 0.8
+  const py = tall ? 0.4 : 0.3
+  const panelY = py + ph + (tall ? 0.3 : 0.2)
   return [
     {
       id: 'front',
@@ -145,10 +153,10 @@ function bookmark(s: Style): Template['sides'] {
       background: '#ffffff',
       elements: [
         fullArt(s, W, H),
-        { type: 'photo', field: 'photo', shape: 'ellipse', x: 0.38, y: 0.45, w: 1.74, h: 2.2, stroke: '#ffffff', strokeWidth: 2 },
-        panel(0.2, 2.95, 2.1, 2.05),
-        { type: 'text', text: '{{name}}', x: 0.25, y: 3.05, w: 2.0, h: 1.05, font: SCRIPT, size: 22, minSize: 11, lineHeight: 0.95, color: s.ink },
-        { type: 'text', text: '{{birthDate}}\n{{deathDate}}', x: 0.25, y: 4.15, w: 2.0, h: 0.7, font: SERIF, weight: 700, size: 9, minSize: 6, lineHeight: 1.25, color: s.accent },
+        { type: 'photo', field: 'photo', shape: 'ellipse', x: (W - pw) / 2, y: py, w: pw, h: ph, stroke: '#ffffff', strokeWidth: 2 },
+        panel(0.15, panelY, W - 0.3, nameH + 0.75),
+        { type: 'text', text: '{{name}}', x: 0.2, y: panelY + 0.05, w: W - 0.4, h: nameH, font: SCRIPT, size: tall ? 20 : 17, minSize: 9, lineHeight: 0.95, color: s.ink },
+        { type: 'text', text: '{{birthDate}}\n{{deathDate}}', x: 0.2, y: panelY + 0.08 + nameH, w: W - 0.4, h: 0.55, font: SERIF, weight: 700, size: 8.5, minSize: 5.5, lineHeight: 1.25, color: s.accent },
       ],
     },
     {
@@ -157,11 +165,11 @@ function bookmark(s: Style): Template['sides'] {
       background: '#ffffff',
       elements: [
         fullArt(s, W, H),
-        panel(0.18, 0.25, 2.14, 8.0, 0.92),
-        { type: 'text', text: '{{verse}}', x: 0.32, y: 0.6, w: 1.86, h: 6.3, font: SERIF, weight: 600, italic: true, size: 11, minSize: 7, lineHeight: 1.35, color: s.ink },
-        { type: 'line', x: 0.95, y: 7.1, points: [0, 0, 0.6, 0], stroke: s.accent, strokeWidth: 0.6 },
-        { type: 'text', text: '{{name}}', x: 0.28, y: 7.2, w: 1.94, h: 0.42, font: SERIF, weight: 700, size: 8, minSize: 5, uppercase: true, letterSpacing: 0.08, color: s.ink },
-        { type: 'text', text: '{{birthDate}}\n{{deathDate}}', x: 0.28, y: 7.6, w: 1.94, h: 0.5, font: SERIF, weight: 600, size: 7, minSize: 5, lineHeight: 1.2, color: s.accent },
+        panel(0.15, 0.2, W - 0.3, H - 0.4, 0.92),
+        { type: 'text', text: '{{verse}}', x: 0.27, y: 0.45, w: W - 0.54, h: H - 2.0, font: SERIF, weight: 600, italic: true, size: tall ? 10.5 : 9.5, minSize: 6, lineHeight: 1.32, color: s.ink },
+        { type: 'line', x: W / 2 - 0.3, y: H - 1.4, points: [0, 0, 0.6, 0], stroke: s.accent, strokeWidth: 0.6 },
+        { type: 'text', text: '{{name}}', x: 0.22, y: H - 1.3, w: W - 0.44, h: 0.42, font: SERIF, weight: 700, size: 7.5, minSize: 5, uppercase: true, letterSpacing: 0.08, color: s.ink },
+        { type: 'text', text: '{{birthDate}}\n{{deathDate}}', x: 0.22, y: H - 0.86, w: W - 0.44, h: 0.5, font: SERIF, weight: 600, size: 6.5, minSize: 4.5, lineHeight: 1.2, color: s.accent },
       ],
     },
   ]
@@ -221,11 +229,19 @@ function thankyou(s: Style): Template['sides'] {
 }
 
 const BUILD: Record<AddonKind, { trim: { w: number; h: number }; size: string; sides: (s: Style) => Template['sides']; fields: string[] }> = {
-  prayer: { trim: { w: 2.75, h: 4.25 }, size: '2.75 x 4.25 in prayer card, printed both sides', sides: prayer, fields: ['photo', 'name', 'birthDate', 'deathDate', 'verse'] },
-  bookmark: { trim: { w: 2.5, h: 8.5 }, size: '2.5 x 8.5 in bookmark, printed both sides', sides: bookmark, fields: ['photo', 'name', 'birthDate', 'deathDate', 'verse'] },
+  prayer: { trim: { w: 3.5, h: 5 }, size: '3.5 x 5 in prayer card', sides: prayer, fields: ['photo', 'name', 'birthDate', 'deathDate', 'verse'] },
+  bookmark: { trim: { w: 2, h: 8 }, size: '2 x 8 in bookmark', sides: (s) => bookmarkSides(s, 8), fields: ['photo', 'name', 'birthDate', 'deathDate', 'verse'] },
+  bookmarkSmall: { trim: { w: 2, h: 6 }, size: '2 x 6 in bookmark', sides: (s) => bookmarkSides(s, 6), fields: ['photo', 'name', 'birthDate', 'deathDate', 'verse'] },
   portrait: { trim: { w: 16, h: 20 }, size: '16 x 20 in easel portrait', sides: portrait, fields: ['photo', 'name', 'birthDate', 'deathDate'] },
   thankyou: { trim: { w: 8.5, h: 5.5 }, size: '8.5 x 5.5 in sheet, folds to 4.25 x 5.5 in', sides: thankyou, fields: ['photo', 'name', 'firstName', 'birthDate', 'deathDate', 'familyMessage'] },
 }
+
+/**
+ * One-sided orders print only the front (photo, name and dates); the verse
+ * is on the back. Products with a "Sides" option say which was chosen.
+ */
+export const printsOneSide = (options: Record<string, string>) => /^one/i.test(options.Sides ?? '')
+export const frontOnly = (t: Template): Template => ({ ...t, sides: t.sides.slice(0, 1) })
 
 export const ADDON_TEMPLATES: Template[] = STYLES.flatMap((s) =>
   ADDON_KINDS.map(({ kind, name, handle }) => {
