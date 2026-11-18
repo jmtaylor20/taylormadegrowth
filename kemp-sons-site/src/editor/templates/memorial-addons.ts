@@ -1,5 +1,6 @@
 import type { Draft, PhotoState } from '../draft'
 import type { Element, Template } from '../types'
+import { THEMES, THEME_FORMATS } from './funeral-themes'
 
 /**
  * Memorial add-ons that match a funeral program: prayer cards, bookmarks, an
@@ -39,8 +40,28 @@ const STYLES: Style[] = [
   { id: 'fishing', art: '/templates/gone-fishing/fishing-panel.jpg', aw: 1470, ah: 2625, ax: 0.5, ay: 0.85, ink: '#1f3340', accent: '#2f5d74' },
 ]
 
+/**
+ * The theme collection (funeral-themes.ts): each theme's painting, with where
+ * to keep it when cropping (art sizes in pixels; focus 0..1).
+ */
+const THEME_ART: Record<string, [number, number, number, number]> = {
+  'autumn-leaves': [1024, 1536, 0.5, 1], 'black-and-gold': [1024, 1536, 0.5, 1], 'blue-hydrangea': [1060, 1484, 0.8, 1],
+  'butterfly-garden': [1024, 1536, 0.8, 1], 'celestial-light': [1086, 1448, 0.5, 1], 'dove-of-peace': [1024, 1536, 0.3, 0.15],
+  'evergreen-peace': [1024, 1536, 0.5, 1], 'faithful-cross': [1024, 1536, 0.5, 1], 'garden-rose': [1060, 1484, 0.5, 1],
+  'golden-filigree': [1024, 1536, 0.5, 0.5], 'lavender-grace': [1024, 1536, 0.5, 0.2], 'modern-minimal': [1024, 1536, 0.5, 1],
+  'music-and-memory': [1024, 1536, 0.5, 1], 'ocean-serenity': [1024, 1536, 0.5, 1], 'patriotic-honor': [1024, 1536, 0.5, 1],
+  'rustic-woodland': [1024, 1536, 0.5, 1], 'starry-night': [1086, 1448, 0.5, 1], 'sunflower-light': [1024, 1536, 0.5, 1],
+  'sunrise-horizon': [1024, 1536, 0.5, 1], 'white-lily': [1024, 1536, 0.5, 1],
+}
+for (const t of THEMES) {
+  const [aw, ah, ax, ay] = THEME_ART[t.slug] ?? [1024, 1536, 0.5, 0.5]
+  STYLES.push({ id: `theme-${t.slug}`, art: `/templates/themes/${t.slug}/art.jpg`, aw, ah, ax, ay, ink: '#2b2622', accent: t.accent })
+}
+
 /** Which add-on style goes with each program. */
 const PROGRAM_STYLE: Record<string, string> = {
+  // Every size of a theme uses that theme's painting.
+  ...Object.fromEntries(THEMES.flatMap((t) => THEME_FORMATS.map((f) => [`funeral-${t.slug}${f.id === 'fold' ? '' : `-${f.id}`}`, `theme-${t.slug}`]))),
   'funeral-clouds-doves': 'sky',
   'funeral-red-roses': 'roses',
   'funeral-pink-floral': 'floral',

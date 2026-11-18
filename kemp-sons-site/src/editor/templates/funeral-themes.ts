@@ -20,7 +20,7 @@ import { kempCollage } from './collage'
 
 type Shape = 'arch' | 'ellipse' | 'rect'
 
-interface Theme {
+export interface Theme {
   slug: string
   name: string
   blurb: string
@@ -47,7 +47,7 @@ interface Theme {
 const CREAM = { fill: '#FAF9F5', opacity: 0.72 }
 const NIGHT = { fill: '#0b1426', opacity: 0.35 }
 
-const THEMES: Theme[] = [
+export const THEMES: Theme[] = [
   { slug: 'white-lily', name: 'White Lily', blurb: 'White lilies and eucalyptus on warm cream', cover: '#2d3328', coverSoft: '#56604f', accent: '#5f7a5a', script: 'Adage Script', scriptScale: 0.9, shape: 'ellipse', frame: '#8a9a7f', veil: CREAM, topVeil: true },
   { slug: 'garden-rose', name: 'Garden Rose', blurb: 'Blush roses and peonies on soft parchment', cover: '#3a2a2c', coverSoft: '#6a5456', accent: '#a3505a', script: 'adelia', scriptScale: 0.85, shape: 'ellipse', frame: '#c9a2a0', veil: CREAM, topVeil: true },
   { slug: 'lavender-grace', name: 'Lavender Grace', blurb: 'Wisteria and lavender on pale stone', cover: '#33284a', coverSoft: '#5d5270', accent: '#6b4f8f', script: 'Great Vibes', shape: 'ellipse', frame: '#a493c4', veil: CREAM, textBelow: true, topVeil: true },
