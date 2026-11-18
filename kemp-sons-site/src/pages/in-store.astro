@@ -12,6 +12,7 @@ import KioskAttract from '../editor/KioskAttract'
 import KioskChooser from '../editor/KioskChooser'
 import { productLines, business } from '../config/site'
 import { templatesIn } from '../editor/templates'
+import { formatOf, formatsFor } from '../lib/formats'
 import { getStartingPrice, formatPrice } from '../lib/shopify'
 
 /**
@@ -28,7 +29,8 @@ const lines = (
   await Promise.all(
     productLines.map(async (line) => ({
       line,
-      items: await Promise.all(templatesIn(line.collection).map(async (t) => ({ t, from: formatPrice(await getStartingPrice(t.shopifyHandle)) }))),
+      items: await Promise.all(templatesIn(line.collection).map(async (t) => ({ t, size: formatOf(t), from: formatPrice(await getStartingPrice(t.shopifyHandle)) }))),
+      sizes: formatsFor(templatesIn(line.collection)),
     })),
   )
 ).filter((l) => l.items.length > 0)
@@ -68,12 +70,24 @@ const chooserLines = lines.map(({ line, items }) => {
     </header>
 
     <main class="k-main">
-      {lines.map(({ line, items }) => (
+      {lines.map(({ line, items, sizes }) => (
         <section id={line.collection} class="k-line" aria-label={line.name}>
           <h2 class="k-sr">{line.name}</h2>
+          {sizes.length > 1 && (
+            <div class="k-sizes" role="group" aria-label="Size">
+              <button type="button" class="k-size-btn" data-size="" aria-pressed="true">
+                All sizes <span class="k-size-n">{items.length}</span>
+              </button>
+              {sizes.map((f) => (
+                <button type="button" class="k-size-btn" data-size={f.id} aria-pressed="false">
+                  {f.name} <span class="k-size-n">{f.templates.length}</span>
+                </button>
+              ))}
+            </div>
+          )}
           <ol class="k-grid">
-            {items.map(({ t, from }) => (
-              <li>
+            {items.map(({ t, size, from }) => (
+              <li data-size={size}>
                 <a class="k-card" href={`/design/${t.id}/`}>
                   <div class="k-thumb">
                     <div class="k-scale" style={scaleStyle(t)}>
@@ -114,6 +128,26 @@ const chooserLines = lines.map(({ line, items }) => {
     if (document.fullscreenElement) document.exitFullscreen()
     else document.documentElement.requestFullscreen?.().catch(() => undefined)
   })
+  // Size buttons: show one size of the current product. Kept in the hash (#line/size) so Back from the designer returns here.
+  const applySize = () => {
+    const [line, size = ''] = window.location.hash.slice(1).split('/')
+    const section = line ? document.getElementById(line) : null
+    if (!section?.classList.contains('k-line')) return
+    const known = !!size && !!section.querySelector(`.k-size-btn[data-size="${CSS.escape(size)}"]`)
+    const want = known ? size : ''
+    section.querySelectorAll<HTMLButtonElement>('.k-size-btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.size === want)))
+    section.querySelectorAll<HTMLElement>('.k-grid > li').forEach((li) => (li.hidden = !!want && li.dataset.size !== want))
+  }
+  document.querySelectorAll<HTMLButtonElement>('.k-size-btn').forEach((b) =>
+    b.addEventListener('click', () => {
+      const line = b.closest('.k-line')!.id
+      history.replaceState(null, '', `${window.location.pathname}#${line}${b.dataset.size ? `/${b.dataset.size}` : ''}`)
+      applySize()
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }),
+  )
+  window.addEventListener('kiosk:line', applySize)
+  applySize()
   // No long-press menus or accidental text selection on a touch screen.
   document.addEventListener('contextmenu', (e) => e.preventDefault())
 </script>
@@ -311,6 +345,15 @@ const chooserLines = lines.map(({ line, items }) => {
   .k-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .k-main { padding: clamp(28px, 4vh, 48px) var(--gutter) 56px; display: grid; align-content: start; }
   .k-line { display: grid; }
+  /* Size buttons: big, thumb-friendly, one row that wraps */
+  .k-sizes { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 0 0 clamp(24px, 3.4vh, 40px); }
+  .k-size-btn { min-height: 56px; padding: 0 22px; border: 2px solid var(--navy-deep); background: #fffdf8; color: var(--navy-deep); font: inherit; font-weight: 800;
+    font-size: clamp(16px, 1.25vw, 19px); text-transform: uppercase; letter-spacing: 0.03em; cursor: pointer; display: inline-flex; align-items: center; gap: 10px;
+    box-shadow: 0 6px 14px -10px rgba(60, 40, 20, 0.5); -webkit-tap-highlight-color: transparent; }
+  .k-size-btn[aria-pressed='true'] { background: var(--navy-deep); color: var(--white); }
+  .k-size-btn:active { transform: translateY(1px); }
+  .k-size-n { font-family: var(--mono); font-size: 13px; font-weight: 600; opacity: 0.7; }
+  .k-grid > li[hidden] { display: none; }
   .k-grid { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: clamp(30px, 4vh, 48px) clamp(24px, 2.6vw, 44px); }
   .k-grid > li { display: flex; }
   /* Picture on top, caption below; Start buttons line up across a row even when a name wraps */

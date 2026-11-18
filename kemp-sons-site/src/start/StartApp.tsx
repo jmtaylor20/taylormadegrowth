@@ -4,7 +4,7 @@ import { TEMPLATES } from '../editor/templates'
 import TemplateThumb from '../editor/TemplateThumb'
 import { renderPreviewSides } from '../editor/render'
 import { getProduct, money, type ShopConfig } from '../editor/shop'
-import { PRICE_GROUPS } from '../../netlify/lib/price-groups'
+import { formatOf, formatsFor, type Format } from '../lib/formats'
 import type { Template } from '../editor/types'
 import './start.css'
 
@@ -31,41 +31,6 @@ const PRODUCTS: Product[] = [
   { id: 'business-cards', name: 'Business cards', blurb: 'Standard 3.5 x 2 cards' },
   { id: 'stickers', name: 'Stickers', blurb: 'Sheets of 3-inch circles' },
 ]
-
-/** Plain-words names for each printed format (price group), in the order customers think of them. */
-const FORMAT_INFO: Record<string, { name: string; finished: string }> = {
-  'program-11x8.5-fold': { name: 'Single fold', finished: 'Folds to 5.5 x 8.5 in' },
-  'program-11x8.5-stagger': { name: 'Stagger fold', finished: 'Folds to 6 x 8.5 in' },
-  'program-16.5x8.5-trifold': { name: 'Trifold', finished: 'Folds to 5.5 x 8.5 in' },
-  'program-14x8.5-trifold': { name: 'Narrow trifold', finished: 'Folds to 4.67 x 8.5 in' },
-  'program-17x11-fold': { name: 'Large fold', finished: 'Folds to 8.5 x 11 in' },
-  'program-17x11-trifold': { name: 'Large trifold', finished: 'Folds to 5.67 x 11 in' },
-  'program-booklet-8': { name: '8-page booklet', finished: '8.5 x 11 in pages' },
-  'card-5x7-1side': { name: 'Photo card, one side', finished: '5 x 7 in flat' },
-  'card-5x7-2side': { name: 'Photo card, two sides', finished: '7 x 5 in flat' },
-}
-const FORMAT_ORDER = Object.keys(FORMAT_INFO)
-
-const formatOf = (t: Template) => PRICE_GROUPS.find((g) => g.handles.includes(t.shopifyHandle))?.id ?? t.id
-
-interface Format {
-  id: string
-  name: string
-  finished: string
-  product: Template['category']
-  templates: Template[]
-}
-
-function buildFormats(): Format[] {
-  const map = new Map<string, Format>()
-  for (const t of TEMPLATES) {
-    const id = formatOf(t)
-    const info = FORMAT_INFO[id] ?? { name: t.sizeLabel, finished: '' }
-    if (!map.has(id)) map.set(id, { id, ...info, product: t.category, templates: [] })
-    map.get(id)!.templates.push(t)
-  }
-  return [...map.values()].sort((a, b) => (FORMAT_ORDER.indexOf(a.id) + 1 || 99) - (FORMAT_ORDER.indexOf(b.id) + 1 || 99))
-}
 
 /** Starting price per format, from the live store (one lookup per format). */
 function usePrices(shop: ShopConfig | null, formats: Format[]) {
@@ -111,7 +76,7 @@ function useRoute(): [string[], (path: string) => void] {
 }
 
 export default function StartApp({ shop, phone, phoneHref }: { shop: ShopConfig | null; phone: string; phoneHref: string }) {
-  const formats = useMemo(buildFormats, [])
+  const formats = useMemo(() => formatsFor(TEMPLATES), [])
   const prices = usePrices(shop, formats)
   const [route, go] = useRoute()
   const [preview, setPreview] = useState<Template | null>(null)

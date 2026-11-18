@@ -13,6 +13,7 @@ import { loadFonts } from './fonts'
 import { buildPrintPdf, isOneColor } from './pdf'
 import { RUSH_HANDLE, rushFormatFor } from '../../netlify/lib/price-groups'
 import { IDLE_SECONDS, KIOSK_HOME, WARN_SECONDS, isKiosk } from './kiosk'
+import { formatOf } from '../lib/formats'
 import { addToCart, createDesign, designFileUrl, getProduct, money, putDesignFile, putStaffFile, type CartLine, type ShopConfig, type ShopProduct, type Variant } from './shop'
 import { EnvelopePanel } from './EnvelopePanel'
 import { buildEnvelopePdf, emptyEnvelopes, envelopeCount, envelopeKind, envelopePrinting, type EnvelopeKind, type EnvelopeState } from './envelopes'
@@ -157,7 +158,7 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
       return null
     }
   })
-  const backHref = home ? '/portal/' : kiosk ? `${KIOSK_HOME}#${t.category}` : (pickerBack ?? siteBack)
+  const backHref = home ? '/portal/' : kiosk ? `${KIOSK_HOME}#${t.category}/${formatOf(t)}` : (pickerBack ?? siteBack)
   const [draft, setDraft, loaded] = useDraft(t)
 
   // Partner home: fill in its details wherever the template's sample text is still there.

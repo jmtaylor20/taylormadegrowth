@@ -12,8 +12,9 @@ import { renderThumbnail } from './render'
  * Talks to the page with two events:
  *   kiosk:choose  (from the page's "Choose a different product" button, or
  *                  the screensaver waking up) opens this screen again.
- * The chosen line is kept in the URL hash, so Back from the designer returns
- * to the same designs.
+ * The chosen line (and size, as #line/size) is kept in the URL hash, so Back
+ * from the designer returns to the same designs. Fires kiosk:line when the
+ * page underneath switches, so the size buttons can follow.
  */
 
 export interface ChooserLine {
@@ -30,7 +31,7 @@ const SWAP_MS = 1120
 
 export default function KioskChooser({ lines }: { lines: ChooserLine[] }) {
   const fromHash = () => {
-    const h = window.location.hash.slice(1)
+    const h = window.location.hash.slice(1).split('/')[0]
     return lines.some((l) => l.id === h) ? h : null
   }
   const [open, setOpen] = useState(() => !fromHash())
@@ -42,7 +43,10 @@ export default function KioskChooser({ lines }: { lines: ChooserLine[] }) {
     const name = lines.find((l) => l.id === id)?.name ?? ''
     const label = document.getElementById('k-current')
     if (label) label.textContent = name
-    history.replaceState(null, '', `${window.location.pathname}#${id}`)
+    // Keep a size already in the hash (coming Back from the designer); a new product starts on all sizes.
+    const [hl, size] = window.location.hash.slice(1).split('/')
+    history.replaceState(null, '', `${window.location.pathname}#${id}${hl === id && size ? `/${size}` : ''}`)
+    window.dispatchEvent(new Event('kiosk:line'))
     window.scrollTo({ top: 0 })
   }, [lines])
 
