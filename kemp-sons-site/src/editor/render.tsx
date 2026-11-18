@@ -94,7 +94,7 @@ const SAMPLE_HOLIDAY = [4, 1, 5, 2, 6, 3].map((n) => `/kiosk/samples/holiday-${n
 const idSeed = (id: string) => [...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7)
 const SAMPLE_CUTOUT = '/kiosk/samples/portrait-cutout.png'
 
-async function samplePhotos(t: Template, seed: number): Promise<Record<string, PhotoState>> {
+export async function samplePhotos(t: Template, seed: number): Promise<Record<string, PhotoState>> {
   const funeral = t.category === 'funeral-programs'
   const portrait = t.samplePortrait ?? SAMPLE_PORTRAIT
   const slots: { slot: string; cutout: boolean; src: string }[] = []
