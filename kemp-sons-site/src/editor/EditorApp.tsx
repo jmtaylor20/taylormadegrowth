@@ -177,6 +177,67 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref, prototype = fal
     })
   }, [home, loaded])
 
+  // Family photo link: /design/<t>/?home=1&case=<id> starts this program fresh from what the family sent.
+  const [caseId] = useState(() => new URLSearchParams(window.location.search).get('case'))
+  const caseDone = useRef(false)
+  useEffect(() => {
+    if (!home || !loaded || !caseId || caseDone.current) return
+    caseDone.current = true
+    // Same family already open in this draft (a reload): keep their edits.
+    if (draft.values.__case === caseId) return
+    ;(async () => {
+      setNotice("Bringing in the family's photos and words...")
+      try {
+        const r = await fetch(`/api/portal/cases/${encodeURIComponent(caseId)}`, { credentials: 'same-origin' })
+        if (!r.ok) throw new Error()
+        const c = (await r.json()).case as { name: string; values: Record<string, string>; photos: { id: string; kind: string }[] }
+        const fresh = defaultDraft(t)
+        const values: Record<string, string> = { ...fresh.values, __case: caseId }
+        const has = new Set(t.fields.map((f) => f.id))
+        if (has.has('funeralHome')) values.funeralHome = home.name
+        if (has.has('funeralHomeDetails')) values.funeralHomeDetails = [[home.address, home.city].filter(Boolean).join(', '), home.phone].filter(Boolean).join('\n')
+        for (const [k, v] of Object.entries(c.values)) if (v && has.has(k) && k !== 'note') values[k] = v
+        // Photos: the main one on the portrait spot, the rest in order on the other spots.
+        const slots: string[] = []
+        for (const f of t.fields) if (f.type === 'photo' && f.id !== 'photo') for (let i = 1; i <= (f.count ?? 1); i++) slots.push(f.count ? `${f.id}_${i}` : f.id)
+        const load = async (pid: string): Promise<PhotoState | null> => {
+          const res = await fetch(`/api/portal/cases/${encodeURIComponent(caseId)}/photos/${pid}`, { credentials: 'same-origin' })
+          if (!res.ok) return null
+          const blob = await res.blob()
+          const src = await new Promise<string>((ok, bad) => {
+            const fr = new FileReader()
+            fr.onload = () => ok(fr.result as string)
+            fr.onerror = bad
+            fr.readAsDataURL(blob)
+          })
+          const img = await new Promise<HTMLImageElement>((ok, bad) => {
+            const i = new Image()
+            i.onload = () => ok(i)
+            i.onerror = bad
+            i.src = src
+          })
+          return { src, w: img.naturalWidth, h: img.naturalHeight, ox: 0, oy: 0, zoom: 1 }
+        }
+        const photos: Record<string, PhotoState> = {}
+        const main = c.photos.find((p) => p.kind === 'portrait')
+        if (main && has.has('photo')) {
+          const ph = await load(main.id)
+          if (ph) photos.photo = ph
+        }
+        const rest = c.photos.filter((p) => p !== main)
+        for (const [i, p] of rest.slice(0, slots.length).entries()) {
+          const ph = await load(p.id)
+          if (ph) photos[slots[i]] = ph
+        }
+        setDraft({ ...fresh, values, photos })
+        const n = Object.keys(photos).length
+        setNotice(`Filled in from ${c.name}'s family link: ${n} photo${n === 1 ? '' : 's'} and their words. Check everything, then review the proof.${rest.length > slots.length ? ` This design has room for ${slots.length + (has.has('photo') ? 1 : 0)} photos; the family sent ${c.photos.length}.` : ''}`)
+      } catch {
+        setNotice("The family's photos and words couldn't be loaded. You can still fill in the program here.")
+      }
+    })()
+  }, [home, loaded])
+
   // Photo fixes (brighten, black & white, sepia, vintage): make the fixed copy whenever a photo, its cut-out or a fix changes.
   const toning = useRef(new Set<string>())
   useEffect(() => {
@@ -675,7 +736,7 @@ function Proof({
       const orderAttrs: Record<string, string> = {
         ...(!tracking.enabled ? {} : isKioskVisit() ? { source: 'kiosk' } : { ...(click ?? {}) }),
         // Funeral home portal: shows on the order, the job board and the home's order list.
-        ...(home ? { 'Funeral home': home.name, '_Home ID': home.slug } : {}),
+        ...(home ? { 'Funeral home': home.name, '_Home ID': home.slug, ...(draft.values.__case ? { '_Case ID': draft.values.__case } : {}) } : {}),
       }
       const checkoutUrl = await addToCart(shop, items, orderAttrs)
       const gaItems = [

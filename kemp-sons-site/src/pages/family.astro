@@ -1,0 +1,11 @@
+---
+import Base from '../layouts/Base.astro'
+import FamilyApp from '../portal/FamilyApp'
+import { business } from '../config/site'
+// Family photo link from a partner funeral home. Private (the link carries its key) and never tracked.
+---
+<Base title="Photos and words for the program | Kemp & Sons Printing" noindex>
+  <main id="main">
+    <FamilyApp client:only="react" phone={business.phone} phoneHref={business.phoneHref} />
+  </main>
+</Base>

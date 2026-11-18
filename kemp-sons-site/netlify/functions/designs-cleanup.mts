@@ -1,5 +1,6 @@
 import { getStore } from '@netlify/blobs'
 import type { Config } from '@netlify/functions'
+import { cleanupCases } from '../lib/cases'
 
 /**
  * Daily cleanup of stored designs. Files are kept for 13 months, long enough
@@ -20,6 +21,8 @@ export default async () => {
     removed++
   }
   console.log(`designs-cleanup: checked ${metas.length}, removed ${removed}`)
+  // Family photo links: photos and wording are deleted 60 days after the link was made.
+  console.log(`designs-cleanup: removed ${await cleanupCases()} old family links`)
 }
 
 export const config: Config = { schedule: '@daily' }

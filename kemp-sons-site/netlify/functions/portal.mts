@@ -1,6 +1,7 @@
 import type { Config, Context } from '@netlify/functions'
 import { admin, adminConfigured } from '../lib/shopify-admin'
-import { checkKey, clearHomeCookie, homeCookie, homeFromRequest, portalConfigured, publicHome } from '../lib/portal'
+import { checkKey, clearHomeCookie, getHome, homeCookie, homeFromRequest, portalConfigured, publicHome } from '../lib/portal'
+import { addPhoto, caseFromLink, createCase, familyView, getCase, homeView, listCases, photoData, removePhoto, saveFamilyValues, type CasePhoto } from '../lib/cases'
 
 /**
  * Funeral home portal API (used by /portal/ and the designer).
@@ -9,6 +10,16 @@ import { checkKey, clearHomeCookie, homeCookie, homeFromRequest, portalConfigure
  *   POST /api/portal/logout                  sign out this device
  *   GET  /api/portal/me                      the signed-in home (401 when not signed in)
  *   GET  /api/portal/orders                  the home's recent orders
+ *   GET  /api/portal/cases                   the home's family links
+ *   POST /api/portal/cases   { name, serviceDate }   new family link
+ *   GET  /api/portal/cases/:id/photos/:pid   a photo the family sent
+ *
+ * Family link (no sign-in; the link's home, case id and token are the key):
+ *   GET    /api/family/:home/:id?t=          the case as the family sees it
+ *   POST   /api/family/:home/:id?t=  {...}   save the program wording
+ *   POST   /api/family/:home/:id/photos?t=&kind=portrait|other   add a photo (image body)
+ *   GET    /api/family/:home/:id/photos/:pid?t=   view a photo they added
+ *   DELETE /api/family/:home/:id/photos/:pid?t=   remove one
  *
  * Orders are tied to a home by the "_Home ID" attribute the designer adds to
  * the cart, so they show here and on the staff job board.
@@ -62,9 +73,49 @@ async function homeOrders(slug: string) {
     })
 }
 
+const image = (p: { data: ArrayBuffer; type: string }) =>
+  new Response(p.data, { headers: { 'Content-Type': p.type, 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex' } })
+
+/** The family's side: everything is checked against the link itself. */
+async function family(req: Request, url: URL, path: string) {
+  const m = path.match(/^\/api\/family\/([a-z0-9-]{1,64})\/([0-9a-f-]{36})(\/photos(?:\/([a-z0-9-]{1,12}))?)?$/)
+  if (!m) return json({ error: 'Not found' }, 404)
+  const [, homeSlug, id, photos, photoId] = m
+  const c = await caseFromLink(homeSlug, id, url.searchParams.get('t') ?? '')
+  const home = c ? await getHome(homeSlug) : null
+  if (!c || !home?.active) return json({ error: 'This link has expired or is not valid. Please ask the funeral home for a new one.' }, 404)
+  if (req.method !== 'GET' && !sameOrigin(req)) return json({ error: 'Bad origin' }, 403)
+
+  if (!photos && req.method === 'GET') return json(familyView(c, home.name))
+  if (!photos && req.method === 'POST') {
+    const body = (await req.json().catch(() => ({}))) as Record<string, unknown>
+    return json(familyView(await saveFamilyValues(c, body), home.name))
+  }
+  if (photos && !photoId && req.method === 'POST') {
+    const kind: CasePhoto['kind'] = url.searchParams.get('kind') === 'portrait' ? 'portrait' : 'other'
+    try {
+      await addPhoto(c, kind, (req.headers.get('content-type') ?? '').split(';')[0], await req.arrayBuffer())
+      return json(familyView(c, home.name))
+    } catch (e) {
+      return json({ error: (e as Error).message }, 400)
+    }
+  }
+  if (photoId && req.method === 'GET') {
+    const p = await photoData(c, photoId)
+    return p ? image(p) : json({ error: 'Not found' }, 404)
+  }
+  if (photoId && req.method === 'DELETE') {
+    await removePhoto(c, photoId)
+    return json(familyView(c, home.name))
+  }
+  return json({ error: 'Not found' }, 404)
+}
+
 export default async (req: Request, context: Context) => {
-  const path = new URL(req.url).pathname.replace(/\/+$/, '')
+  const url = new URL(req.url)
+  const path = url.pathname.replace(/\/+$/, '')
   if (!portalConfigured()) return json({ error: 'The funeral home portal is not set up yet.' }, 503)
+  if (path.startsWith('/api/family/')) return family(req, url, path)
 
   if (path === '/api/portal/login' && req.method === 'POST') {
     if (!sameOrigin(req)) return json({ error: 'Bad origin' }, 403)
@@ -89,7 +140,25 @@ export default async (req: Request, context: Context) => {
       return json({ error: 'Orders could not load right now.' }, 502)
     }
   }
+  if (path === '/api/portal/cases' && req.method === 'GET') return json({ cases: (await listCases(home.slug)).map((c) => homeView(c, url.origin)) })
+  if (path === '/api/portal/cases' && req.method === 'POST') {
+    if (!sameOrigin(req)) return json({ error: 'Bad origin' }, 403)
+    try {
+      const c = await createCase(home.slug, (await req.json().catch(() => ({}))) as { name?: string; serviceDate?: string })
+      return json({ case: homeView(c, url.origin) })
+    } catch (e) {
+      return json({ error: (e as Error).message }, 400)
+    }
+  }
+  const cm = path.match(/^\/api\/portal\/cases\/([0-9a-f-]{36})(?:\/photos\/([a-z0-9-]{1,12}))?$/)
+  if (cm && req.method === 'GET') {
+    const c = await getCase(home.slug, cm[1])
+    if (!c) return json({ error: 'Not found' }, 404)
+    if (!cm[2]) return json({ case: homeView(c, url.origin) })
+    const p = await photoData(c, cm[2])
+    return p ? image(p) : json({ error: 'Not found' }, 404)
+  }
   return json({ error: 'Not found' }, 404)
 }
 
-export const config: Config = { path: ['/api/portal/*'] }
+export const config: Config = { path: ['/api/portal/*', '/api/family/*'] }
