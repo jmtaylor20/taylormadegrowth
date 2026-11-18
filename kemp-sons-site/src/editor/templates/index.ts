@@ -12,6 +12,7 @@ import { funeralPinkTulips } from './funeral-pink-tulips'
 import { funeralPinkFloral } from './funeral-pink-floral'
 import { funeralRedRoses } from './funeral-red-roses'
 import { withKempFonts } from './kemp-fonts'
+import { funeralThemes } from './funeral-themes'
 import { ADDON_TEMPLATES } from './memorial-addons'
 
 /** Every template on the site. Add new ones here. */
@@ -29,6 +30,8 @@ export const TEMPLATES: Template[] = [
   funeralFlagTrifold,
   funeralGoneFishing,
   funeralFlagTabloid,
+  // The theme collection: 20 backgrounds in four sizes
+  ...funeralThemes,
 ].map(withKempFonts) // Kemp's own fonts, matched to each original program
 
 /** Every template, including memorial add-ons (made from a program, never listed in galleries). */

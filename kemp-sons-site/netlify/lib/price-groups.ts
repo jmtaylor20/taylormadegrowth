@@ -28,13 +28,13 @@ export const PRICE_GROUPS: PriceGroup[] = [
   {
     id: 'program-11x8.5-fold', rush: '11 x 8.5 folded',
     label: 'Funeral program, 11 x 8.5 folded (4 pages)',
-    handles: ['funeral-program-clouds-doves', 'funeral-program-red-roses', 'funeral-program-pink-floral', 'funeral-program-pink-tulips'],
+    handles: ['funeral-program-clouds-doves', 'funeral-program-red-roses', 'funeral-program-pink-floral', 'funeral-program-pink-tulips', 'funeral-program-theme-fold'],
   },
   { id: 'program-11x8.5-stagger', rush: '11 x 8.5 stagger fold', label: 'Funeral program, 11 x 8.5 stagger fold (4 pages)', handles: ['funeral-program-pink-stagger'] },
-  { id: 'program-17x11-fold', rush: '17 x 11 folded', label: 'Funeral program, 17 x 11 folded (4 pages)', handles: ['funeral-program-purple-lilacs'] },
-  { id: 'program-14x8.5-trifold', rush: '14 x 8.5 trifold', label: 'Funeral program, 14 x 8.5 trifold (6 panels)', handles: ['funeral-program-gone-fishing'] },
+  { id: 'program-17x11-fold', rush: '17 x 11 folded', label: 'Funeral program, 17 x 11 folded (4 pages)', handles: ['funeral-program-purple-lilacs', 'funeral-program-theme-large-fold'] },
+  { id: 'program-14x8.5-trifold', rush: '14 x 8.5 trifold', label: 'Funeral program, 14 x 8.5 trifold (6 panels)', handles: ['funeral-program-gone-fishing', 'funeral-program-theme-trifold'] },
   { id: 'program-16.5x8.5-trifold', rush: '16.5 x 8.5 trifold', label: 'Funeral program, 16.5 x 8.5 trifold (6 panels)', handles: ['funeral-program-flag-trifold'] },
-  { id: 'program-17x11-trifold', rush: '17 x 11 trifold', label: 'Funeral program, 17 x 11 trifold (6 panels)', handles: ['funeral-program-flag-tabloid'] },
+  { id: 'program-17x11-trifold', rush: '17 x 11 trifold', label: 'Funeral program, 17 x 11 trifold (6 panels)', handles: ['funeral-program-flag-tabloid', 'funeral-program-theme-large-trifold'] },
   { id: 'card-5x7-2side', label: 'Christmas card, 5 x 7 flat, printed both sides', handles: ['christmas-card-very-merry'] },
   {
     id: 'card-5x7-1side',
