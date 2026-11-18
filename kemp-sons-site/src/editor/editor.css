@@ -209,13 +209,6 @@
 .ed-step-nav { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .ed-step-nav .btn { margin-left: auto; }
 .ed-btn.is-on { background: var(--ink); color: var(--white); }
-.ed-sent { position: fixed; inset: 0; z-index: 80; background: rgba(17, 17, 17, 0.6); display: grid; place-items: center; padding: 16px; overflow-y: auto; }
-.ed-sent-in { background: var(--white); color: var(--ink); max-width: 560px; width: 100%; padding: 24px; display: grid; gap: 14px; border: 2px solid var(--ink); }
-.ed-sent-in h2 { font-size: 24px; font-weight: 800; line-height: 1.1; }
-.ed-sent-in dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; font-size: 15px; }
-.ed-sent-in dt { font-weight: 700; }
-.ed-sent-in dd { white-space: pre-line; overflow-wrap: anywhere; }
-.ed-sent-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: space-between; }
 
 /* Same-day shipping line in Print options */
 .ed-ship { font-weight: 700; font-size: 14px; padding: 8px 12px; background: #fff4cc; border-left: 4px solid #b38600; }

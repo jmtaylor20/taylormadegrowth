@@ -6,15 +6,15 @@ import { renderPreviewSides } from '../editor/render'
 import { getProduct, money, type ShopConfig } from '../editor/shop'
 import { PRICE_GROUPS } from '../../netlify/lib/price-groups'
 import type { Template } from '../editor/types'
-import './prototype.css'
+import './start.css'
 
 /**
- * Prototype: a two-door "Start an order" screen.
+ * "Start an order" (/start/): two ways in.
  *   I know what I need  -> product -> size -> only the designs for that size
  *   Show me designs     -> one visual gallery with product and size filters
- * Both open the same simple editor (/prototype/design/<id>/).
+ * Both open the designer (/design/<id>/), which starts in simple mode.
  *
- * Nothing here replaces the live pages; it reads the same templates and prices.
+ * Reads the same templates and live store prices as the rest of the site.
  * Where you are is kept in the URL hash, so Back works and links can be shared.
  */
 
@@ -91,6 +91,14 @@ function usePrices(shop: ShopConfig | null, formats: Format[]) {
 function useRoute(): [string[], (path: string) => void] {
   const read = () => window.location.hash.replace(/^#\/?/, '').split('/').filter(Boolean)
   const [route, setRoute] = useState(read)
+  // Remembered so Back in the designer returns to this exact step.
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('kemp-start', window.location.href)
+    } catch {
+      /* private window */
+    }
+  }, [route])
   useEffect(() => {
     const on = () => {
       setRoute(read())
@@ -102,7 +110,7 @@ function useRoute(): [string[], (path: string) => void] {
   return [route, (path: string) => (window.location.hash = path ? `#${path}` : '')]
 }
 
-export default function PrototypeApp({ shop, phone, phoneHref }: { shop: ShopConfig | null; phone: string; phoneHref: string }) {
+export default function StartApp({ shop, phone, phoneHref }: { shop: ShopConfig | null; phone: string; phoneHref: string }) {
   const formats = useMemo(buildFormats, [])
   const prices = usePrices(shop, formats)
   const [route, go] = useRoute()
@@ -353,7 +361,7 @@ function Preview({ t, formatName, onClose }: { t: Template; formatName: string; 
         </div>
         <div className="pt-preview-bar">
           <span className="mono">{t.sizeLabel}</span>
-          <a className="btn btn-primary" href={`/prototype/design/${t.id}/`}>
+          <a className="btn btn-primary" href={`/design/${t.id}/`}>
             Use this design <span className="arrow" aria-hidden="true">&rarr;</span>
           </a>
         </div>

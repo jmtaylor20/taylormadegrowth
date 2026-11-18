@@ -8,7 +8,7 @@ import type { Element, Template } from '../types'
  * family chose. They're laid out automatically from what was entered for the
  * program (photo, name, dates, verse, family message): no second design step.
  *
- * Kept out of TEMPLATES (no gallery, kiosk or prototype listing); templateById
+ * Kept out of TEMPLATES (no gallery, kiosk or "Start an order" listing); templateById
  * still finds them so staff can adjust one before printing.
  */
 

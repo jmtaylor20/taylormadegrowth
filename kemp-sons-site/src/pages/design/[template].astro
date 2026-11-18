@@ -43,7 +43,7 @@ const shop = domain && token ? { domain, token } : null
 ---
 <Base title={title} description={pageDescription} image={listed ? image : undefined} schema={schema} noindex={!listed}>
   <main id="main">
-    <EditorApp client:only="react" templateId={template} shop={shop} backHref="/#products" phone={business.phone} phoneHref={business.phoneHref} />
+    <EditorApp client:only="react" templateId={template} shop={shop} backHref="/start/" phone={business.phone} phoneHref={business.phoneHref} />
     <noscript><p style="padding:40px">The designer needs JavaScript. To order, call us at {business.phone}.</p></noscript>
     {listed && (
       <section class="seo-summary">

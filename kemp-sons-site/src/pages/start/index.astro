@@ -1,0 +1,21 @@
+---
+import Base from '../../layouts/Base.astro'
+import Header from '../../components/Header.astro'
+import Footer from '../../components/Footer.astro'
+import StartApp from '../../start/StartApp'
+import { business } from '../../config/site'
+// "Start an order": pick by product and size, or browse every design.
+const domain = import.meta.env.SHOPIFY_STORE_DOMAIN
+const token = import.meta.env.SHOPIFY_STOREFRONT_TOKEN
+const shop = domain && token ? { domain, token } : null
+---
+<Base title="Start an order | Kemp & Sons Printing" description="Design funeral programs, Christmas cards and more online. Pick your product and size, or browse every design, then approve a proof and check out.">
+  <Header />
+  <main id="main" class="start-main">
+    <StartApp client:only="react" shop={shop} phone={business.phone} phoneHref={business.phoneHref} />
+  </main>
+  <Footer />
+</Base>
+<style>
+  .start-main { padding-top: var(--header-h, 70px); min-height: 80vh; }
+</style>

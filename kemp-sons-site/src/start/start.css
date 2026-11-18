@@ -1,4 +1,4 @@
-/* Prototype start screen and paths. Mobile first; tap targets 44px or more. */
+/* "Start an order" screen and paths. Mobile first; tap targets 44px or more. */
 .pt { max-width: 1180px; margin: 0 auto; padding: 20px 16px 80px; color: var(--ink); }
 .pt h1 { font-weight: 800; font-size: clamp(30px, 6vw, 52px); line-height: 1; letter-spacing: -0.01em; }
 .pt-kicker { color: var(--red); margin-bottom: 8px; }

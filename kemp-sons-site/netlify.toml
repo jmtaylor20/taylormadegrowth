@@ -36,3 +36,14 @@
   for = "/ort/*"
   [headers.values]
     Cache-Control = "public, max-age=2592000"
+
+# The old prototype addresses now go to the permanent "Start an order" pages.
+[[redirects]]
+  from = "/prototype/design/:template/"
+  to = "/design/:template/"
+  status = 301
+
+[[redirects]]
+  from = "/prototype/*"
+  to = "/start/"
+  status = 301

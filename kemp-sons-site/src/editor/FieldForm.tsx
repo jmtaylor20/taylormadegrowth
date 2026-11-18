@@ -13,7 +13,7 @@ interface Props {
   onFocusField: (id: string | null, typing?: boolean) => void
   /** Lets a tap on an empty photo frame in the preview open the picker for that slot. */
   registerPhotoPicker: (slotId: string, open: (() => void) | null) => void
-  /** Simple mode (prototype): photo adjustments tucked behind one button, black and white only. */
+  /** Simple mode (the default for customers): photo adjustments tucked behind one button, black and white only. */
   simple?: boolean
   /** Show only the words or only the photos (one step at a time in simple mode). */
   only?: 'text' | 'photo'
