@@ -8,10 +8,16 @@ interface Props {
   description?: string
   /** Keep this page out of search results (staff pages). */
   noindex?: boolean
+  /** Share image (path or URL); defaults to the site's. */
+  image?: string
+  /** Extra structured data for search engines (a Product or ItemList). */
+  schema?: Record<string, unknown>
 }
 const {
   title = `${business.name} | Opelika, Alabama`,
   noindex = false,
+  image = 'https://kempandsons.com/og-image.png',
+  schema,
   description = 'Order funeral programs, Christmas cards, business cards, stickers and more online, or request a quote for custom print work. Printed in Opelika, Alabama.',
 } = Astro.props
 const canonical = new URL(Astro.url.pathname, Astro.site)
@@ -56,11 +62,12 @@ const jsonLd = {
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:image" content="https://kempandsons.com/og-image.png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
+    <meta property="og:image" content={new URL(image, Astro.site)} />
+    {image.endsWith('og-image.png') && <meta property="og:image:width" content="1200" />}
+    {image.endsWith('og-image.png') && <meta property="og:image:height" content="630" />}
     <meta name="twitter:card" content="summary_large_image" />
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    {schema && <script type="application/ld+json" set:html={JSON.stringify(schema)} />}
     <script is:inline>
       document.documentElement.classList.add('js')
     </script>

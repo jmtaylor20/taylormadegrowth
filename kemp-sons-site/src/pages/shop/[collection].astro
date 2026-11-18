@@ -33,7 +33,17 @@ import { rushFormatFor } from '../../../netlify/lib/price-groups'
 // Rush (same-day shipping) is offered when any design in this line has a rush format.
 const hasRush = templates.some(({ t }) => !!rushFormatFor(t.shopifyHandle))
 ---
-<Base title={`${line.name} | Order online | ${business.name}, Opelika AL`} description={`${line.intro} ${line.blurb}`}>
+<Base
+  title={`${line.name} | Order online | ${business.name}, Opelika AL`}
+  description={`${line.intro} ${line.blurb}`}
+  image={templates.length ? `/previews/${templates[0].t.id}.jpg` : undefined}
+  schema={templates.length ? {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `${line.name} designs`,
+    itemListElement: templates.map(({ t }, i) => ({ '@type': 'ListItem', position: i + 1, url: new URL(`/design/${t.id}/`, Astro.site).href, name: t.name })),
+  } : undefined}
+>
   <Header />
   <main id="main" class="shop">
     <section class="intro">
