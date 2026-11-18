@@ -1,9 +1,26 @@
-Sample photos for the in-store kiosk screensaver only. All are AI-generated
-images of fictional people, made for this site. They are never shown to
-customers in the designer or printed.
+Sample photos for gallery previews, the kiosk and the design pages' preview
+images. All are AI-generated images of fictional people, made for this site.
+They are never placed in a customer's design or printed.
 
-portrait.jpg   Fictional "Mrs. Margaret Ellen Hayes" (funeral program samples)
-holiday-1.jpg  Fictional family by a Christmas tree (Christmas card samples)
-holiday-2.jpg  Fictional children decorating a tree
-holiday-3.jpg  Fictional couple in the snow
-portrait-cutout.png  The same portrait with its background removed by the site's own remover
+Funeral program sample people (each matches a sample name in the designs):
+portrait.jpg           Mrs. Margaret Ellen Hayes
+portrait-cutout.png    The same portrait with its background removed by the site's own remover
+portrait-dorothy.jpg   Mrs. Dorothy Mae Williams
+portrait-james.jpg     Mr. James Earl Johnson
+portrait-rosa.jpg      Mrs. Rosa Maria Delgado
+portrait-robert.jpg    Mr. Robert Lee Turner
+portrait-helen.jpg     Mrs. Helen Mei Chen
+
+Memory collage snapshots:
+memory-1.jpg  Family cookout
+memory-2.jpg  Couple dancing at a family wedding
+memory-3.jpg  Grandfather and grandson fishing
+memory-4.jpg  Grandmother and granddaughter baking
+
+Christmas card samples:
+holiday-1.jpg  Family by a Christmas tree
+holiday-2.jpg  Children decorating a tree
+holiday-3.jpg  Couple in the snow
+holiday-4.jpg  Family in matching sweaters by the tree
+holiday-5.jpg  Three generations in holiday pajamas by the fireplace
+holiday-6.jpg  Young family among snowy pines

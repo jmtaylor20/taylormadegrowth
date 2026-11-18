@@ -86,22 +86,34 @@ let queue: Promise<unknown> = Promise.resolve()
  * designs show real-looking photos instead of gray placeholders. Every
  * funeral program uses the same portrait so it matches the sample name.
  */
-const SAMPLE_PORTRAITS = ['/kiosk/samples/portrait.jpg']
-const SAMPLE_HOLIDAY = [1, 2, 3].map((n) => `/kiosk/samples/holiday-${n}.jpg`)
+const SAMPLE_PORTRAIT = '/kiosk/samples/portrait.jpg'
+const SAMPLE_MEMORIES = [1, 2, 3, 4].map((n) => `/kiosk/samples/memory-${n}.jpg`)
+const SAMPLE_HOLIDAY = [4, 1, 5, 2, 6, 3].map((n) => `/kiosk/samples/holiday-${n}.jpg`)
+
+/** A steady number from a design's id, so each design gets its own lead photo. */
+const idSeed = (id: string) => [...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7)
 const SAMPLE_CUTOUT = '/kiosk/samples/portrait-cutout.png'
 
 async function samplePhotos(t: Template, seed: number): Promise<Record<string, PhotoState>> {
-  const pool = t.category === 'funeral-programs' ? SAMPLE_PORTRAITS : SAMPLE_HOLIDAY
-  const slots: { slot: string; cutout: boolean }[] = []
+  const funeral = t.category === 'funeral-programs'
+  const portrait = t.samplePortrait ?? SAMPLE_PORTRAIT
+  const slots: { slot: string; cutout: boolean; src: string }[] = []
+  const lead = idSeed(t.id) + seed
+  let m = 0
   for (const f of t.fields) {
     if (f.type !== 'photo') continue
-    if (f.count) for (let i = 1; i <= f.count; i++) slots.push({ slot: `${f.id}_${i}`, cutout: false })
-    else slots.push({ slot: f.id, cutout: !!f.removeBackground && t.category === 'funeral-programs' })
+    if (f.count)
+      for (let i = 1; i <= f.count; i++) {
+        // Collages: the person's portrait now and then among family snapshots.
+        const src = funeral ? (m % 5 === 2 ? portrait : SAMPLE_MEMORIES[(lead + m) % SAMPLE_MEMORIES.length]) : SAMPLE_HOLIDAY[(lead + m) % SAMPLE_HOLIDAY.length]
+        slots.push({ slot: `${f.id}_${i}`, cutout: false, src })
+        m++
+      }
+    else slots.push({ slot: f.id, cutout: !!f.removeBackground && funeral, src: funeral ? portrait : SAMPLE_HOLIDAY[(lead + m++) % SAMPLE_HOLIDAY.length] })
   }
   const photos: Record<string, PhotoState> = {}
   await Promise.all(
-    slots.map(async ({ slot, cutout }, i) => {
-      const src = pool[(seed + i) % pool.length]
+    slots.map(async ({ slot, cutout, src }) => {
       const img = await loadImage(src).catch(() => null)
       if (!img) return
       // Cut-out designs show the portrait cut out, as customers now get by default.

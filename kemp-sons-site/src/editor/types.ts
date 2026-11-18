@@ -237,6 +237,8 @@ export interface Template {
    * managed in the Shopify admin, not here.
    */
   shopifyHandle: string
+  /** Sample portrait for gallery previews (matches the sample name). */
+  samplePortrait?: string
   /** Offer addressed envelopes with this template (e.g. A7 for 5 x 7 cards). */
   envelope?: import('./envelopes').EnvelopeSpec
   /** Which side the thumbnail shows. Defaults to the first. */
