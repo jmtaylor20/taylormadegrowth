@@ -55,12 +55,16 @@ const PROGRAM_STYLE: Record<string, string> = {
 
 export type AddonKind = 'prayer' | 'bookmark' | 'portrait' | 'thankyou'
 
-export const ADDON_KINDS: { kind: AddonKind; name: string; handle: string; blurb: string }[] = [
+/** paused: built but not offered (Kemp isn't doing easel portraits for now, Nov 2026). Remove the flag to bring it back. */
+export const ALL_ADDON_KINDS: { kind: AddonKind; name: string; handle: string; blurb: string; paused?: boolean }[] = [
   { kind: 'prayer', name: 'Prayer cards', handle: 'memorial-prayer-cards', blurb: '2.75 x 4.25 in, photo on the front, verse on the back' },
   { kind: 'bookmark', name: 'Memorial bookmarks', handle: 'memorial-bookmarks', blurb: '2.5 x 8.5 in, printed both sides' },
-  { kind: 'portrait', name: 'Easel portrait', handle: 'memorial-easel-portrait', blurb: '16 x 20 in portrait for the service' },
+  { kind: 'portrait', name: 'Easel portrait', handle: 'memorial-easel-portrait', blurb: '16 x 20 in portrait for the service', paused: true },
   { kind: 'thankyou', name: 'Thank-you cards', handle: 'memorial-thank-you-cards', blurb: 'Folded 4.25 x 5.5 in, for after the service' },
 ]
+
+/** The add-ons Kemp offers right now. */
+export const ADDON_KINDS = ALL_ADDON_KINDS.filter((k) => !k.paused)
 
 const SCRIPT = 'Great Vibes' as const
 const SERIF = 'Cormorant Garamond' as const
