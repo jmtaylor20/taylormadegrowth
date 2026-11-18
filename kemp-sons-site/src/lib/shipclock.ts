@@ -1,10 +1,11 @@
 /**
- * Same-day shipping promise. Kemp & Sons gets packages to the UPS Store by
- * 5 PM; orders placed by the cutoff below (Central time, on shipping days)
- * leave the same day. Everything about the promise is set here.
+ * Shipping promise. Standard orders ship the next shipping day. Rush orders
+ * placed by the cutoff below (Central time, on shipping days) ship the same
+ * day: Kemp & Sons gets packages to the UPS Store by 5 PM. Everything about
+ * the promise is set here.
  */
 export const SHIPPING = {
-  /** Order by this hour (24h, Central) to ship today. The drop-off is 5 PM, so this leaves time to print and pack. */
+  /** Rush orders by this hour (24h, Central) ship today. The drop-off is 5 PM, so this leaves time to print and pack. */
   cutoffHour: 12,
   timeZone: 'America/Chicago',
   /** 0 = Sunday ... 6 = Saturday. */
@@ -29,30 +30,38 @@ const isShipDay = (l: ReturnType<typeof local>) => SHIPPING.days.includes(l.week
 const cutoffLabel = () => (SHIPPING.cutoffHour === 12 ? 'noon' : `${SHIPPING.cutoffHour % 12 || 12} ${SHIPPING.cutoffHour < 12 ? 'AM' : 'PM'}`)
 
 export interface ShipStatus {
-  /** True while an order placed now still ships today. */
+  /** True while a rush order placed now still ships today. */
   today: boolean
   /** One sentence for customers. */
   text: string
 }
 
-/** What to tell a customer ordering right now. */
-export function shipStatus(now = new Date()): ShipStatus {
+/** The next shipping day after today, as "tomorrow" or a weekday name. */
+function nextShipDay(now: Date) {
+  for (let i = 1; i <= 10; i++) {
+    const next = local(new Date(now.getTime() + i * 86400_000))
+    if (isShipDay(next)) return i === 1 ? 'tomorrow' : WEEKDAYS[next.weekday]
+  }
+  return 'soon'
+}
+
+/**
+ * What to tell a customer ordering right now. Standard orders ship the next
+ * shipping day; rush orders placed by the cutoff on a shipping day ship today.
+ * rush = whether this product offers rush.
+ */
+export function shipStatus(opts: { rush?: boolean } = {}, now = new Date()): ShipStatus {
   const l = local(now)
+  const next = nextShipDay(now)
+  if (!opts.rush) return { today: false, text: `Order today and it ships ${next}.` }
   const minsLeft = SHIPPING.cutoffHour * 60 - (l.hour * 60 + l.minute)
   if (isShipDay(l) && minsLeft > 0) {
     const h = Math.floor(minsLeft / 60), m = minsLeft % 60
     const left = h ? `${h} hr${m ? ` ${m} min` : ''}` : `${m} min`
-    return { today: true, text: `Order in the next ${left} (by ${cutoffLabel()} Central) and it ships today.` }
+    return { today: true, text: `Need it today? Add rush in the next ${left} (by ${cutoffLabel()} Central) and it ships today. Standard orders ship ${next}.` }
   }
-  // Next shipping day.
-  for (let i = 1; i <= 10; i++) {
-    const next = local(new Date(now.getTime() + i * 86400_000))
-    if (!isShipDay(next)) continue
-    const day = i === 1 ? 'tomorrow' : WEEKDAYS[next.weekday]
-    return { today: false, text: `Order now and it ships ${day}. Orders by ${cutoffLabel()} Central on weekdays ship the same day.` }
-  }
-  return { today: false, text: `Orders by ${cutoffLabel()} Central on weekdays ship the same day.` }
+  return { today: false, text: `Order now and it ships ${next}. Rush orders placed by ${cutoffLabel()} Central on weekdays ship the same day.` }
 }
 
 /** Short version for small spaces. */
-export const shipPromise = () => `Ships same day when you order by ${cutoffLabel()} Central on weekdays`
+export const shipPromise = () => `Rush ships same day when you order by ${cutoffLabel()} Central`

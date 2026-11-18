@@ -394,7 +394,7 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref, prototype = fal
               <span className="ed-section-no">{String.fromCharCode(65 + new Set(t.fields.map((f) => f.section ?? 'Details')).size)}</span>
               Print options
             </legend>
-            <ShipLine />
+            <ShipLine rush={!!rushVariant} />
             {product && typeof product === 'object' ? (
               product.options.map((o) => (
                 <div key={o.name} className="ed-field">
@@ -422,7 +422,7 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref, prototype = fal
               <label className="ed-rush">
                 <input type="checkbox" checked={rush} onChange={(e) => setRush(e.target.checked)} />
                 <span>
-                  <strong>Rush printing</strong> (+{money(rushVariant.price)}). We move your order to the front of the line. Call us at <a href={phoneHref}>{phone}</a> if you need it by a certain time.
+                  <strong>Rush printing</strong> (+{money(rushVariant.price)}). Order by noon Central on a weekday and it ships the same day. Need it by a certain time? Call us at <a href={phoneHref}>{phone}</a>.
                 </span>
               </label>
             )}
@@ -878,11 +878,12 @@ function KioskIdle() {
 }
 
 /** Same-day shipping countdown, refreshed every 30 seconds. */
-function ShipLine() {
-  const [s, setS] = useState(() => shipStatus())
+function ShipLine({ rush }: { rush: boolean }) {
+  const [s, setS] = useState(() => shipStatus({ rush }))
   useEffect(() => {
-    const id = setInterval(() => setS(shipStatus()), 30_000)
+    setS(shipStatus({ rush }))
+    const id = setInterval(() => setS(shipStatus({ rush })), 30_000)
     return () => clearInterval(id)
-  }, [])
+  }, [rush])
   return <p className={`ed-ship ${s.today ? 'is-today' : ''}`}>{s.text}</p>
 }

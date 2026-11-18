@@ -29,6 +29,9 @@ const scaleStyle = (t: (typeof templates)[number]['t']) => {
   const c = t.thumbnailCrop ?? t.trim
   return `width: ${((c.w / SCALE_W) * 100).toFixed(2)}%; aspect-ratio: ${c.w} / ${c.h};`
 }
+import { rushFormatFor } from '../../../netlify/lib/price-groups'
+// Rush (same-day shipping) is offered when any design in this line has a rush format.
+const hasRush = templates.some(({ t }) => !!rushFormatFor(t.shopifyHandle))
 ---
 <Base title={`${line.name} | Order online | ${business.name}, Opelika AL`} description={`${line.intro} ${line.blurb}`}>
   <Header />
@@ -38,7 +41,7 @@ const scaleStyle = (t: (typeof templates)[number]['t']) => {
         <p class="label">Order online</p>
         <h1 class="headline">{line.name}</h1>
         <p class="lede">{line.intro}</p>
-        {templates.length > 0 && <p class="ship-clock" data-ship-clock><span class="dot" aria-hidden="true"></span><span data-ship-text></span></p>}
+        {templates.length > 0 && <p class="ship-clock" data-ship-clock data-rush={hasRush ? '1' : undefined}><span class="dot" aria-hidden="true"></span><span data-ship-text></span></p>}
       </div>
     </section>
 
@@ -138,7 +141,7 @@ const scaleStyle = (t: (typeof templates)[number]['t']) => {
   const text = el?.querySelector<HTMLElement>('[data-ship-text]')
   const tick = () => {
     if (!el || !text) return
-    const s = shipStatus()
+    const s = shipStatus({ rush: el.dataset.rush === '1' })
     text.textContent = s.text
     el.classList.add('is-on')
     el.classList.toggle('is-today', s.today)
