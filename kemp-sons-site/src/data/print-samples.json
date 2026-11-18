@@ -1,0 +1,567 @@
+[
+ {
+  "group": "Original funeral programs",
+  "items": [
+   {
+    "name": "Clouds & Doves",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-clouds-doves.pdf"
+   },
+   {
+    "name": "Red Roses",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-red-roses.pdf"
+   },
+   {
+    "name": "Pink Floral",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-pink-floral.pdf"
+   },
+   {
+    "name": "Pink Tulips",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-pink-tulips.pdf"
+   },
+   {
+    "name": "Purple Lilacs",
+    "size": "17 x 11 in sheet, folds to 8.5 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-purple-lilacs.pdf"
+   },
+   {
+    "name": "Gold Parchment Booklet",
+    "size": "8-page booklet, 8.5 x 11 in pages",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-gold-booklet.pdf"
+   },
+   {
+    "name": "Pink Floral Stagger Fold",
+    "size": "11 x 8.5 in sheet, stagger folds to 6 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-pink-stagger.pdf"
+   },
+   {
+    "name": "Flag & Clouds Trifold",
+    "size": "16.5 x 8.5 in trifold, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-flag-trifold.pdf"
+   },
+   {
+    "name": "Gone Fishing Trifold",
+    "size": "14 x 8.5 in trifold, folds to 4.67 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-gone-fishing.pdf"
+   },
+   {
+    "name": "Flag & Clouds Large Trifold",
+    "size": "17 x 11 in trifold, folds to 5.67 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-flag-tabloid.pdf"
+   }
+  ]
+ },
+ {
+  "group": "Theme collection, 11 x 8.5 folded",
+  "items": [
+   {
+    "name": "Autumn Leaves",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-autumn-leaves.pdf"
+   },
+   {
+    "name": "Black and Gold",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-black-and-gold.pdf"
+   },
+   {
+    "name": "Blue Hydrangea",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-blue-hydrangea.pdf"
+   },
+   {
+    "name": "Butterfly Garden",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-butterfly-garden.pdf"
+   },
+   {
+    "name": "Celestial Light",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-celestial-light.pdf"
+   },
+   {
+    "name": "Dove of Peace",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-dove-of-peace.pdf"
+   },
+   {
+    "name": "Evergreen Peace",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-evergreen-peace.pdf"
+   },
+   {
+    "name": "Faithful Cross",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-faithful-cross.pdf"
+   },
+   {
+    "name": "Garden Rose",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-garden-rose.pdf"
+   },
+   {
+    "name": "Golden Filigree",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-golden-filigree.pdf"
+   },
+   {
+    "name": "Lavender Grace",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-lavender-grace.pdf"
+   },
+   {
+    "name": "Modern Minimal",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-modern-minimal.pdf"
+   },
+   {
+    "name": "Music and Memory",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-music-and-memory.pdf"
+   },
+   {
+    "name": "Ocean Serenity",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-ocean-serenity.pdf"
+   },
+   {
+    "name": "Patriotic Honor",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-patriotic-honor.pdf"
+   },
+   {
+    "name": "Rustic Woodland",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-rustic-woodland.pdf"
+   },
+   {
+    "name": "Starry Night",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-starry-night.pdf"
+   },
+   {
+    "name": "Sunflower Light",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-sunflower-light.pdf"
+   },
+   {
+    "name": "Sunrise Horizon",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-sunrise-horizon.pdf"
+   },
+   {
+    "name": "White Lily",
+    "size": "11 x 8.5 in sheet, folds to 5.5 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-white-lily.pdf"
+   }
+  ]
+ },
+ {
+  "group": "Theme collection, 14 x 8.5 trifolds",
+  "items": [
+   {
+    "name": "Autumn Leaves Trifold",
+    "size": "14 x 8.5 in trifold, folds to 4.69 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-autumn-leaves-trifold.pdf"
+   },
+   {
+    "name": "Black and Gold Trifold",
+    "size": "14 x 8.5 in trifold, folds to 4.69 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-black-and-gold-trifold.pdf"
+   },
+   {
+    "name": "Blue Hydrangea Trifold",
+    "size": "14 x 8.5 in trifold, folds to 4.69 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-blue-hydrangea-trifold.pdf"
+   },
+   {
+    "name": "Butterfly Garden Trifold",
+    "size": "14 x 8.5 in trifold, folds to 4.69 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-butterfly-garden-trifold.pdf"
+   },
+   {
+    "name": "Celestial Light Trifold",
+    "size": "14 x 8.5 in trifold, folds to 4.69 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-celestial-light-trifold.pdf"
+   },
+   {
+    "name": "Dove of Peace Trifold",
+    "size": "14 x 8.5 in trifold, folds to 4.69 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-dove-of-peace-trifold.pdf"
+   },
+   {
+    "name": "Evergreen Peace Trifold",
+    "size": "14 x 8.5 in trifold, folds to 4.69 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-evergreen-peace-trifold.pdf"
+   },
+   {
+    "name": "Faithful Cross Trifold",
+    "size": "14 x 8.5 in trifold, folds to 4.69 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-faithful-cross-trifold.pdf"
+   },
+   {
+    "name": "Garden Rose Trifold",
+    "size": "14 x 8.5 in trifold, folds to 4.69 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-garden-rose-trifold.pdf"
+   },
+   {
+    "name": "Golden Filigree Trifold",
+    "size": "14 x 8.5 in trifold, folds to 4.69 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-golden-filigree-trifold.pdf"
+   },
+   {
+    "name": "Lavender Grace Trifold",
+    "size": "14 x 8.5 in trifold, folds to 4.69 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-lavender-grace-trifold.pdf"
+   },
+   {
+    "name": "Modern Minimal Trifold",
+    "size": "14 x 8.5 in trifold, folds to 4.69 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-modern-minimal-trifold.pdf"
+   },
+   {
+    "name": "Music and Memory Trifold",
+    "size": "14 x 8.5 in trifold, folds to 4.69 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-music-and-memory-trifold.pdf"
+   },
+   {
+    "name": "Ocean Serenity Trifold",
+    "size": "14 x 8.5 in trifold, folds to 4.69 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-ocean-serenity-trifold.pdf"
+   },
+   {
+    "name": "Patriotic Honor Trifold",
+    "size": "14 x 8.5 in trifold, folds to 4.69 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-patriotic-honor-trifold.pdf"
+   },
+   {
+    "name": "Rustic Woodland Trifold",
+    "size": "14 x 8.5 in trifold, folds to 4.69 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-rustic-woodland-trifold.pdf"
+   },
+   {
+    "name": "Starry Night Trifold",
+    "size": "14 x 8.5 in trifold, folds to 4.69 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-starry-night-trifold.pdf"
+   },
+   {
+    "name": "Sunflower Light Trifold",
+    "size": "14 x 8.5 in trifold, folds to 4.69 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-sunflower-light-trifold.pdf"
+   },
+   {
+    "name": "Sunrise Horizon Trifold",
+    "size": "14 x 8.5 in trifold, folds to 4.69 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-sunrise-horizon-trifold.pdf"
+   },
+   {
+    "name": "White Lily Trifold",
+    "size": "14 x 8.5 in trifold, folds to 4.69 x 8.5 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-white-lily-trifold.pdf"
+   }
+  ]
+ },
+ {
+  "group": "Theme collection, 17 x 11 folded",
+  "items": [
+   {
+    "name": "Autumn Leaves Large",
+    "size": "17 x 11 in sheet, folds to 8.5 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-autumn-leaves-large-fold.pdf"
+   },
+   {
+    "name": "Black and Gold Large",
+    "size": "17 x 11 in sheet, folds to 8.5 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-black-and-gold-large-fold.pdf"
+   },
+   {
+    "name": "Blue Hydrangea Large",
+    "size": "17 x 11 in sheet, folds to 8.5 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-blue-hydrangea-large-fold.pdf"
+   },
+   {
+    "name": "Butterfly Garden Large",
+    "size": "17 x 11 in sheet, folds to 8.5 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-butterfly-garden-large-fold.pdf"
+   },
+   {
+    "name": "Celestial Light Large",
+    "size": "17 x 11 in sheet, folds to 8.5 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-celestial-light-large-fold.pdf"
+   },
+   {
+    "name": "Dove of Peace Large",
+    "size": "17 x 11 in sheet, folds to 8.5 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-dove-of-peace-large-fold.pdf"
+   },
+   {
+    "name": "Evergreen Peace Large",
+    "size": "17 x 11 in sheet, folds to 8.5 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-evergreen-peace-large-fold.pdf"
+   },
+   {
+    "name": "Faithful Cross Large",
+    "size": "17 x 11 in sheet, folds to 8.5 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-faithful-cross-large-fold.pdf"
+   },
+   {
+    "name": "Garden Rose Large",
+    "size": "17 x 11 in sheet, folds to 8.5 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-garden-rose-large-fold.pdf"
+   },
+   {
+    "name": "Golden Filigree Large",
+    "size": "17 x 11 in sheet, folds to 8.5 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-golden-filigree-large-fold.pdf"
+   },
+   {
+    "name": "Lavender Grace Large",
+    "size": "17 x 11 in sheet, folds to 8.5 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-lavender-grace-large-fold.pdf"
+   },
+   {
+    "name": "Modern Minimal Large",
+    "size": "17 x 11 in sheet, folds to 8.5 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-modern-minimal-large-fold.pdf"
+   },
+   {
+    "name": "Music and Memory Large",
+    "size": "17 x 11 in sheet, folds to 8.5 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-music-and-memory-large-fold.pdf"
+   },
+   {
+    "name": "Ocean Serenity Large",
+    "size": "17 x 11 in sheet, folds to 8.5 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-ocean-serenity-large-fold.pdf"
+   },
+   {
+    "name": "Patriotic Honor Large",
+    "size": "17 x 11 in sheet, folds to 8.5 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-patriotic-honor-large-fold.pdf"
+   },
+   {
+    "name": "Rustic Woodland Large",
+    "size": "17 x 11 in sheet, folds to 8.5 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-rustic-woodland-large-fold.pdf"
+   },
+   {
+    "name": "Starry Night Large",
+    "size": "17 x 11 in sheet, folds to 8.5 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-starry-night-large-fold.pdf"
+   },
+   {
+    "name": "Sunflower Light Large",
+    "size": "17 x 11 in sheet, folds to 8.5 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-sunflower-light-large-fold.pdf"
+   },
+   {
+    "name": "Sunrise Horizon Large",
+    "size": "17 x 11 in sheet, folds to 8.5 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-sunrise-horizon-large-fold.pdf"
+   },
+   {
+    "name": "White Lily Large",
+    "size": "17 x 11 in sheet, folds to 8.5 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-white-lily-large-fold.pdf"
+   }
+  ]
+ },
+ {
+  "group": "Theme collection, 17 x 11 trifolds",
+  "items": [
+   {
+    "name": "Autumn Leaves Large Trifold",
+    "size": "17 x 11 in trifold, folds to 5.69 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-autumn-leaves-large-trifold.pdf"
+   },
+   {
+    "name": "Black and Gold Large Trifold",
+    "size": "17 x 11 in trifold, folds to 5.69 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-black-and-gold-large-trifold.pdf"
+   },
+   {
+    "name": "Blue Hydrangea Large Trifold",
+    "size": "17 x 11 in trifold, folds to 5.69 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-blue-hydrangea-large-trifold.pdf"
+   },
+   {
+    "name": "Butterfly Garden Large Trifold",
+    "size": "17 x 11 in trifold, folds to 5.69 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-butterfly-garden-large-trifold.pdf"
+   },
+   {
+    "name": "Celestial Light Large Trifold",
+    "size": "17 x 11 in trifold, folds to 5.69 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-celestial-light-large-trifold.pdf"
+   },
+   {
+    "name": "Dove of Peace Large Trifold",
+    "size": "17 x 11 in trifold, folds to 5.69 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-dove-of-peace-large-trifold.pdf"
+   },
+   {
+    "name": "Evergreen Peace Large Trifold",
+    "size": "17 x 11 in trifold, folds to 5.69 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-evergreen-peace-large-trifold.pdf"
+   },
+   {
+    "name": "Faithful Cross Large Trifold",
+    "size": "17 x 11 in trifold, folds to 5.69 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-faithful-cross-large-trifold.pdf"
+   },
+   {
+    "name": "Garden Rose Large Trifold",
+    "size": "17 x 11 in trifold, folds to 5.69 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-garden-rose-large-trifold.pdf"
+   },
+   {
+    "name": "Golden Filigree Large Trifold",
+    "size": "17 x 11 in trifold, folds to 5.69 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-golden-filigree-large-trifold.pdf"
+   },
+   {
+    "name": "Lavender Grace Large Trifold",
+    "size": "17 x 11 in trifold, folds to 5.69 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-lavender-grace-large-trifold.pdf"
+   },
+   {
+    "name": "Modern Minimal Large Trifold",
+    "size": "17 x 11 in trifold, folds to 5.69 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-modern-minimal-large-trifold.pdf"
+   },
+   {
+    "name": "Music and Memory Large Trifold",
+    "size": "17 x 11 in trifold, folds to 5.69 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-music-and-memory-large-trifold.pdf"
+   },
+   {
+    "name": "Ocean Serenity Large Trifold",
+    "size": "17 x 11 in trifold, folds to 5.69 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-ocean-serenity-large-trifold.pdf"
+   },
+   {
+    "name": "Patriotic Honor Large Trifold",
+    "size": "17 x 11 in trifold, folds to 5.69 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-patriotic-honor-large-trifold.pdf"
+   },
+   {
+    "name": "Rustic Woodland Large Trifold",
+    "size": "17 x 11 in trifold, folds to 5.69 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-rustic-woodland-large-trifold.pdf"
+   },
+   {
+    "name": "Starry Night Large Trifold",
+    "size": "17 x 11 in trifold, folds to 5.69 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-starry-night-large-trifold.pdf"
+   },
+   {
+    "name": "Sunflower Light Large Trifold",
+    "size": "17 x 11 in trifold, folds to 5.69 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-sunflower-light-large-trifold.pdf"
+   },
+   {
+    "name": "Sunrise Horizon Large Trifold",
+    "size": "17 x 11 in trifold, folds to 5.69 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-sunrise-horizon-large-trifold.pdf"
+   },
+   {
+    "name": "White Lily Large Trifold",
+    "size": "17 x 11 in trifold, folds to 5.69 x 11 in",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-funeral-white-lily-large-trifold.pdf"
+   }
+  ]
+ },
+ {
+  "group": "Christmas cards",
+  "items": [
+   {
+    "name": "Candy Dash",
+    "size": "5 x 7 in flat card, printed one side",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-christmas-candy-dash.pdf"
+   },
+   {
+    "name": "Green Stripe",
+    "size": "5 x 7 in flat card, printed one side",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-christmas-green-stripe.pdf"
+   },
+   {
+    "name": "Holly Berry",
+    "size": "5 x 7 in flat card, printed one side",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-christmas-holly-berry.pdf"
+   },
+   {
+    "name": "Ivory Ornaments",
+    "size": "5 x 7 in flat card, printed one side",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-christmas-ivory-ornaments.pdf"
+   },
+   {
+    "name": "Navy Ornaments",
+    "size": "5 x 7 in flat card, printed one side",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-christmas-navy-ornaments.pdf"
+   },
+   {
+    "name": "Nutcracker",
+    "size": "5 x 7 in flat card, printed one side",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-christmas-nutcracker.pdf"
+   },
+   {
+    "name": "Pine Garland",
+    "size": "5 x 7 in flat card, printed one side",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-christmas-pine-garland.pdf"
+   },
+   {
+    "name": "Pink Christmas",
+    "size": "5 x 7 in flat card, printed one side",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-christmas-pink-christmas.pdf"
+   },
+   {
+    "name": "Ribbon Wave",
+    "size": "5 x 7 in flat card, printed one side",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-christmas-ribbon-wave.pdf"
+   },
+   {
+    "name": "Very Merry",
+    "size": "7 x 5 in flat card, printed both sides",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-very-merry-three-photo.pdf"
+   }
+  ]
+ },
+ {
+  "group": "Matching prayer cards and bookmarks",
+  "items": [
+   {
+    "name": "Memorial bookmarks, 2 x 8",
+    "size": "2 x 8 in bookmark",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-memorial-bookmark-roses.pdf"
+   },
+   {
+    "name": "Memorial bookmarks, 2 x 8",
+    "size": "2 x 8 in bookmark",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-memorial-bookmark-theme-garden-rose.pdf"
+   },
+   {
+    "name": "Memorial bookmarks, 2 x 6",
+    "size": "2 x 6 in bookmark",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-memorial-bookmarkSmall-roses.pdf"
+   },
+   {
+    "name": "Memorial bookmarks, 2 x 6",
+    "size": "2 x 6 in bookmark",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-memorial-bookmarkSmall-theme-starry-night.pdf"
+   },
+   {
+    "name": "Prayer cards",
+    "size": "3.5 x 5 in prayer card",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-memorial-prayer-roses.pdf"
+   },
+   {
+    "name": "Prayer cards",
+    "size": "3.5 x 5 in prayer card",
+    "url": "https://cdn.shopify.com/s/files/1/0717/4537/2336/files/kemp-sample-memorial-prayer-theme-patriotic-honor.pdf"
+   }
+  ]
+ }
+]

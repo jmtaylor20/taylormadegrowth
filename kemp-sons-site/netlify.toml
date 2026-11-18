@@ -47,3 +47,9 @@
   from = "/prototype/*"
   to = "/start/"
   status = 301
+
+# Unlisted print-sample pages for Kemp's staff stay out of search results.
+[[headers]]
+  for = "/samples/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"

@@ -1,0 +1,48 @@
+---
+/**
+ * Unlisted page for Kemp's staff: every template as a print file, filled in
+ * with the sample people, to print and check. Not linked anywhere and kept out
+ * of search. The PDFs live in the store's Shopify Files ("kemp-sample-*").
+ * Delete this page (and those files) once the check is done.
+ */
+import Base from '../../layouts/Base.astro'
+import groups from '../../data/print-samples.json'
+const total = groups.reduce((n, g) => n + g.items.length, 0)
+---
+<Base title="Template print samples | Kemp & Sons Printing" noindex>
+  <main class="ps">
+    <img src="/brand/kemp-sons-full-color.svg" alt="Kemp & Sons Printing" width="120" height="80" />
+    <h1>Template print samples</h1>
+    <p class="lead">All {total} website templates as print files, exactly as the website makes them when a customer orders: full size, 0.125 in bleed and crop marks. They're filled in with made-up sample names and photos.</p>
+    <div class="how">
+      <p><strong>Print at 100% or "Actual size"</strong>, not "Fit to page", so sizes and folds are true. On programs and cards, page 1 is the outside or front and page 2 is the inside or back.</p>
+      <p>Look for: text cut off, too small, or too close to a fold or trim; folds landing in the right place; photos sitting where you'd expect; how colors and backgrounds print (especially 17 x 11); anything you'd change before a customer sees it.</p>
+      <p>Send notes to Josh with the template name and what's off.</p>
+    </div>
+    {groups.map((g) => (
+      <section>
+        <h2>{g.group} <span>{g.items.length}</span></h2>
+        <ol>
+          {g.items.map((i) => (
+            <li>
+              <a href={i.url} target="_blank" rel="noopener">{i.name}</a>
+              <span>{i.size}</span>
+            </li>
+          ))}
+        </ol>
+      </section>
+    ))}
+  </main>
+</Base>
+<style>
+  .ps { max-width: 820px; margin: 0 auto; padding: 32px 16px 80px; color: var(--ink); }
+  .ps h1 { font-size: clamp(30px, 6vw, 44px); font-weight: 800; margin: 16px 0 8px; }
+  .lead { font-size: 18px; color: var(--ink-2); }
+  .how { margin: 20px 0 28px; padding: 16px 18px; border: 2px solid var(--ink); background: #fffdf8; display: grid; gap: 8px; font-size: 16px; }
+  .ps h2 { font-size: 22px; font-weight: 800; margin: 28px 0 10px; border-bottom: 2px solid var(--ink); padding-bottom: 6px; }
+  .ps h2 span { font-family: var(--mono); font-size: 13px; color: var(--ink-2); font-weight: 400; }
+  .ps ol { list-style: decimal; padding-left: 28px; display: grid; gap: 6px; }
+  .ps li { font-size: 16px; }
+  .ps li a { font-weight: 700; color: var(--red-ink, #9a1d1d); }
+  .ps li span { display: block; font-size: 13px; color: var(--ink-2); }
+</style>
