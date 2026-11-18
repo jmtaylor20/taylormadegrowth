@@ -38,6 +38,7 @@ const scaleStyle = (t: (typeof templates)[number]['t']) => {
         <p class="label">Order online</p>
         <h1 class="headline">{line.name}</h1>
         <p class="lede">{line.intro}</p>
+        {templates.length > 0 && <p class="ship-clock" data-ship-clock><span class="dot" aria-hidden="true"></span><span data-ship-text></span></p>}
       </div>
     </section>
 
@@ -97,6 +98,10 @@ const scaleStyle = (t: (typeof templates)[number]['t']) => {
 <style>
   .shop { padding-top: var(--header-h); }
   .intro { padding: 64px 0 40px; border-bottom: 2px solid var(--ink); }
+  .ship-clock { display: inline-flex; align-items: center; gap: 10px; justify-self: start; font-weight: 700; font-size: 15px; background: var(--white); border: 1.5px solid var(--ink); padding: 8px 14px; }
+  .ship-clock:empty, .ship-clock:not(.is-on) { visibility: hidden; }
+  .ship-clock .dot { width: 10px; height: 10px; border-radius: 50%; background: #b38600; flex: none; }
+  .ship-clock.is-today .dot { background: #1e8a3c; box-shadow: 0 0 0 4px rgba(30, 138, 60, 0.18); }
   .intro .wrap { display: grid; gap: 18px; }
   /* Warm "proof table": designs drawn to scale on cream, soft shadows, no boxes (matches the in-store kiosk) */
   .warm { background: radial-gradient(120% 70% at 50% 0%, #fffaf2 0%, #f5ede1 55%, #efe4d4 100%); border-bottom: 2px solid var(--ink); }
@@ -125,3 +130,20 @@ const scaleStyle = (t: (typeof templates)[number]['t']) => {
   .others a { display: inline-flex; gap: 8px; padding: 12px 16px; border: 1.5px solid var(--ink); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; font-size: 14px; text-decoration: none; }
   .others a:hover { background: var(--ink); color: var(--white); }
 </style>
+
+<script>
+  import { shipStatus } from '../../lib/shipclock'
+  // Same-day shipping countdown, updated every 30 seconds.
+  const el = document.querySelector<HTMLElement>('[data-ship-clock]')
+  const text = el?.querySelector<HTMLElement>('[data-ship-text]')
+  const tick = () => {
+    if (!el || !text) return
+    const s = shipStatus()
+    text.textContent = s.text
+    el.classList.add('is-on')
+    el.classList.toggle('is-today', s.today)
+  }
+  tick()
+  setInterval(tick, 30_000)
+</script>
+

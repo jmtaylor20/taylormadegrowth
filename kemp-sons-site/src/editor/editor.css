@@ -216,3 +216,7 @@
 .ed-sent-in dt { font-weight: 700; }
 .ed-sent-in dd { white-space: pre-line; overflow-wrap: anywhere; }
 .ed-sent-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: space-between; }
+
+/* Same-day shipping line in Print options */
+.ed-ship { font-weight: 700; font-size: 14px; padding: 8px 12px; background: #fff4cc; border-left: 4px solid #b38600; }
+.ed-ship.is-today { background: #e4f3e7; border-left-color: #1e8a3c; }

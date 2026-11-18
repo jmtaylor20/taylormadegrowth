@@ -18,6 +18,7 @@ import { buildEnvelopePdf, emptyEnvelopes, envelopeCount, envelopeKind, envelope
 import { cutoutKind, dataUrlToBlob, draftJson, loadDesign, photoKind, rememberDesign, reorderUrl } from './saved'
 import { adClick, flushAnalytics, isKioskVisit, track, withLinker } from '../scripts/tracking'
 import { tracking } from '../config/tracking'
+import { shipStatus } from '../lib/shipclock'
 import './editor.css'
 
 interface Props {
@@ -393,6 +394,7 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref, prototype = fal
               <span className="ed-section-no">{String.fromCharCode(65 + new Set(t.fields.map((f) => f.section ?? 'Details')).size)}</span>
               Print options
             </legend>
+            <ShipLine />
             {product && typeof product === 'object' ? (
               product.options.map((o) => (
                 <div key={o.name} className="ed-field">
@@ -873,4 +875,14 @@ function KioskIdle() {
       </div>
     </div>
   )
+}
+
+/** Same-day shipping countdown, refreshed every 30 seconds. */
+function ShipLine() {
+  const [s, setS] = useState(() => shipStatus())
+  useEffect(() => {
+    const id = setInterval(() => setS(shipStatus()), 30_000)
+    return () => clearInterval(id)
+  }, [])
+  return <p className={`ed-ship ${s.today ? 'is-today' : ''}`}>{s.text}</p>
 }
