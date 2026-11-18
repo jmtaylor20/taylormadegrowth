@@ -24,3 +24,5 @@ holiday-3.jpg  Couple in the snow
 holiday-4.jpg  Family in matching sweaters by the tree
 holiday-5.jpg  Three generations in holiday pajamas by the fireplace
 holiday-6.jpg  Young family among snowy pines
+
+portrait-<name>-cutout.png  Each portrait with its background removed by the site's own remover (MODNet)

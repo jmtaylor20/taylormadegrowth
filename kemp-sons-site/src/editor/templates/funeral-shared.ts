@@ -93,17 +93,19 @@ export interface Persona {
   last: string
   he: boolean
   portrait: string
+  /** The portrait with its background removed, for designs that show it cut out. */
+  cutout: string
   /** Spouse, for the men's obituary. */
   spouse?: string
 }
 
 export const PERSONAS: Persona[] = [
-  { title: 'Mrs.', first: 'Margaret', middle: 'Ellen', last: 'Hayes', he: false, portrait: '/kiosk/samples/portrait.jpg' },
-  { title: 'Mrs.', first: 'Dorothy', middle: 'Mae', last: 'Williams', he: false, portrait: '/kiosk/samples/portrait-dorothy.jpg' },
-  { title: 'Mr.', first: 'James', middle: 'Earl', last: 'Johnson', he: true, spouse: 'Ruth', portrait: '/kiosk/samples/portrait-james.jpg' },
-  { title: 'Mrs.', first: 'Rosa', middle: 'Maria', last: 'Delgado', he: false, portrait: '/kiosk/samples/portrait-rosa.jpg' },
-  { title: 'Mr.', first: 'Robert', middle: 'Lee', last: 'Turner', he: true, spouse: 'Betty', portrait: '/kiosk/samples/portrait-robert.jpg' },
-  { title: 'Mrs.', first: 'Helen', middle: 'Mei', last: 'Chen', he: false, portrait: '/kiosk/samples/portrait-helen.jpg' },
+  { title: 'Mrs.', first: 'Margaret', middle: 'Ellen', last: 'Hayes', he: false, portrait: '/kiosk/samples/portrait.jpg', cutout: '/kiosk/samples/portrait-cutout.png' },
+  { title: 'Mrs.', first: 'Dorothy', middle: 'Mae', last: 'Williams', he: false, portrait: '/kiosk/samples/portrait-dorothy.jpg', cutout: '/kiosk/samples/portrait-dorothy-cutout.png' },
+  { title: 'Mr.', first: 'James', middle: 'Earl', last: 'Johnson', he: true, spouse: 'Ruth', portrait: '/kiosk/samples/portrait-james.jpg', cutout: '/kiosk/samples/portrait-james-cutout.png' },
+  { title: 'Mrs.', first: 'Rosa', middle: 'Maria', last: 'Delgado', he: false, portrait: '/kiosk/samples/portrait-rosa.jpg', cutout: '/kiosk/samples/portrait-rosa-cutout.png' },
+  { title: 'Mr.', first: 'Robert', middle: 'Lee', last: 'Turner', he: true, spouse: 'Betty', portrait: '/kiosk/samples/portrait-robert.jpg', cutout: '/kiosk/samples/portrait-robert-cutout.png' },
+  { title: 'Mrs.', first: 'Helen', middle: 'Mei', last: 'Chen', he: false, portrait: '/kiosk/samples/portrait-helen.jpg', cutout: '/kiosk/samples/portrait-helen-cutout.png' },
 ]
 
 const manObituary = (p: Persona) =>

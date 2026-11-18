@@ -18,14 +18,16 @@ import { ADDON_TEMPLATES } from './memorial-addons'
 
 /**
  * Funeral programs take turns opening with each sample person, so the
- * galleries show a range of families. Designs whose sample shows a cut-out
- * portrait keep Margaret, the one sample with a cut-out.
+ * galleries show a range of families.
  */
 function withSamplePerson(t: Template, i: number): Template {
   if (t.category !== 'funeral-programs') return t
-  const cutout = t.fields.some((f) => f.type === 'photo' && f.removeBackground)
-  const p = cutout ? PERSONAS[0] : PERSONAS[i % PERSONAS.length]
-  return { ...withPersona(t, p), samplePortrait: p.portrait }
+  // Floral and pink designs open with a woman; the fishing design with a man.
+  const want = /pink|tulip|lilac|rose|lavender|hydrangea|lily|butterfly/.test(t.id) ? false : /fishing/.test(t.id) ? true : null
+  let k = i
+  while (want !== null && PERSONAS[k % PERSONAS.length].he !== want) k++
+  const p = PERSONAS[k % PERSONAS.length]
+  return { ...withPersona(t, p), samplePortrait: p.portrait, sampleCutout: p.cutout }
 }
 
 /** Every template on the site. Add new ones here. */

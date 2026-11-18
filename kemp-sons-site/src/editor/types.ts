@@ -239,6 +239,8 @@ export interface Template {
   shopifyHandle: string
   /** Sample portrait for gallery previews (matches the sample name). */
   samplePortrait?: string
+  /** The same portrait cut out, for designs that preview it without its background. */
+  sampleCutout?: string
   /** Offer addressed envelopes with this template (e.g. A7 for 5 x 7 cards). */
   envelope?: import('./envelopes').EnvelopeSpec
   /** Which side the thumbnail shows. Defaults to the first. */

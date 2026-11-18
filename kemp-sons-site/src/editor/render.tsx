@@ -117,8 +117,9 @@ async function samplePhotos(t: Template, seed: number): Promise<Record<string, P
       const img = await loadImage(src).catch(() => null)
       if (!img) return
       // Cut-out designs show the portrait cut out, as customers now get by default.
-      if (cutout) await loadImage(SAMPLE_CUTOUT).catch(() => null)
-      photos[slot] = { src, w: img.naturalWidth, h: img.naturalHeight, ox: 0, oy: 0, zoom: 1, ...(cutout ? { cutout: SAMPLE_CUTOUT, useCutout: true } : {}) }
+      const cut = t.sampleCutout ?? SAMPLE_CUTOUT
+      if (cutout) await loadImage(cut).catch(() => null)
+      photos[slot] = { src, w: img.naturalWidth, h: img.naturalHeight, ox: 0, oy: 0, zoom: 1, ...(cutout ? { cutout: cut, useCutout: true } : {}) }
     }),
   )
   return photos
