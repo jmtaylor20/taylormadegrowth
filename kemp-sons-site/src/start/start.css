@@ -22,9 +22,11 @@
 .pt-door-line { font-size: 17px; color: var(--ink-2); }
 
 .pt-crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 16px; }
-.pt-crumbs ol { list-style: none; display: flex; flex-wrap: wrap; gap: 4px; font-size: 14px; color: var(--ink-2); }
-.pt-crumbs li + li::before { content: '>'; margin: 0 6px; color: var(--gray, #999); }
-.pt-crumbs ol button { all: unset; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; min-height: 32px; }
+.pt-crumbs ol { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 0; padding: 0; font-size: 15px; line-height: 1; color: var(--ink-2); }
+.pt-crumbs li { display: inline-flex; align-items: center; min-height: 44px; }
+.pt-crumbs li + li::before { content: '>'; margin: 0 8px; color: var(--gray, #999); }
+.pt-crumbs ol button { all: unset; cursor: pointer; display: inline-flex; align-items: center; min-height: 44px; font: inherit; line-height: 1; text-decoration: underline; text-underline-offset: 3px; }
+.pt-crumbs ol button:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
 .pt-crumbs [aria-current] { font-weight: 700; color: var(--ink); }
 .pt-back { all: unset; cursor: pointer; font-weight: 700; min-height: 44px; display: inline-flex; align-items: center; padding: 0 14px; border: 1.5px solid var(--ink); background: var(--white); }
 
