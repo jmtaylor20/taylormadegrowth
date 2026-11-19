@@ -66,7 +66,7 @@ const CARDS: Card[] = [
     description: 'A hand-painted pine garland tied with a red bow, red script "Merry Christmas" and your family name.',
     // The window's top runs behind the script, so it starts above the lettering.
     win: [0.91, 1.385, 3.18, 4.215],
-    over: [0.91, 1.385, 3.1767, 0.34],
+    over: [0.8733, 1.34, 3.2533, 0.4],
     name_line: { x: 0.95, y: 5.64, w: 3.1, h: 0.4, color: '#bf2735', font: 'Great Vibes', size: 22 },
   },
   {
