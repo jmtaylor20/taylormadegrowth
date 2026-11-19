@@ -61,7 +61,8 @@ export interface Experience {
   dispose(): void
 }
 
-export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: boolean }): Experience | null {
+export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: boolean; christmas?: boolean }): Experience | null {
+  const xmas = !!opts.christmas
   let renderer: THREE.WebGLRenderer
   try {
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' })
@@ -182,12 +183,16 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
   // the same tilt, so their planes are parallel and none can pass through
   // another; each is only turned within its own plane and stacked with a gap.
   const FAN_X = 0.04, FAN_Y = -0.2
+  // Christmas hero: the Pine Garland card up front, Very Merry tucked behind it (hover fans it out).
+  const XMAS_HERO: Pose = { p: [0, 0.1, 0.35], r: [-0.12, -0.5, 0.05], s: 1.5, o: 1 }
+  const XMAS_BEHIND: Pose = { p: [0.55, -0.55, -0.35], r: [-0.12, -0.5, -0.02], s: 1.2, o: 1 }
   // Poses per stage, in local units around the stage anchor.
   const objects: { obj: THREE.Object3D; poses: Pose[] }[] = [
     {
       obj: program,
       poses: [
-        { p: [0, 0, 0.3], r: [-0.12, -0.5, 0.06], s: 1.25, o: 1, fold: 1 },
+        // Christmas season: the hero is a Christmas card; the program first appears unfolding in "How it works".
+        xmas ? { ...HIDE_DOWN, fold: 1 } : { p: [0, 0, 0.3], r: [-0.12, -0.5, 0.06], s: 1.25, o: 1, fold: 1 },
         { p: [0, 0, 0], r: [0.08, 0.32, -0.03], s: 0.95, o: 1, fold: 0 },
         { p: [-0.1, 0.05, 0.3], r: [FAN_X, FAN_Y, 0.03], s: 0.95, o: 1, fold: 1 },
         { ...HIDE_UP, fold: 1 },
@@ -196,11 +201,11 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
     },
     {
       obj: card,
-      poses: [HIDE_DOWN, HIDE_DOWN, { p: [1.3, 1.1, -0.6], r: [FAN_X, FAN_Y, -0.1], s: 0.95, o: 1 }, HIDE_UP, HIDE_UP],
+      poses: [xmas ? XMAS_HERO : HIDE_DOWN, HIDE_DOWN, { p: [1.3, 1.1, -0.6], r: [FAN_X, FAN_Y, -0.1], s: 0.95, o: 1 }, HIDE_UP, HIDE_UP],
     },
     {
       obj: veryMerry,
-      poses: [HIDE_DOWN, HIDE_DOWN, { p: [1.5, -1.1, -0.1], r: [FAN_X, FAN_Y, -0.06], s: 1, o: 1 }, HIDE_UP, HIDE_UP],
+      poses: [xmas ? XMAS_BEHIND : HIDE_DOWN, HIDE_DOWN, { p: [1.5, -1.1, -0.1], r: [FAN_X, FAN_Y, -0.06], s: 1, o: 1 }, HIDE_UP, HIDE_UP],
     },
     {
       obj: booklet,
@@ -341,6 +346,31 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
     return ray.intersectObject(hitbox, false).length > 0
   }
   let hover = 0
+  let hoverH = 0
+  // Christmas season: a light snowfall (pale blue flakes, so they show on the cream page).
+  let snow: THREE.Points | null = null
+  if (xmas && !opts.reducedMotion) {
+    const N = 140
+    const arr = new Float32Array(N * 3)
+    for (let n = 0; n < N; n++) {
+      arr[n * 3] = (Math.random() - 0.5) * 22
+      arr[n * 3 + 1] = (Math.random() - 0.5) * 12
+      arr[n * 3 + 2] = Math.random() * 5 - 1
+    }
+    const geo = new THREE.BufferGeometry()
+    geo.setAttribute('position', new THREE.BufferAttribute(arr, 3))
+    const dot = document.createElement('canvas')
+    dot.width = dot.height = 64
+    const g = dot.getContext('2d')!
+    const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32)
+    grad.addColorStop(0, 'rgba(255,255,255,1)')
+    grad.addColorStop(1, 'rgba(255,255,255,0)')
+    g.fillStyle = grad
+    g.fillRect(0, 0, 64, 64)
+    const mat = new THREE.PointsMaterial({ size: 0.13, map: new THREE.CanvasTexture(dot), color: 0xa9bfd4, transparent: true, opacity: 0.75, depthWrite: false })
+    snow = new THREE.Points(geo, mat)
+    scene.add(snow)
+  }
 
   function anchorFor(stage: number) {
     const i = Math.max(0, Math.min(4, Math.round(stage)))
@@ -349,9 +379,7 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
     const fitH = fp && fp.h > 0 ? (viewH * 0.86) / (fp.h * 1.1) : Infinity
     if (mobile) {
       const s = Math.min(0.85, viewW / 7, fp && fp.w > 0 ? (viewW * 0.92) / (fp.w * 1.1) : Infinity, fitH * 0.5)
-      // Stay below the seasonal banner when it's showing (it makes the header taller).
-      const promo = document.documentElement.classList.contains('has-promo') ? (34 * viewH) / window.innerHeight : 0
-      return { x: -(fp?.cx ?? 0) * s, y: viewH * 0.25 - promo - (fp?.cy ?? 0) * s, scale: s }
+      return { x: -(fp?.cx ?? 0) * s, y: viewH * 0.25 - (fp?.cy ?? 0) * s, scale: s }
     }
     const scale = Math.min(1.15, viewW / 13, fitH)
     const copy = copyBounds[i]
@@ -402,25 +430,55 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
       obj.rotation.set(lerp(A.r[0], B.r[0], k), lerp(A.r[1], B.r[1], k) + Math.sin(t * 0.5) * 0.03 * idle, lerp(A.r[2], B.r[2], k))
       obj.scale.setScalar(Math.max(0.0001, lerp(A.s, B.s, k)))
       setOpacity(obj, lerp(A.o, B.o, k))
-      if (obj === program) {
+      if (obj === (xmas ? card : program)) {
         // Open on hover, only on the first stage (where it sits folded), easing back when the mouse leaves.
         // Closed: the cover. Open: the whole spread (shrunk to 62%, three panels wide).
         hitbox.position.copy(obj.position)
         hitbox.rotation.copy(obj.rotation)
         hitbox.scale.copy(obj.scale)
-        if (hover > 0.5) hitbox.scale.x *= 1.9
+        // The hover area is sized for the program; the Christmas card is 5 x 7 in.
+        if (xmas) hitbox.scale.multiply(new THREE.Vector3(5 / 5.5, 7 / 8.5, 1))
+        if (hover > 0.5) hitbox.scale.x *= xmas ? 1.7 : 1.9
         const want = current < 0.5 && ((pointerSeen && overProgram()) || tapOpen) ? 1 : 0
         if (current >= 0.5) tapOpen = false
         // Slow enough to watch it unfold (about 1.5 s open), a little quicker to fold back.
         hover = opts.reducedMotion ? want : lerp(hover, want, 1 - Math.exp(-dt * (want ? 2 : 2.6)))
         const h = smooth(Math.min(1, Math.max(0, hover)))
+        hoverH = h
+        document.documentElement.style.cursor = want && current < 0.5 ? 'pointer' : ''
+        if (xmas) {
+          // The front card turns toward the viewer and steps left as the second card fans out (below).
+          obj.rotation.y = lerp(obj.rotation.y, -0.12, h)
+          obj.rotation.z = lerp(obj.rotation.z, 0.08, h)
+          obj.position.x -= 0.65 * h
+          continue
+        }
         setFold(lerp(A.fold ?? 0, B.fold ?? 0, k) * (1 - h))
         // Open, it's three panels wide: shrink it and turn it toward the viewer so it stays clear of the text.
         obj.scale.multiplyScalar(lerp(1, 0.62, h))
         obj.rotation.y = lerp(obj.rotation.y, 0.12, h)
         obj.rotation.x = lerp(obj.rotation.x, 0, h)
-        document.documentElement.style.cursor = want && current < 0.5 ? 'pointer' : ''
+      } else if (xmas && obj === veryMerry && i0 === 0) {
+        // Fans out to the right of the front card.
+        const h = hoverH * (1 - k)
+        obj.position.x += 0.85 * h
+        obj.position.y += 0.35 * h
+        obj.position.z += 0.5 * h
+        obj.rotation.y = lerp(obj.rotation.y, 0.05, h)
+        obj.rotation.z = lerp(obj.rotation.z, -0.1, h)
       }
+    }
+    if (snow) {
+      // Light snowfall in front of the hero, fading out as you scroll on.
+      const pos = snow.geometry.attributes.position as THREE.BufferAttribute
+      for (let n = 0; n < pos.count; n++) {
+        let y = pos.getY(n) - dt * (0.35 + (n % 7) * 0.05)
+        if (y < -6) y = 6
+        pos.setY(n, y)
+        pos.setX(n, pos.getX(n) + Math.sin(t * 0.6 + n) * dt * 0.08)
+      }
+      pos.needsUpdate = true
+      ;(snow.material as THREE.PointsMaterial).opacity = 0.75 * Math.max(0, 1 - current * 1.5)
     }
     // Cards drift gently once they're on stage.
     cardFan.rotation.y = Math.sin(t * 0.5) * 0.12 * idle

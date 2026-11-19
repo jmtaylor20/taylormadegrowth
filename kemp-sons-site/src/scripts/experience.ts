@@ -33,7 +33,7 @@ export async function initExperience() {
   const canvas = document.getElementById('stage') as HTMLCanvasElement | null
   // Three.js loads after the page's text so the first paint stays fast.
   const { createScene } = await import('./scene')
-  const exp = canvas ? createScene(canvas, { reducedMotion: reduced }) : null
+  const exp = canvas ? createScene(canvas, { reducedMotion: reduced, christmas: document.documentElement.classList.contains('season-xmas') }) : null
   if (!exp) document.documentElement.classList.add('no-webgl')
 
   const sections = Array.from(document.querySelectorAll<HTMLElement>('[data-stage]'))

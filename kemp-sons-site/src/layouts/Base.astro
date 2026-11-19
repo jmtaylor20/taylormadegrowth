@@ -46,10 +46,16 @@ const jsonLd = {
   founder: undefined,
   sameAs: Object.values(business.social).filter(Boolean),
 }
+import { christmasSeason } from '../config/season'
 ---
 <!doctype html>
 <html lang="en">
   <head>
+    <script is:inline define:vars={{ seasonEnds: christmasSeason.endsAt, orderBy: christmasSeason.orderBy }}>
+      // Seasonal theme (src/config/season.ts): switches itself off after the end date.
+      if (Date.now() < Date.parse(seasonEnds)) document.documentElement.classList.add('season-xmas')
+      if (Date.now() < Date.parse(orderBy)) document.documentElement.classList.add('xmas-order-open')
+    </script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{title}</title>

@@ -44,11 +44,19 @@ const SHEETS = 5
           <span class="mono slug-addr">{business.address.street} &middot; {business.address.city}, {business.address.state}</span>
         </div>
         <div class="copy">
-          <h1 class="headline reveal">Printed right<br />here in<br /><span class="accent misreg">Opelika.</span></h1>
-          <p class="lede reveal">Design funeral programs and Christmas cards online, approve your proof, then pick it up at our shop or have it shipped. Business cards, stickers and everything else, we'll quote within one business day.</p>
-          <div class="btn-row reveal">
+          <h1 class="headline reveal off-xmas">Printed right<br />here in<br /><span class="accent misreg">Opelika.</span></h1>
+          <p class="lede reveal off-xmas">Design funeral programs and Christmas cards online, approve your proof, then pick it up at our shop or have it shipped. Business cards, stickers and everything else, we'll quote within one business day.</p>
+          <div class="btn-row reveal off-xmas">
             <a class="btn btn-primary" href="/start/">Start an order <span class="arrow" aria-hidden="true">&rarr;</span></a>
             <a class="btn" href="#custom">Get a custom quote</a>
+          </div>
+          <!-- Christmas season (src/config/season.ts) -->
+          <p class="xmas-kicker mono reveal on-xmas"><span aria-hidden="true">&#10052;</span> Christmas cards are here</p>
+          <h1 class="headline reveal on-xmas">Christmas cards,<br />printed here in<br /><span class="accent misreg">Opelika.</span></h1>
+          <p class="lede reveal on-xmas">Put your family photo on one of our Christmas designs, or upload a card you made, approve your proof, then pick them up at our shop or have them shipped. We can address the envelopes too.<span class="xmas-orderby"> Order by December 15.</span></p>
+          <div class="btn-row reveal on-xmas">
+            <a class="btn btn-primary" href="/shop/christmas-cards/">Design your Christmas cards <span class="arrow" aria-hidden="true">&rarr;</span></a>
+            <a class="btn" href="/start/">Start another order</a>
           </div>
         </div>
         <div class="hero-foot reveal">
@@ -193,6 +201,15 @@ const SHEETS = 5
   .slug-row { display: flex; justify-content: space-between; gap: 16px; color: var(--ink-2); border-bottom: 1px solid var(--rule); padding-bottom: 12px; }
   .hero .copy { max-width: 760px; align-self: center; gap: 30px; }
   .hero .lede { max-width: 40ch; }
+  /* Christmas season: swap the hero copy (the class is set before paint by Base.astro). */
+  .on-xmas { display: none; }
+  .xmas-orderby { display: none; }
+  :global(html.xmas-order-open) .xmas-orderby { display: inline; }
+  :global(html.season-xmas) .off-xmas { display: none; }
+  :global(html.season-xmas) h1.on-xmas, :global(html.season-xmas) p.on-xmas { display: block; }
+  :global(html.season-xmas) .btn-row.on-xmas { display: flex; }
+  .xmas-kicker { color: #1f5a3c; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: -14px; }
+  .xmas-kicker span { color: var(--red); margin-right: 6px; }
   .hero-foot { display: grid; gap: 14px; padding-bottom: 28px; }
   .hero-bar { width: min(420px, 100%); }
   @media (max-width: 860px) { .slug-addr { display: none; } .hero.chapter { padding-top: 44svh; } }
