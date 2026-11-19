@@ -10,8 +10,10 @@ import type { Element, Template } from '../types'
  * artwork overlaps the window (the script on Pine Garland), a cut-out of that
  * part is drawn over the photo again so the lettering stays in front.
  *
- * Front only (one-sided pricing). Cards with room under the photo get a
- * family name line.
+ * Cards with a matching back pattern from Kemp (Drive: Christmas Cards /
+ * invite backs) print on both sides: the pattern, with an optional message
+ * panel. The rest print the front only. Cards with room under the photo get
+ * a family name line.
  */
 
 const DIR = '/templates/xmas'
@@ -28,6 +30,8 @@ interface Card {
   over?: [number, number, number, number]
   /** Family name line under the photo, when there's room. */
   name_line?: { y: number; h: number; x: number; w: number; color: string; font: 'Great Vibes' | 'Montserrat'; size: number }
+  /** Matching back pattern (card-N-back.jpg) and the message color on it. */
+  back?: { ink: string }
 }
 
 const CARDS: Card[] = [
@@ -37,6 +41,7 @@ const CARDS: Card[] = [
     name: 'Green Stripe',
     description: 'Watercolor sage stripes, a red frame for your photo and gold script "Merry Christmas".',
     win: [0.61, 1.51, 3.78, 4.9467],
+    back: { ink: '#3f6b4a' },
   },
   {
     n: 2,
@@ -78,6 +83,7 @@ const CARDS: Card[] = [
     name: 'Nutcracker',
     description: 'Pink bows, nutcrackers and little trees around a big photo, with bold "Merry Christmas" lettering.',
     win: [0.5667, 1.4667, 3.8667, 5.03],
+    back: { ink: '#c23a5e' },
   },
   {
     n: 7,
@@ -85,6 +91,7 @@ const CARDS: Card[] = [
     name: 'Navy Ornaments',
     description: 'Painted ornaments, ribbons and holly on deep navy, with a white script "Merry Christmas".',
     win: [0.5667, 1.47, 3.8633, 5.0267],
+    back: { ink: '#24385e' },
   },
   {
     n: 8,
@@ -92,6 +99,7 @@ const CARDS: Card[] = [
     name: 'Ivory Ornaments',
     description: 'Painted ornaments, ribbons and holly on ivory, with a pink script "Merry Christmas".',
     win: [0.5667, 1.47, 3.8667, 5.0267],
+    back: { ink: '#c23a5e' },
   },
   {
     n: 9,
@@ -99,6 +107,7 @@ const CARDS: Card[] = [
     name: 'Pink Christmas',
     description: 'A playful pink holiday print with Santa, gifts and trees, and bold "Merry Christmas" lettering.',
     win: [0.5667, 1.47, 3.8667, 5.0267],
+    back: { ink: '#c23a5e' },
   },
 ]
 
@@ -117,21 +126,41 @@ function build(c: Card): Template {
         ? { type: 'text', text: '{{family}}', showIf: 'family', x: L.x, y: L.y, w: L.w, h: L.h, font: 'Great Vibes', size: L.size, minSize: 12, color: L.color }
         : { type: 'text', text: '{{family}}', showIf: 'family', x: L.x, y: L.y, w: L.w, h: L.h, font: 'Montserrat', weight: 600, size: L.size, minSize: 6, uppercase: true, letterSpacing: 0.2, color: L.color },
     )
+  const B = c.back
+  const backSide = B && {
+    id: 'back',
+    label: 'Back',
+    background: '#ffffff',
+    elements: [
+      { type: 'image', src: `${DIR}/card-${c.n}-back.jpg`, x: -PAD, y: -PAD, w: 5 + 2 * PAD, h: 7 + 2 * PAD },
+      // An optional message on a soft white panel; leave it blank for just the pattern.
+      { type: 'rect', showIf: 'message', x: 0.7, y: 2.2, w: 3.6, h: 2.6, fill: '#ffffff', opacity: 0.94, radius: 0.12 },
+      { type: 'rect', showIf: 'message', x: 0.82, y: 2.32, w: 3.36, h: 2.36, stroke: B.ink, strokeWidth: 0.7, opacity: 0.55, radius: 0.08 },
+      { type: 'text', text: '{{message}}', showIf: 'message', x: 1.0, y: 2.5, w: 3.0, h: 1.35, font: 'Playfair Display', italic: true, size: 13, minSize: 7, lineHeight: 1.35, color: '#2b2b2b' },
+      { type: 'text', text: '{{signed}}', showIf: 'message', x: 0.95, y: 3.9, w: 3.1, h: 0.62, font: 'Great Vibes', size: 26, minSize: 12, color: B.ink },
+    ] as Element[],
+  }
   return {
     id: `christmas-${c.id}`,
     category: 'christmas-cards',
     shopifyHandle: `christmas-card-${c.id}`,
     envelope: { w: 7.25, h: 5.25, label: 'A7 envelope', shopifyHandle: 'addressed-envelopes' },
     name: c.name,
-    description: c.description,
+    description: B ? `${c.description} The matching pattern prints on the back, with room for a short message.` : c.description,
     trim: { w: 5, h: 7 },
-    sizeLabel: '5 x 7 in flat card, printed one side',
+    sizeLabel: B ? '5 x 7 in flat card, printed both sides' : '5 x 7 in flat card, printed one side',
     safeMargin: 0.15,
     fields: [
       { id: 'photo', type: 'photo', label: 'Photo', hint: 'Drag the photo on the preview to reposition it.', section: 'Front' },
       ...(L ? [{ id: 'family', type: 'text' as const, label: 'Family name', default: 'The Hayes Family', hint: 'Leave blank for photo only.', section: 'Front' }] : []),
+      ...(B
+        ? [
+            { id: 'message', type: 'textarea' as const, label: 'Message on the back', rows: 3, section: 'Back', hint: 'Leave blank for just the pattern on the back.', default: 'Wishing you a season full of joy and a happy new year.' },
+            { id: 'signed', type: 'text' as const, label: 'Signed', default: 'Love, the Hayes family', section: 'Back' },
+          ]
+        : []),
     ],
-    sides: [{ id: 'front', label: 'Front', background: '#ffffff', elements }],
+    sides: [{ id: 'front', label: 'Front', background: '#ffffff', elements }, ...(backSide ? [backSide] : [])],
   }
 }
 
