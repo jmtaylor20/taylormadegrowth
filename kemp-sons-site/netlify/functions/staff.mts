@@ -34,7 +34,7 @@ const json = (body: unknown, status = 200, headers: Record<string, string> = {})
 
 const SHOP = {
   name: 'Kemp & Sons',
-  address: '2301 Enterprise Drive, Opelika',
+  address: '2301 Enterprise Drive, Suite A, Opelika',
   phone: '(334) 705-5888',
 }
 

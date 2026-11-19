@@ -12,7 +12,7 @@ export const business = {
   // TODO(kemp): confirm founding year before using it anywhere.
   founded: null as number | null,
   address: {
-    street: '2301 Enterprise Drive',
+    street: '2301 Enterprise Drive, Suite A',
     city: 'Opelika',
     state: 'AL',
     zip: '36801',
@@ -20,11 +20,10 @@ export const business = {
   // From the current site ("705-5888"); area code assumed 334. TODO(kemp): confirm.
   phone: '(334) 705-5888',
   phoneHref: 'tel:+13347055888',
-  fax: '(334) 741-0754',
   email: 'printing@kempandsons.com',
   // TODO(kemp): confirm hours. Shown only when filled in.
   hours: [] as { days: string; time: string }[],
-  mapUrl: 'https://maps.google.com/?q=2301+Enterprise+Drive+Opelika+AL+36801',
+  mapUrl: 'https://maps.google.com/?q=2301+Enterprise+Drive+Suite+A+Opelika+AL+36801',
   social: {
     // TODO(kemp): add real profile URLs.
     facebook: '',

@@ -250,7 +250,7 @@ export function letterheadTexture(r: THREE.WebGLRenderer, logo: HTMLImageElement
   g.fillStyle = C.red
   g.fillRect(50, 196, W - 100, 4)
   lines(g, 50, 250, 560, 16, 30, '#cfd3d6', false)
-  centerText(g, '2301 Enterprise Drive  |  Opelika, Alabama', W / 2, 840, `15px ${SANS}`, C.gray, 1)
+  centerText(g, '2301 Enterprise Drive, Suite A  |  Opelika, Alabama', W / 2, 840, `15px ${SANS}`, C.gray, 1)
   return toTexture(c, r)
 }
 
@@ -286,7 +286,7 @@ export function businessCardBack(r: THREE.WebGLRenderer) {
   g.font = `32px ${SANS}`
   g.fillText('(334) 705-5888', 70, 400)
   g.fillText('printing@kempandsons.com', 70, 448)
-  g.fillText('2301 Enterprise Drive, Opelika, AL', 70, 496)
+  g.fillText('2301 Enterprise Drive, Suite A, Opelika, AL', 70, 496)
   return toTexture(c, r)
 }
 
