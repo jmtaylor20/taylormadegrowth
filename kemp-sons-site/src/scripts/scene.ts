@@ -409,7 +409,8 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
         if (hover > 0.5) hitbox.scale.x *= 1.9
         const want = current < 0.5 && ((pointerSeen && overProgram()) || tapOpen) ? 1 : 0
         if (current >= 0.5) tapOpen = false
-        hover = opts.reducedMotion ? want : lerp(hover, want, 1 - Math.exp(-dt * 6))
+        // Slow enough to watch it unfold (about 1.5 s open), a little quicker to fold back.
+        hover = opts.reducedMotion ? want : lerp(hover, want, 1 - Math.exp(-dt * (want ? 2 : 2.6)))
         const h = smooth(Math.min(1, Math.max(0, hover)))
         setFold(lerp(A.fold ?? 0, B.fold ?? 0, k) * (1 - h))
         // Open, it's three panels wide: shrink it and turn it toward the viewer so it stays clear of the text.
