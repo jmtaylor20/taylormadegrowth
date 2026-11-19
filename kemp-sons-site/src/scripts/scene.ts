@@ -172,8 +172,10 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
   bizCards[2].position.set(0.5, -0.55, -0.25)
   cards.add(cardFan)
 
+  // Invisible hover area for the program: follows its pose but not the hover effect, so opening never makes it "un-hover".
+  const hitbox = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.MeshBasicMaterial({ visible: false }))
   const world = new THREE.Group()
-  world.add(program, card, veryMerry, booklet, navyCard, stack, cards)
+  world.add(program, card, veryMerry, booklet, navyCard, stack, cards, hitbox)
   scene.add(world)
 
   // The fan (stage 2) is laid out like proofs on a table: every piece shares
@@ -315,11 +317,30 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
   }
   resize()
   window.addEventListener('resize', resize)
+  // Hovering the folded program at the top of the page opens it (a tap does the same on touch screens).
+  let pointerSeen = false
+  let tapOpen = false
   const onPointer = (e: PointerEvent) => {
     pointerX = (e.clientX / window.innerWidth) * 2 - 1
     pointerY = (e.clientY / window.innerHeight) * 2 - 1
+    if (e.pointerType === 'mouse') pointerSeen = true
+  }
+  const onTap = (e: PointerEvent) => {
+    if (e.pointerType === 'mouse') return
+    onPointer(e)
+    tapOpen = overProgram() ? !tapOpen : false
   }
   window.addEventListener('pointermove', onPointer, { passive: true })
+  window.addEventListener('pointerdown', onTap, { passive: true })
+  const ray = new THREE.Raycaster()
+  const ndc = new THREE.Vector2()
+  function overProgram() {
+    ndc.set(pointerX, -pointerY)
+    ray.setFromCamera(ndc, camera)
+    hitbox.updateMatrixWorld()
+    return ray.intersectObject(hitbox, false).length > 0
+  }
+  let hover = 0
 
   function anchorFor(stage: number) {
     const i = Math.max(0, Math.min(4, Math.round(stage)))
@@ -379,7 +400,24 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
       obj.rotation.set(lerp(A.r[0], B.r[0], k), lerp(A.r[1], B.r[1], k) + Math.sin(t * 0.5) * 0.03 * idle, lerp(A.r[2], B.r[2], k))
       obj.scale.setScalar(Math.max(0.0001, lerp(A.s, B.s, k)))
       setOpacity(obj, lerp(A.o, B.o, k))
-      if (obj === program) setFold(lerp(A.fold ?? 0, B.fold ?? 0, k))
+      if (obj === program) {
+        // Open on hover, only on the first stage (where it sits folded), easing back when the mouse leaves.
+        // Closed: the cover. Open: the whole spread (shrunk to 62%, three panels wide).
+        hitbox.position.copy(obj.position)
+        hitbox.rotation.copy(obj.rotation)
+        hitbox.scale.copy(obj.scale)
+        if (hover > 0.5) hitbox.scale.x *= 1.9
+        const want = current < 0.5 && ((pointerSeen && overProgram()) || tapOpen) ? 1 : 0
+        if (current >= 0.5) tapOpen = false
+        hover = opts.reducedMotion ? want : lerp(hover, want, 1 - Math.exp(-dt * 6))
+        const h = smooth(Math.min(1, Math.max(0, hover)))
+        setFold(lerp(A.fold ?? 0, B.fold ?? 0, k) * (1 - h))
+        // Open, it's three panels wide: shrink it and turn it toward the viewer so it stays clear of the text.
+        obj.scale.multiplyScalar(lerp(1, 0.62, h))
+        obj.rotation.y = lerp(obj.rotation.y, 0.12, h)
+        obj.rotation.x = lerp(obj.rotation.x, 0, h)
+        document.documentElement.style.cursor = want && current < 0.5 ? 'pointer' : ''
+      }
     }
     // Cards drift gently once they're on stage.
     cardFan.rotation.y = Math.sin(t * 0.5) * 0.12 * idle
@@ -405,6 +443,7 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', resize)
       window.removeEventListener('pointermove', onPointer)
+      window.removeEventListener('pointerdown', onTap)
       renderer.dispose()
     },
   }
