@@ -35,11 +35,11 @@ export const PRICE_GROUPS: PriceGroup[] = [
   { id: 'program-14x8.5-trifold', rush: '14 x 8.5 trifold', label: 'Funeral program, 14 x 8.5 trifold (6 panels)', handles: ['funeral-program-gone-fishing', 'funeral-program-theme-trifold'] },
   { id: 'program-16.5x8.5-trifold', rush: '16.5 x 8.5 trifold', label: 'Funeral program, 16.5 x 8.5 trifold (6 panels)', handles: ['funeral-program-flag-trifold'] },
   { id: 'program-17x11-trifold', rush: '17 x 11 trifold', label: 'Funeral program, 17 x 11 trifold (6 panels)', handles: ['funeral-program-flag-tabloid', 'funeral-program-theme-large-trifold'] },
-  { id: 'card-5x7-2side', label: 'Christmas card, 5 x 7 flat, printed both sides', handles: ['christmas-card-very-merry'] },
+  { id: 'card-5x7-2side', label: 'Christmas card, 5 x 7 flat, printed both sides', handles: ['christmas-card-very-merry', 'christmas-card-own-design-2side'] },
   {
     id: 'card-5x7-1side',
     label: 'Christmas card, 5 x 7 flat, printed one side',
-    handles: ['green-stripe', 'candy-dash', 'ribbon-wave', 'pine-garland', 'holly-berry', 'nutcracker', 'navy-ornaments', 'ivory-ornaments', 'pink-christmas'].map((h) => `christmas-card-${h}`),
+    handles: ['green-stripe', 'candy-dash', 'ribbon-wave', 'pine-garland', 'holly-berry', 'nutcracker', 'navy-ornaments', 'ivory-ornaments', 'pink-christmas'].map((h) => `christmas-card-${h}`).concat('christmas-card-own-design-1side'),
   },
   { id: 'program-booklet-8', rush: '8-page booklet', label: 'Funeral program, 8.5 x 11 booklet (8 pages)', handles: ['funeral-program-gold-booklet'] },
 ]

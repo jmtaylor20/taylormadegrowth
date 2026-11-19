@@ -241,6 +241,11 @@ export interface Template {
   samplePortrait?: string
   /** The same portrait cut out, for designs that preview it without its background. */
   sampleCutout?: string
+  /**
+   * Upload-your-own design: the customer's finished artwork fills each side.
+   * Shows the size and ownership notes, and adds an ownership check to the proof.
+   */
+  ownDesign?: boolean
   /** Offer addressed envelopes with this template (e.g. A7 for 5 x 7 cards). */
   envelope?: import('./envelopes').EnvelopeSpec
   /** Which side the thumbnail shows. Defaults to the first. */

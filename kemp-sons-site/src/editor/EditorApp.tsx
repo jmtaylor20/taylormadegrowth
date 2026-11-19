@@ -175,8 +175,11 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
       /* private window */
     }
   }
-  const STEPS = ['Words', 'Photos', 'Print & review'] as const
-  const [step, setStep] = useState(0)
+  // Own designs have nothing to type, so they start on the upload step.
+  const hasWords = t.fields.some((f) => f.type !== 'photo')
+  const STEPS = ['Words', t.ownDesign ? 'Your design' : 'Photos', 'Print & review'] as const
+  const firstStep = hasWords ? 0 : 1
+  const [step, setStep] = useState(firstStep)
   const [kiosk] = useState(isKiosk)
   // Staff final tweaks: /design/<t>/?from=<design id>&staff=<order name>&opts=<print options>
   const [staff] = useState<StaffEdit | null>(() => {
@@ -490,15 +493,16 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
             <>
               {simple && (
                 <ol className="ed-simple-steps" aria-label="Steps">
-                  {STEPS.map((name, i) => (
+                  {STEPS.map((name, i) => i < firstStep ? null : (
                     <li key={name}>
                       <button type="button" className={i === step ? 'is-on' : i < step ? 'is-done' : ''} aria-current={i === step ? 'step' : undefined} onClick={() => setStep(i)}>
-                        <span className="mono">{i + 1}</span> {name}
+                        <span className="mono">{i + 1 - firstStep}</span> {name}
                       </button>
                     </li>
                   ))}
                 </ol>
               )}
+              {t.ownDesign && (!simple || step === 1) && <OwnDesignNotes t={t} />}
               {(!simple || step < 2) && (
                 <FieldForm
                   template={t}
@@ -570,7 +574,7 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
 
           {simple && (
             <div className="ed-step-nav">
-              {step > 0 && (
+              {step > firstStep && (
                 <button type="button" className="ed-btn ed-btn-ghost" onClick={() => setStep(step - 1)}>
                   &larr; {STEPS[step - 1]}
                 </button>
@@ -641,6 +645,34 @@ interface StaffEdit {
 }
 
 const CHECKS = ['Names and spelling are correct', 'Photos look the way I want', 'I approve this proof for printing'] as const
+const OWN_CHECKS = [
+  'My design looks the way I want, with nothing important cut off at the edges',
+  'I own this design or have permission to print it',
+  'I approve this proof for printing',
+] as const
+
+/** Size and ownership notes for upload-your-own designs. */
+function OwnDesignNotes({ t }: { t: Template }) {
+  const pw = Math.round((t.trim.w + 0.25) * 300), ph = Math.round((t.trim.h + 0.25) * 300)
+  return (
+    <div className="ed-notice ed-own">
+      <p>
+        <strong>Upload your finished card</strong> and we'll print it. Made it with AI, Canva or another app, or bought it from another shop? This is the place.
+      </p>
+      <ul>
+        <li>
+          <strong>Size:</strong> {t.trim.w} x {t.trim.h} in, {t.trim.w < t.trim.h ? 'portrait (tall)' : 'landscape (wide)'}. For the sharpest print, use an image at least {pw} x {ph} pixels. That includes 1/8 in on each edge that's trimmed off, so keep words and faces at least 1/4 in inside the edges.
+        </li>
+        <li>
+          <strong>Other sizes:</strong> we fit your image to the card, and you can drag or zoom it to line it up. A different shape gets trimmed to fit. Enlarging a small image makes it softer, so we'll warn you on the proof if it may print blurry. Start with the largest version you have.
+        </li>
+        <li>
+          <strong>Your rights:</strong> only upload designs you made, bought a license to print, or have permission to use. Designs from other card companies are usually copyrighted. We may decline jobs we believe aren't yours to print.
+        </li>
+      </ul>
+    </div>
+  )
+}
 
 function Proof({
   t,
@@ -672,7 +704,8 @@ function Proof({
   home?: PortalHome | null
 }) {
   const [images, setImages] = useState<Record<string, string>>({})
-  const [checked, setChecked] = useState<boolean[]>(CHECKS.map(() => false))
+  const checks: readonly string[] = t.ownDesign ? OWN_CHECKS : CHECKS
+  const [checked, setChecked] = useState<boolean[]>(checks.map(() => false))
   const [work, setWork] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const issues = useMemo(() => preflight(t, draft), [t, draft])
@@ -944,7 +977,7 @@ function Proof({
 
           <section className="ed-checks">
             <p className="ed-checks-h">Before we print</p>
-            {CHECKS.map((c, i) => (
+            {checks.map((c, i) => (
               <label key={c} className={`ed-check ${checked[i] ? 'is-on' : ''}`}>
                 <input type="checkbox" checked={checked[i]} onChange={(e) => setChecked((arr) => arr.map((v, j) => (j === i ? e.target.checked : v)))} />
                 <span>{c}</span>
@@ -980,7 +1013,7 @@ function Proof({
 
       <div className="ed-proof-bar">
         <p className="mono" aria-live="polite">
-          {work ?? (missingPhotos ? 'Add your photos to continue' : allChecked ? `Ready / ${summary}` : `${checked.filter(Boolean).length} of ${CHECKS.length} checked`)}
+          {work ?? (missingPhotos ? 'Add your photos to continue' : allChecked ? `Ready / ${summary}` : `${checked.filter(Boolean).length} of ${checks.length} checked`)}
         </p>
         {staff ? (
           savedForStaff ? (

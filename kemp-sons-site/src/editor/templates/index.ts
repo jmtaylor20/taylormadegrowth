@@ -15,6 +15,7 @@ import { withKempFonts } from './kemp-fonts'
 import { funeralThemes } from './funeral-themes'
 import { PERSONAS, withPersona } from './funeral-shared'
 import { ADDON_TEMPLATES } from './memorial-addons'
+import { christmasOwnDesigns } from './christmas-own-design'
 
 /**
  * Funeral programs take turns opening with each sample person, so the
@@ -51,8 +52,11 @@ export const TEMPLATES: Template[] = [
   .map(withKempFonts) // Kemp's own fonts, matched to each original program
   .map(withSamplePerson)
 
-/** Every template, including memorial add-ons (made from a program, never listed in galleries). */
-export const ALL_TEMPLATES: Template[] = [...TEMPLATES, ...ADDON_TEMPLATES]
+/** Upload-your-own designs (reached from "Have your own design?" on Start an order, not the galleries). */
+export const OWN_DESIGNS: Template[] = christmasOwnDesigns
+
+/** Every template, including memorial add-ons and own designs (never listed in galleries). */
+export const ALL_TEMPLATES: Template[] = [...TEMPLATES, ...OWN_DESIGNS, ...ADDON_TEMPLATES]
 
 export const templateById = (id: string) => ALL_TEMPLATES.find((t) => t.id === id)
 export const templatesIn = (category: Template['category']) => TEMPLATES.filter((t) => t.category === category)

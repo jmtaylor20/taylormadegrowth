@@ -8,6 +8,7 @@
 
 .pt-door-row { display: grid; gap: 16px; margin-top: 24px; }
 @media (min-width: 760px) { .pt-door-row { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 1040px) { .pt-door-row { grid-template-columns: 1fr 1fr 1fr; } }
 .pt-door { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 8px; padding: 22px; background: var(--white); border: 2px solid var(--ink); box-shadow: 8px 8px 0 #103750; transition: transform 0.15s, box-shadow 0.15s; }
 .pt-door:hover, .pt-door:focus-visible { transform: translate(-2px, -2px); box-shadow: 10px 10px 0 #103750; }
 .pt-door:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
@@ -66,3 +67,5 @@
 .pt-preview-sides img { width: 100%; height: auto; box-shadow: 0 8px 18px rgba(30, 20, 5, 0.2); }
 .pt-preview-sides figcaption { font-size: 12px; color: var(--ink-2); }
 .pt-preview-bar { position: sticky; bottom: -18px; background: var(--white); padding: 12px 0; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; border-top: 1.5px solid var(--rule); }
+
+a.pt-size { text-decoration: none; color: inherit; }

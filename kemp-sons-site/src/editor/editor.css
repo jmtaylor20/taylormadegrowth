@@ -227,3 +227,5 @@
 .ed-addons, .ed-addons .ed-checks-h, .ed-addons strong { color: var(--ink); }
 .ed-addons .ed-hint { color: var(--ink-2); }
 .ed-addons select.ed-input { color: var(--ink); background: var(--white); border: 1.5px solid var(--ink); }
+.ed-own ul { margin: 8px 0 0 18px; display: grid; gap: 6px; list-style: disc; }
+.ed-own li { line-height: 1.4; }

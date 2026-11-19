@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { TEMPLATES } from '../editor/templates'
+import { OWN_DESIGNS, TEMPLATES } from '../editor/templates'
 import TemplateThumb from '../editor/TemplateThumb'
 import { renderPreviewSides } from '../editor/render'
 import { getProduct, money, type ShopConfig } from '../editor/shop'
@@ -112,6 +112,13 @@ export default function StartApp({ shop, phone, phoneHref }: { shop: ShopConfig 
               <span className="pt-door-title">Show me designs</span>
               <span className="pt-door-line">Browse and pick a look you like.</span>
             </button>
+            <button type="button" className="pt-door" onClick={() => go('own')}>
+              <span className="pt-door-art" aria-hidden="true">
+                <UploadArt />
+              </span>
+              <span className="pt-door-title">Have your own design?</span>
+              <span className="pt-door-line">Upload a finished card and we'll print it. Christmas cards for now.</span>
+            </button>
           </div>
           <p className="pt-help">
             Not sure? Call us at <a href={phoneHref}>{phone}</a> and we'll help you choose.
@@ -175,6 +182,31 @@ export default function StartApp({ shop, phone, phoneHref }: { shop: ShopConfig 
           go={go}
         >
           <Designs templates={fmt.templates} formatName={() => fmt.name} price={() => from(fmt)} onPick={setPreview} />
+        </Step>
+      )}
+
+      {/* ---------- Path C: their own finished design ---------- */}
+      {mode === 'own' && (
+        <Step crumbs={[['Start', ''], ['Your own design', 'own']]} title="Pick your card size" sub="Christmas cards, 5 x 7 in. Then upload your design, check the proof and add envelopes if you'd like." go={go}>
+          <div className="pt-sizes">
+            {OWN_DESIGNS.map((t) => {
+              const f = formats.find((x) => x.id === formatOf(t))
+              const portrait = t.trim.w < t.trim.h
+              return (
+                <a key={t.id} className="pt-size" href={`/design/${t.id}/`}>
+                  <Outline t={t} />
+                  <span className="pt-size-name">{t.sides.length === 2 ? 'Printed both sides' : 'Printed one side'}</span>
+                  <span className="pt-size-line">
+                    {t.trim.w} x {t.trim.h} in, {portrait ? 'portrait (tall)' : 'landscape (wide)'}
+                  </span>
+                  <span className="pt-size-meta mono">{f && from(f) ? from(f) : 'Christmas card'}</span>
+                </a>
+              )
+            })}
+          </div>
+          <p className="pt-help">
+            Funeral programs need a few details we check by hand, so for your own program design, call us at <a href={phoneHref}>{phone}</a>.
+          </p>
         </Step>
       )}
 
@@ -349,6 +381,17 @@ function Outline({ t }: { t: Template }) {
       {(side.folds ?? []).map((f) => (
         <line key={f} x1={x + f * k} x2={x + f * k} y1={y} y2={y + h} />
       ))}
+    </svg>
+  )
+}
+
+function UploadArt() {
+  return (
+    <svg viewBox="0 0 160 100" className="pt-sizes-art">
+      <rect x="52" y="12" width="56" height="78" />
+      <line x1="80" x2="80" y1="68" y2="34" />
+      <line x1="68" x2="80" y1="46" y2="34" />
+      <line x1="92" x2="80" y1="46" y2="34" />
     </svg>
   )
 }
