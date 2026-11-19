@@ -467,6 +467,8 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
         obj.rotation.y = lerp(obj.rotation.y, 0.05, h)
         obj.rotation.z = lerp(obj.rotation.z, -0.1, h)
       }
+      // In the Christmas season the hover belongs to the card, so the program's scroll unfold is driven here.
+      if (xmas && obj === program) setFold(lerp(A.fold ?? 0, B.fold ?? 0, k))
     }
     if (snow) {
       // Light snowfall in front of the hero, fading out as you scroll on.
