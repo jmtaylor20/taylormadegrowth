@@ -349,7 +349,9 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
     const fitH = fp && fp.h > 0 ? (viewH * 0.86) / (fp.h * 1.1) : Infinity
     if (mobile) {
       const s = Math.min(0.85, viewW / 7, fp && fp.w > 0 ? (viewW * 0.92) / (fp.w * 1.1) : Infinity, fitH * 0.5)
-      return { x: -(fp?.cx ?? 0) * s, y: viewH * 0.25 - (fp?.cy ?? 0) * s, scale: s }
+      // Stay below the seasonal banner when it's showing (it makes the header taller).
+      const promo = document.documentElement.classList.contains('has-promo') ? (34 * viewH) / window.innerHeight : 0
+      return { x: -(fp?.cx ?? 0) * s, y: viewH * 0.25 - promo - (fp?.cy ?? 0) * s, scale: s }
     }
     const scale = Math.min(1.15, viewW / 13, fitH)
     const copy = copyBounds[i]

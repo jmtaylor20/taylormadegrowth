@@ -44,7 +44,7 @@ const hasRush = templates.some(({ t }) => !!rushFormatFor(t.shopifyHandle))
     itemListElement: templates.map(({ t }, i) => ({ '@type': 'ListItem', position: i + 1, url: new URL(`/design/${t.id}/`, Astro.site).href, name: t.name })),
   } : undefined}
 >
-  <Header />
+  <Header promo={line.collection !== 'funeral-programs' && line.collection !== 'christmas-cards'} />
   <main id="main" class="shop">
     <section class="intro">
       <div class="wrap">

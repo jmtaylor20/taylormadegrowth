@@ -1,7 +1,34 @@
 ---
 import { business } from '../config/site'
+import { christmasPromo } from '../config/promo'
+
+/** promo: show the seasonal banner (off on funeral pages). */
+const { promo = true } = Astro.props as { promo?: boolean }
+const showPromo = promo && Date.now() < Date.parse(christmasPromo.endsAt)
+const loop = [...christmasPromo.lines, ...christmasPromo.lines]
 ---
 <header class="site-header" data-header>
+  {showPromo && (
+    <div class="promo" data-promo data-ends={christmasPromo.endsAt}>
+      <script is:inline>
+        // Before paint: hide after the end date or once closed; otherwise make room for it.
+        ;(function () {
+          var el = document.currentScript.parentElement, off = Date.now() >= Date.parse(el.dataset.ends)
+          try { off = off || sessionStorage.getItem('kemp-promo-closed') === '1' } catch (e) {}
+          if (off) el.remove(); else document.documentElement.classList.add('has-promo')
+        })()
+      </script>
+      <a class="promo-link" href={christmasPromo.href}>
+        <span class="promo-sr">{christmasPromo.lines.join('. ')}</span>
+        <span class="promo-track" aria-hidden="true">
+          {loop.map((l) => (
+            <span class="promo-item">{l}<span class="promo-dot">&#10045;</span></span>
+          ))}
+        </span>
+      </a>
+      <button type="button" class="promo-close" data-promo-close aria-label="Close the Christmas banner">&times;</button>
+    </div>
+  )}
   <div class="wrap bar">
     <a href="/" class="logo" aria-label="Kemp & Sons Printing, home">
       <img src="/brand/kemp-sons-full-color.svg" alt="Kemp & Sons Printing" width="150" height="99" />
@@ -38,7 +65,24 @@ import { business } from '../config/site'
     border-bottom: 1px solid transparent;
   }
   .site-header.scrolled { background: var(--stock); border-bottom-color: var(--ink); }
-  .bar { height: var(--header-h); display: flex; align-items: center; gap: 28px; }
+  .bar { height: var(--nav-h); display: flex; align-items: center; gap: 28px; }
+  :global(html.has-promo) { --promo-h: 34px; }
+  .promo { position: relative; height: 34px; display: flex; align-items: center; background: #16402f; color: #f6efe0; border-bottom: 1px solid #0d2a1f; }
+  .promo-link { flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; overflow: hidden; color: inherit; text-decoration: none; }
+  .promo-track { display: flex; flex: none; white-space: nowrap; animation: promo-scroll 48s linear infinite; }
+  .promo-item { display: inline-flex; align-items: center; font-size: 13px; font-weight: 600; letter-spacing: 0.02em; padding-left: 28px; }
+  .promo-dot { color: #d9b46a; padding-left: 28px; }
+  .promo:hover .promo-track, .promo-link:focus-visible .promo-track { animation-play-state: paused; }
+  .promo-link, .promo-link * { text-decoration: none !important; }
+  .promo-link:hover .promo-item { text-decoration: underline !important; text-underline-offset: 3px; }
+  .promo-link:focus-visible { outline: 2px solid #d9b46a; outline-offset: -3px; }
+  .promo-close { flex: none; width: 34px; height: 34px; border: 0; background: #16402f; color: #f6efe0; font-size: 20px; line-height: 1; cursor: pointer; box-shadow: -10px 0 10px #16402f; }
+  .promo-close:hover { background: #0d2a1f; }
+  .promo-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  @keyframes promo-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) {
+    .promo-track { animation: none; }
+  }
   .logo img { width: 104px; height: auto; }
   .nav { display: flex; gap: 28px; margin-left: auto; }
   .nav a {
@@ -76,6 +120,15 @@ import { business } from '../config/site'
 </style>
 
 <script>
+  document.querySelector('[data-promo-close]')?.addEventListener('click', () => {
+    document.querySelector('[data-promo]')?.remove()
+    document.documentElement.classList.remove('has-promo')
+    try {
+      sessionStorage.setItem('kemp-promo-closed', '1')
+    } catch {
+      /* private window */
+    }
+  })
   const header = document.querySelector<HTMLElement>('[data-header]')!
   const btn = document.querySelector<HTMLButtonElement>('[data-menu-btn]')!
   const menu = document.querySelector<HTMLElement>('[data-menu]')!
