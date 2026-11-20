@@ -1,0 +1,39 @@
+---
+import Base from '../layouts/Base.astro'
+import Header from '../components/Header.astro'
+import Footer from '../components/Footer.astro'
+import { POLICIES, type Policy } from '../data/policies'
+
+export function getStaticPaths() {
+  return POLICIES.map((p) => ({ params: { policy: p.slug }, props: { p } }))
+}
+const { p } = Astro.props as { p: Policy }
+---
+<Base title={`${p.title} | Kemp & Sons Printing`} description={p.summary}>
+  <Header />
+  <main id="main" class="policy">
+    <div class="wrap inner">
+      <p class="label">Policies</p>
+      <h1 class="headline">{p.title}</h1>
+      <p class="lede">{p.summary}</p>
+      <nav class="others mono" aria-label="Other policies">
+        {POLICIES.map((o) => <a href={`/${o.slug}/`} aria-current={o.slug === p.slug ? 'page' : undefined}>{o.title.replace(' Policy', '').replace(' of Service', '')}</a>)}
+      </nav>
+      <article class="body" set:html={p.html} />
+    </div>
+  </main>
+  <Footer />
+</Base>
+
+<style>
+  .policy { background: var(--stock); padding: calc(var(--header-h) + 64px) 0 96px; }
+  .inner { max-width: 820px; display: grid; gap: 20px; }
+  .headline { font-size: clamp(40px, 7vw, 88px); }
+  .others { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 12px 0; }
+  .others a { color: var(--ink); }
+  .others a[aria-current] { color: var(--red-ink); text-decoration: none; font-weight: 700; }
+  .body { display: grid; gap: 14px; font-size: 17px; line-height: 1.65; color: var(--ink); }
+  .body :global(h2) { font-weight: 800; text-transform: uppercase; font-size: 20px; margin-top: 18px; }
+  .body :global(ul) { padding-left: 22px; display: grid; gap: 6px; }
+  .body :global(a) { color: var(--ink); }
+</style>

@@ -15,6 +15,7 @@ export const GET: APIRoute = ({ site }) => {
     ...productLines.filter((l) => templatesIn(l.collection).length).map((l) => ({ loc: url(`/shop/${l.collection}/`), priority: '0.9' })),
     ...TEMPLATES.map((t) => ({ loc: url(`/design/${t.id}/`), priority: '0.8' })),
     { loc: url('/reorder/'), priority: '0.4' },
+    ...['refunds', 'shipping', 'privacy', 'terms'].map((p) => ({ loc: url(`/${p}/`), priority: '0.2' })),
   ]
   const body = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

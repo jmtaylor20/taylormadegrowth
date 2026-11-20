@@ -36,6 +36,7 @@ const socials = Object.entries(business.social).filter(([, url]) => url)
     </div>
     <div class="slug mono">
       <span><RegMark /> &copy; {year} {business.name}</span>
+      <span class="policies"><a href="/refunds/">Refunds</a><a href="/shipping/">Shipping</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a></span>
       <span>Website by <a href="https://taylormadegrowth.com" target="_blank" rel="noopener">TaylorMade Brands</a></span>
     </div>
   </div>
@@ -55,6 +56,8 @@ const socials = Object.entries(business.social).filter(([, url]) => url)
   .social { display: flex; gap: 14px; margin-top: 10px; }
   .slug { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; color: rgba(255, 255, 255, 0.55); border-top: 1px solid rgba(255, 255, 255, 0.2); padding-top: 18px; }
   .slug span { display: inline-flex; align-items: center; gap: 10px; }
+  .policies { flex-wrap: wrap; gap: 6px 16px !important; }
+  .policies a { color: rgba(255, 255, 255, 0.75); }
   @media (max-width: 860px) { .cols { grid-template-columns: 1fr 1fr; } .tag { text-align: left; } }
   @media (max-width: 460px) { .cols { grid-template-columns: 1fr; } }
 </style>

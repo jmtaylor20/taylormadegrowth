@@ -101,6 +101,8 @@ function toJob(o: OrderNode) {
     customer: o.customer?.displayName ?? o.shippingAddress?.name ?? o.email ?? 'Customer',
     email: o.email,
     phone: o.phone ?? o.customer?.defaultPhoneNumber?.phoneNumber ?? o.shippingAddress?.phone ?? null,
+    // Texts go only to a number the customer opted in with on the proof page (carrier rules for A2P texting).
+    textTo: (o.customAttributes ?? []).find((a) => a.key === '_Text consent') ? (o.customAttributes ?? []).find((a) => a.key === 'Text updates')?.value ?? null : null,
     address: method === 'ship' && o.shippingAddress
       ? [o.shippingAddress.address1, o.shippingAddress.address2, [o.shippingAddress.city, o.shippingAddress.provinceCode, o.shippingAddress.zip].filter(Boolean).join(' ')].filter(Boolean).join(', ')
       : null,
@@ -212,11 +214,11 @@ async function act(id: string, body: Record<string, string | undefined>) {
         )
         check(r.fulfillmentOrderLineItemsPreparedForPickup, 'Ready for pickup')
         notes.push(`Pickup email sent to ${job.email ?? 'the customer'}.`)
-        const to = toE164(job.phone)
+        const to = toE164(job.textTo)
         if (textingEnabled() && to && body.text !== 'no') {
           try {
-            await sendText(to, `${SHOP.name}: your order ${job.name} is ready for pickup at ${SHOP.address}. Questions? ${SHOP.phone}`)
-            notes.push(`Text sent to ${job.phone}.`)
+            await sendText(to, `${SHOP.name}: your order ${job.name} is ready for pickup at ${SHOP.address}. Questions? ${SHOP.phone}. Reply STOP to opt out.`)
+            notes.push(`Text sent to ${job.textTo}.`)
           } catch {
             notes.push('The text could not be sent; the email went out.')
           }

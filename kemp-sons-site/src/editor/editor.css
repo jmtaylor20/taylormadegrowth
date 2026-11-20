@@ -133,6 +133,12 @@
 .ed-issues ul { padding-left: 18px; display: grid; gap: 4px; }
 .ed-issues .ed-hint { color: rgba(255, 255, 255, 0.6); margin-top: 8px; }
 .ed-checks { background: var(--white); color: var(--ink); padding: 16px; display: grid; gap: 8px; }
+.ed-sms { background: var(--white); color: var(--ink); padding: 16px; display: grid; gap: 10px; margin-top: 12px; }
+.ed-sms-phone { display: grid; gap: 4px; }
+.ed-sms-phone .mono { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; }
+.ed-sms-phone input { font: inherit; font-size: 16px; padding: 10px 12px; border: 1.5px solid var(--ink); background: var(--white); max-width: 260px; }
+.ed-sms-terms { font-size: 12px; line-height: 1.5; }
+.ed-sms-terms a { color: inherit; }
 .ed-checks-h { font-weight: 800; text-transform: uppercase; font-size: 16px; margin-bottom: 4px; }
 .ed-check { display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 8px 12px; border: 1.5px solid var(--rule); cursor: pointer; font-weight: 600; }
 .ed-check.is-on { border-color: var(--ink); background: #f3f1ec; }

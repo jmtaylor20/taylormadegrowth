@@ -654,6 +654,8 @@ interface StaffEdit {
   summary: string
 }
 
+/** Bump when the text-message consent wording on the proof page changes; it's saved with each opt-in. */
+const SMS_CONSENT_VERSION = '2026-11-20'
 const CHECKS = ['Names and spelling are correct', 'Photos look the way I want', 'I approve this proof for printing'] as const
 const OWN_CHECKS = [
   'My design looks the way I want, with nothing important cut off at the edges',
@@ -720,6 +722,11 @@ function Proof({
   const [error, setError] = useState<string | null>(null)
   const issues = useMemo(() => preflight(t, draft), [t, draft])
   const allChecked = checked.every(Boolean)
+  // Optional order-update texts. Unchecked by default; the consent and its wording go on the order (A2P 10DLC opt-in).
+  const [smsOn, setSmsOn] = useState(false)
+  const [smsPhone, setSmsPhone] = useState('')
+  const smsDigits = smsPhone.replace(/\D/g, '').replace(/^1(?=\d{10}$)/, '')
+  const smsOk = !smsOn || smsDigits.length === 10
   // Every photo spot must be filled: an empty one would print as a gray placeholder.
   const missingPhotos = issues.some((i) => i.kind === 'photo')
 
@@ -826,7 +833,7 @@ function Proof({
   }
 
   const approve = async () => {
-    if (!allChecked || missingPhotos || !variant || !shop) return
+    if (!allChecked || missingPhotos || !variant || !shop || !smsOk) return
     setError(null)
     try {
       const ref = `KS-${Date.now().toString(36).toUpperCase()}`
@@ -898,6 +905,9 @@ function Proof({
       const orderAttrs: Record<string, string> = {
         ...(!tracking.enabled ? {} : isKioskVisit() ? { source: 'kiosk' } : { ...(click ?? {}) }),
         // Funeral home portal: shows on the order, the job board and the home's order list.
+        ...(smsOn && smsOk
+          ? { 'Text updates': `(${smsDigits.slice(0, 3)}) ${smsDigits.slice(3, 6)}-${smsDigits.slice(6)}`, '_Text consent': `Yes, ${new Date().toISOString()}, proof page, wording ${SMS_CONSENT_VERSION}` }
+          : {}),
         ...(home ? { 'Funeral home': home.name, '_Home ID': home.slug, ...(draft.values.__case ? { '_Case ID': draft.values.__case } : {}) } : {}),
       }
       const checkoutUrl = await addToCart(shop, items, orderAttrs)
@@ -995,6 +1005,23 @@ function Proof({
             ))}
           </section>
 
+          <section className="ed-sms">
+            <label className={`ed-check ${smsOn ? 'is-on' : ''}`}>
+              <input type="checkbox" checked={smsOn} onChange={(e) => setSmsOn(e.target.checked)} />
+              <span>Text me order updates (optional)</span>
+            </label>
+            {smsOn && (
+              <label className="ed-sms-phone">
+                <span className="mono">Mobile number</span>
+                <input type="tel" inputMode="tel" autoComplete="tel" value={smsPhone} onChange={(e) => setSmsPhone(e.target.value)} placeholder="(334) 555-0123" aria-invalid={!smsOk} />
+                {!smsOk && smsPhone && <span className="ed-hint">Enter a 10-digit US mobile number.</span>}
+              </label>
+            )}
+            <p className="ed-hint ed-sms-terms">
+              By checking this box, you agree to receive text messages from Kemp &amp; Sons Printing about this order, such as when it is ready for pickup or has shipped, at the number above. Usually 1 to 3 messages per order. Message and data rates may apply. Reply STOP to opt out or HELP for help. Consent is not a condition of purchase. See our <a href="/privacy/" target="_blank" rel="noopener">Privacy Policy</a> and <a href="/terms/" target="_blank" rel="noopener">Terms</a>.
+            </p>
+          </section>
+
           {env && (
             <section className="ed-proof-side">
               <p className="mono">Envelopes</p>
@@ -1036,7 +1063,7 @@ function Proof({
             </button>
           )
         ) : (
-          <button type="button" className="btn btn-primary" disabled={!allChecked || missingPhotos || !variant || !!work} onClick={approve}>
+          <button type="button" className="btn btn-primary" disabled={!allChecked || missingPhotos || !variant || !smsOk || !!work} onClick={approve}>
             {work ? 'Working...' : variant ? `Approve & checkout ${money(total)}` : 'Approve proof'}
           </button>
         )}

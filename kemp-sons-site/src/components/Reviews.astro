@@ -1,0 +1,49 @@
+---
+/**
+ * Real Google reviews (Kemp & Sons' Business Profile), picked from the five-star
+ * reviews with written comments. Source data: src/data/google-reviews.json,
+ * pulled from Google Business Profile; refresh it when new reviews come in.
+ */
+import data from '../data/google-reviews.json'
+const stars = (n: number) => '★★★★★'.slice(0, Math.round(n))
+---
+<section class="reviews" id="reviews" aria-labelledby="reviews-title">
+  <div class="wrap">
+    <div class="rv-head">
+      <div>
+        <span class="label reveal">What customers say</span>
+        <h2 class="headline reveal" id="reviews-title">{data.rating} stars<br />on Google.</h2>
+      </div>
+      <p class="rv-sum reveal">
+        <span class="rv-stars" aria-hidden="true">{stars(5)}</span>
+        <span>{data.rating} average from {data.count} Google reviews</span>
+        <a href={data.mapsUrl} target="_blank" rel="noopener">Read them all on Google <span aria-hidden="true">&rarr;</span></a>
+      </p>
+    </div>
+    <ul class="rv-grid">
+      {data.reviews.map((r) => (
+        <li class="rv reveal">
+          <span class="rv-stars" role="img" aria-label="5 out of 5 stars">★★★★★</span>
+          <blockquote><p>{r.text}</p></blockquote>
+          <p class="rv-by mono">{r.name} &middot; Google review, {r.year}</p>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .reviews { position: relative; z-index: 1; background: var(--white); border-top: 2px solid var(--ink); padding: 112px 0; }
+  .rv-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 24px 48px; margin-bottom: 48px; }
+  .rv-head .headline { font-size: clamp(40px, 6vw, 96px); }
+  .rv-sum { display: grid; gap: 6px; justify-items: start; max-width: 340px; color: var(--ink-2); }
+  .rv-sum a { color: var(--ink); font-weight: 700; }
+  .rv-stars { color: #f2a900; letter-spacing: 2px; font-size: 20px; line-height: 1; }
+  .rv-grid { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 0; border-top: 2px solid var(--ink); border-left: 1px solid var(--rule); }
+  .rv { display: grid; grid-template-rows: auto 1fr auto; gap: 14px; padding: 28px 26px 26px; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .rv blockquote p { font-size: 17px; line-height: 1.55; color: var(--ink); }
+  .rv blockquote p::before { content: '\201C'; }
+  .rv blockquote p::after { content: '\201D'; }
+  .rv-by { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
+  @media (max-width: 720px) { .reviews { padding: 72px 0; } .rv { padding: 22px 18px; } }
+</style>

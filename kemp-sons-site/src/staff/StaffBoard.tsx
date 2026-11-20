@@ -31,6 +31,8 @@ interface Job {
   customer: string
   email: string | null
   phone: string | null
+  /** The number the customer opted in for texts with, if any. */
+  textTo?: string | null
   address: string | null
   paid: string | null
   /** Funeral home that ordered through the portal. */
@@ -414,7 +416,7 @@ function Detail({ job: j, texting, onClose, onAct }: { job: Job; texting: boolea
           </div>
           {j.method === 'pickup' && j.stage !== 'done' && (
             <p className="sb-hint">
-              Ready for pickup emails the customer{texting && j.phone ? ' and texts them' : ''}.{!texting ? ' Texts turn on once Twilio is set up.' : ''}
+              Ready for pickup emails the customer{texting && j.textTo ? ' and texts them' : ''}.{texting && !j.textTo ? ' No text: the customer did not sign up for texts.' : ''}{!texting ? ' Texts turn on once Twilio is set up.' : ''}
             </p>
           )}
           {j.method === 'ship' && j.stage !== 'done' && (

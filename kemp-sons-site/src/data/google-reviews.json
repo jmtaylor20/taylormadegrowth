@@ -1,0 +1,39 @@
+{
+  "rating": 4.6,
+  "count": 50,
+  "checked": "2026-11-20",
+  "mapsUrl": "https://maps.google.com/maps?cid=3991499854608017812",
+  "writeUrl": "https://search.google.com/local/writereview?placeid=ChIJ5fiJZjrtjIgRlCnvSvinZDc",
+  "reviews": [
+    {
+      "name": "Floyd R.",
+      "year": 2026,
+      "text": "I highly recommend Kemp & Sons Printing! Their service was professional, friendly, and efficient from start to finish. The quality of the printing was excellent, and their pricing was very reasonable for the level of service and quality provided."
+    },
+    {
+      "name": "Lacey M.",
+      "year": 2025,
+      "text": "I cannot say enough great things!!! Abbi's designs are always perfect, and the order is always fulfilled quickly. They've done my wedding invitations, my child's birthday invitations, postcards for my business, and so much more."
+    },
+    {
+      "name": "Dr. Redmond",
+      "year": 2026,
+      "text": "I have had such great customer service at Kemps. You can tell it is a family business because of the care they take with each client. Special shoutout to Brandy who cut her lunch hour short to help me!!"
+    },
+    {
+      "name": "Steven R.",
+      "year": 2018,
+      "text": "Kemp & Sons is the best place to have any paper printing done in the Auburn/Opelika area. I have used them for many years. Each job has been fairly priced and always on time too!"
+    },
+    {
+      "name": "Caitlin M.",
+      "year": 2020,
+      "text": "The people at Kemp & Sons are the kindest most professional people ever! They have done several different projects for me (stationery, wedding invites, office supplies, etc.) and I am continually impressed. Amazing prices, amazing people, amazing work!"
+    },
+    {
+      "name": "Ashley M.",
+      "year": 2024,
+      "text": "10/10! They did a sign for us within 24 hours and their pricing is super reasonable. Very impressed!"
+    }
+  ]
+}
