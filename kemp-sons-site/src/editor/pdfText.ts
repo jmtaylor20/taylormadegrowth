@@ -1,3 +1,4 @@
+import { conditionMet } from './conditions'
 import { GState, type jsPDF } from 'jspdf'
 import type { Element, Side, StackEl, TextEl, TextStyle } from './types'
 import { fillTokens, fitStack, fitText, fontString } from './textFit'
@@ -90,6 +91,7 @@ const overlaps = (a: Box, b: Box) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 &
 /** Whether an element is drawn at all with these values and photos (mirrors SideCanvas). */
 function isShown(el: Element, values: Record<string, string>, photos: Record<string, PhotoState>) {
   if (el.showIf && !(values[el.showIf] ?? '').trim()) return false
+  if (!conditionMet(el.onlyIf, values)) return false
   if (el.hideWhenCutout) {
     const ph = photos[el.hideWhenCutout]
     if (ph?.useCutout && ph.cutout) return false

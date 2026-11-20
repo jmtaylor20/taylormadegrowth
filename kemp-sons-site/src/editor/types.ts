@@ -47,6 +47,27 @@ export interface TextField {
   rows?: number
   /** Form section heading this field sits under. */
   section?: string
+  /** Show this field only when another field matches. */
+  onlyIf?: FieldCondition
+}
+
+/** A dropdown. The chosen option's value is stored like text. */
+export interface SelectField {
+  id: string
+  type: 'select'
+  label: string
+  options: { value: string; label: string }[]
+  default: string
+  hint?: string
+  section?: string
+  onlyIf?: FieldCondition
+}
+
+/** Show a field or element only when another field has (or doesn't have) a value. */
+export interface FieldCondition {
+  field: string
+  is?: string
+  not?: string
 }
 
 export interface PhotoField {
@@ -64,7 +85,7 @@ export interface PhotoField {
   removeBackground?: boolean
 }
 
-export type Field = TextField | PhotoField
+export type Field = TextField | SelectField | PhotoField
 
 interface Base {
   x: number
@@ -73,6 +94,8 @@ interface Base {
   opacity?: number
   /** Hide this element when the named field is left blank. */
   showIf?: string
+  /** Show this element only when another field matches (e.g. the funeral home picked from a list). */
+  onlyIf?: FieldCondition
   /** Hide this element when the named photo has its background removed (e.g. a photo's white border). */
   hideWhenCutout?: string
   /** Show this element only when the named photo has its background removed (e.g. a cut-out's own placement). */

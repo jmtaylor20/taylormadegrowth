@@ -12,6 +12,7 @@ import { funeralPinkTulips } from './funeral-pink-tulips'
 import { funeralPinkFloral } from './funeral-pink-floral'
 import { funeralRedRoses } from './funeral-red-roses'
 import { withKempFonts } from './kemp-fonts'
+import { withFuneralHomes } from './funeral-home-panels'
 import { funeralThemes } from './funeral-themes'
 import { PERSONAS, withPersona } from './funeral-shared'
 import { ADDON_TEMPLATES } from './memorial-addons'
@@ -51,6 +52,7 @@ export const TEMPLATES: Template[] = [
 ]
   .map(withKempFonts) // Kemp's own fonts, matched to each original program
   .map(withSamplePerson)
+  .map(withFuneralHomes)
 
 /** Upload-your-own designs (reached from "Have your own design?" on Start an order, not the galleries). */
 export const OWN_DESIGNS: Template[] = christmasOwnDesigns

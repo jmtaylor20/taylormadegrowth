@@ -1,3 +1,4 @@
+import { conditionMet } from './conditions'
 import type { Template } from './types'
 import type { Draft } from './draft'
 import { fieldsOf, fillTokens, fitStack, fitText } from './textFit'
@@ -23,6 +24,7 @@ export function preflight(t: Template, d: Draft): PreflightIssue[] {
   for (const side of t.sides)
     for (const el of side.elements) {
       if (el.showIf && !(d.values[el.showIf] ?? '').trim()) continue
+      if (!conditionMet(el.onlyIf, d.values)) continue
       // Elements switched by a photo's cut-out (one of two placements for the same photo).
       const cut = (f?: string) => !!(f && d.photos[f]?.useCutout && d.photos[f]?.cutout)
       if (el.hideWhenCutout && cut(el.hideWhenCutout)) continue

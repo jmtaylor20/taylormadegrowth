@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { FUNERAL_HOMES, homePanelFor } from '../config/funeral-homes'
+import { HOME_FIELD } from './templates/funeral-home-panels'
 import type { Template } from './types'
 import { templateById } from './templates'
 import { addonDraft, addonsFor, frontOnly, printsOneSide, type AddonKind } from './templates/memorial-addons'
@@ -229,7 +231,9 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
   useEffect(() => {
     if (!home || !loaded) return
     const defs = defaultDraft(t).values
+    const panel = homePanelFor(home.name)
     const want: Record<string, string> = {
+      ...(panel ? { [HOME_FIELD]: panel.slug } : {}),
       funeralHome: home.name,
       funeralHomeDetails: [[home.address, home.city].filter(Boolean).join(', '), home.phone].filter(Boolean).join('\n'),
     }
@@ -262,6 +266,7 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
         const fresh = defaultDraft(t)
         const values: Record<string, string> = { ...fresh.values, __case: caseId }
         const has = new Set(t.fields.map((f) => f.id))
+        if (has.has(HOME_FIELD) && homePanelFor(home.name)) values[HOME_FIELD] = homePanelFor(home.name)!.slug
         if (has.has('funeralHome')) values.funeralHome = home.name
         if (has.has('funeralHomeDetails')) values.funeralHomeDetails = [[home.address, home.city].filter(Boolean).join(', '), home.phone].filter(Boolean).join('\n')
         for (const [k, v] of Object.entries(c.values)) if (v && has.has(k) && k !== 'note') values[k] = v
@@ -412,7 +417,17 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
     [t],
   )
 
-  const onValue = useCallback((id: string, value: string) => setDraft((d) => ({ ...d, values: { ...d.values, [id]: value } })), [setDraft])
+  const onValue = useCallback(
+    (id: string, value: string) =>
+      setDraft((d) => {
+        const values = { ...d.values, [id]: value }
+        // A listed funeral home also fills in its name and address (used inside the program, on add-ons and on the order).
+        const panel = id === HOME_FIELD ? FUNERAL_HOMES.find((h) => h.slug === value) : undefined
+        if (panel) Object.assign(values, { funeralHome: panel.name, funeralHomeDetails: panel.details })
+        return { ...d, values }
+      }),
+    [setDraft],
+  )
   const onPhoto = useCallback(
     (id: string, next: PhotoState | null) =>
       setDraft((d) => {

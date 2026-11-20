@@ -1,3 +1,4 @@
+import { conditionMet } from './conditions'
 import { memo, useMemo } from 'react'
 import { Stage, Layer, Group, Rect, Ellipse, Line, Star, Text, Image as KImage, Circle } from 'react-konva'
 import type Konva from 'konva'
@@ -107,6 +108,7 @@ interface NodeProps {
 
 function ElementNode({ el, ...rest }: NodeProps) {
   if (el.showIf && !(rest.values[el.showIf] ?? '').trim()) return null
+  if (!conditionMet(el.onlyIf, rest.values)) return null
   if (el.hideWhenCutout) {
     const ph = rest.photos[el.hideWhenCutout]
     if (ph?.useCutout && ph.cutout) return null

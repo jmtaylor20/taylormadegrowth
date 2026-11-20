@@ -1,3 +1,4 @@
+import { conditionMet } from './conditions'
 import { useEffect, useRef, useState } from 'react'
 import type { Field, PhotoField, Template } from './types'
 import type { Draft, PhotoState, PhotoTone } from './draft'
@@ -36,6 +37,7 @@ export function FieldForm({ template, draft, onValue, onPhoto, onFocusField, reg
   const sections: { name: string; fields: Field[] }[] = []
   for (const f of template.fields) {
     if (only && (only === 'photo') !== (f.type === 'photo')) continue
+    if (f.type !== 'photo' && !conditionMet(f.onlyIf, draft.values)) continue
     const name = f.section ?? 'Details'
     let s = sections.find((x) => x.name === name)
     if (!s) sections.push((s = { name, fields: [] }))
@@ -59,7 +61,15 @@ export function FieldForm({ template, draft, onValue, onPhoto, onFocusField, reg
                   {f.label}
                   <FitBadge status={fitStatus(template, draft.values, f.id)} />
                 </span>
-                {f.type === 'textarea' ? (
+                {f.type === 'select' ? (
+                  <select value={draft.values[f.id] ?? f.default} onChange={(e) => onValue(f.id, e.target.value)} className="ed-input">
+                    {f.options.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                ) : f.type === 'textarea' ? (
                   <textarea
                     rows={f.rows ?? 3}
                     value={draft.values[f.id] ?? ''}
