@@ -16,7 +16,7 @@ export const FORMAT_INFO: Record<string, { name: string; finished: string }> = {
   'program-17x11-trifold': { name: 'Large trifold', finished: 'Folds to 5.67 x 11 in' },
   'program-booklet-8': { name: '8-page booklet', finished: '8.5 x 11 in pages' },
   'card-5x7-1side': { name: 'Photo card, one side', finished: '5 x 7 in flat' },
-  'card-5x7-2side': { name: 'Photo card, two sides', finished: '7 x 5 in flat' },
+  'card-5x7-2side': { name: 'Photo card, two sides', finished: '5 x 7 in flat' },
 }
 const FORMAT_ORDER = Object.keys(FORMAT_INFO)
 

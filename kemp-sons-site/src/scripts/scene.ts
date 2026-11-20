@@ -429,7 +429,8 @@ export function createScene(canvas: HTMLCanvasElement, opts: { reducedMotion: bo
       // One shared sway, so pieces that sit parallel stay parallel.
       obj.rotation.set(lerp(A.r[0], B.r[0], k), lerp(A.r[1], B.r[1], k) + Math.sin(t * 0.5) * 0.03 * idle, lerp(A.r[2], B.r[2], k))
       obj.scale.setScalar(Math.max(0.0001, lerp(A.s, B.s, k)))
-      setOpacity(obj, lerp(A.o, B.o, k))
+      // Pieces leaving the stage fade out in the first part of the scroll, so they don't hang over the text as they pass.
+      setOpacity(obj, B.o < A.o ? lerp(A.o, B.o, Math.min(1, k * 2.5)) : lerp(A.o, B.o, k))
       if (obj === (xmas ? card : program)) {
         // Open on hover, only on the first stage (where it sits folded), easing back when the mouse leaves.
         // Closed: the cover. Open: the whole spread (shrunk to 62%, three panels wide).

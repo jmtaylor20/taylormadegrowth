@@ -56,7 +56,7 @@ export const productLines = [
   {
     collection: 'christmas-cards',
     name: 'Christmas & Seasonal Cards',
-    blurb: '5x7 photo cards and greetings, with names and addresses merged from a spreadsheet.',
+    blurb: '5x7 photo cards in ten designs, or upload your own. We can address the envelopes from your list.',
     tone: 'red',
     intro: 'Pick a design, add your family photos and greeting, and approve your proof online. Printed on heavy card stock in Opelika, ready for pickup or shipped to your door.',
   },
@@ -66,9 +66,9 @@ export const productLines = [
     /** Until online designs exist, this line is a quote request with this job type picked. */
     quoteJob: 'Business cards or stationery',
     quoteBlurb: 'Crisp cards on heavy stock with your logo. Tell us what you need and we will quote it.',
-    blurb: 'Crisp cards on heavy stock, from our layouts or your own logo. Reorder in a few clicks.',
+    blurb: 'Crisp cards on heavy stock with your logo. Tell us what you need and we will quote it.',
     tone: 'navy',
-    intro: 'Start from one of our layouts or bring your own logo. Approve your proof online and pick up your cards in Opelika, or have them shipped.',
+    intro: 'Send us your logo or your current card and we will set them up and send you a proof. Pick them up in Opelika, or have them shipped.',
   },
   {
     collection: 'thank-you-cards',

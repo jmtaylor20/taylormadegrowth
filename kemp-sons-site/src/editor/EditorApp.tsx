@@ -326,6 +326,16 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
     }
   }, [draft.photos])
   const [sideId, setSideId] = useState(t.sides[0].id)
+  // Each step opens on the side its first field is on (a card whose only words are on the back shows the back).
+  const firstRender = useRef(true)
+  useEffect(() => {
+    // The page opens on the front (it's what sells the design); moving between steps follows the fields.
+    if (firstRender.current) { firstRender.current = false; return }
+    if (!simple || step > 1) return
+    const f = t.fields.find((x) => (step === 0 ? x.type !== 'photo' : x.type === 'photo'))
+    const s = f && sideOfField(t, f.id)
+    if (s) setSideId(s)
+  }, [step])
   const [showGuides, setShowGuides] = useState(false)
   const [focused, setFocused] = useState<string | null>(null)
   const [typing, setTyping] = useState(false)

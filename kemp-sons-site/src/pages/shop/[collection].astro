@@ -17,6 +17,9 @@ const { line } = Astro.props
 const templates = await Promise.all(
   templatesIn(line.collection).map(async (t) => ({ t, from: formatPrice(await getStartingPrice(t.shopifyHandle)) })),
 )
+import { formatOf, formatsFor } from '../../lib/formats'
+// Size filter, when a line comes in more than one size (funeral programs).
+const sizes = formatsFor(templates.map(({ t }) => t))
 const others = productLines.filter((l) => l.collection !== line.collection)
 const pad = (n: number) => String(n).padStart(2, '0')
 
@@ -57,10 +60,25 @@ const hasRush = templates.some(({ t }) => !!rushFormatFor(t.shopifyHandle))
 
     <section class="warm" aria-label={`${line.name} designs`}>
     <div class="wrap designs">
+      {sizes.length > 2 && (
+        <div class="sizes" role="group" aria-label="Filter by size" data-size-filter>
+          <span class="mono sizes-label">Size</span>
+          <button type="button" class="size-btn is-on" data-size="" aria-pressed="true">All <span class="n">{templates.length}</span></button>
+          {sizes.map((f) => (
+            <button type="button" class="size-btn" data-size={f.id} aria-pressed="false">{f.name} <span class="n">{f.templates.length}</span><span class="fin">{f.finished}</span></button>
+          ))}
+        </div>
+      )}
+      {line.collection === 'christmas-cards' && (
+        <a class="own" href="/start/#own">
+          <span class="own-k mono">Have your own design?</span>
+          <span>Made your card in Canva or an AI tool, or bought a design elsewhere? Upload it and we'll print it, with envelopes if you'd like. <u>Upload your card</u> <span aria-hidden="true">&rarr;</span></span>
+        </a>
+      )}
       {templates.length > 0 ? (
         <ol class="grid">
           {templates.map(({ t, from }, i) => (
-            <li>
+            <li data-format={formatOf(t)}>
               <a class="card" href={`/design/${t.id}/`}>
                 <div class="thumb">
                   <div class="scale" style={scaleStyle(t)}>
@@ -106,6 +124,27 @@ const hasRush = templates.some(({ t }) => !!rushFormatFor(t.shopifyHandle))
   </main>
   <Footer />
   <LivePrices />
+<script>
+  const bar = document.querySelector<HTMLElement>('[data-size-filter]')
+  if (bar) {
+    const items = [...document.querySelectorAll<HTMLElement>('.grid > li[data-format]')]
+    const apply = (size: string) => {
+      bar.querySelectorAll<HTMLButtonElement>('.size-btn').forEach((b) => {
+        const on = (b.dataset.size ?? '') === size
+        b.classList.toggle('is-on', on)
+        b.setAttribute('aria-pressed', String(on))
+      })
+      items.forEach((li) => (li.hidden = !!size && li.dataset.format !== size))
+      try { size ? history.replaceState(null, '', `#size=${size}`) : history.replaceState(null, '', location.pathname) } catch {}
+    }
+    bar.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>('.size-btn')
+      if (b) apply(b.dataset.size ?? '')
+    })
+    const m = location.hash.match(/size=([\w.-]+)/)
+    if (m) apply(m[1])
+  }
+</script>
 </Base>
 
 <style>
@@ -121,6 +160,23 @@ const hasRush = templates.some(({ t }) => !!rushFormatFor(t.shopifyHandle))
   .designs { padding-top: 56px; padding-bottom: 72px; display: grid; gap: 40px; }
   .grid { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 52px 40px; }
   .grid > li { display: flex; }
+  .grid > li[hidden] { display: none; }
+  .sizes { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 44px; }
+  .sizes-label { font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; margin-right: 6px; }
+  .size-btn { font: inherit; font-weight: 600; font-size: 0.95rem; min-height: 44px; padding: 8px 16px; border: 1.5px solid var(--ink, #111); background: var(--paper, #fff); color: inherit; cursor: pointer; display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; text-align: left; }
+  .size-btn .n { font-family: var(--font-mono, monospace); font-size: 0.75rem; opacity: 0.6; }
+  .size-btn .fin { flex-basis: 100%; font-weight: 400; font-size: 0.78rem; opacity: 0.7; }
+  .size-btn.is-on { background: var(--ink, #111); color: #fff; }
+  .size-btn:focus-visible { outline: 3px solid var(--red, #e11d26); outline-offset: 2px; }
+  @media (max-width: 720px) {
+    .sizes { flex-wrap: nowrap; overflow-x: auto; margin: 0 calc(-1 * var(--gutter, 20px)) 32px; padding: 0 var(--gutter, 20px) 6px; scrollbar-width: none; }
+    .sizes::-webkit-scrollbar { display: none; }
+    .size-btn { flex: 0 0 auto; white-space: nowrap; }
+    .size-btn .fin { display: none; }
+  }
+  .own { display: flex; flex-direction: column; gap: 6px; max-width: 720px; margin: 0 0 48px; padding: 18px 22px; border: 1.5px solid var(--ink, #111); background: var(--paper, #fff); color: inherit; text-decoration: none; line-height: 1.5; }
+  .own-k { font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--red, #e11d26); }
+  .own:hover u { text-decoration-thickness: 2px; }
   .card { flex: 1; display: grid; grid-template-rows: auto 1fr; gap: 18px; text-decoration: none; color: var(--ink); }
   .thumb { aspect-ratio: 8.5 / 11; display: flex; align-items: flex-end; justify-content: center; position: relative; }
   .thumb::after { content: ''; position: absolute; left: 8%; right: 8%; bottom: -10px; height: 18px; border-radius: 50%;
