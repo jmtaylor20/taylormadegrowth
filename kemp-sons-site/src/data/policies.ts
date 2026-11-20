@@ -44,7 +44,7 @@ const refunds: Policy = {
 <p>If you need to change or cancel an order, call us at (334) 705-5888 as soon as possible. If your order has not gone to print, we will do our best to help, but we cannot promise a change or cancellation once production has started.</p>
 
 <h2>If there is a problem with print quality</h2>
-<p>We stand behind our work. If your order has a printing or material defect, such as a misprint, smearing, a trimming or folding error, a result that does not match your approved proof, or damage during shipping, contact us within 7 days of pickup or delivery. Please include your order number and clear photos of the problem, and keep the printed items and any shipping packaging.</p>
+<p>We stand behind our work. If your order has a printing or material defect, such as a misprint, smearing, a trimming or folding error, a result that does not match your approved proof, or damage during shipping, contact us within 24 to 48 hours of pickup or delivery. Please include your order number and clear photos of the problem, and keep the printed items and any shipping packaging.</p>
 <p>We will review it with you. If the problem is our error, we will reprint the affected items or offer another remedy that we agree on with you. We may ask you to return or show us the items.</p>
 
 <h2>What is not a defect</h2>
@@ -76,13 +76,13 @@ const shipping: Policy = {
 <h2>When orders ship</h2>
 <ul>
 <li>Standard orders ship the next business day after you approve your proof and pay, unless a different date is shown when you order.</li>
-<li>Rush orders, where offered, ship the same business day when placed and approved by the cutoff shown on the site (noon Central, Monday through Friday).</li>
+<li>Rush orders, where offered, ship the same business day when placed and approved by the cutoff shown on the site (2 PM Central, Monday through Friday).</li>
 <li>Large, complex or custom quoted jobs ship on the date we give you with your quote.</li>
 </ul>
 <p>Ship dates are not delivery dates. Once your order ships, delivery time depends on the carrier. We are not responsible for carrier delays, weather or holiday slowdowns, but we will help you track a package.</p>
 
 <h2>Address and delivery problems</h2>
-<p>Please make sure your shipping address is complete and correct. If a package is returned because of an incorrect address, reshipping may cost extra. If your order arrives damaged, contact us within 7 days with photos of the items and the packaging so we can help. See our <a href="/refunds/">Refund Policy</a>.</p>
+<p>Please make sure your shipping address is complete and correct. If a package is returned because of an incorrect address, reshipping may cost extra. If your order arrives damaged, contact us within 24 to 48 hours of delivery with photos of the items and the packaging so we can help. See our <a href="/refunds/">Refund Policy</a>.</p>
 
 <h2>Contact us</h2>
 ${CONTACT}

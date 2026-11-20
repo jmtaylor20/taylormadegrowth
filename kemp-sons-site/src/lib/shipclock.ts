@@ -6,7 +6,7 @@
  */
 export const SHIPPING = {
   /** Rush orders by this hour (24h, Central) ship today. The drop-off is 5 PM, so this leaves time to print and pack. */
-  cutoffHour: 12,
+  cutoffHour: 14,
   timeZone: 'America/Chicago',
   /** 0 = Sunday ... 6 = Saturday. */
   days: [1, 2, 3, 4, 5],

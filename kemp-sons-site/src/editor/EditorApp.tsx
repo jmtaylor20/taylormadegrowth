@@ -562,7 +562,7 @@ function Editor({ t, shop, backHref: siteBack, phone, phoneHref }: { t: Template
               <label className="ed-rush">
                 <input type="checkbox" checked={rush} onChange={(e) => setRush(e.target.checked)} />
                 <span>
-                  <strong>Rush printing</strong> (+{money(rushVariant.price)}). Order by noon Central on a weekday and it ships the same day. Need it by a certain time? Call us at <a href={phoneHref}>{phone}</a>.
+                  <strong>Rush printing</strong> (+{money(rushVariant.price)}). Order by 2 PM Central on a weekday and it ships the same day. Need it by a certain time? Call us at <a href={phoneHref}>{phone}</a>.
                 </span>
               </label>
             )}

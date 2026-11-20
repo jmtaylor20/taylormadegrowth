@@ -55,6 +55,9 @@ const hasRush = templates.some(({ t }) => !!rushFormatFor(t.shopifyHandle))
         <h1 class="headline">{line.name}</h1>
         <p class="lede">{line.intro}</p>
         {templates.length > 0 && <p class="ship-clock" data-ship-clock data-rush={hasRush ? '1' : undefined}><span class="dot" aria-hidden="true"></span><span data-ship-text></span></p>}
+        {line.collection === 'christmas-cards' && (
+          <p class="xmas-note"><span class="xmas-orderby">Order by December 15 for delivery before Christmas. We can't guarantee delivery before Christmas on orders placed after the 15th.</span><span class="xmas-late">We can't guarantee delivery before Christmas on orders placed now.</span></p>
+        )}
       </div>
     </section>
 
@@ -161,6 +164,10 @@ const hasRush = templates.some(({ t }) => !!rushFormatFor(t.shopifyHandle))
   .grid { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 52px 40px; }
   .grid > li { display: flex; }
   .grid > li[hidden] { display: none; }
+  .xmas-note { margin-top: 12px; font-size: 15px; color: var(--ink-2); max-width: 640px; }
+  .xmas-note .xmas-orderby { display: none; }
+  :global(html.xmas-order-open) .xmas-note .xmas-orderby { display: inline; }
+  :global(html.xmas-order-open) .xmas-note .xmas-late { display: none; }
   .sizes { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 44px; }
   .sizes-label { font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; margin-right: 6px; }
   .size-btn { font: inherit; font-weight: 600; font-size: 0.95rem; min-height: 44px; padding: 8px 16px; border: 1.5px solid var(--ink, #111); background: var(--paper, #fff); color: inherit; cursor: pointer; display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; text-align: left; }

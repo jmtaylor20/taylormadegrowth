@@ -55,7 +55,7 @@ const SHEETS = 5
           <!-- Christmas season (src/config/season.ts) -->
           <p class="xmas-kicker mono reveal on-xmas"><span aria-hidden="true">&#10052;</span> Christmas cards are here</p>
           <h1 class="headline reveal on-xmas">Christmas cards,<br />printed here in<br /><span class="accent misreg">Opelika.</span></h1>
-          <p class="lede reveal on-xmas">Put your family photo on one of our Christmas designs, or upload a card you made, approve your proof, then pick them up at our shop or have them shipped. We can address the envelopes too.<span class="xmas-orderby"> Order by December 15.</span></p>
+          <p class="lede reveal on-xmas">Put your family photo on one of our Christmas designs, or upload a card you made, approve your proof, then pick them up at our shop or have them shipped. We can address the envelopes too.<span class="xmas-orderby"> Order by December 15. We can't guarantee delivery before Christmas on orders placed after the 15th.</span><span class="xmas-late"> Orders placed now may not arrive before Christmas.</span></p>
           <div class="btn-row reveal on-xmas">
             <a class="btn btn-primary" href="/shop/christmas-cards/">Design your Christmas cards <span class="arrow" aria-hidden="true">&rarr;</span></a>
             <a class="btn" href="/start/">Start another order</a>
@@ -211,6 +211,8 @@ const SHEETS = 5
   .on-xmas { display: none; }
   .xmas-orderby { display: none; }
   :global(html.xmas-order-open) .xmas-orderby { display: inline; }
+  .xmas-late { display: inline; }
+  :global(html.xmas-order-open) .xmas-late { display: none; }
   :global(html.season-xmas) .off-xmas { display: none; }
   :global(html.season-xmas) h1.on-xmas, :global(html.season-xmas) p.on-xmas { display: block; }
   :global(html.season-xmas) .btn-row.on-xmas { display: flex; }
