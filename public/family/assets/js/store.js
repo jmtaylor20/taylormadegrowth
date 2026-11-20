@@ -185,6 +185,7 @@ function migrate() {
   state.payments ??= [];
   state.reconciliations ??= [];
   state.pending ??= [];
+  state.plan ??= null;
   state.settings ??= {};
   state.settings.monthlySpending ??= 0;
   state.settings.monthlyToGoals ??= 0;

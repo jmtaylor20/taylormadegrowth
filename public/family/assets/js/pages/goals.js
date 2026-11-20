@@ -34,7 +34,8 @@ export default function goals(state) {
       ),
       bar((g.saved ?? 0) / (g.target || 1), done ? 'var(--josh)' : 'var(--gold)'),
       el('div.tiny', { style: { marginTop: '7px' } },
-        done ? 'Funded. Go book it.' : `${money(left)} to go of ${money(g.target)}`),
+        done ? 'Funded. Go book it.' : `${money(left)} to go of ${money(g.target)}`,
+        g.monthly ? ` · ${money(g.monthly.winter)}/mo now, ${money(g.monthly.summer)}/mo from April` : ''),
     ));
   }
 
