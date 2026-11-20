@@ -26,6 +26,9 @@ export default function debt(state) {
     stat('Minimums', money(totals.minimums), 'already in your bills', ''),
   ));
 
+  const plan = planCard(state);
+  if (plan) wrap.append(plan);
+
   // ---- The order -----------------------------------------------------------
 
   wrap.append(section('Pay in this order', 'highest rate first'));
@@ -101,6 +104,57 @@ export default function debt(state) {
   }
 
   return wrap;
+}
+
+// ---- What this month is supposed to look like -------------------------------
+//
+// The order the money goes in is the one decision that does not change month to
+// month, so it is worth seeing right above the Pay buttons. TaylorMade is
+// seasonal: the gross swings but the household line deliberately does not.
+
+function planCard(state) {
+  const p = state.plan;
+  if (!p) return null;
+
+  const month = new Date().getMonth() + 1;
+  const summer = (p.summerMonths ?? []).includes(month);
+  const season = state.income?.find((i) => i.id === 'i-tmb')?.seasonal;
+  const gross = (summer ? season?.summer : season?.winter) ?? 0;
+  if (!gross) return null;
+
+  const tax = gross * (p.taxReserveRate ?? 0);
+  const events = summer ? (p.events?.summer ?? 0) : (p.events?.winter ?? 0);
+  const house = p.tmbShare ?? 0;
+  const left = gross - tax - house - events;
+
+  const line = (label, amount, sub, cls) => el('div.row', {},
+    el('div.mid', {},
+      el('div.nm', {}, el('span.t', { text: label })),
+      sub ? el('div.meta', { text: sub }) : null),
+    el('div.amt' + (cls ? '.' + cls : ''), { text: amount }),
+  );
+
+  const box = el('div.card.flush', {},
+    line('TaylorMade', money(gross), summer ? 'summer rate' : 'winter rate', ''),
+    line('Tax reserve', '-' + money(tax), `${Math.round((p.taxReserveRate ?? 0) * 100)}% off the top, first`, 'neg'),
+    line('Household', '-' + money(house), `Laci adds ${money(p.laciShare ?? 0)} to make ${money(p.perPerson ?? 0)} each`, 'neg'),
+    line('Events fund', '-' + money(events), 'its own account, not Regions', 'neg'),
+    el('div.row', { style: { borderTop: '1px solid var(--line)' } },
+      el('div.mid', {},
+        el('div.nm', {}, el('span.t', { text: 'At the cards' })),
+        el('div.meta', { text: 'on top of the minimums above' })),
+      el('div.amt.pos', { text: money(left) }),
+    ),
+  );
+
+  return el('div', {},
+    section('The plan this month', summer ? 'summer' : 'winter'),
+    box,
+    el('div.qbox', { style: { margin: '10px 0 0' } },
+      el('b', { text: 'Buffer: ' }),
+      `keep ${money(p.bufferTarget ?? 0)} sitting in Regions and never spend it. `
+      + 'Household stays at this number when TaylorMade jumps in April — that is the whole plan.'),
+  );
 }
 
 // ---- Record a payment ------------------------------------------------------
