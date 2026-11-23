@@ -18,5 +18,5 @@ export const tracking = {
   callLabel: '',
   /** Shopify checkout, so a visit keeps one session from the site through checkout. */
   checkoutDomain: 'ynnu29-88.myshopify.com',
-  linkerDomains: ['kempandsons.com', 'kemp-sons-site.netlify.app', 'ynnu29-88.myshopify.com'],
+  linkerDomains: ['kempandsons.com', 'ynnu29-88.myshopify.com'],
 }

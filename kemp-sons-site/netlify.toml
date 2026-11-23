@@ -17,8 +17,6 @@
   [headers.values]
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    # Preview only: keeps the site out of search results until launch. Remove at launch.
-    X-Robots-Tag = "noindex, nofollow"
 
 # Staff pages and API stay out of search results permanently.
 [[headers]]
@@ -36,6 +34,13 @@
   for = "/ort/*"
   [headers.values]
     Cache-Control = "public, max-age=2592000"
+
+# The Netlify address forwards to the real domain, so search engines and links see one site.
+[[redirects]]
+  from = "https://kemp-sons-site.netlify.app/*"
+  to = "https://kempandsons.com/:splat"
+  status = 301
+  force = true
 
 # The old prototype addresses now go to the permanent "Start an order" pages.
 [[redirects]]

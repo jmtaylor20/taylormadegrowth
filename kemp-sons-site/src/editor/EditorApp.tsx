@@ -1029,7 +1029,7 @@ function Proof({
               <label className="ed-sms-phone">
                 <span className="mono">Mobile number</span>
                 <input type="tel" inputMode="tel" autoComplete="tel" value={smsPhone} onChange={(e) => setSmsPhone(e.target.value)} placeholder="(334) 555-0123" aria-invalid={!smsOk} />
-                {!smsOk && smsPhone && <span className="ed-hint">Enter a 10-digit US mobile number.</span>}
+                {!smsOk && <span className="ed-hint">Enter a 10-digit US mobile number, or uncheck the box.</span>}
               </label>
             )}
             <p className="ed-hint ed-sms-terms">
