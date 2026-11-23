@@ -11,11 +11,13 @@ export const tracking = {
   /** GA4 measurement ID. */
   ga4: 'G-CRKJS4F8XB',
   /** Google Ads tag ID, like AW-123456789. */
-  adsId: '',
+  adsId: 'AW-18580854111',
   /** Conversion label for a sent quote request (work order form). */
-  quoteLabel: '',
+  quoteLabel: 'r3E4CJOtqbodEN-qhZxF',
   /** Conversion label for calls from the website (turns on the call-number swap). */
-  callLabel: '',
+  callLabel: 'Ate8CJatqbodEN-qhZxF',
+  /** Purchase conversion. Fires from Shopify's checkout (Settings > Customer events > custom pixel), not from this site. */
+  purchaseLabel: '_mt6CJyLpLwdEN-qhZxF',
   /** Shopify checkout, so a visit keeps one session from the site through checkout. */
   checkoutDomain: 'ynnu29-88.myshopify.com',
   linkerDomains: ['kempandsons.com', 'ynnu29-88.myshopify.com'],
