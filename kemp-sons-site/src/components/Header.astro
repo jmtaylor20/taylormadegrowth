@@ -1,7 +1,27 @@
 ---
 import { business } from '../config/site'
+import { notice } from '../config/promo'
+
+const showPromo = !!notice.text && Date.now() < Date.parse(notice.endsAt)
 ---
 <header class="site-header" data-header>
+  {showPromo && (
+    <div class="promo" data-promo data-ends={notice.endsAt}>
+      <script is:inline>
+        // Before paint: hide after the end date or once closed; otherwise make room for it.
+        ;(function () {
+          var el = document.currentScript.parentElement, off = Date.now() >= Date.parse(el.dataset.ends)
+          try { off = off || sessionStorage.getItem('kemp-promo-closed') === '1' } catch (e) {}
+          if (off) el.remove(); else document.documentElement.classList.add('has-promo')
+        })()
+      </script>
+      <p class="promo-link" role="status">
+        <span class="promo-full">{notice.text}</span>
+        <span class="promo-short">{notice.short}</span>
+      </p>
+      <button type="button" class="promo-close" data-promo-close aria-label="Close the holiday hours notice">&times;</button>
+    </div>
+  )}
   <div class="wrap bar">
     <a href="/" class="logo" aria-label="Kemp & Sons Printing, home">
       <img src="/brand/kemp-sons-full-color.svg" alt="Kemp & Sons Printing" width="150" height="99" />
@@ -38,7 +58,14 @@ import { business } from '../config/site'
     border-bottom: 1px solid transparent;
   }
   .site-header.scrolled { background: var(--stock); border-bottom-color: var(--ink); }
-  .bar { height: var(--header-h); display: flex; align-items: center; gap: 28px; }
+  .bar { height: var(--nav-h); display: flex; align-items: center; gap: 28px; }
+  :global(html.has-promo) { --promo-h: 34px; }
+  .promo { position: relative; height: 34px; display: flex; align-items: center; background: var(--navy, #103750); color: #fff; border-bottom: 1px solid #0b2638; }
+  .promo-link { flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; justify-content: center; padding: 0 12px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; font-weight: 600; letter-spacing: 0.01em; }
+  .promo-short { display: none; }
+  @media (max-width: 1100px) { .promo-full { display: none; } .promo-short { display: inline; } }
+  .promo-close { flex: none; width: 34px; height: 34px; border: 0; background: transparent; color: #fff; font-size: 20px; line-height: 1; cursor: pointer; }
+  .promo-close:hover { background: #0b2638; }
   .logo img { width: 104px; height: auto; }
   .nav { display: flex; gap: 28px; margin-left: auto; }
   .nav a {
@@ -76,6 +103,15 @@ import { business } from '../config/site'
 </style>
 
 <script>
+  document.querySelector('[data-promo-close]')?.addEventListener('click', () => {
+    document.querySelector('[data-promo]')?.remove()
+    document.documentElement.classList.remove('has-promo')
+    try {
+      sessionStorage.setItem('kemp-promo-closed', '1')
+    } catch {
+      /* private window */
+    }
+  })
   const header = document.querySelector<HTMLElement>('[data-header]')!
   const btn = document.querySelector<HTMLButtonElement>('[data-menu-btn]')!
   const menu = document.querySelector<HTMLElement>('[data-menu]')!

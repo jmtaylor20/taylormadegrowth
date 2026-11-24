@@ -39,7 +39,10 @@
 
   --maxw: 1360px;
   --gutter: max(20px, 4vw);
-  --header-h: 68px;
+  --nav-h: 68px;
+  /* The seasonal banner above the nav adds its height when it's showing. */
+  --promo-h: 0px;
+  --header-h: calc(var(--nav-h) + var(--promo-h));
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 

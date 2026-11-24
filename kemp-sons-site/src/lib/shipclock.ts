@@ -10,8 +10,8 @@ export const SHIPPING = {
   timeZone: 'America/Chicago',
   /** 0 = Sunday ... 6 = Saturday. */
   days: [1, 2, 3, 4, 5],
-  /** Dates the UPS Store is closed (YYYY-MM-DD). */
-  closed: ['2026-11-26', '2026-12-25', '2027-01-01', '2027-05-31', '2027-07-05', '2027-09-06', '2027-11-25', '2027-12-24'],
+  /** Dates nothing ships (YYYY-MM-DD): UPS Store holidays and days Kemp & Sons is closed (Thanksgiving week 2026: closed Wed noon through Fri). */
+  closed: ['2026-11-25', '2026-11-26', '2026-11-27', '2026-12-25', '2027-01-01', '2027-05-31', '2027-07-05', '2027-09-06', '2027-11-25', '2027-12-24'],
 }
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
