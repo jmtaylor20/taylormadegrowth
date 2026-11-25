@@ -150,8 +150,8 @@ const CARDS: Card[] = [
     id: 'rocking-horse',
     name: 'Rocking Horse',
     description: 'Soft pink stripes, a ribbon frame tied with a bow and a little rocking horse beneath your photo.',
-    win: [0.5133,  0.5667,  3.94,  5.55],
-    over: [0.4867,  0.54,  3.9933,  5.6033],
+    win: [0.5133, 0.5667, 3.94, 5.84],
+    over: [0.4867, 0.54, 3.9933, 5.8933],
     back: { ink: '#d0506a' },
   },
   {
