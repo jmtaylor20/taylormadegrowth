@@ -35,7 +35,7 @@ export const PRICE_GROUPS: PriceGroup[] = [
   { id: 'program-14x8.5-trifold', rush: '14 x 8.5 trifold', label: 'Funeral program, 14 x 8.5 trifold (6 panels)', handles: ['funeral-program-gone-fishing', 'funeral-program-theme-trifold'] },
   { id: 'program-16.5x8.5-trifold', rush: '16.5 x 8.5 trifold', label: 'Funeral program, 16.5 x 8.5 trifold (6 panels)', handles: ['funeral-program-flag-trifold'] },
   { id: 'program-17x11-trifold', rush: '17 x 11 trifold', label: 'Funeral program, 17 x 11 trifold (6 panels)', handles: ['funeral-program-flag-tabloid', 'funeral-program-theme-large-trifold'] },
-  { id: 'card-5x7-2side', label: 'Christmas card, 5 x 7 flat, printed both sides', handles: ['christmas-card-very-merry', 'christmas-card-own-design-2side', ...['green-stripe', 'nutcracker', 'navy-ornaments', 'ivory-ornaments', 'pink-christmas'].map((h) => `christmas-card-${h}`)] },
+  { id: 'card-5x7-2side', label: 'Christmas card, 5 x 7 flat, printed both sides', handles: ['christmas-card-very-merry', 'christmas-card-own-design-2side', ...['green-stripe', 'nutcracker', 'navy-ornaments', 'ivory-ornaments', 'pink-christmas', 'pink-blue-baubles', 'whimsy-trees', 'ribbon-stripe', 'winter-berry', 'rocking-horse', 'holly-medallion', 'christmas-plaid'].map((h) => `christmas-card-${h}`)] },
   {
     id: 'card-5x7-1side',
     label: 'Christmas card, 5 x 7 flat, printed one side',

@@ -1,7 +1,7 @@
 import type { Element, Template } from '../types'
 
 /**
- * Nine 5 x 7 portrait photo cards from Kemp's Christmas card artwork (Drive:
+ * 5 x 7 portrait photo cards from Kemp's Christmas card artwork (Drive:
  * Christmas Cards, 1.jpg to 9.jpg). Each card is the purchased artwork with
  * "Merry Christmas" built in and one photo window. The artwork files in
  * /public/templates/xmas are 300 ppi with a mirrored 0.127 in bleed.
@@ -108,6 +108,69 @@ const CARDS: Card[] = [
     description: 'A playful pink holiday print with Santa, gifts and trees, and bold "Merry Christmas" lettering.',
     win: [0.5667, 1.47, 3.8667, 5.0267],
     back: { ink: '#c23a5e' },
+  },
+  {
+    n: 10,
+    id: 'pink-blue-baubles',
+    name: 'Pink & Blue Baubles',
+    description: 'Pink and blue painted ornaments with green bows around your photo, and a pink script "Merry Christmas".',
+    win: [0.52, 1.0567, 4.1067, 5.2433],
+    over: [0.4933, 1.03, 4.16, 5.2967],
+    back: { ink: '#c23a5e' },
+  },
+  {
+    n: 11,
+    id: 'whimsy-trees',
+    name: 'Whimsy Trees',
+    description: 'A forest of painted pink, blue and green Christmas trees, with a blue script "Merry Christmas".',
+    win: [0.55, 1.0567, 3.8933, 5.07],
+    over: [0.5233, 1.03, 3.9467, 5.1233],
+    back: { ink: '#3a5bb8' },
+  },
+  {
+    n: 12,
+    id: 'ribbon-stripe',
+    name: 'Ribbon Stripe',
+    description: 'Cream stripes with red and green ribbon lines and a rosy script "Merry Christmas".',
+    win: [0.5633, 1.0967, 3.8733, 5.0467],
+    over: [0.5367, 1.07, 3.9267, 5.1],
+    back: { ink: '#3f6b4a' },
+  },
+  {
+    n: 13,
+    id: 'winter-berry',
+    name: 'Winter Berry',
+    description: 'A border of winter greenery and red berries, with "Merry Christmas" in red hand lettering.',
+    win: [0.4767, 1.0533, 4.0167, 5.1333],
+    over: [0.45, 1.0267, 4.07, 5.1867],
+    back: { ink: '#b8262e' },
+  },
+  {
+    n: 14,
+    id: 'rocking-horse',
+    name: 'Rocking Horse',
+    description: 'Soft pink stripes, a ribbon frame tied with a bow and a little rocking horse beneath your photo.',
+    win: [0.5167, 0.6133, 3.9367, 5.0467],
+    over: [0.49, 0.5867, 3.99, 5.1],
+    back: { ink: '#d0506a' },
+  },
+  {
+    n: 15,
+    id: 'holly-medallion',
+    name: 'Holly Medallion',
+    description: 'Blue stripes with holly medallions and "Merry Christmas" in red hand lettering.',
+    win: [0.47, 1.0433, 4.08, 5.1867],
+    over: [0.4433, 1.0167, 4.1333, 5.24],
+    back: { ink: '#b8262e' },
+  },
+  {
+    n: 16,
+    id: 'christmas-plaid',
+    name: 'Christmas Plaid',
+    description: 'A painted red and green plaid frame with "Merry Christmas" in red hand lettering.',
+    win: [0.4833, 1.1067, 3.9767, 5.0533],
+    over: [0.4567, 1.08, 4.03, 5.1067],
+    back: { ink: '#2f6b3a' },
   },
 ]
 
